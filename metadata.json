@@ -1,0 +1,6 @@
+{
+  "name": "Resync",
+  "description": "An AI-powered research manuscript coherence and inconsistency detection system that checks logical flow, section alignment, and references.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
