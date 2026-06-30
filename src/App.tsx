@@ -497,7 +497,7 @@ export default function App() {
                 </h1>
               </div>
 
-              {activeTab !== 'scan' && (
+              {activeTab !== 'scan' && activeTab !== 'overview' && (
                 <button
                   onClick={() => setActiveTab('scan')}
                   className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-colors self-start"
@@ -512,108 +512,123 @@ export default function App() {
             {/* 1. OVERVIEW / DASHBOARD TAB */}
             {activeTab === 'overview' && (
               <div className="space-y-8">
-                {scans.length === 0 ? (
-                  /* No scans empty state */
-                  <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center max-w-xl mx-auto space-y-5 shadow-sm">
-                    <div className="w-14 h-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-                      <Compass className="w-7 h-7" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="font-serif text-lg font-bold text-slate-800">No Manuscript Scans Yet</h3>
-                      <p className="text-sm text-slate-500">
-                        Submit a shared Google Docs link of your draft, thesis chapter, or research manuscript to analyze cross-section flow, inconsistencies, and citations.
+                {/* On Top: What they prompted/scan */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      <Compass className="w-4 h-4" /> New Manuscript Coherence Scan
+                    </span>
+                  </div>
+                  <ScanForm
+                    email={currentUser.email}
+                    onScanSuccess={(newScan) => {
+                      setScans([newScan, ...scans]);
+                      setSelectedScan(newScan);
+                    }}
+                  />
+                </div>
+
+                {/* On Bottom: Results history */}
+                <div className="border-t border-slate-200/80 pt-8 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-serif text-xl font-bold text-slate-800 flex items-center gap-2">
+                      <History className="w-5 h-5 text-indigo-600" /> Diagnostic Results History
+                    </h3>
+                  </div>
+
+                  {scans.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center max-w-xl mx-auto space-y-3 shadow-sm">
+                      <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center mx-auto">
+                        <History className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-serif text-base font-bold text-slate-700">No Scan History Yet</h4>
+                      <p className="text-xs text-slate-400">
+                        Submit a document link in the form above to run your first diagnostics and save it to history.
                       </p>
                     </div>
-                    <button
-                      onClick={() => setActiveTab('scan')}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-lg inline-flex items-center gap-1 transition-colors"
-                    >
-                      Scan Your First Document <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  /* Render Current Selected Scan Report */
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
-                    {/* Left side: History log panel */}
-                    <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 shadow-sm">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <History className="w-4 h-4" /> Scan History Log
-                        </span>
-                        <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-bold font-mono">
-                          {scans.length} Scans
-                        </span>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                      
+                      {/* Left side: History log panel */}
+                      <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200/80 p-5 space-y-4 shadow-sm">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <History className="w-4 h-4" /> Scan History Log
+                          </span>
+                          <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-bold font-mono">
+                            {scans.length} Scans
+                          </span>
+                        </div>
+
+                        <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
+                          {scans.map((scan) => (
+                            <div
+                              key={scan.id}
+                              onClick={() => setSelectedScan(scan)}
+                              className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex justify-between items-start gap-2 ${
+                                selectedScan?.id === scan.id
+                                  ? 'border-indigo-600 bg-indigo-50/10 ring-1 ring-indigo-500'
+                                  : 'border-slate-100 hover:border-slate-200 bg-white'
+                              }`}
+                            >
+                              <div className="space-y-1 min-w-0">
+                                <h4 className="text-xs font-bold text-slate-800 truncate">{scan.title}</h4>
+                                <p className="text-[10px] text-slate-400 font-mono">
+                                  {new Date(scan.timestamp).toLocaleDateString()} • {scan.chapterType}
+                                </p>
+                              </div>
+                              
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                                  scan.coherenceScore >= 85 ? 'bg-emerald-50 text-emerald-700' :
+                                  scan.coherenceScore >= 70 ? 'bg-amber-50 text-amber-700' :
+                                  'bg-rose-50 text-rose-700'
+                                }`}>
+                                  Score: {scan.coherenceScore}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteScan(scan.id);
+                                  }}
+                                  title="Delete from history"
+                                  className="p-1 text-slate-300 hover:text-rose-600 rounded transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
-                      <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
-                        {scans.map((scan) => (
-                          <div
-                            key={scan.id}
-                            onClick={() => setSelectedScan(scan)}
-                            className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex justify-between items-start gap-2 ${
-                              selectedScan?.id === scan.id
-                                ? 'border-indigo-600 bg-indigo-50/10 ring-1 ring-indigo-500'
-                                : 'border-slate-100 hover:border-slate-200 bg-white'
-                            }`}
-                          >
-                            <div className="space-y-1 min-w-0">
-                              <h4 className="text-xs font-bold text-slate-800 truncate">{scan.title}</h4>
-                              <p className="text-[10px] text-slate-400 font-mono">
-                                {new Date(scan.timestamp).toLocaleDateString()} • {scan.chapterType}
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                                scan.coherenceScore >= 85 ? 'bg-emerald-50 text-emerald-700' :
-                                scan.coherenceScore >= 70 ? 'bg-amber-50 text-amber-700' :
-                                'bg-rose-50 text-rose-700'
-                              }`}>
-                                Score: {scan.coherenceScore}
+                      {/* Right side: Selected Scan Details Visualizer */}
+                      <div className="lg:col-span-8">
+                        {selectedScan ? (
+                          <div className="space-y-4">
+                            <div className="bg-white rounded-xl border border-slate-200/80 p-5 flex items-center justify-between shadow-sm">
+                              <div>
+                                <h2 className="font-serif text-lg font-bold text-slate-800">{selectedScan.title}</h2>
+                                <p className="text-xs text-slate-400">
+                                  Link: <a href={selectedScan.documentLink} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline inline-flex items-center gap-1 font-mono">{selectedScan.documentLink}</a>
+                                </p>
+                              </div>
+                              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded font-medium">
+                                Active Report
                               </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteScan(scan.id);
-                                }}
-                                title="Delete from history"
-                                className="p-1 text-slate-300 hover:text-rose-600 rounded transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
                             </div>
+                            <ResultDetails scan={selectedScan} />
                           </div>
-                        ))}
+                        ) : (
+                          <div className="p-8 text-center text-slate-400 font-serif italic">
+                            Select a manuscript scan from the history log to view the diagnostic report.
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Right side: Selected Scan Details Visualizer */}
-                    <div className="lg:col-span-8">
-                      {selectedScan ? (
-                        <div className="space-y-4">
-                          <div className="bg-white rounded-xl border border-slate-200/80 p-5 flex items-center justify-between shadow-sm">
-                            <div>
-                              <h2 className="font-serif text-lg font-bold text-slate-800">{selectedScan.title}</h2>
-                              <p className="text-xs text-slate-400">
-                                Link: <a href={selectedScan.documentLink} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline inline-flex items-center gap-1 font-mono">{selectedScan.documentLink}</a>
-                              </p>
-                            </div>
-                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded font-medium">
-                              Active Report
-                            </span>
-                          </div>
-                          <ResultDetails scan={selectedScan} />
-                        </div>
-                      ) : (
-                        <div className="p-8 text-center text-slate-400 font-serif italic">
-                          Select a manuscript scan from the history log to view the diagnostic report.
-                        </div>
-                      )}
                     </div>
-
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 
