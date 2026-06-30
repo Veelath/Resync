@@ -48,11 +48,6 @@ export default function App() {
 
   // System Navigation
   const [activeTab, setActiveTab] = useState<'overview' | 'scan' | 'results' | 'profile'>('overview');
-  
-  // Estimator State for Landing Page Interactive Widget
-  const [estPages, setEstPages] = useState(45);
-  const [estSections, setEstSections] = useState(5);
-  const [estCitationStyle, setEstCitationStyle] = useState<'partial' | 'unverified' | 'clean'>('partial');
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   // Scans State
@@ -318,121 +313,6 @@ export default function App() {
                 >
                   Access Workspace
                 </button>
-              </div>
-            </div>
-
-            {/* Interactive Risk Estimator (Full Width / Grid layout for high visual appeal) */}
-            <div className="max-w-5xl mx-auto bg-white rounded-2xl border border-slate-200/95 shadow-md p-8 space-y-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-mono">Interactive Pre-Scan Utility</span>
-                    <span className="text-xs text-slate-400 font-mono">• Simulated Assessment</span>
-                  </div>
-                  <h3 className="font-serif text-xl font-bold text-slate-800">Inconsistency Probability Calculator</h3>
-                  <p className="text-xs text-slate-400 mt-1">Adjust draft parameters below to instantly forecast expected document alignment and link validation risks.</p>
-                </div>
-                
-                <div className="shrink-0">
-                  <span className="text-xs text-slate-400">Perfect for Dissertations, Papers, & Essays</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-                <div className="md:col-span-7 space-y-6">
-                  {/* Parameter 1: Page count */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <span>Estimated Manuscript Size</span>
-                      <span className="text-indigo-600 font-mono lowercase font-bold">{estPages} pages (~{estPages * 300} words)</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="5"
-                      max="200"
-                      value={estPages}
-                      onChange={(e) => setEstPages(parseInt(e.target.value))}
-                      className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Parameter 2: Sections */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <span>Distinct Chapters / Sections</span>
-                      <span className="text-indigo-600 font-mono font-bold">{estSections} sections</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="3"
-                      max="15"
-                      value={estSections}
-                      onChange={(e) => setEstSections(parseInt(e.target.value))}
-                      className="w-full accent-indigo-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Parameter 3: Citation quality */}
-                  <div className="space-y-2.5">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Reference Citation Integrity</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: 'unverified', label: 'Unverified URLs', desc: 'Copy-pasted links' },
-                        { id: 'partial', label: 'Partially Cited', desc: 'Standard DOI lookups' },
-                        { id: 'clean', label: 'Perfect Cross-Ref', desc: 'Validated indexing' }
-                      ].map((style) => (
-                        <button
-                          key={style.id}
-                          type="button"
-                          onClick={() => setEstCitationStyle(style.id as any)}
-                          className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
-                            estCitationStyle === style.id
-                              ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-500 text-indigo-950'
-                              : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
-                          }`}
-                        >
-                          <span className="text-xs font-bold block">{style.label}</span>
-                          <span className="text-[10px] text-slate-400 block mt-0.5">{style.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="md:col-span-5 bg-slate-50/80 rounded-2xl border border-slate-100 p-6 space-y-6 text-center">
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Calculated Diagnostic Metrics</div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Projected Score</span>
-                      <span className="font-mono text-2xl font-extrabold text-indigo-600">
-                        {Math.max(45, Math.min(98, 95 - Math.floor(estPages / 12) - (estSections > 7 ? 6 : 0) - (estCitationStyle === 'unverified' ? 15 : estCitationStyle === 'partial' ? 6 : -3)))}
-                        <span className="text-xs text-slate-400">/100</span>
-                      </span>
-                    </div>
-
-                    <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Likely Gaps</span>
-                      <span className="font-mono text-2xl font-extrabold text-amber-600">
-                        {Math.floor(estPages / 14) + (estCitationStyle === 'unverified' ? 4 : estCitationStyle === 'partial' ? 2 : 0) + (estSections > 6 ? 2 : 0)} errors
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Estimated Document Health</span>
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${
-                      (95 - Math.floor(estPages / 12) - (estSections > 7 ? 6 : 0) - (estCitationStyle === 'unverified' ? 15 : estCitationStyle === 'partial' ? 6 : -3)) >= 82
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-100'
-                        : 'bg-amber-50 text-amber-800 border border-amber-100'
-                    }`}>
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      {(95 - Math.floor(estPages / 12) - (estSections > 7 ? 6 : 0) - (estCitationStyle === 'unverified' ? 15 : estCitationStyle === 'partial' ? 6 : -3)) >= 82
-                        ? 'Excellent Ready State'
-                        : 'Review Advised (Scan Recommended)'}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
 
