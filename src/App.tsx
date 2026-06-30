@@ -440,67 +440,78 @@ export default function App() {
                           </span>
                         </div>
 
-                        <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
-                          {scans.map((scan) => (
-                            <div
-                              key={scan.id}
-                              onClick={() => setSelectedScan(scan)}
-                              className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex justify-between items-start gap-2 ${
-                                selectedScan?.id === scan.id
-                                  ? 'border-indigo-600 bg-indigo-50/10 ring-1 ring-indigo-500'
-                                  : 'border-slate-100 hover:border-slate-200 bg-white'
-                              }`}
-                            >
-                              <div className="space-y-1 min-w-0">
-                                <h4 className="text-xs font-bold text-slate-800 truncate">{scan.title}</h4>
-                                <p className="text-[10px] text-slate-400 font-mono">
-                                  {new Date(scan.timestamp).toLocaleDateString()} • {scan.chapterType}
-                                </p>
+                        <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+                          {scans.map((scan) => {
+                            const isSelected = selectedScan?.id === scan.id;
+                            return (
+                              <div
+                                key={scan.id}
+                                onClick={() => setSelectedScan(scan)}
+                                className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all duration-200 flex justify-between items-center gap-3 ${
+                                  isSelected
+                                    ? 'border-indigo-500 bg-indigo-50/20 shadow-sm shadow-indigo-500/5 ring-1 ring-indigo-500'
+                                    : 'border-slate-100 hover:border-slate-200 hover:-translate-y-0.5 hover:shadow-sm bg-white'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                    isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-50 text-slate-400'
+                                  }`}>
+                                    <BookOpen className="w-4 h-4" />
+                                  </div>
+                                  <div className="space-y-0.5 min-w-0">
+                                    <h4 className="text-xs font-bold text-slate-800 truncate">{scan.title}</h4>
+                                    <p className="text-[10px] text-slate-400 font-mono">
+                                      {new Date(scan.timestamp).toLocaleDateString()} • {scan.chapterType}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                    scan.coherenceScore >= 85 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                    scan.coherenceScore >= 70 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                    'bg-rose-50 text-rose-700 border-rose-200'
+                                  }`}>
+                                    {scan.coherenceScore}
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteScan(scan.id);
+                                    }}
+                                    title="Delete from history"
+                                    className="p-1.5 text-slate-300 hover:text-rose-600 rounded-lg hover:bg-slate-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
-                              
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                                  scan.coherenceScore >= 85 ? 'bg-emerald-50 text-emerald-700' :
-                                  scan.coherenceScore >= 70 ? 'bg-amber-50 text-amber-700' :
-                                  'bg-rose-50 text-rose-700'
-                                }`}>
-                                  Score: {scan.coherenceScore}
-                                </span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteScan(scan.id);
-                                  }}
-                                  title="Delete from history"
-                                  className="p-1 text-slate-300 hover:text-rose-600 rounded transition-colors"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
 
                       {/* Right side: Selected Scan Details Visualizer */}
                       <div className="lg:col-span-8">
                         {selectedScan ? (
-                          <div className="space-y-4">
-                            <div className="bg-white rounded-xl border border-slate-200/80 p-5 flex items-center justify-between shadow-sm">
-                              <div>
+                          <div className="space-y-4 animate-fade-in">
+                            <div className="bg-white rounded-xl border border-slate-200/80 p-5 flex items-center justify-between shadow-sm border-l-4 border-l-indigo-650">
+                              <div className="space-y-1">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 font-mono">Currently Auditing</span>
                                 <h2 className="font-serif text-lg font-bold text-slate-800">{selectedScan.title}</h2>
                                 <p className="text-xs text-slate-400">
-                                  Link: <a href={selectedScan.documentLink} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline inline-flex items-center gap-1 font-mono">{selectedScan.documentLink}</a>
+                                  Source Link: <a href={selectedScan.documentLink} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline inline-flex items-center gap-1 font-mono">{selectedScan.documentLink}</a>
                                 </p>
                               </div>
-                              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded font-medium">
+                              <span className="text-xs text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md font-semibold shrink-0">
                                 Active Report
                               </span>
                             </div>
                             <ResultDetails scan={selectedScan} />
                           </div>
                         ) : (
-                          <div className="p-8 text-center text-slate-400 font-serif italic">
+                          <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center text-slate-400 font-serif italic shadow-sm">
                             Select a manuscript scan from the history log to view the diagnostic report.
                           </div>
                         )}
