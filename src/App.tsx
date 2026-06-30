@@ -425,40 +425,23 @@ export default function App() {
                   </div>
 
                   {scans.length === 0 ? (
-                    /* IF NO HISTORY YET: Show ScanForm on top, empty history on bottom */
-                    <>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                          <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                            <Compass className="w-4 h-4" /> Start Your First Manuscript Scan
-                          </span>
+                    /* IF NO HISTORY YET: Show only metrics bar and empty history card */
+                    <div className="space-y-6 pt-4">
+                      <h3 className="font-serif text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <History className="w-5 h-5 text-indigo-600" /> Diagnostic results history
+                      </h3>
+                      <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center max-w-xl mx-auto space-y-4 shadow-sm flex flex-col items-center">
+                        <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center">
+                          <History className="w-6 h-6" />
                         </div>
-                        <ScanForm
-                          email={currentUser.email}
-                          onScanSuccess={(newScan) => {
-                            setScans([newScan, ...scans]);
-                            setSelectedScan(newScan);
-                          }}
-                        />
-                      </div>
-
-                      <div className="border-t border-slate-200/80 pt-8 space-y-6">
-                        <h3 className="font-serif text-xl font-bold text-slate-800 flex items-center gap-2">
-                          <History className="w-5 h-5 text-indigo-600" /> Diagnostic results history
-                        </h3>
-                        <div className="bg-white rounded-xl border border-slate-200/80 p-12 text-center max-w-xl mx-auto space-y-4 shadow-sm flex flex-col items-center">
-                          <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center">
-                            <History className="w-6 h-6" />
-                          </div>
-                          <div className="space-y-1.5">
-                            <h4 className="font-serif text-base font-bold text-slate-700">No scan history yet</h4>
-                            <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                              Your past reports will appear here once you run a scan.
-                            </p>
-                          </div>
+                        <div className="space-y-1.5">
+                          <h4 className="font-serif text-base font-bold text-slate-700">No scan history yet</h4>
+                          <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                            Your past reports will appear here once you run a scan.
+                          </p>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     /* IF HAS HISTORY: Show Active Scan Report on top, and History Log Grid on bottom */
                     <>
