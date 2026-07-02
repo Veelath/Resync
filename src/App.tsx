@@ -696,7 +696,7 @@ export default function App() {
               {/* Header Title Bar */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                  <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block font-mono">
                     Resync Academic Workspace
                   </span>
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
@@ -705,10 +705,10 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => setActiveTab('scan')}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer animate-fade-in"
                 >
                   <PlusCircle className="w-4 h-4" />
-                  <span>New scan</span>
+                  <span>Run New Manuscript Scan</span>
                 </button>
               </div>
 
