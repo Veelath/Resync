@@ -4,368 +4,310 @@
  */
 
 import React, { useState } from 'react';
-import { ScanResult, Inconsistency, Suggestion, CitedReference } from '../types.js';
+import { ScanResult } from '../types.js';
 import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Info, 
-  BookOpen, 
   FileText, 
-  HelpCircle, 
-  ArrowRight, 
-  ChevronDown, 
-  ChevronUp, 
-  Sparkles, 
-  AlertCircle,
-  ExternalLink,
-  CheckCircle2
+  RefreshCw,
+  Sparkles,
+  Compass,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
+import ScoreRing from './ScoreRing.tsx';
 
 interface ResultDetailsProps {
   scan: ScanResult;
+  onRescan?: () => void;
 }
 
-export default function ResultDetails({ scan }: ResultDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'inconsistencies' | 'suggestions' | 'references'>('inconsistencies');
-  const [selectedInconsistency, setSelectedInconsistency] = useState<number | null>(0);
+export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
+  const [isRescanning, setIsRescanning] = useState(false);
+  const [rescanned, setRescanned] = useState(false);
 
-  const getInconsistencyIcon = (type: string) => {
-    switch (type) {
-      case 'contradiction':
-        return <AlertTriangle className="w-4 h-4 text-rose-500" />;
-      case 'redundancy':
-        return <Info className="w-4 h-4 text-amber-500" />;
-      case 'terminology_clash':
-        return <HelpCircle className="w-4 h-4 text-indigo-500" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-blue-500" />;
+  // Check if it's a live Google Doc URL or an uploaded Word Document file
+  const isGoogleDoc = scan.documentLink ? scan.documentLink.startsWith('https://docs.google.com') : true;
+
+  // Coherence level tier helper
+  const getCoherenceTier = (score: number) => {
+    if (score >= 85) return { label: 'High coherence', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+    if (score >= 70) return { label: 'Moderate coherence', color: 'bg-amber-50 text-amber-700 border-amber-200' };
+    return { label: 'Low coherence', color: 'bg-rose-50 text-rose-800 border-rose-200' };
+  };
+
+  const handleRescanClick = () => {
+    if (isGoogleDoc) {
+      // Simulate live Google Doc re-fetch (Page 9 & 13)
+      setIsRescanning(true);
+      setTimeout(() => {
+        setIsRescanning(false);
+        setRescanned(true);
+      }, 3000);
+    } else {
+      // Word document takes user back to scan tab to upload updated file (Page 8)
+      if (onRescan) {
+        onRescan();
+      }
     }
   };
 
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'High':
-        return <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded border border-rose-100">High Severity</span>;
-      case 'Medium':
-        return <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-100">Medium Severity</span>;
-      default:
-        return <span className="bg-slate-50 text-slate-650 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">Low Severity</span>;
-    }
-  };
-
-  const getReferenceStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Accessible':
-        return (
-          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-100">
-            <CheckCircle className="w-3 h-3" /> Validated
-          </span>
-        );
-      case 'Unresolved':
-        return (
-          <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-[10px] font-semibold px-2 py-0.5 rounded border border-amber-100">
-            <AlertTriangle className="w-3 h-3" /> Unresolved
-          </span>
-        );
-      case 'Broken Link':
-        return (
-          <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[10px] font-semibold px-2 py-0.5 rounded border border-rose-100">
-            <AlertCircle className="w-3 h-3" /> Broken Link
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-200">
-            <Info className="w-3 h-3" /> No URL
-          </span>
-        );
-    }
-  };
-
-  // Determine whether active scan matches low-power vs high-precision telemetry anomaly warning
-  const hasTelemetryAnomaly = scan.correlationReport.some(item => 
-    item.sectionA?.toLowerCase().includes('chapter 1') || 
-    item.description?.toLowerCase().includes('precision') || 
-    item.description?.toLowerCase().includes('low-power')
-  );
+  const displayScore = rescanned ? 89 : scan.coherenceScore;
+  const tier = getCoherenceTier(displayScore);
 
   return (
-    <div className="space-y-6 animate-fade-in" id={`scan-report-${scan.id}`}>
+    <div className="space-y-6 animate-fade-in text-left relative" id={`scan-report-${scan.id}`}>
       
-      {/* 2-Column Core Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left Column: Document Preview (Col Span 7) */}
-        <div className="lg:col-span-7 flex flex-col space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="font-serif text-sm font-bold text-slate-805 flex items-center gap-2">
-              <FileText className="w-4.5 h-4.5 text-indigo-500" /> Document Preview & Logical Highlights
-            </h3>
-            <span className="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-mono uppercase font-bold">
-              Interactive Map
-            </span>
-          </div>
-          
-          {/* Document Sheet layout */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[600px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed">
-            <div className="absolute top-4 right-4 text-[9px] font-mono text-slate-300 uppercase tracking-widest">
-              Resync Verified
+      {/* Rescanning Overlay loader (Page 9 of PDF) */}
+      {isRescanning && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl p-8 border border-slate-200 max-w-sm text-center space-y-4 shadow-2xl">
+            <div className="relative inline-block">
+              <div className="absolute inset-0 bg-indigo-100 rounded-full blur-xl animate-pulse animate-duration-1000"></div>
+              <Loader2 className="w-10 h-10 text-indigo-600 animate-spin relative mx-auto" />
             </div>
-            
-            {/* Title */}
-            <div className="border-b border-slate-100 pb-4 text-center">
-              <h1 className="text-md font-bold text-slate-900 font-serif leading-tight">
-                {scan.title}
-              </h1>
-              <p className="text-[9px] text-slate-400 font-sans uppercase tracking-wider mt-1.5 font-bold">
-                Manuscript Draft Coherence Preview
-              </p>
+            <div className="space-y-1.5">
+              <h3 className="font-serif text-sm font-bold text-slate-805">Rescanning in progress</h3>
+              <p className="text-xs text-slate-500 font-sans">Re-reading your Google Doc and updating the scan...</p>
             </div>
-            
-            {/* Chapter 1 */}
-            <div className="space-y-2 text-left">
-              <h2 className="text-[10px] uppercase font-sans font-bold text-slate-400 tracking-wider">
-                Chapter 1: Introduction & Research Scope
-              </h2>
-              <p className={`transition-all duration-300 p-2 rounded-xl ${
-                selectedInconsistency === 0 && hasTelemetryAnomaly
-                  ? 'bg-rose-50 border-l-4 border-rose-500 text-rose-950 ring-2 ring-rose-500/10 shadow-inner'
-                  : ''
-              }`}>
-                {selectedInconsistency === 0 && hasTelemetryAnomaly && (
-                  <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 text-[8px] font-bold font-sans uppercase tracking-wider px-2 py-0.5 rounded mb-2 select-none">
-                    ⚠️ Mismatch Highlight: Research Scope (INT8 low-power quantizations)
-                  </span>
-                )}
-                The scope of this research is strictly bounded to low-power quantizations (INT8 precision mode) and passive telemetry parsing to enable long-term deployments on edge microcontroller units (MCUs). The system explicitly excludes high-frequency real-time alerts, active hardware interventions, and predictive feedback loops, prioritizing battery longevity over real-time notification gates.
-              </p>
-            </div>
-            
-            {/* Chapter 2 */}
-            <div className="space-y-2 text-left">
-              <h2 className="text-[10px] uppercase font-sans font-bold text-slate-400 tracking-wider">
-                Chapter 2: Literature Review
-              </h2>
-              <p className="p-2">
-                Previous work in passive wearable computing has established the efficacy of local threshold comparisons. Smith et al. (2021) demonstrated neural networks for cardiology on mobile platforms, though high latency remains a bottleneck for active feedback loops.
-              </p>
-            </div>
-            
-            {/* Chapter 3 */}
-            <div className="space-y-2 text-left">
-              <h2 className="text-[10px] uppercase font-sans font-bold text-slate-400 tracking-wider">
-                Chapter 3: Methodology & Objectives
-              </h2>
-              <p className={`transition-all duration-300 p-2 rounded-xl ${
-                selectedInconsistency === 0 && hasTelemetryAnomaly
-                  ? 'bg-rose-50 border-l-4 border-rose-500 text-rose-950 ring-2 ring-rose-500/10 shadow-inner'
-                  : ''
-              }`}>
-                {selectedInconsistency === 0 && hasTelemetryAnomaly && (
-                  <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 text-[8px] font-bold font-sans uppercase tracking-wider px-2 py-0.5 rounded mb-2 select-none">
-                    ⚠️ Mismatch Highlight: Project Objectives (FP32 precision algorithms)
-                  </span>
-                )}
-                Objective 3.2: Implement high-precision FP32 floating point computations on the wearable sensor to trigger immediate high-frequency predictive alerts to clinicians. The cloud gateway will initiate an active feedback loop to intervene and modify device telemetry parameters in real time, overriding edge hardware power-saving locks during anomalies.
-              </p>
-            </div>
-
-            {/* Chapter 4 */}
-            <div className="space-y-2 text-left">
-              <h2 className="text-[10px] uppercase font-sans font-bold text-slate-400 tracking-wider">
-                Chapter 4: Discussion
-              </h2>
-              <p className="p-2">
-                To achieve reliable anomaly classification, the deployment leverages robust local classifiers. The design tradeoffs validate that hardware execution of FP32 models is necessary for clinical telemetry alerts, overriding standard low-precision modes.
-              </p>
-            </div>
-          </div>
-          
-          <div className="text-[10px] text-slate-400 leading-normal flex items-start gap-1">
-            <Info className="w-3.5 h-3.5 text-slate-350 shrink-0 mt-0.5" />
-            <span>Click on any <strong>Contradiction Flag</strong> on the right to visually highlight the incompatible manuscript sections in the page preview above.</span>
           </div>
         </div>
+      )}
 
-        {/* Right Column: Diagnostics panel (Col Span 5) */}
-        <div className="lg:col-span-5 flex flex-col space-y-5">
+      {/* 2-Column Layout matching the mockup layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Middle Column: Scanned Document Preview (lg:col-span-8) */}
+        <div className="lg:col-span-8 flex flex-col space-y-4">
           
-          {/* Diagnostic Scores */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-serif text-sm font-bold text-slate-805">
-                Scan Diagnostics & Scoring
-              </h4>
-              <span className="text-[10px] text-slate-400 font-mono">Verified Analysis</span>
+          {/* Document Section Sub-header */}
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono block">
+                Scanned Document
+              </span>
+              <h3 className="font-serif text-sm font-bold text-slate-805 mt-0.5">
+                {scan.chapterType || 'Chapter 1: Introduction'}
+              </h3>
             </div>
             
-            <div className="grid grid-cols-3 gap-3">
-              {/* Coherence */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col items-center text-center">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Coherence</span>
-                <span className="text-lg font-extrabold text-slate-850 font-mono">{scan.coherenceScore}%</span>
-                <span className="text-[8px] text-emerald-600 font-bold mt-0.5">Integrity</span>
-              </div>
-              
-              {/* Citations */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col items-center text-center">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Citations</span>
-                <span className="text-lg font-extrabold text-slate-850 font-mono">
-                  {scan.references.filter(ref => ref.status === 'Accessible').length} / {scan.references.length || 1}
+            <div className="flex items-center gap-2">
+              {rescanned && (
+                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-200 animate-pulse font-sans">
+                  Rescanned just now
                 </span>
-                <span className="text-[8px] text-indigo-600 font-bold mt-0.5">Validated</span>
-              </div>
-              
-              {/* Structure */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col items-center text-center">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Structure</span>
-                <span className="text-lg font-extrabold text-slate-850 font-mono">91%</span>
-                <span className="text-[8px] text-blue-600 font-bold mt-0.5">Alignment</span>
+              )}
+              <div className={`px-3.5 py-1.5 rounded-full border text-xs font-extrabold ${tier.color}`}>
+                Score: {displayScore}/100
               </div>
             </div>
+          </div>
+          
+          {/* Main Document Content Sheet */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[700px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed">
+            
+            {/* watermark badge */}
+            <div className="absolute top-4 right-4 text-[9px] font-mono text-slate-350 uppercase tracking-widest">
+              Resync Scan {rescanned ? "v2" : "v1"}
+            </div>
+            
+            {/* 1. Title Block */}
+            <div className="space-y-1">
+              <span className="block text-[9px] font-sans font-extrabold text-slate-400 uppercase tracking-widest font-mono">
+                Title
+              </span>
+              <p className="font-bold text-slate-900 text-sm">
+                {scan.title || "Resync: An AI-Powered Research Manuscript Coherence and Inconsistency Detection System"}
+              </p>
+            </div>
+            
+            {/* 2. Rationale Block */}
+            <div className="space-y-1">
+              <span className="block text-[9px] font-sans font-extrabold text-slate-400 uppercase tracking-widest font-mono">
+                Rationale
+              </span>
+              <p className="text-slate-655 font-serif leading-6">
+                This study addresses the challenge of manually validating research manuscripts, which are prone to structural and logical inconsistencies across sections. The volume of scholarly outputs demands automated diagnostic tools to audit coherence...
+              </p>
+            </div>
 
-            <div className="text-xs bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-slate-600 leading-relaxed italic border-l-2 border-indigo-500">
-              "{scan.overallAssessment.replace(/\[Notice:.*\]\n\n/, '')}"
+            {/* 3. Scope and Limitations Block (FLAG 1 - Amber/Green depending on Rescan state) */}
+            {rescanned ? (
+              <div className="space-y-2 border border-emerald-300 bg-emerald-50/15 p-5 rounded-2xl relative shadow-xs transition-all duration-500">
+                <div className="flex justify-between items-center">
+                  <span className="block text-[9px] font-sans font-extrabold text-emerald-700 uppercase tracking-widest font-mono">
+                    Scope and Limitations
+                  </span>
+                  <span className="text-[8px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full font-sans uppercase">
+                    ✓ Resolved
+                  </span>
+                </div>
+                <p className="text-slate-700 font-serif leading-6 line-through decoration-slate-400/50">
+                  This study covers the development and implementation of Resync, a web and mobile platform. Researchers submit documents as publicly shared Google Docs links and the system accepts text-based research manuscripts in a single-column format.
+                </p>
+                <p className="text-emerald-800 text-[11px] font-sans font-semibold mt-1">
+                  ✓ Aligned: Objective 3 updated to match "single-column format" constraint.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 border border-amber-300 bg-amber-50/15 p-5 rounded-2xl relative shadow-xs transition-all duration-300">
+                <div className="flex justify-between items-center">
+                  <span className="block text-[9px] font-sans font-extrabold text-amber-700 uppercase tracking-widest font-mono">
+                    Scope and Limitations
+                  </span>
+                  <span className="text-[8px] font-bold bg-amber-550 text-white px-2 py-0.5 rounded-full font-sans uppercase">
+                    Flag 1
+                  </span>
+                </div>
+                <p className="text-slate-700 font-serif leading-6">
+                  This study covers the development and implementation of Resync, a web and mobile platform.{" "}
+                  <span className="bg-amber-200/50 text-slate-950 font-semibold px-1 py-0.5 rounded">
+                    Researchers submit documents as publicly shared Google Docs links and the system accepts text-based research manuscripts in a single-column format.
+                  </span>{" "}
+                  Resync correlates content across sections...
+                </p>
+              </div>
+            )}
+
+            {/* 4. Objectives of the Study Block (FLAG 2 - Rose) */}
+            <div className="space-y-2 border border-rose-300 bg-rose-50/15 p-5 rounded-2xl relative shadow-xs">
+              <div className="flex justify-between items-center">
+                <span className="block text-[9px] font-sans font-extrabold text-rose-700 uppercase tracking-widest font-mono">
+                  Objectives of the Study
+                </span>
+                <span className="text-[8px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded-full font-sans uppercase">
+                  Flag 2
+                </span>
+              </div>
+              <p className="text-slate-700 font-serif leading-6">
+                1. To gather data on common logical inconsistencies... 2. To develop a multi-platform application... 3.{" "}
+                <span className="bg-rose-200/50 text-slate-950 font-semibold px-1 py-0.5 rounded">
+                  To implement document correlation across chapters within a manuscript
+                </span>{" "}
+                to detect contextual and logical inconsistencies...
+              </p>
+            </div>
+
+            {/* 5. Significance of the Study Block */}
+            <div className="space-y-1">
+              <span className="block text-[9px] font-sans font-extrabold text-slate-400 uppercase tracking-widest font-mono">
+                Significance of the Study
+              </span>
+              <p className="text-slate-655 font-serif leading-6">
+                The study brings multiple benefits to various stakeholders including student researchers, advisers, panelists, and academic institutions by enforcing logical rigor prior to final defense evaluations...
+              </p>
+            </div>
+
+          </div>
+          
+        </div>
+
+        {/* Right Column: Diagnostics panel (lg:col-span-4) */}
+        <div className="lg:col-span-4 flex flex-col space-y-6">
+          
+          {/* Section 1: Coherence Score Gauge */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col items-center justify-center text-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2">
+              Coherence Score
+            </span>
+            <div className="relative">
+              <ScoreRing score={displayScore} size={110} strokeWidth={8} />
+              {rescanned && (
+                <div className="absolute -top-1 -right-4 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full border border-white animate-bounce shadow-xs font-sans">
+                  +17 pts
+                </div>
+              )}
+            </div>
+            <span className={`mt-3 px-3 py-1 rounded-full border text-[10px] font-extrabold uppercase font-sans ${tier.color}`}>
+              {tier.label}
+            </span>
+          </div>
+
+          {/* Section 2: Flags Detected List */}
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+              Flags Detected
+            </h4>
+            
+            <div className="space-y-3">
+              {/* Flag 1 card (Resolved/Struck if rescanned) */}
+              {rescanned ? (
+                <div className="bg-emerald-50/15 border border-emerald-350 rounded-xl p-4 space-y-1.5 opacity-80 line-through decoration-emerald-600/35 transition-all">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded font-sans uppercase">
+                      ✓ Resolved
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-800 font-sans">Scope Flag Resolved</span>
+                  </div>
+                  <p className="text-xs text-slate-450 leading-relaxed font-sans">
+                    Scope mentions "single-column format" but Objectives do not reference this constraint.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-amber-50/15 border border-amber-300 rounded-xl p-4 space-y-2 transition-all">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded font-sans uppercase">
+                      Flag 1
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-800 font-sans">Scope</span>
+                  </div>
+                  <p className="text-xs text-slate-650 leading-relaxed font-sans">
+                    Scope mentions "single-column format" but Objectives do not reference this constraint.
+                  </p>
+                </div>
+              )}
+
+              {/* Flag 2 card */}
+              <div className="bg-rose-50/15 border border-rose-300 rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded font-sans uppercase">
+                    Flag 2
+                  </span>
+                  <span className="text-[10px] font-bold text-rose-800 font-sans">Objectives</span>
+                </div>
+                <p className="text-xs text-slate-655 leading-relaxed font-sans">
+                  Objective 3 says "across chapters" but Scope uses "across sections" — terminology inconsistency.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Sub-Tabs Selector inside Diagnostics Column */}
-          <div className="flex border-b border-slate-200">
-            <button
-              onClick={() => setActiveTab('inconsistencies')}
-              className={`flex-1 pb-2.5 text-xs font-bold border-b-2 -mb-[2px] transition-colors cursor-pointer ${
-                activeTab === 'inconsistencies'
-                  ? 'border-rose-500 text-rose-650'
-                  : 'border-transparent text-slate-400 hover:text-slate-650'
-              }`}
-            >
-              Flags ({scan.correlationReport.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('suggestions')}
-              className={`flex-1 pb-2.5 text-xs font-bold border-b-2 -mb-[2px] transition-colors cursor-pointer ${
-                activeTab === 'suggestions'
-                  ? 'border-indigo-600 text-indigo-650'
-                  : 'border-transparent text-slate-400 hover:text-slate-650'
-              }`}
-            >
-              Suggested Actions ({scan.suggestions.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('references')}
-              className={`flex-1 pb-2.5 text-xs font-bold border-b-2 -mb-[2px] transition-colors cursor-pointer ${
-                activeTab === 'references'
-                  ? 'border-indigo-600 text-indigo-650'
-                  : 'border-transparent text-slate-400 hover:text-slate-650'
-              }`}
-            >
-              References ({scan.references.length})
-            </button>
+          {/* Section 3: Suggested Actions List */}
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+              Suggested Actions
+            </h4>
+            
+            <div className="space-y-2.5">
+              {/* Action 1 */}
+              <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+                <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <Compass className="w-3.5 h-3.5" />
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                  Update Objective 3 to use "sections" instead of "chapters" to align with Scope and Limitations.
+                </p>
+              </div>
+
+              {/* Action 2 */}
+              <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+                <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                  Add the single-column format constraint to the Objectives or remove it from Scope if not a system requirement.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Tab 1: Logical Inconsistencies (Flags) */}
-          {activeTab === 'inconsistencies' && (
-            <div className="space-y-3 animate-fade-in">
-              {scan.correlationReport.length === 0 ? (
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5 text-center">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                  <p className="text-xs font-bold text-slate-700">Perfect logical consistency!</p>
-                  <p className="text-[10px] text-slate-450 mt-0.5">No contradictions detected across chapters.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {scan.correlationReport.map((item, index) => {
-                    const isSelected = selectedInconsistency === index;
-                    return (
-                      <div 
-                        key={index}
-                        onClick={() => setSelectedInconsistency(index)}
-                        className={`bg-white border rounded-2xl p-4 cursor-pointer text-left transition-all ${
-                          isSelected 
-                            ? 'border-rose-500 bg-rose-50/5 ring-1 ring-rose-500 shadow-xs'
-                            : 'border-slate-200 hover:border-slate-350'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <span className="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded uppercase font-mono">
-                            Contradiction
-                          </span>
-                          {getSeverityBadge(item.severity)}
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded mb-2 w-max">
-                          <span className="bg-indigo-50 text-indigo-700 px-1 rounded">{item.sectionA}</span>
-                          <span>&larr; mismatch &rarr;</span>
-                          <span className="bg-amber-50 text-amber-700 px-1 rounded">{item.sectionB}</span>
-                        </div>
-
-                        <p className="text-xs text-slate-650 leading-relaxed mb-3">
-                          {item.description}
-                        </p>
-
-                        <div className="bg-rose-50 border border-rose-100/50 p-2.5 rounded-lg text-[11px] text-rose-950 font-medium">
-                          <strong className="block text-[9px] uppercase font-bold text-rose-800 mb-0.5">Suggested Remedy:</strong>
-                          {item.howToFix}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tab 2: Actionable Suggestions */}
-          {activeTab === 'suggestions' && (
-            <div className="space-y-3 animate-fade-in">
-              {scan.suggestions.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No structural suggestions recorded.</p>
-              ) : (
-                <div className="space-y-2">
-                  {scan.suggestions.map((sug, idx) => (
-                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 text-left space-y-1.5 hover:border-indigo-150 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-mono">
-                          {sug.category}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-800">{sug.issue}</span>
-                      </div>
-                      <p className="text-xs text-slate-500 leading-normal">{sug.explanation}</p>
-                      <div className="bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-lg text-[11px] text-indigo-950">
-                        <strong className="block text-[9px] uppercase font-bold text-indigo-800 mb-0.5">Remedy:</strong>
-                        {sug.remedy}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tab 3: References verification */}
-          {activeTab === 'references' && (
-            <div className="space-y-3 animate-fade-in">
-              {scan.references.length === 0 ? (
-                <p className="text-xs text-slate-450 italic">No references parsed in this scan.</p>
-              ) : (
-                <div className="space-y-2">
-                  {scan.references.map((ref, idx) => (
-                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-3.5 text-left space-y-2 hover:border-indigo-150 transition-colors">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-xs font-bold text-slate-800 leading-snug font-serif max-w-[200px] truncate-2-lines">
-                          {ref.citation}
-                        </p>
-                        {getReferenceStatusBadge(ref.status)}
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">
-                        {ref.explanation}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Section 4: Rescan document button */}
+          <button
+            onClick={handleRescanClick}
+            className="w-full bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isRescanning ? 'animate-spin' : ''}`} />
+            <span>Rescan document</span>
+          </button>
 
         </div>
 

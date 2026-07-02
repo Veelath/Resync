@@ -110,8 +110,8 @@ export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
         setError('Please select or upload a Word document.');
         return;
       }
-      // Since backend requires a link to fetch text, send demo sample doc and specify file name
-      linkToSend = 'https://docs.google.com/document/d/1B_8_DemoAcademicManuscriptEdgeWearables/edit?usp=sharing';
+      // Store file protocol so results details can distinguish it from a live Google Doc URL
+      linkToSend = 'file://' + uploadedFile.name;
     } else {
       if (!documentLink) {
         setError('Please provide a Google Docs link.');

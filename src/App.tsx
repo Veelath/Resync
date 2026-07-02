@@ -933,7 +933,13 @@ export default function App() {
                           <span>Google Doc</span>
                         </a>
                       </div>
-                      <ResultDetails scan={activeScan} />
+                      <ResultDetails 
+                        scan={activeScan} 
+                        onRescan={() => {
+                          setActiveTab('scan');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }} 
+                      />
                     </div>
                   )}
 
@@ -1009,6 +1015,7 @@ export default function App() {
               onScanSuccess={(newScan) => {
                 setScans([newScan, ...scans]);
                 setSelectedScan(newScan);
+                setShowFullReport(true);
                 setActiveTab('overview');
               }}
             />
