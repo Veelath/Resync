@@ -489,12 +489,12 @@ export default function App() {
   if (activeScan) {
     const scoreVal = activeScan.coherenceScore;
     if (scoreVal >= 85) {
-      scoreColor = 'stroke-indigo-650';
-      scoreBadge = 'bg-emerald-50 text-emerald-705 border-emerald-200';
+      scoreColor = 'stroke-indigo-600';
+      scoreBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
       scoreLabel = 'High Coherence';
     } else if (scoreVal >= 70) {
       scoreColor = 'stroke-amber-500';
-      scoreBadge = 'bg-amber-55 text-amber-705 border-amber-200';
+      scoreBadge = 'bg-amber-50 text-amber-700 border-amber-200';
       scoreLabel = 'Moderate Coherence';
     }
   }
@@ -524,7 +524,7 @@ export default function App() {
             {!sidebarCollapsed && (
               <div className="animate-fade-in">
                 <span className="font-serif text-lg font-bold tracking-tight text-slate-900">Resync</span>
-                <span className="text-[10px] block font-mono text-indigo-600 uppercase tracking-widest font-bold">Manuscript</span>
+                <span className="text-[10px] block font-mono text-indigo-600 uppercase tracking-wider font-bold">Manuscript Coherence</span>
               </div>
             )}
           </div>
@@ -601,7 +601,7 @@ export default function App() {
                 </div>
                 <div>
                   <span className="font-serif text-lg font-bold text-slate-900">Resync</span>
-                  <span className="text-[10px] block font-mono text-indigo-600 uppercase tracking-widest font-bold">Manuscript</span>
+                  <span className="text-[10px] block font-mono text-indigo-600 uppercase tracking-wider font-bold">Manuscript Coherence</span>
                 </div>
               </div>
 
@@ -676,12 +676,12 @@ export default function App() {
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <span className="font-serif text-md font-bold tracking-tight text-slate-905">Resync</span>
+              <span className="font-serif text-md font-bold tracking-tight text-slate-900">Resync</span>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-605 flex items-center justify-center font-bold text-xs border border-indigo-100">
+            <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs border border-indigo-100">
               {currentUser.name.charAt(0)}
             </div>
           </div>
@@ -705,7 +705,7 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => setActiveTab('scan')}
-                  className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>New scan</span>
@@ -750,13 +750,13 @@ export default function App() {
                             <AlertTriangle className="w-5 h-5" />
                           </div>
                           <div className="text-left">
-                            <p className="text-xs font-bold text-slate-805 leading-tight">Issues flagged</p>
-                            <p className="text-[10px] text-slate-405 mt-0.5">for review</p>
+                            <p className="text-xs font-bold text-slate-800 leading-tight">Issues flagged</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">for review</p>
                           </div>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-indigo-55 text-indigo-600 flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                             <BookOpen className="w-5 h-5" />
                           </div>
                           <div className="text-left">
@@ -770,7 +770,7 @@ export default function App() {
                       <div className="pt-2 flex justify-center md:justify-start">
                         <button
                           onClick={() => setActiveTab('scan')}
-                          className="bg-indigo-600 hover:bg-indigo-550 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer"
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer"
                         >
                           <Upload className="w-4.5 h-4.5" />
                           <span>Upload a chapter to begin</span>
@@ -806,7 +806,7 @@ export default function App() {
                             <circle cx="40" cy="40" r={radius} className={scoreColor} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-lg font-bold text-slate-805 font-mono">{activeScan.coherenceScore}</span>
+                            <span className="text-lg font-bold text-slate-800 font-mono">{activeScan.coherenceScore}</span>
                             <span className="text-[9px] text-slate-400 -mt-1 font-mono">/100</span>
                           </div>
                         </div>
@@ -836,7 +836,7 @@ export default function App() {
 
                         <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                           <span className="text-xl font-extrabold text-slate-800 font-mono">{citationsFlagged}</span>
-                          <span className="text-[9px] text-slate-405 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
+                          <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
                         </div>
                       </div>
                     </div>
@@ -889,8 +889,8 @@ export default function App() {
                         });
 
                         let scoreBadgeColor = 'bg-rose-50 text-rose-700 border-rose-100';
-                        if (scan.coherenceScore >= 85) scoreBadgeColor = 'bg-emerald-50 text-emerald-705 border-emerald-100';
-                        else if (scan.coherenceScore >= 70) scoreBadgeColor = 'bg-amber-50 text-amber-705 border-amber-100';
+                        if (scan.coherenceScore >= 85) scoreBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                        else if (scan.coherenceScore >= 70) scoreBadgeColor = 'bg-amber-50 text-amber-700 border-amber-100';
 
                         return (
                           <div
@@ -903,7 +903,7 @@ export default function App() {
                             className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-4 ${
                               isSelected
                                 ? 'border-indigo-500 bg-indigo-50/10 shadow-xs ring-1 ring-indigo-500'
-                                : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-355'
+                                : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-300'
                             }`}
                           >
                             <div className="space-y-1 min-w-0">
