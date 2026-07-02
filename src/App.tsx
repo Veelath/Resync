@@ -53,6 +53,7 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFullReport, setShowFullReport] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Scans State
   const [scans, setScans] = useState<ScanResult[]>([]);
@@ -450,7 +451,7 @@ export default function App() {
   // LOGGED-IN USERS LAYOUT
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: LayoutGrid },
-    { id: 'results', label: 'Results', icon: FileSpreadsheet },
+    { id: 'results', label: 'Reports', icon: FileSpreadsheet },
     { id: 'scan', label: 'Upload', icon: Upload },
     { id: 'profile', label: 'Profile', icon: UserIcon }
   ];
@@ -509,17 +510,23 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col md:flex-row w-full">
       
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-r border-slate-200/80 h-screen sticky top-0 justify-between p-6 shrink-0">
+      <aside className={`hidden md:flex md:flex-col ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} bg-white border-r border-slate-200/80 h-screen sticky top-0 justify-between p-6 transition-all duration-300 shrink-0`}>
         <div className="space-y-8">
           {/* Logo & Platform Name */}
-          <div className="flex items-center gap-3 pl-2">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20">
+          <div 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className={`flex items-center gap-3 pl-2 cursor-pointer hover:opacity-85 transition-all ${sidebarCollapsed ? 'justify-center pl-0' : ''}`}
+            title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
-            <div>
-              <span className="font-serif text-lg font-bold tracking-tight text-slate-900">Resync</span>
-              <span className="text-[10px] block font-mono text-indigo-600 uppercase tracking-widest font-bold">Manuscript</span>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="animate-fade-in">
+                <span className="font-serif text-lg font-bold tracking-tight text-slate-900">Resync</span>
+                <span className="text-[10px] block font-mono text-indigo-600 uppercase tracking-widest font-bold">Manuscript</span>
+              </div>
+            )}
           </div>
 
           {/* Navigation Links */}
@@ -536,14 +543,15 @@ export default function App() {
                       setSelectedScan(scans[0]);
                     }
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                  title={item.label}
+                  className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  {item.label}
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  {!sidebarCollapsed && <span className="animate-fade-in truncate">{item.label}</span>}
                 </button>
               );
             })}
@@ -552,21 +560,24 @@ export default function App() {
 
         {/* User profile details / Log Out button at bottom */}
         <div className="border-t border-slate-100 pt-4 space-y-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-650 flex items-center justify-center font-bold text-sm border border-indigo-100">
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 px-2'}`}>
+            <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-650 flex items-center justify-center font-bold text-sm border border-indigo-100 shrink-0">
               {currentUser.name.charAt(0)}
             </div>
-            <div className="flex flex-col text-left min-w-0">
-              <span className="text-xs font-bold text-slate-800 truncate">{currentUser.name}</span>
-              <span className="text-[10px] text-slate-400 truncate">{currentUser.institution || 'Researcher'}</span>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="flex flex-col text-left min-w-0 animate-fade-in">
+                <span className="text-xs font-bold text-slate-800 truncate">{currentUser.name}</span>
+                <span className="text-[10px] text-slate-400 truncate">{currentUser.institution || 'Researcher'}</span>
+              </div>
+            )}
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50/50 transition-all cursor-pointer"
+            title="Log out"
+            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-2.5 rounded-xl text-sm font-semibold text-slate-550 hover:text-rose-600 hover:bg-rose-50/50 transition-all cursor-pointer`}
           >
-            <LogOut className="w-5 h-5 text-slate-400" />
-            <span>Log out</span>
+            <LogOut className="w-5 h-5 text-slate-400 shrink-0" />
+            {!sidebarCollapsed && <span className="animate-fade-in">Log out</span>}
           </button>
         </div>
       </aside>
@@ -940,7 +951,7 @@ export default function App() {
           {activeTab === 'results' && (
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden animate-fade-in">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-serif text-lg font-bold text-slate-800">Manuscript Scans Archive</h3>
+                <h3 className="font-serif text-lg font-bold text-slate-800">Manuscript Reports Archive</h3>
                 <span className="text-xs text-slate-400 font-mono">Securely stored inside Resync persistent engine</span>
               </div>
 
