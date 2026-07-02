@@ -756,7 +756,7 @@ export default function App() {
         <div className="flex-grow flex flex-col min-w-0">
 
         {/* Tab Panel Renderings */}
-        <main className="flex-grow p-6 sm:p-8 max-w-5xl w-full mx-auto space-y-8 animate-fade-in">
+        <main className="flex-grow p-6 sm:p-8 max-w-[1400px] w-full mx-auto space-y-8 animate-fade-in">
           
           {/* 1. OVERVIEW / DASHBOARD TAB */}
           {activeTab === 'overview' && (
