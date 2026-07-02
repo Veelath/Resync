@@ -974,30 +974,18 @@ export default function App() {
                               setShowFullReport(true);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col items-center justify-between text-center min-h-[220px] ${
+                            className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-4 ${
                               isSelected
                                 ? 'border-indigo-500 bg-indigo-50/10 shadow-xs ring-1 ring-indigo-500'
-                                : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-300 hover:shadow-xs'
+                                : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-300'
                             }`}
                           >
-                            {/* Top: Score representation */}
-                            <div className="w-12 h-12 flex items-center justify-center scale-90 shrink-0">
-                              <ScoreRing score={scan.coherenceScore} size={48} strokeWidth={5} showDetails={false} />
+                            <div className="space-y-1 min-w-0">
+                              <h4 className="text-xs font-bold text-slate-800 truncate">{scan.chapterType || scan.title}</h4>
+                              <p className="text-[9px] text-slate-400 font-mono">{formattedDate}</p>
                             </div>
-
-                            {/* Middle: Details */}
-                            <div className="space-y-1 w-full flex flex-col items-center mt-2 flex-grow justify-center">
-                              <span className="text-[9px] font-bold text-indigo-600 font-mono tracking-widest uppercase truncate max-w-full block">
-                                {scan.chapterType || 'Chapters'}
-                              </span>
-                              <h4 className="text-xs font-serif font-extrabold text-slate-800 line-clamp-2 max-w-full leading-normal text-center">
-                                {scan.title}
-                              </h4>
-                            </div>
-
-                            {/* Bottom: Date */}
-                            <span className="text-[9px] text-slate-400 font-mono mt-2 shrink-0">
-                              {formattedDate}
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${scoreBadgeColor}`}>
+                              {scan.coherenceScore}
                             </span>
                           </div>
                         );
@@ -1047,62 +1035,57 @@ export default function App() {
                   No results recorded. Run a manuscript scan first.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="p-4">Manuscript Title</th>
-                        <th className="p-4">Chapter category</th>
-                        <th className="p-4">Date scanned</th>
-                        <th className="p-4">Coherence Score</th>
-                        <th className="p-4 text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-sm divide-y divide-slate-100">
-                      {scans.map((scan) => (
-                        <tr key={scan.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-4 font-bold text-slate-800 font-serif">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-6">
+                  {scans.map((scan) => {
+                    const scanDate = new Date(scan.timestamp);
+                    const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <div
+                        key={scan.id}
+                        className="bg-slate-50/40 border border-slate-200/80 rounded-2xl p-5 hover:border-indigo-500 hover:shadow-md transition-all flex flex-col items-center justify-between text-center min-h-[250px] relative"
+                      >
+                        {/* Top: Score gauge */}
+                        <div className="w-14 h-14 flex items-center justify-center scale-90 shrink-0">
+                          <ScoreRing score={scan.coherenceScore} size={56} strokeWidth={6} showDetails={false} />
+                        </div>
+
+                        {/* Middle: Details */}
+                        <div className="space-y-1.5 w-full flex flex-col items-center mt-3 flex-grow justify-center">
+                          <span className="text-[9px] font-bold text-indigo-600 font-mono tracking-widest uppercase truncate max-w-full block">
+                            {scan.chapterType || 'Chapters'}
+                          </span>
+                          <h4 className="text-xs font-serif font-extrabold text-slate-800 line-clamp-2 max-w-full leading-normal text-center">
                             {scan.title}
-                          </td>
-                          <td className="p-4 text-xs font-semibold text-slate-505">
-                            {scan.chapterType}
-                          </td>
-                          <td className="p-4 text-xs text-slate-400 font-mono">
-                            {new Date(scan.timestamp).toLocaleDateString()} {new Date(scan.timestamp).toLocaleTimeString()}
-                          </td>
-                          <td className="p-4">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded font-mono ${
-                              scan.coherenceScore >= 85 ? 'bg-emerald-50 text-emerald-707 border border-emerald-100' :
-                              scan.coherenceScore >= 70 ? 'bg-amber-50 text-amber-707 border border-amber-100' :
-                              'bg-rose-50 text-rose-707 border border-rose-100'
-                            }`}>
-                              {scan.coherenceScore} / 100
-                            </span>
-                          </td>
-                          <td className="p-4 text-center">
-                            <div className="flex items-center justify-center gap-3">
-                              <button
-                                onClick={() => {
-                                  setSelectedScan(scan);
-                                  setActiveTab('overview');
-                                }}
-                                className="text-xs text-indigo-600 font-bold hover:underline cursor-pointer"
-                              >
-                                Open Report
-                              </button>
-                              <button
-                                onClick={() => handleDeleteScan(scan.id)}
-                                className="text-slate-350 hover:text-rose-600 transition-colors cursor-pointer"
-                                title="Delete Record"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </h4>
+                          <span className="text-[9px] text-slate-400 font-mono">
+                            {formattedDate}
+                          </span>
+                        </div>
+
+                        {/* Bottom: Divider + Actions */}
+                        <div className="border-t border-slate-100 w-full pt-3 mt-3 flex items-center justify-between">
+                          <button
+                            onClick={() => {
+                              setSelectedScan(scan);
+                              setShowFullReport(true);
+                              setActiveTab('overview');
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer"
+                          >
+                            Open Report
+                          </button>
+                          <button
+                            onClick={() => handleDeleteScan(scan.id)}
+                            className="p-1 rounded-lg text-slate-350 hover:text-rose-600 transition-colors cursor-pointer"
+                            title="Delete Report"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
