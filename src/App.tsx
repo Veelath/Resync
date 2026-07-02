@@ -281,9 +281,9 @@ export default function App() {
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Document Coherence & Citation Auditor
               </div>
               <h1 className="font-serif text-4xl sm:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
-                Defend with complete <br />
+                Even great research has gaps. <br />
                 <span className="text-indigo-600 relative inline-block">
-                  document consistency.
+                  Resync finds them first.
                   <span className="absolute left-0 bottom-1 w-full h-2 bg-indigo-100/70 -z-10 rounded"></span>
                 </span>
               </h1>
@@ -301,7 +301,7 @@ export default function App() {
                   }}
                   className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Get Started — Free <ArrowRight className="w-4 h-4" />
+                  Get Started <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => {
@@ -311,7 +311,7 @@ export default function App() {
                   }}
                   className="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-sm px-8 py-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center"
                 >
-                  Access Workspace
+                  Log In
                 </button>
               </div>
             </div>
@@ -755,7 +755,7 @@ export default function App() {
                 disabled={authLoading}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-6 cursor-pointer"
               >
-                {authLoading ? 'Authenticating...' : authTab === 'login' ? 'Access Workspace' : 'Initialize Account'}
+                {authLoading ? 'Authenticating...' : authTab === 'login' ? 'Log In' : 'Initialize Account'}
               </button>
             </form>
 
