@@ -504,7 +504,10 @@ export default function App() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = activeScan
     ? circumference - (activeScan.coherenceScore / 100) * circumference
-    : circumfere    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col md:flex-row w-full">
+    : circumference;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col md:flex-row w-full">
       
       {/* Desktop Sidebar Navigation */}
       <aside className={`hidden md:flex md:flex-col ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} bg-white border-r border-slate-200/80 h-screen sticky top-0 justify-between p-6 transition-all duration-300 shrink-0`}>
