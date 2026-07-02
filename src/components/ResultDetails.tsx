@@ -185,6 +185,7 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
                   +17 pts
                 </div>
               )}
+            </div>
           </div>
 
           {/* Section 2: Flags Detected List */}
