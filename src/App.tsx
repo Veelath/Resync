@@ -1024,64 +1024,66 @@ export default function App() {
 
           {/* 3. RESULTS ARCHIVE LIST TAB */}
           {activeTab === 'results' && (
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden animate-fade-in">
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 shadow-sm overflow-hidden animate-fade-in">
+              <div className="p-6 border-b border-slate-200/60 bg-white flex items-center justify-between">
                 <h3 className="font-serif text-lg font-bold text-slate-800">Manuscript Reports Archive</h3>
                 <span className="text-xs text-slate-400 font-mono">Securely stored inside Resync persistent engine</span>
               </div>
 
               {scans.length === 0 ? (
-                <div className="p-12 text-center text-slate-400 font-serif italic">
+                <div className="p-12 text-center text-slate-400 font-serif italic bg-white">
                   No results recorded. Run a manuscript scan first.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
                   {scans.map((scan) => {
                     const scanDate = new Date(scan.timestamp);
                     const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const isSelected = selectedScan?.id === scan.id;
+
                     return (
                       <div
                         key={scan.id}
-                        className="bg-slate-50/40 border border-slate-200/80 rounded-2xl p-5 hover:border-indigo-500 hover:shadow-md transition-all flex flex-col items-center justify-between text-center min-h-[250px] relative"
+                        onClick={() => {
+                          setSelectedScan(scan);
+                          setShowFullReport(true);
+                          setActiveTab('overview');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`bg-white border rounded-lg p-6 flex flex-col items-center justify-between text-center transition-all duration-300 hover:shadow-lg cursor-pointer min-h-[360px] relative ${
+                          isSelected
+                            ? 'border-indigo-650 ring-1 ring-indigo-600/30 shadow-md'
+                            : 'border-slate-200 hover:border-slate-350 shadow-xs'
+                        }`}
                       >
-                        {/* Top: Score gauge */}
-                        <div className="w-14 h-14 flex items-center justify-center scale-90 shrink-0">
-                          <ScoreRing score={scan.coherenceScore} size={56} strokeWidth={6} showDetails={false} />
+                        {/* Absolute Delete Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteScan(scan.id);
+                          }}
+                          className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50/50 transition-all cursor-pointer"
+                          title="Delete Scan Record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Top: Large Score gauge circle */}
+                        <div className="flex-1 flex items-center justify-center my-2 shrink-0">
+                          <ScoreRing score={scan.coherenceScore} size={110} strokeWidth={8} showDetails={false} />
                         </div>
 
-                        {/* Middle: Details */}
-                        <div className="space-y-1.5 w-full flex flex-col items-center mt-3 flex-grow justify-center">
+                        {/* Bottom: Details block */}
+                        <div className="space-y-2 mt-4 w-full flex flex-col items-center">
                           <span className="text-[9px] font-bold text-indigo-600 font-mono tracking-widest uppercase truncate max-w-full block">
                             {scan.chapterType || 'Chapters'}
                           </span>
-                          <h4 className="text-xs font-serif font-extrabold text-slate-800 line-clamp-2 max-w-full leading-normal text-center">
+                          <h4 className="text-xs font-serif font-extrabold text-slate-805 line-clamp-2 max-w-full leading-normal text-center px-1">
                             {scan.title}
                           </h4>
-                          <span className="text-[9px] text-slate-400 font-mono">
+                          <span className="text-[9px] text-slate-400 font-mono block mt-1">
                             {formattedDate}
                           </span>
-                        </div>
-
-                        {/* Bottom: Divider + Actions */}
-                        <div className="border-t border-slate-100 w-full pt-3 mt-3 flex items-center justify-between">
-                          <button
-                            onClick={() => {
-                              setSelectedScan(scan);
-                              setShowFullReport(true);
-                              setActiveTab('overview');
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer"
-                          >
-                            Open Report
-                          </button>
-                          <button
-                            onClick={() => handleDeleteScan(scan.id)}
-                            className="p-1 rounded-lg text-slate-350 hover:text-rose-600 transition-colors cursor-pointer"
-                            title="Delete Report"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     );
