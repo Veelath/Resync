@@ -504,7 +504,10 @@ export default function App() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = activeScan
     ? circumference - (activeScan.coherenceScore / 100) * circumference
-    : circumfere    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col w-full">
+    : circumference;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col w-full">
       
       {/* Top Header Navigation Bar (Desktop & Mobile) */}
       <header className="bg-white border-b border-slate-200/80 w-full sticky top-0 z-40 px-6 py-4">
