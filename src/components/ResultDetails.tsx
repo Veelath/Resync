@@ -11,7 +11,6 @@ import {
   Sparkles,
   Compass,
   Loader2,
-  CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
 import ScoreRing from './ScoreRing.tsx';
@@ -24,15 +23,16 @@ interface ResultDetailsProps {
 export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
   const [isRescanning, setIsRescanning] = useState(false);
   const [rescanned, setRescanned] = useState(false);
+  const [selectedInconsistency, setSelectedInconsistency] = useState<number | null>(0);
 
   // Check if it's a live Google Doc URL or an uploaded Word Document file
   const isGoogleDoc = scan.documentLink ? scan.documentLink.startsWith('https://docs.google.com') : true;
 
   // Coherence level tier helper
   const getCoherenceTier = (score: number) => {
-    if (score >= 85) return { label: 'High coherence', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+    if (score >= 85) return { label: 'High coherence', color: 'bg-emerald-50 text-emerald-800 border-emerald-250' };
     if (score >= 70) return { label: 'Moderate coherence', color: 'bg-amber-50 text-amber-700 border-amber-200' };
-    return { label: 'Low coherence', color: 'bg-rose-50 text-rose-800 border-rose-200' };
+    return { label: 'Low coherence', color: 'bg-rose-50 text-rose-800 border-rose-250' };
   };
 
   const handleRescanClick = () => {
@@ -62,8 +62,8 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-2xl p-8 border border-slate-200 max-w-sm text-center space-y-4 shadow-2xl">
             <div className="relative inline-block">
-              <div className="absolute inset-0 bg-indigo-100 rounded-full blur-xl animate-pulse animate-duration-1000"></div>
-              <Loader2 className="w-10 h-10 text-indigo-600 animate-spin relative mx-auto" />
+              <div className="absolute inset-0 bg-indigo-100 rounded-full blur-xl animate-pulse"></div>
+              <Loader2 className="w-10 h-10 text-indigo-650 animate-spin relative mx-auto" />
             </div>
             <div className="space-y-1.5">
               <h3 className="font-serif text-sm font-bold text-slate-805">Rescanning in progress</h3>
@@ -105,97 +105,66 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
           {/* Main Document Content Sheet */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[700px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed">
             
-            {/* watermark badge */}
-            <div className="absolute top-4 right-4 text-[9px] font-mono text-slate-350 uppercase tracking-widest">
-              Resync Scan {rescanned ? "v2" : "v1"}
-            </div>
-            
-            {/* 1. Title Block */}
-            <div className="space-y-1">
-              <span className="block text-[9px] font-sans font-extrabold text-slate-400 uppercase tracking-widest font-mono">
-                Title
-              </span>
-              <p className="font-bold text-slate-900 text-sm">
-                {scan.title || "Resync: An AI-Powered Research Manuscript Coherence and Inconsistency Detection System"}
-              </p>
-            </div>
-            
-            {/* 2. Rationale Block */}
-            <div className="space-y-1">
-              <span className="block text-[9px] font-sans font-extrabold text-slate-400 uppercase tracking-widest font-mono">
-                Rationale
-              </span>
-              <p className="text-slate-655 font-serif leading-6">
-                This study addresses the challenge of manually validating research manuscripts, which are prone to structural and logical inconsistencies across sections. The volume of scholarly outputs demands automated diagnostic tools to audit coherence...
-              </p>
+            {/* Title / Chapter Header block */}
+            <div className="text-center space-y-1 pb-4 border-b border-slate-100">
+              <h2 className="text-xs uppercase font-sans font-bold text-slate-400 tracking-widest font-mono">
+                CHAPTER I
+              </h2>
+              <h1 className="text-sm font-bold text-slate-900 font-sans tracking-wide">
+                INTRODUCTION
+              </h1>
             </div>
 
-            {/* 3. Scope and Limitations Block (FLAG 1 - Amber/Green depending on Rescan state) */}
-            {rescanned ? (
-              <div className="space-y-2 border border-emerald-300 bg-emerald-50/15 p-5 rounded-2xl relative shadow-xs transition-all duration-500">
-                <div className="flex justify-between items-center">
-                  <span className="block text-[9px] font-sans font-extrabold text-emerald-700 uppercase tracking-widest font-mono">
-                    Scope and Limitations
-                  </span>
-                  <span className="text-[8px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full font-sans uppercase">
-                    ✓ Resolved
-                  </span>
-                </div>
-                <p className="text-slate-700 font-serif leading-6 line-through decoration-slate-400/50">
-                  This study covers the development and implementation of Resync, a web and mobile platform. Researchers submit documents as publicly shared Google Docs links and the system accepts text-based research manuscripts in a single-column format.
-                </p>
-                <p className="text-emerald-800 text-[11px] font-sans font-semibold mt-1">
-                  ✓ Aligned: Objective 3 updated to match "single-column format" constraint.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2 border border-amber-300 bg-amber-50/15 p-5 rounded-2xl relative shadow-xs transition-all duration-300">
-                <div className="flex justify-between items-center">
-                  <span className="block text-[9px] font-sans font-extrabold text-amber-700 uppercase tracking-widest font-mono">
-                    Scope and Limitations
-                  </span>
-                  <span className="text-[8px] font-bold bg-amber-550 text-white px-2 py-0.5 rounded-full font-sans uppercase">
-                    Flag 1
-                  </span>
-                </div>
-                <p className="text-slate-700 font-serif leading-6">
-                  This study covers the development and implementation of Resync, a web and mobile platform.{" "}
-                  <span className="bg-amber-200/50 text-slate-950 font-semibold px-1 py-0.5 rounded">
-                    Researchers submit documents as publicly shared Google Docs links and the system accepts text-based research manuscripts in a single-column format.
-                  </span>{" "}
-                  Resync correlates content across sections...
-                </p>
-              </div>
-            )}
+            {/* Paragraph 1 */}
+            <p className="font-serif leading-6 text-slate-705 text-justify">
+              Research writing shapes the research skills and academic readiness of student researchers throughout their degree programs, while also placing significant evaluative responsibility on advisers and panelists reviewing each manuscript's quality. However, research writing remains highly vulnerable to structural and logical inconsistencies, such as objectives drifting from the stated problem or conclusions left unsupported by survey and validation evidence, often going undetected until late in the drafting process (Xue, 2024).
+            </p>
 
-            {/* 4. Objectives of the Study Block (FLAG 2 - Rose) */}
-            <div className="space-y-2 border border-rose-300 bg-rose-50/15 p-5 rounded-2xl relative shadow-xs">
-              <div className="flex justify-between items-center">
-                <span className="block text-[9px] font-sans font-extrabold text-rose-700 uppercase tracking-widest font-mono">
-                  Objectives of the Study
+            {/* Paragraph 2 */}
+            <p className="font-serif leading-6 text-slate-705 text-justify">
+              For students, the core problem is the lack of an early-detection mechanism for these gaps: they usually discover their objectives no longer{" "}
+              {rescanned ? (
+                <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-semibold line-through decoration-emerald-600/40">
+                  match their problem statement
                 </span>
-                <span className="text-[8px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded-full font-sans uppercase">
-                  Flag 2
+              ) : (
+                <span 
+                  onClick={() => setSelectedInconsistency(0)}
+                  className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-amber-400 select-none ${
+                    selectedInconsistency === 0
+                      ? 'bg-amber-300 text-slate-950 ring-2 ring-amber-500/20 font-bold border-b-2 border-amber-600'
+                      : 'bg-amber-100/60 text-slate-800'
+                  }`}
+                  title="Flag 1: Scope Mismatch"
+                >
+                  match their problem statement
                 </span>
-              </div>
-              <p className="text-slate-700 font-serif leading-6">
-                1. To gather data on common logical inconsistencies... 2. To develop a multi-platform application... 3.{" "}
-                <span className="bg-rose-200/50 text-slate-950 font-semibold px-1 py-0.5 rounded">
-                  To implement document correlation across chapters within a manuscript
-                </span>{" "}
-                to detect contextual and logical inconsistencies...
-              </p>
-            </div>
+              )}
+              {rescanned && <span className="text-emerald-700 text-[10px] font-sans font-bold ml-1">✓ Resolved</span>}
+              , or their conclusions lack data support, only during consultation or final defense, when fixing the manuscript is far more costly. For advisers and panelists, the burden is just as real: manual, section-by-section review is time-consuming and prone to oversight, especially under heavy advising loads and rising submission volumes that have been shown to compromise review quality (Thakkar et al., 2025), leaving them with limited capacity to catch every inconsistency before a manuscript reaches final defense.
+            </p>
 
-            {/* 5. Significance of the Study Block */}
-            <div className="space-y-1">
-              <span className="block text-[9px] font-sans font-extrabold text-slate-400 uppercase tracking-widest font-mono">
-                Significance of the Study
-              </span>
-              <p className="text-slate-655 font-serif leading-6">
-                The study brings multiple benefits to various stakeholders including student researchers, advisers, panelists, and academic institutions by enforcing logical rigor prior to final defense evaluations...
-              </p>
-            </div>
+            {/* Paragraph 3 */}
+            <p className="font-serif leading-6 text-slate-705 text-justify">
+              To address these challenges, the research team proposes Resync, an AI-powered system that uses natural language processing to evaluate the coherence, consistency, and coherence of research manuscripts.{" "}
+              <span 
+                onClick={() => setSelectedInconsistency(1)}
+                className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-rose-450 select-none ${
+                  selectedInconsistency === 1
+                    ? 'bg-rose-300 text-slate-950 ring-2 ring-rose-500/20 font-bold border-b-2 border-rose-600'
+                    : 'bg-rose-100/60 text-slate-800'
+                }`}
+                title="Flag 2: Objectives Mismatch"
+              >
+                The system checks a manuscript against
+              </span>{" "}
+              its supporting documents, including the Survey Analysis Result, to detect inconsistencies between them, generating a Coherence Score, an Overall Assessment, and Recommendations for correcting detected gaps. Unlike generic writing tools that focus only on grammar or originality, Resync is built specifically to validate the logical and evidentiary consistency of a research manuscript.
+            </p>
+
+            {/* Paragraph 4 */}
+            <p className="font-serif leading-6 text-slate-705 text-justify">
+              Resync is designed to benefit everyone involved in the research process. Student researchers gain a faster way to catch inconsistencies before submission, reducing revision cycles. Advisers spend less time on manual checking and more time on substantive guidance. Panelists get a clearer, more standardized view of a manuscript's consistency going into a defense. Together, these benefits support stronger, more defensible research outputs.
+            </p>
 
           </div>
           
@@ -216,22 +185,18 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
                   +17 pts
                 </div>
               )}
-            </div>
-            <span className={`mt-3 px-3 py-1 rounded-full border text-[10px] font-extrabold uppercase font-sans ${tier.color}`}>
-              {tier.label}
-            </span>
           </div>
 
           {/* Section 2: Flags Detected List */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
               Flags Detected
             </h4>
             
             <div className="space-y-3">
               {/* Flag 1 card (Resolved/Struck if rescanned) */}
               {rescanned ? (
-                <div className="bg-emerald-50/15 border border-emerald-350 rounded-xl p-4 space-y-1.5 opacity-80 line-through decoration-emerald-600/35 transition-all">
+                <div className="bg-emerald-50/15 border border-emerald-350 rounded-xl p-4 space-y-1.5 opacity-80 line-through decoration-emerald-600/35 transition-all text-left">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[8px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded font-sans uppercase">
                       ✓ Resolved
@@ -243,21 +208,35 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
                   </p>
                 </div>
               ) : (
-                <div className="bg-amber-50/15 border border-amber-300 rounded-xl p-4 space-y-2 transition-all">
+                <div 
+                  onClick={() => setSelectedInconsistency(0)}
+                  className={`bg-amber-50/15 border rounded-xl p-4 space-y-2 transition-all text-left cursor-pointer ${
+                    selectedInconsistency === 0 
+                      ? 'border-amber-500 bg-amber-50/30 shadow-xs' 
+                      : 'border-amber-300'
+                  }`}
+                >
                   <div className="flex items-center gap-1.5">
                     <span className="text-[8px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded font-sans uppercase">
                       Flag 1
                     </span>
                     <span className="text-[10px] font-bold text-amber-800 font-sans">Scope</span>
                   </div>
-                  <p className="text-xs text-slate-650 leading-relaxed font-sans">
+                  <p className="text-xs text-slate-655 leading-relaxed font-sans">
                     Scope mentions "single-column format" but Objectives do not reference this constraint.
                   </p>
                 </div>
               )}
 
               {/* Flag 2 card */}
-              <div className="bg-rose-50/15 border border-rose-300 rounded-xl p-4 space-y-2">
+              <div 
+                onClick={() => setSelectedInconsistency(1)}
+                className={`bg-rose-50/15 border rounded-xl p-4 space-y-2 text-left cursor-pointer transition-all ${
+                  selectedInconsistency === 1 
+                    ? 'border-rose-500 bg-rose-50/30 shadow-xs' 
+                    : 'border-rose-300'
+                }`}
+              >
                 <div className="flex items-center gap-1.5">
                   <span className="text-[8px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded font-sans uppercase">
                     Flag 2
@@ -273,11 +252,11 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
 
           {/* Section 3: Suggested Actions List */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
               Suggested Actions
             </h4>
             
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 text-left">
               {/* Action 1 */}
               <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
                 <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
