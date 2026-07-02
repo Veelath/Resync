@@ -33,6 +33,7 @@ import {
 import ScanForm from './components/ScanForm.tsx';
 import ResultDetails from './components/ResultDetails.tsx';
 import ProfileView from './components/ProfileView.tsx';
+import ScoreRing from './components/ScoreRing.tsx';
 
 export default function App() {
   // Authentication State
@@ -973,18 +974,30 @@ export default function App() {
                               setShowFullReport(true);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-4 ${
+                            className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col items-center justify-between text-center min-h-[220px] ${
                               isSelected
                                 ? 'border-indigo-500 bg-indigo-50/10 shadow-xs ring-1 ring-indigo-500'
-                                : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-300'
+                                : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-300 hover:shadow-xs'
                             }`}
                           >
-                            <div className="space-y-1 min-w-0">
-                              <h4 className="text-xs font-bold text-slate-800 truncate">{scan.chapterType || scan.title}</h4>
-                              <p className="text-[9px] text-slate-400 font-mono">{formattedDate}</p>
+                            {/* Top: Score representation */}
+                            <div className="w-12 h-12 flex items-center justify-center scale-90 shrink-0">
+                              <ScoreRing score={scan.coherenceScore} size={48} strokeWidth={5} showDetails={false} />
                             </div>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${scoreBadgeColor}`}>
-                              {scan.coherenceScore}
+
+                            {/* Middle: Details */}
+                            <div className="space-y-1 w-full flex flex-col items-center mt-2 flex-grow justify-center">
+                              <span className="text-[9px] font-bold text-indigo-600 font-mono tracking-widest uppercase truncate max-w-full block">
+                                {scan.chapterType || 'Chapters'}
+                              </span>
+                              <h4 className="text-xs font-serif font-extrabold text-slate-800 line-clamp-2 max-w-full leading-normal text-center">
+                                {scan.title}
+                              </h4>
+                            </div>
+
+                            {/* Bottom: Date */}
+                            <span className="text-[9px] text-slate-400 font-mono mt-2 shrink-0">
+                              {formattedDate}
                             </span>
                           </div>
                         );

@@ -9,9 +9,10 @@ interface ScoreRingProps {
   score: number;
   size?: number;
   strokeWidth?: number;
+  showDetails?: boolean;
 }
 
-export default function ScoreRing({ score, size = 120, strokeWidth = 10 }: ScoreRingProps) {
+export default function ScoreRing({ score, size = 120, strokeWidth = 10, showDetails = true }: ScoreRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
@@ -57,13 +58,15 @@ export default function ScoreRing({ score, size = 120, strokeWidth = 10 }: Score
         </svg>
         {/* Centered Score text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-mono text-3xl font-bold text-slate-800">{score}</span>
-          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">/ 100</span>
+          <span className={`font-mono font-bold text-slate-800 ${showDetails ? 'text-3xl' : 'text-sm'}`}>{score}</span>
+          {showDetails && <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">/ 100</span>}
         </div>
       </div>
-      <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold ${bgColor}`}>
-        {label}
-      </span>
+      {showDetails && (
+        <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold ${bgColor}`}>
+          {label}
+        </span>
+      )}
     </div>
   );
 }
