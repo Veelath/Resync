@@ -80,23 +80,23 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
         <div className="lg:col-span-8 flex flex-col space-y-4">
           
           {/* Document Section Sub-header */}
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono block">
+              <span className="text-xs font-bold text-slate-450 uppercase tracking-widest font-mono block">
                 Scanned Document
               </span>
-              <h3 className="font-serif text-sm font-bold text-slate-805 mt-0.5">
+              <h3 className="font-serif text-base font-bold text-slate-805 mt-1">
                 {scan.chapterType || 'Chapter 1: Introduction'}
               </h3>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {rescanned && (
-                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-200 animate-pulse font-sans">
+                <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200 animate-pulse font-sans">
                   Rescanned just now
                 </span>
               )}
-              <div className={`px-3.5 py-1.5 rounded-full border text-xs font-extrabold ${tier.color}`}>
+              <div className={`px-4 py-2 rounded-full border text-sm font-extrabold ${tier.color}`}>
                 Score: {displayScore}/100
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
                   match their problem statement
                 </span>
               )}
-              {rescanned && <span className="text-emerald-700 text-[10px] font-sans font-bold ml-1">✓ Resolved</span>}
+              {rescanned && <span className="text-emerald-700 text-xs font-sans font-bold ml-1.5">✓ Resolved</span>}
               , or their conclusions lack data support, only during consultation or final defense, when fixing the manuscript is far more costly. For advisers and panelists, the burden is just as real: manual, section-by-section review is time-consuming and prone to oversight, especially under heavy advising loads and rising submission volumes that have been shown to compromise review quality (Thakkar et al., 2025), leaving them with limited capacity to catch every inconsistency before a manuscript reaches final defense.
             </p>
 
@@ -174,14 +174,14 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
         <div className="lg:col-span-4 flex flex-col space-y-6">
           
           {/* Section 1: Coherence Score Gauge */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col items-center justify-center text-center">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col items-center justify-center text-center">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2.5">
               Coherence Score
             </span>
             <div className="relative">
-              <ScoreRing score={displayScore} size={110} strokeWidth={8} />
+              <ScoreRing score={displayScore} size={120} strokeWidth={8} />
               {rescanned && (
-                <div className="absolute -top-1 -right-4 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full border border-white animate-bounce shadow-xs font-sans">
+                <div className="absolute -top-1.5 -right-5 bg-emerald-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full border border-white animate-bounce shadow-xs font-sans">
                   +17 pts
                 </div>
               )}
@@ -190,7 +190,7 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
 
           {/* Section 2: Flags Detected List */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
               Flags Detected
             </h4>
             
@@ -198,11 +198,11 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
               {/* Flag 1 card (Resolved/Struck if rescanned) */}
               {rescanned ? (
                 <div className="bg-emerald-50/15 border border-emerald-350 rounded-xl p-4 space-y-1.5 opacity-80 line-through decoration-emerald-600/35 transition-all text-left">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded font-sans uppercase">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded font-sans uppercase">
                       ✓ Resolved
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-800 font-sans">Scope Flag Resolved</span>
+                    <span className="text-xs font-bold text-emerald-800 font-sans">Scope Flag Resolved</span>
                   </div>
                   <p className="text-xs text-slate-450 leading-relaxed font-sans">
                     Scope mentions "single-column format" but Objectives do not reference this constraint.
@@ -217,11 +217,11 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
                       : 'border-amber-300'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded font-sans uppercase">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded font-sans uppercase">
                       Flag 1
                     </span>
-                    <span className="text-[10px] font-bold text-amber-800 font-sans">Scope</span>
+                    <span className="text-xs font-bold text-amber-805 font-sans">Scope</span>
                   </div>
                   <p className="text-xs text-slate-655 leading-relaxed font-sans">
                     Scope mentions "single-column format" but Objectives do not reference this constraint.
@@ -238,11 +238,11 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
                     : 'border-rose-300'
                 }`}
               >
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[8px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded font-sans uppercase">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded font-sans uppercase">
                     Flag 2
                   </span>
-                  <span className="text-[10px] font-bold text-rose-800 font-sans">Objectives</span>
+                  <span className="text-xs font-bold text-rose-805 font-sans">Objectives</span>
                 </div>
                 <p className="text-xs text-slate-655 leading-relaxed font-sans">
                   Objective 3 says "across chapters" but Scope uses "across sections" — terminology inconsistency.
@@ -253,7 +253,7 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
 
           {/* Section 3: Suggested Actions List */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
               Suggested Actions
             </h4>
             
@@ -283,9 +283,9 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
           {/* Section 4: Rescan document button */}
           <button
             onClick={handleRescanClick}
-            className="w-full bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer select-none"
+            className="w-full bg-indigo-50/10 border border-indigo-150 hover:bg-indigo-50/30 text-indigo-650 font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isRescanning ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-indigo-600 ${isRescanning ? 'animate-spin' : ''}`} />
             <span>Rescan document</span>
           </button>
 

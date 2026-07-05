@@ -199,7 +199,7 @@ export default function App() {
               </div>
               <div>
                 <span className="font-serif text-lg font-bold tracking-tight text-slate-900">Resync</span>
-                <span className="text-[10px] block font-mono text-indigo-600 uppercase tracking-wider font-bold">Manuscript Coherence</span>
+                <span className="text-xs block font-mono text-indigo-650 uppercase tracking-wider font-bold">Manuscript Coherence</span>
               </div>
             </div>
 
@@ -277,7 +277,7 @@ export default function App() {
             {/* How It Works Progression Stepper */}
             <div className="pt-12 border-t border-slate-200/80 space-y-8">
               <div className="text-center space-y-2">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 font-mono">Streamlined Diagnostics</span>
+                <span className="text-xs uppercase font-bold tracking-wider text-indigo-650 font-mono">Streamlined Diagnostics</span>
                 <h3 className="font-serif text-2xl font-bold text-slate-800">Resync Scanning Pipeline</h3>
                 <p className="text-xs text-slate-400 max-w-md mx-auto">See how Resync audits your Google Docs for defense readiness in three simple steps.</p>
               </div>
@@ -442,7 +442,7 @@ export default function App() {
               </form>
 
               <div className="text-center pt-2">
-                <p className="text-[10px] text-slate-400 font-mono">Secure TLS 1.3 Encryption Standard</p>
+                <p className="text-xs text-slate-400 font-mono">Secure TLS 1.3 Encryption Standard</p>
               </div>
 
             </div>
@@ -528,7 +528,7 @@ export default function App() {
             {!sidebarCollapsed && (
               <div className="animate-fade-in text-left">
                 <span className="font-serif text-lg font-bold tracking-tight text-slate-900 block leading-none">Resync</span>
-                <span className="text-[9px] block font-mono text-indigo-650 uppercase tracking-widest font-bold mt-1">Manuscript Coherence</span>
+                <span className="text-xs block font-mono text-indigo-650 uppercase tracking-widest font-bold mt-1">Manuscript Coherence</span>
               </div>
             )}
           </div>
@@ -575,7 +575,7 @@ export default function App() {
             {!sidebarCollapsed && (
               <div className="flex flex-col text-left min-w-0 animate-fade-in">
                 <span className="text-xs font-bold text-slate-800 truncate">{currentUser.name}</span>
-                <span className="text-[10px] text-slate-400 truncate">{currentUser.institution || 'Researcher'}</span>
+                <span className="text-xs text-slate-400 truncate">{currentUser.institution || 'Researcher'}</span>
               </div>
             )}
           </div>
@@ -699,7 +699,7 @@ export default function App() {
                 </div>
                 <div className="text-left">
                   <span className="font-serif text-lg font-bold tracking-tight text-slate-900 block leading-none">Resync</span>
-                  <span className="text-[9px] block font-mono text-indigo-650 uppercase tracking-widest font-bold mt-1">Manuscript Coherence</span>
+                  <span className="text-xs block font-mono text-indigo-650 uppercase tracking-widest font-bold mt-1">Manuscript Coherence</span>
                 </div>
               </div>
             </div>
@@ -744,7 +744,7 @@ export default function App() {
                   </div>
                   <div className="flex flex-col text-left min-w-0">
                     <span className="text-xs font-bold text-slate-800 truncate">{currentUser.name}</span>
-                    <span className="text-[9px] text-slate-400 font-mono -mt-0.5 truncate">{currentUser.institution || 'Researcher'}</span>
+                    <span className="text-xs text-slate-400 font-mono -mt-0.5 truncate">{currentUser.institution || 'Researcher'}</span>
                   </div>
                 </div>
                 <button
@@ -779,7 +779,7 @@ export default function App() {
               {/* Header Title Bar */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
                 <div>
-                  <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block font-mono">
+                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block font-mono">
                     Resync Academic Workspace
                   </span>
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
@@ -824,7 +824,7 @@ export default function App() {
                           </div>
                           <div className="text-left">
                             <p className="text-xs font-bold text-slate-800 leading-tight">Integrity score</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">out of 100</p>
+                            <p className="text-xs text-slate-400 mt-0.5">out of 100</p>
                           </div>
                         </div>
 
@@ -834,7 +834,7 @@ export default function App() {
                           </div>
                           <div className="text-left">
                             <p className="text-xs font-bold text-slate-800 leading-tight">Issues flagged</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">for review</p>
+                            <p className="text-xs text-slate-400 mt-0.5">for review</p>
                           </div>
                         </div>
 
@@ -844,7 +844,7 @@ export default function App() {
                           </div>
                           <div className="text-left">
                             <p className="text-xs font-bold text-slate-800 leading-tight">Citations</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">checked</p>
+                            <p className="text-xs text-slate-400 mt-0.5">checked</p>
                           </div>
                         </div>
                       </div>
@@ -890,17 +890,17 @@ export default function App() {
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <span className="text-lg font-bold text-slate-800 font-mono">{activeScan.coherenceScore}</span>
-                            <span className="text-[9px] text-slate-400 -mt-1 font-mono">/100</span>
+                            <span className="text-xs text-slate-400 -mt-1 font-mono">/100</span>
                           </div>
                         </div>
 
                         <div className="space-y-1 text-left">
                           <h3 className="text-md font-bold text-slate-800 leading-tight">Manuscript integrity</h3>
                           <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${scoreBadge}`}>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${scoreBadge}`}>
                               {scoreLabel}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono">{scanDateString}</span>
+                            <span className="text-xs text-slate-400 font-mono">{scanDateString}</span>
                           </div>
                         </div>
                       </div>
@@ -909,17 +909,17 @@ export default function App() {
                       <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
                         <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                           <span className="text-xl font-extrabold text-slate-800 font-mono">{issuesFlagged}</span>
-                          <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Issues<br/>flagged</span>
+                          <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Issues<br/>flagged</span>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                           <span className="text-xl font-extrabold text-slate-800 font-mono">{citationsChecked}</span>
-                          <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Citations<br/>checked</span>
+                          <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Citations<br/>checked</span>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                           <span className="text-xl font-extrabold text-slate-800 font-mono">{citationsFlagged}</span>
-                          <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
+                          <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
                         </div>
                       </div>
                     </div>
@@ -958,8 +958,8 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                        <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-650 hover:text-indigo-650 font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-xs flex items-center gap-1">
-                          <Link className="w-3 h-3" />
+                        <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-655 hover:text-indigo-655 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1">
+                          <Link className="w-3.5 h-3.5" />
                           <span>Google Doc</span>
                         </a>
                       </div>
@@ -980,7 +980,7 @@ export default function App() {
                   {/* Document History section */}
                   <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
                     <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                      <span className="text-xs font-bold text-slate-455 uppercase tracking-wider block font-mono">
                         Document History
                       </span>
                     </div>
@@ -1017,11 +1017,11 @@ export default function App() {
                               <h4 className="text-xs font-bold text-slate-800 truncate max-w-[170px] sm:max-w-[200px]" title={scan.title}>
                                 {scan.title}
                               </h4>
-                              <p className="text-[9px] text-slate-400 font-mono">
+                              <p className="text-xs text-slate-400 font-mono">
                                 {formattedDate} <span className="text-slate-300">•</span> <span className="text-indigo-650">{scan.chapterType || 'Full Manuscript'}</span>
                               </p>
                             </div>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${scoreBadgeColor}`}>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${scoreBadgeColor}`}>
                               {scan.coherenceScore}
                             </span>
                           </div>
@@ -1053,7 +1053,7 @@ export default function App() {
                 {/* Header Title Bar with Back Button */}
                 <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
                   <div className="text-left">
-                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block font-mono">
+                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block font-mono">
                       Scan Completed
                     </span>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
@@ -1072,7 +1072,7 @@ export default function App() {
                 {/* Score gauge & statistics */}
                 <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
                   <div className="text-left">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
                       Result Analytics
                     </span>
                   </div>
@@ -1087,14 +1087,14 @@ export default function App() {
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <span className="text-lg font-bold text-slate-800 font-mono">{latestUploadedScan.coherenceScore}</span>
-                          <span className="text-[9px] text-slate-400 -mt-1 font-mono">/100</span>
+                          <span className="text-xs text-slate-400 -mt-1 font-mono">/100</span>
                         </div>
                       </div>
 
                       <div className="space-y-1 text-left">
                         <h3 className="text-md font-bold text-slate-800 leading-tight">Manuscript integrity</h3>
                         <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
                             latestUploadedScan.coherenceScore >= 85 
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
                               : latestUploadedScan.coherenceScore >= 70 
@@ -1103,7 +1103,7 @@ export default function App() {
                           }`}>
                             {latestUploadedScan.coherenceScore >= 85 ? 'High Coherence' : latestUploadedScan.coherenceScore >= 70 ? 'Moderate Coherence' : 'Low Coherence'}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <span className="text-xs text-slate-400 font-mono">
                             {new Date(latestUploadedScan.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(latestUploadedScan.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                           </span>
                         </div>
@@ -1116,21 +1116,21 @@ export default function App() {
                         <span className="text-xl font-extrabold text-slate-800 font-mono">
                           {(latestUploadedScan.correlationReport?.length || 0) + (latestUploadedScan.suggestions?.length || 0)}
                         </span>
-                        <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Issues<br/>flagged</span>
+                        <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Issues<br/>flagged</span>
                       </div>
 
                       <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                         <span className="text-xl font-extrabold text-slate-800 font-mono">
                           {latestUploadedScan.references?.length || 0}
                         </span>
-                        <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Citations<br/>checked</span>
+                        <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Citations<br/>checked</span>
                       </div>
 
                       <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                         <span className="text-xl font-extrabold text-slate-800 font-mono">
                           {latestUploadedScan.references?.filter(ref => ref.status !== 'Accessible').length || 0}
                         </span>
-                        <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
+                        <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
                       </div>
                     </div>
                   </div>
@@ -1140,7 +1140,7 @@ export default function App() {
                 <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
                   <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-between border border-slate-200/60">
                     <div className="text-left">
-                      <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
+                      <span className="text-xs font-mono text-slate-400 uppercase">Active Report Source</span>
                       <h4 className="text-xs font-bold text-slate-800">{latestUploadedScan.title}</h4>
                       {latestUploadedScan.supportingDoc && (
                         <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
@@ -1246,13 +1246,13 @@ export default function App() {
 
                         {/* Bottom: Details block */}
                         <div className="space-y-2 mt-4 w-full flex flex-col items-center">
-                          <span className="text-[9px] font-bold text-indigo-600 font-mono tracking-widest uppercase truncate max-w-full block">
+                          <span className="text-xs font-bold text-indigo-600 font-mono tracking-widest uppercase truncate max-w-full block">
                             {scan.chapterType || 'Chapters'}
                           </span>
                           <h4 className="text-xs font-serif font-extrabold text-slate-805 line-clamp-2 max-w-full leading-normal text-center px-1">
                             {scan.title}
                           </h4>
-                          <span className="text-[9px] text-slate-400 font-mono block mt-1">
+                          <span className="text-xs text-slate-400 font-mono block mt-1">
                             {formattedDate}
                           </span>
                         </div>

@@ -270,58 +270,58 @@ export default function ScanForm({
     : (step === 3 ? 2 : step);
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm animate-fade-in space-y-6">
+    <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm animate-fade-in space-y-8">
       {/* Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-indigo-50 text-indigo-650">
-            <Compass className="w-5 h-5" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 pb-5">
+        <div className="flex items-center gap-4 text-left">
+          <div className="p-3 rounded-xl bg-indigo-50 text-indigo-650">
+            <Compass className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="font-serif text-base font-bold text-slate-805">Manuscript Coherence Scan Engine</h2>
-            <p className="text-[11px] text-slate-400">Fetch, analyze, and diagnose logical flow in seconds.</p>
+            <h2 className="font-serif text-lg sm:text-xl font-bold text-slate-805">Manuscript Coherence Scan Engine</h2>
+            <p className="text-xs sm:text-sm text-slate-450 mt-1">Fetch, analyze, and diagnose logical flow in seconds.</p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={loadDemoSample}
-          className="text-xs text-indigo-600 font-semibold hover:underline bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg transition-all self-start cursor-pointer"
+          className="text-xs sm:text-sm text-indigo-600 font-bold hover:underline bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl transition-all self-start cursor-pointer hover:scale-102 active:scale-98 duration-100"
         >
           Load Interactive Demo Link
         </button>
       </div>
 
       {loading ? (
-        <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 animate-fade-in">
+        <div className="py-16 flex flex-col items-center justify-center text-center space-y-6 animate-fade-in">
           <div className="relative">
-            <div className="absolute inset-0 bg-indigo-100/50 rounded-full blur-xl animate-pulse"></div>
-            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin relative" />
+            <div className="absolute inset-0 bg-indigo-100/50 rounded-full blur-2xl animate-pulse"></div>
+            <Loader2 className="w-12 h-12 text-indigo-600 animate-spin relative" />
           </div>
           
-          <div className="space-y-1.5 max-w-sm">
-            <h3 className="font-serif text-base font-bold text-slate-850 animate-pulse">Analyzing Coherence...</h3>
-            <p className="text-xs text-indigo-600 font-medium font-mono min-h-[30px] px-4 transition-all">
+          <div className="space-y-2.5 max-w-md">
+            <h3 className="font-serif text-lg font-bold text-slate-850 animate-pulse">Analyzing Coherence...</h3>
+            <p className="text-sm sm:text-base text-indigo-600 font-bold font-mono min-h-[35px] px-6 transition-all">
               {ANALYSIS_STEPS[stepIndex]}
             </p>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-450 leading-relaxed">
               Our AI is auditing logical consistency and citation maps. This may take up to 20 seconds.
             </p>
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Segmented Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <div className={`h-1 flex-1 rounded-full transition-all duration-350 ${currentDisplayStep >= 1 ? 'bg-indigo-600' : 'bg-slate-100'}`} />
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <div className={`h-1.5 flex-1 rounded-full transition-all duration-350 ${currentDisplayStep >= 1 ? 'bg-indigo-600' : 'bg-slate-100'}`} />
               {uploadType === 'chapter' && (
-                <div className={`h-1 flex-1 rounded-full transition-all duration-350 ${currentDisplayStep >= 2 ? 'bg-indigo-600' : 'bg-slate-100'}`} />
+                <div className={`h-1.5 flex-1 rounded-full transition-all duration-350 ${currentDisplayStep >= 2 ? 'bg-indigo-600' : 'bg-slate-100'}`} />
               )}
-              <div className={`h-1 flex-1 rounded-full transition-all duration-350 ${currentDisplayStep >= totalSteps ? 'bg-indigo-600' : 'bg-slate-100'}`} />
+              <div className={`h-1.5 flex-1 rounded-full transition-all duration-350 ${currentDisplayStep >= totalSteps ? 'bg-indigo-600' : 'bg-slate-100'}`} />
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-450 font-mono">
-              <span className="font-bold text-indigo-600 uppercase">
+            <div className="flex justify-between items-center text-xs text-slate-500 font-mono font-bold">
+              <span className="text-indigo-600 uppercase tracking-wider">
                 {currentDisplayStep === 1 && "1. Choose upload type"}
                 {currentDisplayStep === 2 && uploadType === 'chapter' && "2. Select chapters"}
                 {currentDisplayStep === totalSteps && `${totalSteps}. Upload document`}
@@ -362,10 +362,10 @@ export default function ScanForm({
 
           {/* STEP 1: Choose upload type */}
           {step === 1 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="text-center md:text-left space-y-1">
-                <h3 className="text-base sm:text-lg font-bold text-slate-800 font-serif">How would you like to upload your manuscript?</h3>
-                <p className="text-sm text-slate-400">Select whether you want to scan individual sections or the entire draft.</p>
+            <div className="space-y-8 animate-fade-in">
+              <div className="text-center md:text-left space-y-2">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-805 font-serif">How would you like to upload your manuscript?</h3>
+                <p className="text-sm sm:text-base text-slate-450">Select whether you want to scan individual sections or the entire draft.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -376,12 +376,12 @@ export default function ScanForm({
                   }}
                   className="bg-slate-50/50 hover:bg-slate-50 border-2 border-slate-250/70 hover:border-indigo-500 hover:shadow-lg rounded-3xl p-8 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-5 hover:scale-[1.02] duration-200"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-55 bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
-                    <Layers className="w-6 h-6" />
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-55 bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                    <Layers className="w-7 h-7" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-extrabold text-slate-805 font-serif">Per chapter</h4>
-                    <p className="text-sm text-slate-450 mt-1.5">Upload and scan one or more chapters</p>
+                    <h4 className="text-xl font-extrabold text-slate-850 font-serif">Per chapter</h4>
+                    <p className="text-base text-slate-450 mt-2">Upload and scan one or more chapters</p>
                   </div>
                 </div>
 
@@ -392,12 +392,12 @@ export default function ScanForm({
                   }}
                   className="bg-slate-50/50 hover:bg-slate-50 border-2 border-slate-255/70 hover:border-indigo-500 hover:shadow-lg rounded-3xl p-8 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-5 hover:scale-[1.02] duration-200"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-55 bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
-                    <BookOpen className="w-6 h-6" />
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-55 bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-7 h-7" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-extrabold text-slate-805 font-serif">Whole manuscript</h4>
-                    <p className="text-sm text-slate-450 mt-1.5">Upload and scan the full draft at once</p>
+                    <h4 className="text-xl font-extrabold text-slate-850 font-serif">Whole manuscript</h4>
+                    <p className="text-base text-slate-450 mt-2">Upload and scan the full draft at once</p>
                   </div>
                 </div>
               </div>
@@ -406,10 +406,10 @@ export default function ScanForm({
 
           {/* STEP 2: Select Chapters (Only for 'chapter' uploadType) */}
           {step === 2 && uploadType === 'chapter' && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="text-center md:text-left space-y-1">
-                <h3 className="text-base sm:text-lg font-bold text-slate-800 font-serif">Which chapters are you uploading?</h3>
-                <p className="text-sm text-slate-400">Select one or more chapters to analyze compatibility.</p>
+            <div className="space-y-8 animate-fade-in">
+              <div className="text-center md:text-left space-y-2">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-855 font-serif">Which chapters are you uploading?</h3>
+                <p className="text-sm sm:text-base text-slate-450">Select one or more chapters to analyze compatibility.</p>
               </div>
 
               <div className="flex flex-wrap gap-4 justify-center md:justify-start">
@@ -463,13 +463,13 @@ export default function ScanForm({
 
           {/* STEP 3: Upload Document */}
           {step === 3 && (
-            <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
+            <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
               <div className="flex items-center justify-between">
                 <div className="text-left">
-                  <span className="text-xs font-bold text-indigo-650 uppercase tracking-wide block font-mono">
+                  <span className="text-sm font-bold text-indigo-650 uppercase tracking-wide block font-mono">
                     Uploading
                   </span>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-855 font-serif">
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-855 font-serif">
                     {uploadType === 'chapter' 
                       ? `Chapters ${selectedChapters.join(', ')}`
                       : 'Full manuscript draft'}
@@ -482,39 +482,39 @@ export default function ScanForm({
                 <button
                   type="button"
                   onClick={() => setUploadSource('link')}
-                  className={`flex items-center gap-1.5 px-5 py-3 text-sm font-semibold border-b-2 -mb-[2px] transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-6 py-4 text-base font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${
                     uploadSource === 'link'
                       ? 'border-indigo-600 text-indigo-600'
                       : 'border-transparent text-slate-400 hover:text-slate-650'
                   }`}
                 >
-                  <Link className="w-4 h-4" />
+                  <Link className="w-5 h-5" />
                   <span>Google Docs link</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setUploadSource('file')}
-                  className={`flex items-center gap-1.5 px-5 py-3 text-sm font-semibold border-b-2 -mb-[2px] transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-6 py-4 text-base font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${
                     uploadSource === 'file'
                       ? 'border-indigo-600 text-indigo-600'
                       : 'border-transparent text-slate-400 hover:text-slate-650'
                   }`}
                 >
-                  <FileText className="w-4 h-4" />
+                  <FileText className="w-5 h-5" />
                   <span>Word document</span>
                 </button>
               </div>
 
               {/* Inputs section */}
               {uploadSource === 'link' ? (
-                <div className="space-y-2 text-left">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <div className="space-y-3 text-left">
+                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
                     Google Docs URL
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      <Link className="w-4.5 h-4.5" />
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Link className="w-5 h-5" />
                     </div>
                     <input
                       type="url"
@@ -522,43 +522,43 @@ export default function ScanForm({
                       value={documentLink}
                       onChange={(e) => setDocumentLink(e.target.value)}
                       placeholder="https://docs.google.com/document/d/.../edit?usp=sharing"
-                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-10 pr-3 py-3.5 text-sm text-slate-850 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
                     />
                   </div>
-                  <p className="text-xs text-slate-450">
+                  <p className="text-sm text-slate-450 leading-relaxed">
                     Note: Make sure your document is set to <strong className="text-slate-500 font-semibold font-serif">"Anyone with the link can view"</strong> so our engine can fetch its text.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2 text-left">
+                <div className="space-y-3 text-left">
                   <div className="flex justify-between items-center">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
                       Upload Word Document (.docx)
                     </label>
                     {isRescan && prevFileName && (
-                      <span className="text-xs text-indigo-650 font-semibold">
+                      <span className="text-sm text-indigo-650 font-semibold">
                         Previous file: {prevFileName}
                       </span>
                     )}
                   </div>
                   
                   {uploadedFile ? (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between animate-fade-in">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                          <FileText className="w-5 h-5" />
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center justify-between animate-fade-in">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                          <FileText className="w-6 h-6" />
                         </div>
                         <div className="min-w-0 text-left">
-                          <p className="text-sm font-bold text-slate-800 truncate font-serif">{uploadedFile.name}</p>
-                          <p className="text-xs text-slate-405">{(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          <p className="text-base font-bold text-slate-800 truncate font-serif">{uploadedFile.name}</p>
+                          <p className="text-sm text-slate-405">{(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setUploadedFile(null)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-655 hover:bg-slate-100 transition-all cursor-pointer"
+                        className="p-2 rounded-lg text-slate-400 hover:text-slate-655 hover:bg-slate-100 transition-all cursor-pointer"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
                   ) : (
@@ -568,7 +568,7 @@ export default function ScanForm({
                       onDragLeave={handleDrag}
                       onDrop={handleDrop}
                       onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-3 ${
+                      className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-4 ${
                         dragActive 
                           ? 'border-indigo-500 bg-indigo-50/10'
                           : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/30'
@@ -581,12 +581,12 @@ export default function ScanForm({
                         onChange={handleFileChange}
                         className="hidden"
                       />
-                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-450">
-                        <Upload className="w-6 h-6" />
+                      <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-450">
+                        <Upload className="w-7 h-7" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-700 font-serif">Drag your .docx here or click to browse</p>
-                        <p className="text-xs text-slate-450 mt-1 font-mono">Word documents only, up to 25 MB</p>
+                        <p className="text-base font-bold text-slate-705 font-serif">Drag your .docx here or click to browse</p>
+                        <p className="text-sm text-slate-450 mt-1.5 font-mono">Word documents only, up to 25 MB</p>
                       </div>
                     </div>
                   )}
@@ -594,9 +594,9 @@ export default function ScanForm({
               )}
 
               {/* Supporting Documents tabbed inputs */}
-              <div className="space-y-3 pt-4 border-t border-slate-100 text-left">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <div className="space-y-4 pt-5 border-t border-slate-100 text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
                     Supporting Documents (Optional)
                   </label>
                   
@@ -605,7 +605,7 @@ export default function ScanForm({
                     <button
                       type="button"
                       onClick={() => setSupportingSource('link')}
-                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${
                         supportingSource === 'link'
                           ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
                           : 'text-slate-400 hover:text-slate-655'
@@ -616,7 +616,7 @@ export default function ScanForm({
                     <button
                       type="button"
                       onClick={() => setSupportingSource('file')}
-                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${
                         supportingSource === 'file'
                           ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
                           : 'text-slate-400 hover:text-slate-655'
@@ -629,42 +629,42 @@ export default function ScanForm({
 
                 {supportingSource === 'link' ? (
                   <div className="relative animate-fade-in">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      <Link className="w-4 h-4" />
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Link className="w-5 h-5" />
                     </div>
                     <input
                       type="url"
                       value={supportingLink}
                       onChange={(e) => setSupportingLink(e.target.value)}
                       placeholder="https://drive.google.com/file/... or survey URL"
-                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-9 pr-3 py-3 text-sm text-slate-850 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
                     />
                   </div>
                 ) : (
                   <div className="animate-fade-in">
                     {supportingFile ? (
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between border-dashed">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
-                            <FileText className="w-4.5 h-4.5" />
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 flex items-center justify-between border-dashed">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5" />
                           </div>
                           <div className="min-w-0 text-left">
-                            <p className="text-sm font-bold text-slate-800 truncate font-serif">{supportingFile.name}</p>
-                            <p className="text-[10px] text-slate-405">{(supportingFile.size / 1024).toFixed(1)} KB</p>
+                            <p className="text-base font-bold text-slate-800 truncate font-serif">{supportingFile.name}</p>
+                            <p className="text-xs text-slate-405">{(supportingFile.size / 1024).toFixed(1)} KB</p>
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => setSupportingFile(null)}
-                          className="p-1 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
+                          className="p-2 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-5 h-5" />
                         </button>
                       </div>
                     ) : (
                       <div
                         onClick={() => supportingFileInputRef.current?.click()}
-                        className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-4 px-6 text-center cursor-pointer transition-all flex items-center justify-center gap-2"
+                        className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-5 px-8 text-center cursor-pointer transition-all flex items-center justify-center gap-2.5"
                       >
                         <input
                           ref={supportingFileInputRef}
@@ -677,8 +677,8 @@ export default function ScanForm({
                           }}
                           className="hidden"
                         />
-                        <Upload className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-bold text-slate-650">Select supporting file (survey, datasheet, PDF...)</span>
+                        <Upload className="w-5 h-5 text-slate-450" />
+                        <span className="text-sm font-bold text-slate-650">Select supporting file (survey, datasheet, PDF...)</span>
                       </div>
                     )}
                   </div>

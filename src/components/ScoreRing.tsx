@@ -59,7 +59,7 @@ export default function ScoreRing({ score, size = 120, strokeWidth = 10, showDet
         {/* Centered Score text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={`font-mono font-bold text-slate-800 ${showDetails ? 'text-3xl' : 'text-sm'}`}>{score}</span>
-          {showDetails && <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">/ 100</span>}
+          {showDetails && <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">/ 100</span>}
         </div>
       </div>
       {showDetails && (
