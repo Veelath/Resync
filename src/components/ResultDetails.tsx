@@ -126,8 +126,8 @@ Details: ${r.explanation}
       
       {/* Rescanning Overlay loader (Page 9 of PDF) */}
       {isRescanning && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl p-8 border border-slate-200 max-w-sm text-center space-y-4 shadow-2xl">
+        <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-white/95 rounded-2xl p-8 border border-slate-200/80 max-w-sm text-center space-y-4 shadow-2xl">
             <div className="relative inline-block">
               <div className="absolute inset-0 bg-indigo-100 rounded-full blur-xl animate-pulse"></div>
               <Loader2 className="w-10 h-10 text-indigo-650 animate-spin relative mx-auto" />

@@ -885,8 +885,8 @@ Details: ${r.explanation}
           )}
           {/* Rescan Confirmation Modal */}
           {showRescanConfirmModal && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden max-w-md w-full p-6 relative space-y-6 text-left">
+            <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="bg-white/95 rounded-2xl border border-slate-200/80 shadow-2xl overflow-hidden max-w-md w-full p-6 relative space-y-6 text-left">
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-lg shrink-0 ${modStatus.isModified ? 'bg-indigo-50 text-indigo-650' : 'bg-amber-50 text-amber-605'}`}>
                     {modStatus.isModified ? <Sparkles className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
