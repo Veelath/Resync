@@ -201,7 +201,6 @@ export default function App() {
 
             {/* Auth Actions */}
             <div className="flex items-center gap-4">
-              <span className="text-[11px] font-mono text-slate-400 hidden md:inline-block">Document Assurance Tool v2.4</span>
               <button
                 onClick={() => {
                   setAuthTab('login');
@@ -233,7 +232,7 @@ export default function App() {
             {/* Elegant Hero Title Section */}
             <div className="text-center max-w-4xl mx-auto space-y-8">
               <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Document Coherence & Citation Auditor
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Document Coherence
               </div>
               <h1 className="font-serif text-4xl sm:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
                 Even great research has gaps. <br />
@@ -326,7 +325,7 @@ export default function App() {
                 <Sparkles className="w-3 h-3" />
               </div>
               <span className="font-serif font-bold text-slate-700">Resync</span>
-              <span>— AI-Powered Coherence & Citation Auditor</span>
+              <span>— AI-Powered Coherence</span>
             </div>
             <div className="flex gap-4">
               <span className="font-mono">Secure TLS Cloud Node</span>
@@ -1017,7 +1016,6 @@ export default function App() {
                 setScans([newScan, ...scans]);
                 setSelectedScan(newScan);
                 setShowFullReport(true);
-                setActiveTab('overview');
               }}
             />
           )}
@@ -1113,7 +1111,7 @@ export default function App() {
               <Sparkles className="w-3 h-3" />
             </div>
             <span className="font-serif font-bold text-slate-700">Resync</span>
-            <span>— AI-Powered Coherence & Citation Auditor</span>
+            <span>— AI-Powered Coherence</span>
           </div>
           <div className="flex gap-4">
             <span className="font-mono">Secure TLS Cloud Node</span>

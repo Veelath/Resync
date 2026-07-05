@@ -44,6 +44,7 @@ export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
   const [uploadType, setUploadType] = useState<'chapter' | 'manuscript' | null>(null);
   const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
   const [uploadSource, setUploadSource] = useState<'link' | 'file'>('link');
+  const [success, setSuccess] = useState(false);
   
   // Fields
   const [documentLink, setDocumentLink] = useState('');
@@ -121,6 +122,7 @@ export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
 
     setLoading(true);
     setError('');
+    setSuccess(false);
 
     // Format section category based on step selection
     let formattedCategory = 'Full Manuscript';
@@ -149,6 +151,13 @@ export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
       }
 
       onScanSuccess(data.scan);
+      setSuccess(true);
+      setStep(1);
+      setUploadType(null);
+      setSelectedChapters([]);
+      setDocumentLink('');
+      setUploadedFile(null);
+      setCustomTopic('');
     } catch (err: any) {
       setError(err.message || 'An error occurred during scanning.');
     } finally {
@@ -158,6 +167,7 @@ export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
 
   // Helper to load sample credentials instantly
   const loadDemoSample = () => {
+    setSuccess(false);
     setUploadType('chapter');
     setSelectedChapters([1, 3, 4]);
     setUploadSource('link');
@@ -232,6 +242,26 @@ export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
               <span className="text-slate-400">Step {currentDisplayStep} of {totalSteps}</span>
             </div>
           </div>
+
+          {success && (
+            <div className="flex items-start gap-2.5 bg-emerald-50 text-emerald-800 text-xs p-3.5 rounded-lg border border-emerald-100 animate-fade-in relative">
+              <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 pr-6 text-left">
+                <span className="font-semibold block">Scan Completed Successfully</span>
+                <p className="text-[11px] leading-relaxed text-slate-650">
+                  Your manuscript has been successfully analyzed. You can view the report in the Dashboard or Results Archive.
+                </p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setSuccess(false)}
+                className="absolute top-3.5 right-3.5 text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                title="Close Notice"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="flex items-start gap-2.5 bg-rose-50 text-rose-800 text-xs p-3.5 rounded-lg border border-rose-100 animate-fade-in">
