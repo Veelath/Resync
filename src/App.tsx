@@ -1341,11 +1341,16 @@ export default function App() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
-                  {scans.map((scan) => {
+                  {scans.map((scan, index) => {
                     const scanDate = new Date(scan.timestamp);
                     const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const isSelected = selectedScan?.id === scan.id;
                     const isHovered = hoveredCardId === scan.id;
+
+                    const isRightHalf = (index % 4) >= 2;
+                    const expandClass = isRightHalf 
+                      ? 'right-full mr-4 origin-right' 
+                      : 'left-full ml-4 origin-left';
 
                     return (
                       <div
@@ -1358,111 +1363,111 @@ export default function App() {
                           setActiveTab('overview');
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className={`bg-white border rounded-3xl p-6 flex flex-col items-center justify-between text-center transition-all duration-300 hover:shadow-2xl cursor-pointer min-h-[380px] relative overflow-hidden ${
+                        className={`bg-white border rounded-3xl p-6 flex flex-col items-center justify-between text-center transition-all duration-300 hover:shadow-2xl cursor-pointer min-h-[380px] relative ${
                           isSelected
                             ? 'border-indigo-650 ring-1 ring-indigo-605 shadow-md scale-102'
                             : 'border-slate-200 hover:border-indigo-500 shadow-sm hover:scale-102'
                         }`}
                       >
-                        {isHovered ? (
-                          /* Hover Analytics details view */
-                          <div className="w-full h-full flex flex-col justify-between text-left space-y-3.5 animate-fade-in relative z-10">
-                            {/* Card Header */}
+                        {/* Absolute Delete Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteScan(scan.id);
+                          }}
+                          className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer z-10"
+                          title="Delete Scan Record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Top: Large Score gauge circle */}
+                        <div className="flex-1 flex items-center justify-center my-2 shrink-0">
+                          <ScoreRing score={scan.coherenceScore} size={110} strokeWidth={8} showDetails={false} />
+                        </div>
+
+                        {/* Bottom: Details block */}
+                        <div className="space-y-2 mt-4 w-full flex flex-col items-center">
+                          <span className="text-[10px] font-bold text-indigo-650 font-mono tracking-widest uppercase truncate max-w-full block bg-indigo-50 px-2 py-0.5 rounded">
+                            {scan.chapterType || 'Chapters'}
+                          </span>
+                          <h4 className="text-xs font-serif font-extrabold text-slate-850 line-clamp-2 max-w-full leading-normal text-center px-1">
+                            {scan.title}
+                          </h4>
+                          <span className="text-[10px] text-slate-400 font-mono block mt-1">
+                            {formattedDate}
+                          </span>
+                        </div>
+
+                        {/* Slide-out Hover Analytics Detail Sheet */}
+                        {isHovered && (
+                          <div 
+                            className={`absolute top-0 h-full w-[310px] bg-white border border-slate-200/90 shadow-2xl rounded-2xl p-5 z-30 animate-fade-in transition-all flex flex-col justify-between text-left cursor-default ${expandClass}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
-                              <span className="text-[9px] font-bold text-indigo-655 uppercase tracking-wider font-mono bg-indigo-50 px-2 py-0.5 rounded">
-                                {scan.chapterType || 'Chapters'}
+                              <span className="text-[9px] font-bold text-indigo-655 uppercase tracking-widest font-mono bg-indigo-50 px-2 py-0.5 rounded">
+                                Report Details
                               </span>
-                              <span className="text-[9px] text-slate-400 font-mono font-bold uppercase">Analytics</span>
+                              <span className="text-[9px] text-slate-400 font-mono">Quick Inspect</span>
                             </div>
 
-                            {/* Title */}
-                            <h4 className="text-xs font-serif font-extrabold text-slate-800 line-clamp-1 max-w-full">
-                              {scan.title}
-                            </h4>
+                            <div className="space-y-3.5 flex-1 pt-3.5">
+                              <h5 className="font-serif text-xs font-bold text-slate-800 leading-snug line-clamp-2">
+                                {scan.title}
+                              </h5>
 
-                            {/* Analytics Grid */}
-                            <div className="grid grid-cols-2 gap-2.5 pt-1">
-                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
-                                <span className="text-sm font-extrabold text-slate-850 font-mono">{scan.coherenceScore}</span>
-                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Coherence</span>
+                              <div className="space-y-2 pt-1.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-400 font-mono font-semibold">Coherence Score:</span>
+                                  <span className={`font-mono font-extrabold ${scan.coherenceScore >= 85 ? 'text-emerald-600' : scan.coherenceScore >= 70 ? 'text-amber-500' : 'text-rose-500'}`}>
+                                    {scan.coherenceScore}/100
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-400 font-mono font-semibold">Duplication rate:</span>
+                                  <span className="font-mono font-bold text-slate-700">{scan.duplicationScore || 0}%</span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-400 font-mono font-semibold">Logic Flags:</span>
+                                  <span className="font-mono font-bold text-slate-700">
+                                    {scan.correlationReport?.length || 0} consistency flags
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-400 font-mono font-semibold">Audited Citations:</span>
+                                  <span className="font-mono font-bold text-slate-700">
+                                    {scan.references?.length || 0} checks
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-400 font-mono font-semibold">Paradigm Type:</span>
+                                  <span className="font-mono font-bold text-slate-700 capitalize">
+                                    {scan.researchType || 'quantitative'}
+                                  </span>
+                                </div>
                               </div>
 
-                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
-                                <span className="text-sm font-extrabold text-indigo-650 font-mono">{scan.duplicationScore || 0}%</span>
-                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Duplication</span>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
-                                <span className="text-sm font-extrabold text-slate-850 font-mono">
-                                  {(scan.correlationReport?.length || 0) + (scan.suggestions?.length || 0)}
-                                </span>
-                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Issues</span>
-                              </div>
-
-                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
-                                <span className="text-sm font-extrabold text-slate-850 font-mono">{scan.references?.length || 0}</span>
-                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Citations</span>
-                              </div>
-                            </div>
-
-                            {/* Paradigm & Missing warning list */}
-                            <div className="space-y-1.5 border-t border-slate-100 pt-2 flex-grow flex flex-col justify-end">
-                              <div className="flex items-center justify-between text-[9px]">
-                                <span className="text-slate-400 font-mono font-semibold">Paradigm:</span>
-                                <span className="font-bold text-slate-700 capitalize font-mono">{scan.researchType || 'quantitative'}</span>
-                              </div>
-                              
                               {scan.missingSections && scan.missingSections.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-0.5">
-                                  {scan.missingSections.slice(0, 1).map((sec, idx) => (
-                                    <span key={idx} className="bg-rose-50 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded border border-rose-100 truncate max-w-full block">
-                                      ⚠️ {sec}
-                                    </span>
-                                  ))}
+                                <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                                    Missing Structure
+                                  </span>
+                                  <div className="flex flex-col gap-1">
+                                    {scan.missingSections.slice(0, 2).map((sec, idx) => (
+                                      <span key={idx} className="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded truncate max-w-full">
+                                        ⚠️ {sec}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
 
-                            {/* Prompt Hint Link */}
-                            <div className="pt-2 text-center border-t border-slate-100">
-                              <span className="text-[9px] font-extrabold text-indigo-600 hover:underline">
-                                Click to open full audit &rarr;
-                              </span>
+                            <div className="border-t border-slate-100 pt-2 text-center text-[9px] font-extrabold text-indigo-650 flex items-center justify-center gap-1">
+                              Click card to view full manuscript report &rarr;
                             </div>
                           </div>
-                        ) : (
-                          /* Normal View */
-                          <>
-                            {/* Absolute Delete Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteScan(scan.id);
-                              }}
-                              className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer z-10"
-                              title="Delete Scan Record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Top: Large Score gauge circle */}
-                            <div className="flex-1 flex items-center justify-center my-2 shrink-0">
-                              <ScoreRing score={scan.coherenceScore} size={110} strokeWidth={8} showDetails={false} />
-                            </div>
-
-                            {/* Bottom: Details block */}
-                            <div className="space-y-2 mt-4 w-full flex flex-col items-center">
-                              <span className="text-[10px] font-bold text-indigo-650 font-mono tracking-widest uppercase truncate max-w-full block bg-indigo-50 px-2 py-0.5 rounded">
-                                {scan.chapterType || 'Chapters'}
-                              </span>
-                              <h4 className="text-xs font-serif font-extrabold text-slate-850 line-clamp-2 max-w-full leading-normal text-center px-1">
-                                {scan.title}
-                              </h4>
-                              <span className="text-[10px] text-slate-400 font-mono block mt-1">
-                                {formattedDate}
-                              </span>
-                            </div>
-                          </>
                         )}
                       </div>
                     );
