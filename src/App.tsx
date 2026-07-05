@@ -1329,7 +1329,7 @@ export default function App() {
 
           {/* 3. RESULTS ARCHIVE LIST TAB */}
           {activeTab === 'results' && (
-            <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 shadow-sm overflow-hidden animate-fade-in">
+            <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 shadow-sm animate-fade-in relative">
               <div className="p-6 border-b border-slate-200/60 bg-white flex items-center justify-between">
                 <h3 className="font-serif text-lg font-bold text-slate-800">Manuscript Reports Archive</h3>
                 <span className="text-xs text-slate-400 font-mono">Securely stored inside Resync persistent engine</span>
@@ -1341,21 +1341,26 @@ export default function App() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
-                  {scans.map((scan) => {
+                  {scans.map((scan, index) => {
                     const scanDate = new Date(scan.timestamp);
                     const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const isSelected = selectedScan?.id === scan.id;
                     const isHovered = hoveredCardId === scan.id;
+
+                    const isRightHalf = (index % 4) >= 2;
+                    const expandClass = isRightHalf 
+                      ? 'right-0' 
+                      : 'left-0';
 
                     return (
                       <div
                         key={scan.id}
                         onMouseEnter={() => setHoveredCardId(scan.id)}
                         onMouseLeave={() => setHoveredCardId(null)}
-                        className="relative h-[130px] w-full"
+                        className="relative h-[120px] w-full"
                       >
                         {isHovered ? (
-                          /* Combined Expanded Card on Hover */
+                          /* Combined Horizontal Expanded Card on Hover */
                           <div
                             onClick={() => {
                               setSelectedScan(scan);
@@ -1363,12 +1368,12 @@ export default function App() {
                               setActiveTab('overview');
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className="absolute top-0 left-0 w-full bg-white border border-slate-350 shadow-2xl rounded-3xl p-5 z-30 transition-all flex flex-col justify-between text-left cursor-pointer scale-102 translate-y-[-4px]"
+                            className={`absolute top-0 w-[530px] h-[128px] bg-white border border-slate-350 shadow-2xl rounded-2xl p-4.5 z-30 transition-all flex flex-row items-center gap-4.5 cursor-pointer scale-102 translate-y-[-4px] ${expandClass}`}
                           >
-                            {/* Top row: circle score and text details side-by-side */}
-                            <div className="flex items-center gap-4 relative">
+                            {/* Left part: Circle score + Title details */}
+                            <div className="flex items-center gap-3.5 w-[210px] shrink-0 text-left relative h-full">
                               <div className="shrink-0">
-                                <ScoreRing score={scan.coherenceScore} size={64} strokeWidth={5} showDetails={false} />
+                                <ScoreRing score={scan.coherenceScore} size={60} strokeWidth={5.5} showDetails={false} />
                               </div>
 
                               <div className="flex-1 min-w-0 space-y-0.5">
@@ -1383,24 +1388,24 @@ export default function App() {
                                 </span>
                               </div>
 
-                              {/* Absolute Delete Button inside hovered card */}
+                              {/* Absolute Delete Button */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDeleteScan(scan.id);
                                 }}
-                                className="absolute top-0 right-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer z-40"
+                                className="absolute top-0 right-0 p-1 rounded text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer z-40"
                                 title="Delete Scan Record"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3 h-3" />
                               </button>
                             </div>
 
-                            {/* Separator Divider */}
-                            <div className="border-t border-slate-100 my-3.5" />
+                            {/* Vertical Line Divider */}
+                            <div className="w-[1px] h-[85px] bg-slate-100 shrink-0 self-center" />
 
-                            {/* Bottom row: details attributes list */}
-                            <div className="space-y-2 pb-1.5">
+                            {/* Right part: Analytics metrics list */}
+                            <div className="flex-1 space-y-1.5 text-left pl-1">
                               <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
                                 <span className="text-slate-500 font-sans font-medium">duplication</span>
                                 <span className="font-mono font-bold text-slate-800">{scan.duplicationScore || 0}%</span>
@@ -1418,24 +1423,13 @@ export default function App() {
                                 </span>
                               </div>
 
-                              {/* Missing Warnings Banner callout */}
+                              {/* Warnings Alert block */}
                               {scan.missingSections && scan.missingSections.length > 0 && (
-                                <div className="pt-2">
-                                  <div className="flex flex-col gap-1.5">
-                                    {scan.missingSections.slice(0, 1).map((sec, idx) => (
-                                      <div key={idx} className="bg-rose-50 border border-rose-100/60 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-sans shadow-xs truncate">
-                                        <span>⚠️</span>
-                                        <span className="truncate">{sec.toLowerCase()}</span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                <div className="bg-rose-50 border border-rose-100/60 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1.5 font-sans truncate shadow-xs">
+                                  <span>⚠️</span>
+                                  <span className="truncate">{scan.missingSections[0].toLowerCase()}</span>
                                 </div>
                               )}
-                            </div>
-
-                            {/* Footer link click */}
-                            <div className="border-t border-slate-100 pt-2.5 mt-1 text-center text-[10px] font-bold text-indigo-650 flex items-center justify-center gap-1">
-                              Click to open full manuscript report &rarr;
                             </div>
                           </div>
                         ) : (
@@ -1454,7 +1448,7 @@ export default function App() {
                             }`}
                           >
                             <div className="shrink-0">
-                              <ScoreRing score={scan.coherenceScore} size={64} strokeWidth={5} showDetails={false} />
+                              <ScoreRing score={scan.coherenceScore} size={60} strokeWidth={5.5} showDetails={false} />
                             </div>
 
                             <div className="flex-1 min-w-0 space-y-0.5">
