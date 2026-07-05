@@ -491,8 +491,6 @@ ${s.explanation}
 
         </div>
 
-        </div>
-
       </div>
 
     </div>
