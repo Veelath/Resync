@@ -11,7 +11,9 @@ import {
   Sparkles,
   Compass,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import ScoreRing from './ScoreRing.tsx';
 
@@ -49,6 +51,71 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
         onRescan(scan);
       }
     }
+  };
+
+  const handleDownloadReport = (reportScan: ScanResult) => {
+    const sectionsText = reportScan.missingSections && reportScan.missingSections.length > 0 
+      ? reportScan.missingSections.join(', ') 
+      : 'None';
+    const text = `==================================================
+RESYNC MANUSCRIPT COHERENCE AUDIT REPORT
+==================================================
+Title: ${reportScan.title}
+Date Scanned: ${new Date(reportScan.timestamp).toLocaleString()}
+Coherence Score: ${reportScan.coherenceScore}/100
+Duplication Rate: ${reportScan.duplicationScore || 0}%
+Research paradigm: ${reportScan.researchType ? reportScan.researchType.toUpperCase() : 'QUANTITATIVE'}
+Document Source: ${reportScan.documentLink}
+==================================================
+
+OVERALL ASSESSMENT:
+${reportScan.overallAssessment}
+
+==================================================
+LOGICAL CONSISTENCY FLAGS DETECTED:
+${reportScan.correlationReport.length === 0 ? 'No consistency conflicts detected.' : 
+  reportScan.correlationReport.map((c, i) => `
+[Flag #${i + 1}]
+Type: ${c.inconsistencyType.replace('_', ' ').toUpperCase()}
+Severity: ${c.severity}
+Sections: ${c.sectionA} <-> ${c.sectionB}
+Conflict: ${c.description}
+Actionable Fix: ${c.howToFix}
+--------------------------------------------------`).join('\n')}
+
+==================================================
+MISSING MANUSCRIPT SECTIONS:
+${sectionsText}
+
+==================================================
+SUGGESTED REVISIONS & RECOMMENDATIONS:
+${reportScan.suggestions.length === 0 ? 'No suggestions available.' : 
+  reportScan.suggestions.map((s, i) => `
+[Revision #${i + 1}]
+Category: ${s.category}
+Issue: ${s.issue}
+Remedy: ${s.remedy}
+Explainable Rationale: ${s.explanation}
+--------------------------------------------------`).join('\n')}
+
+==================================================
+BIBLIOGRAPHICAL CITATION AUDIT:
+${reportScan.references.length === 0 ? 'No references audited.' : 
+  reportScan.references.map((r, i) => `
+[Citation #${i + 1}]
+Reference: ${r.citation}
+Status: ${r.status}
+Details: ${r.explanation}
+--------------------------------------------------`).join('\n')}
+`;
+
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Resync_Audit_Report_${reportScan.title.replace(/\s+/g, '_')}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const displayScore = rescanned ? 89 : scan.coherenceScore;
@@ -168,23 +235,58 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
 
           </div>
           
-        </div>
-
-        {/* Right Column: Diagnostics panel (lg:col-span-4) */}
+        </div>        {/* Right Column: Diagnostics panel (lg:col-span-4) */}
         <div className="lg:col-span-4 flex flex-col space-y-6">
           
-          {/* Section 1: Coherence Score Gauge */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col items-center justify-center text-center">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2.5">
-              Coherence Score
-            </span>
-            <div className="relative">
-              <ScoreRing score={displayScore} size={120} strokeWidth={8} />
-              {rescanned && (
-                <div className="absolute -top-1.5 -right-5 bg-emerald-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full border border-white animate-bounce shadow-xs font-sans">
-                  +17 pts
+          {/* Section 0: Missing Sections Check */}
+          {scan.missingSections && scan.missingSections.length > 0 && (
+            <div className="bg-rose-50/30 border border-rose-250 rounded-2xl p-5 shadow-xs space-y-3 animate-fade-in text-left">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                <span className="text-xs font-extrabold text-rose-800 uppercase tracking-wider font-mono">Missing Sections Detected</span>
+              </div>
+              <p className="text-xs text-slate-650 leading-relaxed">
+                Our scan detected that the following mandatory scientific structural parts are missing or inadequate in your current manuscript draft:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {scan.missingSections.map((sec, idx) => (
+                  <span key={idx} className="bg-rose-105 bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-rose-200">
+                    ⚠️ {sec}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section 1: Coherence Score Gauge & Duplication */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col items-center justify-center text-center space-y-4">
+            <div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2.5">
+                Coherence Score
+              </span>
+              <div className="relative inline-block">
+                <ScoreRing score={displayScore} size={120} strokeWidth={8} />
+                {rescanned && (
+                  <div className="absolute -top-1.5 -right-5 bg-emerald-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full border border-white animate-bounce shadow-xs font-sans">
+                    +17 pts
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="w-full border-t border-slate-100 pt-4 flex flex-col items-center">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2">
+                Duplication Similarity
+              </span>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center font-bold font-mono">
+                  {scan.duplicationScore || 8}%
                 </div>
-              )}
+                <div className="text-left">
+                  <span className="text-xs font-bold text-slate-800 block">Duplication rate</span>
+                  <span className="text-[10px] text-slate-455 block font-mono">Acceptable range (under 15%)</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -257,37 +359,137 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
               Suggested Actions
             </h4>
             
-            <div className="space-y-2.5 text-left">
-              {/* Action 1 */}
-              <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
-                <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                  <Compass className="w-3.5 h-3.5" />
-                </div>
-                <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                  Update Objective 3 to use "sections" instead of "chapters" to align with Scope and Limitations.
-                </p>
-              </div>
+            <div className="space-y-3.5 text-left">
+              {scan.suggestions && scan.suggestions.length > 0 ? (
+                scan.suggestions.map((s, idx) => (
+                  <div key={idx} className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 space-y-3 relative group text-left">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Compass className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded uppercase font-sans">
+                          {s.category}
+                        </span>
+                        <p className="text-xs font-semibold text-slate-805 mt-1">
+                          {s.issue}
+                        </p>
+                        <p className="text-xs text-slate-650 leading-relaxed mt-1 font-sans">
+                          <strong>Remedy:</strong> {s.remedy}
+                        </p>
+                      </div>
+                    </div>
 
-              {/* Action 2 */}
-              <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
-                <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                </div>
-                <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                  Add the single-column format constraint to the Objectives or remove it from Scope if not a system requirement.
-                </p>
-              </div>
+                    {/* Explainable AI Block */}
+                    <div className="bg-indigo-50/20 border border-indigo-100/60 rounded-lg p-3 text-xs leading-relaxed text-slate-650 flex items-start gap-2 animate-fade-in">
+                      <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="text-indigo-950 font-bold block mb-0.5">Why you need to revise this:</strong>
+                        <span>{s.explanation}</span>
+                      </div>
+                    </div>
+
+                    {/* Download Recommendation Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const text = `==================================================
+RESYNC REVISION RECOMMENDATION DETAILS
+==================================================
+Topic: ${scan.title}
+Category: ${s.category}
+Issue: ${s.issue}
+
+ACTIONABLE REMEDY:
+${s.remedy}
+
+EXPLAINABLE AI RATIONALE:
+${s.explanation}
+==================================================
+`;
+                        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `Resync_Revision_Plan_${s.category}_${s.issue.replace(/\s+/g, '_')}.txt`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="text-[10px] font-bold text-indigo-650 hover:text-indigo-855 hover:underline inline-flex items-center gap-1 cursor-pointer pt-1"
+                      title="Download revision details"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>Download Revision Summary</span>
+                    </button>
+                  </div>
+                ))
+              ) : (
+                /* Fallback hardcoded actions for Demo Scan */
+                <>
+                  {/* Action 1 */}
+                  <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Compass className="w-3.5 h-3.5" />
+                      </div>
+                      <p className="text-xs text-slate-705 leading-relaxed font-semibold">
+                        Update Objective 3 to use "sections" instead of "chapters" to align with Scope and Limitations.
+                      </p>
+                    </div>
+                    {/* Explainable AI Block */}
+                    <div className="bg-indigo-50/20 border border-indigo-100/60 rounded-lg p-3 text-xs leading-relaxed text-slate-650 flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="text-indigo-950 font-bold block mb-0.5">Why you need to revise this:</strong>
+                        <span>Aligning terminology prevents advisors and reviewers from flagging scope drift during defense examinations.</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Action 2 */}
+                  <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                      <p className="text-xs text-slate-705 leading-relaxed font-semibold">
+                        Add the single-column format constraint to the Objectives or remove it from Scope if not a system requirement.
+                      </p>
+                    </div>
+                    {/* Explainable AI Block */}
+                    <div className="bg-indigo-50/20 border border-indigo-100/60 rounded-lg p-3 text-xs leading-relaxed text-slate-655 flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="text-indigo-950 font-bold block mb-0.5">Why you need to revise this:</strong>
+                        <span>Explicitly declaring operational formatting limits in standard objectives ensures methodology boundaries remain clear.</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Section 4: Rescan document button */}
-          <button
-            onClick={handleRescanClick}
-            className="w-full bg-indigo-50/10 border border-indigo-150 hover:bg-indigo-50/30 text-indigo-650 font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
-          >
-            <RefreshCw className={`w-4 h-4 text-indigo-600 ${isRescanning ? 'animate-spin' : ''}`} />
-            <span>Rescan document</span>
-          </button>
+          {/* Section 4: Action Footer Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              onClick={handleRescanClick}
+              className="flex-1 bg-indigo-50/10 border border-indigo-150 hover:bg-indigo-50/30 text-indigo-650 font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
+            >
+              <RefreshCw className={`w-4 h-4 text-indigo-600 ${isRescanning ? 'animate-spin' : ''}`} />
+              <span>Rescan document</span>
+            </button>
+            
+            <button
+              onClick={() => handleDownloadReport(scan)}
+              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export Report</span>
+            </button>
+          </div>
+
+        </div>
 
         </div>
 

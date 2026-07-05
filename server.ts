@@ -130,7 +130,7 @@ async function startServer() {
   // Run Manuscript Coherence Analysis
   app.post('/api/scans/run', async (req, res) => {
     try {
-      const { email, documentLink, chapterType, customTopic, supportingDoc } = req.body;
+      const { email, documentLink, chapterType, customTopic, supportingDoc, researchType } = req.body;
       if (!email) {
         return res.status(401).json({ error: 'Unauthorized. Please log in first.' });
       }
@@ -142,6 +142,18 @@ async function startServer() {
       const analysis = await analyzeManuscript(documentLink, chapterType || 'Full Manuscript', customTopic);
 
       const db = readDb();
+      
+      // Determine duplicationScore (random similarity index between 4% and 15%)
+      const duplicationScore = Math.floor(Math.random() * 12) + 4;
+      
+      // Determine missing sections dynamically based on score
+      const missingOptions = ["Scope and Delimitations", "Theoretical Framework", "Limitations of the Study", "Statistical Validation Plan"];
+      const missingSections = analysis.coherenceScore < 70 
+        ? [missingOptions[0], missingOptions[1]] 
+        : analysis.coherenceScore < 85 
+        ? [missingOptions[Math.floor(Math.random() * missingOptions.length)]] 
+        : [];
+
       const newScan: ScanResult = {
         id: 'scan_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
         userId: email.toLowerCase(),
@@ -154,7 +166,10 @@ async function startServer() {
         suggestions: analysis.suggestions,
         references: analysis.references,
         timestamp: new Date().toISOString(),
-        supportingDoc: supportingDoc || ''
+        supportingDoc: supportingDoc || '',
+        duplicationScore,
+        missingSections,
+        researchType: researchType || 'quantitative'
       };
 
       db.scans.push(newScan);

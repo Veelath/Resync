@@ -19,7 +19,8 @@ import {
   Check,
   Upload,
   FileText,
-  X
+  X,
+  Download
 } from 'lucide-react';
 
 interface ScanFormProps {
@@ -69,6 +70,115 @@ export default function ScanForm({
   const [uploadSource, setUploadSource] = useState<'link' | 'file'>(isRescan ? 'file' : 'link');
   const [success, setSuccess] = useState(false);
   const [showRescanConfirmModal, setShowRescanConfirmModal] = useState(false);
+  const [researchType, setResearchType] = useState<'quantitative' | 'qualitative'>('quantitative');
+  const [latestScanResult, setLatestScanResult] = useState<ScanResult | null>(null);
+
+  const playSuccessChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      
+      // Note 1: E5
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
+      gain1.gain.setValueAtTime(0, ctx.currentTime);
+      gain1.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.5);
+
+      // Note 2: A5 (played slightly later)
+      setTimeout(() => {
+        try {
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(880.00, ctx.currentTime); // A5
+          gain2.gain.setValueAtTime(0, ctx.currentTime);
+          gain2.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(ctx.currentTime);
+          osc2.stop(ctx.currentTime + 0.6);
+        } catch (innerErr) {
+          console.warn("Chime note 2 failed:", innerErr);
+        }
+      }, 120);
+    } catch (e) {
+      console.warn("AudioContext chime failed:", e);
+    }
+  };
+
+  const handleDownload = (scan: ScanResult) => {
+    const sectionsText = scan.missingSections && scan.missingSections.length > 0 
+      ? scan.missingSections.join(', ') 
+      : 'None';
+    const text = `==================================================
+RESYNC MANUSCRIPT COHERENCE AUDIT REPORT
+==================================================
+Title: ${scan.title}
+Date Scanned: ${new Date(scan.timestamp).toLocaleString()}
+Coherence Score: ${scan.coherenceScore}/100
+Duplication Rate: ${scan.duplicationScore || 0}%
+Research paradigm: ${scan.researchType ? scan.researchType.toUpperCase() : 'QUANTITATIVE'}
+Document Source: ${scan.documentLink}
+==================================================
+
+OVERALL ASSESSMENT:
+${scan.overallAssessment}
+
+==================================================
+LOGICAL CONSISTENCY FLAGS DETECTED:
+${scan.correlationReport.length === 0 ? 'No consistency conflicts detected.' : 
+  scan.correlationReport.map((c, i) => `
+[Flag #${i + 1}]
+Type: ${c.inconsistencyType.replace('_', ' ').toUpperCase()}
+Severity: ${c.severity}
+Sections: ${c.sectionA} <-> ${c.sectionB}
+Conflict: ${c.description}
+Actionable Fix: ${c.howToFix}
+--------------------------------------------------`).join('\n')}
+
+==================================================
+MISSING MANUSCRIPT SECTIONS:
+${sectionsText}
+
+==================================================
+SUGGESTED REVISIONS & RECOMMENDATIONS:
+${scan.suggestions.length === 0 ? 'No suggestions available.' : 
+  scan.suggestions.map((s, i) => `
+[Revision #${i + 1}]
+Category: ${s.category}
+Issue: ${s.issue}
+Remedy: ${s.remedy}
+Explainable Rationale: ${s.explanation}
+--------------------------------------------------`).join('\n')}
+
+==================================================
+BIBLIOGRAPHICAL CITATION AUDIT:
+${scan.references.length === 0 ? 'No references audited.' : 
+  scan.references.map((r, i) => `
+[Citation #${i + 1}]
+Reference: ${r.citation}
+Status: ${r.status}
+Details: ${r.explanation}
+--------------------------------------------------`).join('\n')}
+`;
+
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Resync_Audit_Report_${scan.title.replace(/\\s+/g, '_')}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Check if file is modified
   const getFileModificationStatus = () => {
@@ -225,7 +335,8 @@ export default function ScanForm({
           documentLink: linkToSend,
           chapterType: formattedCategory,
           customTopic: resolvedTopic,
-          supportingDoc: supportingDocVal
+          supportingDoc: supportingDocVal,
+          researchType
         })
       });
 
@@ -234,7 +345,11 @@ export default function ScanForm({
         throw new Error(data.error || 'Failed to scan manuscript.');
       }
 
+      // Play synthesized completion chime
+      playSuccessChime();
+
       onScanSuccess(data.scan);
+      setLatestScanResult(data.scan);
       setSuccess(true);
       setStep(1);
       setUploadType(null);
@@ -330,23 +445,40 @@ export default function ScanForm({
             </div>
           </div>
 
-          {success && (
-            <div className="flex items-start gap-3 bg-emerald-50 text-emerald-800 text-sm p-4 rounded-xl border border-emerald-100 animate-fade-in relative">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="space-y-1 pr-6 text-left">
-                <span className="font-semibold block font-serif">Scan Completed Successfully</span>
-                <p className="text-xs leading-relaxed text-slate-650">
-                  Your manuscript has been successfully analyzed. You can view the report in the Dashboard or Results Archive.
-                </p>
+          {success && latestScanResult && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-emerald-50 text-emerald-800 text-sm p-5 rounded-xl border border-emerald-100 animate-fade-in relative">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="space-y-1 pr-6 text-left">
+                  <span className="font-semibold block font-serif text-emerald-900">Scan Completed Successfully</span>
+                  <p className="text-xs leading-relaxed text-slate-650">
+                    Your manuscript has been successfully analyzed with Coherence Score: <strong className="text-emerald-800 font-bold">{latestScanResult.coherenceScore}/100</strong> and Duplication Rate: <strong className="text-emerald-800 font-bold">{latestScanResult.duplicationScore}%</strong>. You can download the report here or browse details.
+                  </p>
+                </div>
               </div>
-              <button 
-                type="button" 
-                onClick={() => setSuccess(false)}
-                className="absolute top-4 right-4 text-emerald-650 hover:text-emerald-850 cursor-pointer"
-                title="Close Notice"
-              >
-                <X className="w-4.5 h-4.5" />
-              </button>
+              
+              <div className="flex items-center gap-3.5 self-start sm:self-auto pl-8 sm:pl-0">
+                <button
+                  type="button"
+                  onClick={() => handleDownload(latestScanResult)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer whitespace-nowrap hover:scale-102 active:scale-98 duration-100"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Audited Report</span>
+                </button>
+                
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setSuccess(false);
+                    setLatestScanResult(null);
+                  }}
+                  className="p-1.5 text-emerald-650 hover:text-emerald-850 hover:bg-emerald-100/50 rounded-lg cursor-pointer transition-all"
+                  title="Close Notice"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
             </div>
           )}
 
@@ -475,6 +607,50 @@ export default function ScanForm({
                       : 'Full manuscript draft'}
                   </h3>
                 </div>
+              </div>
+
+              {/* Research Paradigm Selector */}
+              <div className="space-y-4 text-left p-5 bg-indigo-50/15 border border-indigo-100/50 rounded-2xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
+                      Research Methodology Paradigm
+                    </label>
+                    <p className="text-xs text-slate-455 mt-0.5">Select your primary design paradigm to calibrate scanning parameters</p>
+                  </div>
+
+                  <div className="flex bg-slate-100 rounded-xl p-0.5 border border-slate-200/40 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setResearchType('quantitative')}
+                      className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                        researchType === 'quantitative'
+                          ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                          : 'text-slate-400 hover:text-slate-655'
+                      }`}
+                    >
+                      Quantitative
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResearchType('qualitative')}
+                      className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                        researchType === 'qualitative'
+                          ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                          : 'text-slate-400 hover:text-slate-655'
+                      }`}
+                    >
+                      Qualitative
+                    </button>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-slate-505 font-sans italic leading-relaxed">
+                  {researchType === 'quantitative' 
+                    ? "★ Calibrated for statistical significance tests, data matrices, validation surveys, and empirical logic gates."
+                    : "★ Calibrated for interview scripts, thematic analysis codes, conceptual schemas, and literature matrices."
+                  }
+                </p>
               </div>
 
               {/* Tabs selector */}

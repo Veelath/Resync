@@ -28,7 +28,9 @@ import {
   Link,
   X,
   LayoutGrid,
-  Upload
+  Upload,
+  ArrowRightLeft,
+  Bell
 } from 'lucide-react';
 import ScanForm from './components/ScanForm.tsx';
 import ResultDetails from './components/ResultDetails.tsx';
@@ -50,7 +52,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
 
   // System Navigation
-  const [activeTab, setActiveTab] = useState<'overview' | 'scan' | 'results' | 'profile'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'scan' | 'results' | 'profile' | 'compare'>('overview');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFullReport, setShowFullReport] = useState(false);
@@ -62,6 +64,31 @@ export default function App() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [latestUploadedScan, setLatestUploadedScan] = useState<ScanResult | null>(null);
   const [rescanScan, setRescanScan] = useState<ScanResult | null>(null);
+
+  // Notifications State
+  interface AppNotification {
+    id: string;
+    title: string;
+    message: string;
+    timestamp: string;
+    read: boolean;
+    scanId?: string;
+  }
+
+  const [notifications, setNotifications] = useState<AppNotification[]>([
+    {
+      id: 'notif_init',
+      title: 'Welcome to Resync',
+      message: 'Create a new manuscript coherence scan or load a demo sample to begin.',
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      read: false
+    }
+  ]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Version Comparison State
+  const [compareScanAId, setCompareScanAId] = useState<string>('');
+  const [compareScanBId, setCompareScanBId] = useState<string>('');
 
   // Persist sessions in local storage
   useEffect(() => {
@@ -166,6 +193,8 @@ export default function App() {
     if (!currentUser) return;
     if (!confirm('Are you sure you want to delete this scan from history?')) return;
 
+    const deletedScan = scans.find(s => s.id === scanId);
+
     try {
       const response = await fetch(`/api/scans/${scanId}?email=${encodeURIComponent(currentUser.email)}`, {
         method: 'DELETE'
@@ -176,6 +205,18 @@ export default function App() {
           const remaining = scans.filter(s => s.id !== scanId);
           setSelectedScan(remaining.length > 0 ? remaining[0] : null);
         }
+        
+        // Add built-in deletion notification
+        setNotifications((prev) => [
+          {
+            id: 'notif_' + Date.now().toString(36),
+            title: 'Scan Record Deleted',
+            message: `The scan record "${deletedScan?.title || 'Unknown'}" was deleted from history.`,
+            timestamp: new Date().toISOString(),
+            read: false
+          },
+          ...prev
+        ]);
       }
     } catch (err) {
       console.error('Delete scan failed:', err);
@@ -457,6 +498,7 @@ export default function App() {
     { id: 'overview', label: 'Dashboard', icon: Layers },
     { id: 'scan', label: 'Upload & Scan', icon: Compass },
     { id: 'results', label: 'Reports', icon: FileSpreadsheet },
+    { id: 'compare', label: 'Compare Versions', icon: ArrowRightLeft },
     { id: 'profile', label: 'Academic Profile', icon: GraduationCap }
   ];
 
@@ -735,6 +777,81 @@ export default function App() {
                   );
                 })}
               </nav>
+
+              {/* Notification Bell Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className={`p-2 rounded-xl transition-all cursor-pointer relative ${
+                    showNotifications ? 'bg-indigo-50 text-indigo-650' : 'text-slate-400 hover:text-indigo-650 hover:bg-slate-50'
+                  }`}
+                  title="Notifications"
+                >
+                  <Bell className="w-4.5 h-4.5" />
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-600 rounded-full border border-white animate-pulse"></span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 mt-3.5 bg-white border border-slate-200 shadow-2xl rounded-2xl w-80 p-4 z-50 text-left space-y-3.5 animate-fade-in max-h-[400px] overflow-y-auto">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider font-mono">Notifications</span>
+                      {notifications.some(n => !n.read) && (
+                        <button
+                          onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
+                          className="text-[10px] font-bold text-indigo-600 hover:text-indigo-805 hover:underline"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {notifications.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-slate-400">
+                          No notifications yet.
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div
+                            key={notif.id}
+                            onClick={() => {
+                              setNotifications(notifications.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                              if (notif.scanId) {
+                                const foundScan = scans.find(s => s.id === notif.scanId);
+                                if (foundScan) {
+                                  setSelectedScan(foundScan);
+                                  setLatestUploadedScan(foundScan);
+                                  setActiveTab('scan');
+                                  setShowNotifications(false);
+                                }
+                              }
+                            }}
+                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                              notif.read 
+                                ? 'bg-white border-slate-100 hover:bg-slate-55 hover:border-slate-200' 
+                                : 'bg-indigo-50/10 border-indigo-100 hover:bg-indigo-50/20'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`text-xs font-bold ${notif.read ? 'text-slate-700' : 'text-indigo-950 font-extrabold'}`}>
+                                {notif.title}
+                              </span>
+                              <span className="text-[9px] text-slate-405 whitespace-nowrap">
+                                {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1 leading-normal font-sans">
+                              {notif.message}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* User profile details / Log Out button */}
               <div className="flex items-center gap-4 pl-4 border-l border-slate-100">
@@ -1188,6 +1305,17 @@ export default function App() {
                   setLatestUploadedScan(newScan);
                   setRescanScan(null);
                   setShowFullReport(true);
+                  setNotifications((prev) => [
+                    {
+                      id: 'notif_' + Date.now().toString(36),
+                      title: 'Scan Completed Successfully',
+                      message: `"${newScan.title}" (${newScan.chapterType}) has been audited. Coherence Score: ${newScan.coherenceScore}/100.`,
+                      timestamp: new Date().toISOString(),
+                      read: false,
+                      scanId: newScan.id
+                    },
+                    ...prev
+                  ]);
                 }}
               />
             )
@@ -1259,6 +1387,273 @@ export default function App() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 3.5. COMPARE TAB */}
+          {activeTab === 'compare' && (
+            <div className="space-y-6 animate-fade-in text-left">
+              {/* Header Title Bar */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
+                <div>
+                  <span className="text-xs font-bold text-indigo-650 uppercase tracking-wider block font-mono">
+                    Manuscript Version Diffing
+                  </span>
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5 font-serif font-serif">
+                    Version Comparison
+                  </h1>
+                </div>
+              </div>
+
+              {scans.length < 2 ? (
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm text-center max-w-md mx-auto space-y-5">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                    <ArrowRightLeft className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-serif text-base font-bold text-slate-800">Multiple Versions Required</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      You need at least two scans in your history to compare coherence scores and logical improvements across document revisions.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('scan')}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <span>Analyze another draft</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Selector Header Bar */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-455 uppercase tracking-wider font-mono">Select Base Scan (Older Version)</label>
+                      <select
+                        value={compareScanAId}
+                        onChange={(e) => setCompareScanAId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer"
+                      >
+                        <option value="">-- Choose Base Scan --</option>
+                        {scans.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.title} ({s.chapterType}) - {new Date(s.timestamp).toLocaleDateString()} (Score: {s.coherenceScore})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-455 uppercase tracking-wider font-mono">Select Target Scan (Newer Version)</label>
+                      <select
+                        value={compareScanBId}
+                        onChange={(e) => setCompareScanBId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer"
+                      >
+                        <option value="">-- Choose Target Scan --</option>
+                        {scans.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.title} ({s.chapterType}) - {new Date(s.timestamp).toLocaleDateString()} (Score: {s.coherenceScore})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Comparison Details Dashboard */}
+                  {(() => {
+                    const scanA = scans.find(s => s.id === compareScanAId);
+                    const scanB = scans.find(s => s.id === compareScanBId);
+                    if (!scanA || !scanB) {
+                      return (
+                        <div className="bg-slate-50/50 border border-slate-200 border-dashed rounded-2xl p-12 text-center text-xs text-slate-400">
+                          Please select both a Base Scan and a Target Scan above to view coherence differentials.
+                        </div>
+                      );
+                    }
+
+                    const scoreDelta = scanB.coherenceScore - scanA.coherenceScore;
+                    const dupDelta = (scanB.duplicationScore || 0) - (scanA.duplicationScore || 0);
+                    const flagsA = (scanA.correlationReport?.length || 0);
+                    const flagsB = (scanB.correlationReport?.length || 0);
+
+                    return (
+                      <div className="space-y-6 animate-fade-in">
+                        {/* Summary Metrics Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          
+                          {/* Coherence Score Comparison Card */}
+                          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col items-center justify-between text-center min-h-[160px]">
+                            <span className="text-[10px] font-bold text-slate-405 uppercase tracking-wider font-mono">Coherence Differential</span>
+                            <div className="flex items-center gap-6 my-2">
+                              <div className="flex flex-col items-center">
+                                <span className="text-2xl font-bold font-mono text-slate-555">{scanA.coherenceScore}</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-mono">Base</span>
+                              </div>
+                              <ArrowRight className="w-5 h-5 text-slate-300" />
+                              <div className="flex flex-col items-center">
+                                <span className="text-3xl font-extrabold font-mono text-indigo-600">{scanB.coherenceScore}</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-mono">Target</span>
+                              </div>
+                            </div>
+                            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                              scoreDelta >= 0 
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}>
+                              {scoreDelta >= 0 ? `+${scoreDelta} pts improvement` : `${scoreDelta} pts regression`}
+                            </span>
+                          </div>
+
+                          {/* Duplication rate comparison card */}
+                          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col items-center justify-between text-center min-h-[160px]">
+                            <span className="text-[10px] font-bold text-slate-405 uppercase tracking-wider font-mono">Duplication Change</span>
+                            <div className="flex items-center gap-6 my-2">
+                              <div className="flex flex-col items-center">
+                                <span className="text-2xl font-bold font-mono text-slate-555">{scanA.duplicationScore || 0}%</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-mono">Base</span>
+                              </div>
+                              <ArrowRight className="w-5 h-5 text-slate-300" />
+                              <div className="flex flex-col items-center">
+                                <span className="text-3xl font-extrabold font-mono text-indigo-650">{scanB.duplicationScore || 0}%</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-mono">Target</span>
+                              </div>
+                            </div>
+                            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                              dupDelta <= 0 
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}>
+                              {dupDelta <= 0 ? `${dupDelta}% duplication reduction` : `+${dupDelta}% duplication increase`}
+                            </span>
+                          </div>
+
+                          {/* Logic flag comparison card */}
+                          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col items-center justify-between text-center min-h-[160px]">
+                            <span className="text-[10px] font-bold text-slate-405 uppercase tracking-wider font-mono">Logic Mismatch Flags</span>
+                            <div className="flex items-center gap-6 my-2">
+                              <div className="flex flex-col items-center">
+                                <span className="text-2xl font-bold font-mono text-slate-555">{flagsA}</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-mono">Base</span>
+                              </div>
+                              <ArrowRight className="w-5 h-5 text-slate-300" />
+                              <div className="flex flex-col items-center">
+                                <span className="text-3xl font-extrabold font-mono text-indigo-600">{flagsB}</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-mono">Target</span>
+                              </div>
+                            </div>
+                            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                              flagsB <= flagsA
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}>
+                              {flagsA - flagsB >= 0 ? `${flagsA - flagsB} conflicts resolved` : `+${flagsB - flagsA} conflicts added`}
+                            </span>
+                          </div>
+
+                        </div>
+
+                        {/* Detailed Side by Side Lists */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          
+                          {/* Base Scan Details Column */}
+                          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 text-left">
+                            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                              <h4 className="font-serif font-bold text-slate-800 truncate max-w-[200px]" title={scanA.title}>{scanA.title}</h4>
+                              <span className="text-[10px] bg-slate-150 bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded font-mono uppercase">Base Version</span>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Logical Conflicts</span>
+                                <div className="space-y-2 mt-2">
+                                  {scanA.correlationReport.length === 0 ? (
+                                    <p className="text-xs text-slate-400 italic">No coherence conflicts detected.</p>
+                                  ) : (
+                                    scanA.correlationReport.map((c, idx) => (
+                                      <div key={idx} className="bg-slate-50/50 border border-slate-200 rounded-xl p-3 text-xs text-left">
+                                        <div className="flex items-center gap-1.5 mb-1 font-sans">
+                                          <span className="text-[9px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded uppercase">Flag {idx+1}</span>
+                                          <span className="text-[10px] font-bold text-slate-700">{c.inconsistencyType.replace('_', ' ').toUpperCase()}</span>
+                                        </div>
+                                        <p className="text-slate-650 leading-relaxed font-serif">{c.description}</p>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Missing Sections</span>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {scanA.missingSections && scanA.missingSections.length > 0 ? (
+                                    scanA.missingSections.map((sec, idx) => (
+                                      <span key={idx} className="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded border border-rose-200">
+                                        ⚠️ {sec}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <p className="text-xs text-slate-400 italic">No missing sections checked.</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Target Scan Details Column */}
+                          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 text-left">
+                            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                              <h4 className="font-serif font-bold text-slate-800 truncate max-w-[200px]" title={scanB.title}>{scanB.title}</h4>
+                              <span className="text-[10px] bg-indigo-50 text-indigo-650 font-bold px-2 py-0.5 rounded font-mono uppercase">Target Version</span>
+                            </div>
+
+                            <div className="space-y-4">
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Logical Conflicts</span>
+                                <div className="space-y-2 mt-2">
+                                  {scanB.correlationReport.length === 0 ? (
+                                    <p className="text-xs text-slate-400 italic">No coherence conflicts detected.</p>
+                                  ) : (
+                                    scanB.correlationReport.map((c, idx) => (
+                                      <div key={idx} className="bg-slate-50/50 border border-slate-200 rounded-xl p-3 text-xs text-left">
+                                        <div className="flex items-center gap-1.5 mb-1 font-sans">
+                                          <span className="text-[9px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded uppercase">Flag {idx+1}</span>
+                                          <span className="text-[10px] font-bold text-slate-700">{c.inconsistencyType.replace('_', ' ').toUpperCase()}</span>
+                                        </div>
+                                        <p className="text-slate-650 leading-relaxed font-serif">{c.description}</p>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Missing Sections</span>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {scanB.missingSections && scanB.missingSections.length > 0 ? (
+                                    scanB.missingSections.map((sec, idx) => (
+                                      <span key={idx} className="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded border border-rose-200">
+                                        ⚠️ {sec}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <p className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-150 flex items-center gap-1">
+                                      ✓ All structural sections present!
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                 </div>
               )}
             </div>
