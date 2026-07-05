@@ -1340,7 +1340,8 @@ export default function App() {
                   No results recorded. Run a manuscript scan first.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4                   {scans.map((scan) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
+                  {scans.map((scan) => {
                     const scanDate = new Date(scan.timestamp);
                     const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const isSelected = selectedScan?.id === scan.id;
