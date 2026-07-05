@@ -1299,6 +1299,8 @@ export default function App() {
                 isRescan={!!rescanScan}
                 initialUploadType={rescanScan?.chapterType?.toLowerCase().includes('chapter') ? 'chapter' : 'manuscript'}
                 initialChaptersString={rescanScan?.chapterType || ''}
+                initialDocumentLink={rescanScan?.documentLink || ''}
+                prevScanTimestamp={rescanScan?.timestamp || ''}
                 onScanSuccess={(newScan) => {
                   setScans([newScan, ...scans]);
                   setSelectedScan(newScan);

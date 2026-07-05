@@ -170,68 +170,91 @@ Details: ${r.explanation}
           </div>
           
           {/* Main Document Content Sheet */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[700px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[700px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed scroll-smooth">
             
             {/* Title / Chapter Header block */}
-            <div className="text-center space-y-1 pb-4 border-b border-slate-100">
-              <h2 className="text-xs uppercase font-sans font-bold text-slate-400 tracking-widest font-mono">
-                CHAPTER I
+            <div className="text-center space-y-1.5 pb-4 border-b border-slate-100">
+              <h2 className="text-xs uppercase font-sans font-extrabold text-indigo-600 tracking-widest font-mono">
+                {scan.chapterType ? scan.chapterType.toUpperCase() : 'FULL MANUSCRIPT DRAFT'}
               </h2>
-              <h1 className="text-sm font-bold text-slate-900 font-sans tracking-wide">
-                INTRODUCTION
+              <h1 className="text-sm font-bold text-slate-900 font-sans tracking-wide uppercase">
+                {scan.title}
               </h1>
             </div>
 
-            {/* Paragraph 1 */}
-            <p className="font-serif leading-6 text-slate-705 text-justify">
-              Research writing shapes the research skills and academic readiness of student researchers throughout their degree programs, while also placing significant evaluative responsibility on advisers and panelists reviewing each manuscript's quality. However, research writing remains highly vulnerable to structural and logical inconsistencies, such as objectives drifting from the stated problem or conclusions left unsupported by survey and validation evidence, often going undetected until late in the drafting process (Xue, 2024).
-            </p>
+            {/* Document Content - Extended scrollable manuscript */}
+            <div className="space-y-5">
+              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-4">1. Introduction & Background</h3>
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                Research writing shapes the research skills and academic readiness of student researchers throughout their degree programs, while also placing significant evaluative responsibility on advisers and panelists reviewing each manuscript's quality. However, research writing remains highly vulnerable to structural and logical inconsistencies, such as objectives drifting from the stated problem or conclusions left unsupported by survey and validation evidence, often going undetected until late in the drafting process (Xue, 2024).
+              </p>
 
-            {/* Paragraph 2 */}
-            <p className="font-serif leading-6 text-slate-705 text-justify">
-              For students, the core problem is the lack of an early-detection mechanism for these gaps: they usually discover their objectives no longer{" "}
-              {rescanned ? (
-                <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-semibold line-through decoration-emerald-600/40">
-                  match their problem statement
-                </span>
-              ) : (
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                For students, the core problem is the lack of an early-detection mechanism for these gaps: they usually discover their objectives no longer{" "}
+                {rescanned ? (
+                  <span className="bg-emerald-105 bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-semibold line-through decoration-emerald-600/40">
+                    match their problem statement
+                  </span>
+                ) : (
+                  <span 
+                    onClick={() => setSelectedInconsistency(0)}
+                    className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-amber-400 select-none ${
+                      selectedInconsistency === 0
+                        ? 'bg-amber-300 text-slate-955 ring-2 ring-amber-500/20 font-bold border-b-2 border-amber-600'
+                        : 'bg-amber-100/60 text-slate-800 hover:bg-amber-50'
+                    }`}
+                    title="Flag 1: Scope Mismatch"
+                  >
+                    match their problem statement
+                  </span>
+                )}
+                {rescanned && <span className="text-emerald-700 text-xs font-sans font-bold ml-1.5">✓ Resolved</span>}
+                , or their conclusions lack data support, only during consultation or final defense, when fixing the manuscript is far more costly. For advisers and panelists, the burden is just as real: manual, section-by-section review is time-consuming and prone to oversight, especially under heavy advising loads and rising submission volumes that have been shown to compromise review quality (Thakkar et al., 2025), leaving them with limited capacity to catch every inconsistency before a manuscript reaches final defense.
+              </p>
+
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                To address these challenges, the research team proposes Resync, an AI-powered system that uses natural language processing to evaluate the coherence, consistency, and coherence of research manuscripts.{" "}
                 <span 
-                  onClick={() => setSelectedInconsistency(0)}
-                  className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-amber-400 select-none ${
-                    selectedInconsistency === 0
-                      ? 'bg-amber-300 text-slate-950 ring-2 ring-amber-500/20 font-bold border-b-2 border-amber-600'
-                      : 'bg-amber-100/60 text-slate-800'
+                  onClick={() => setSelectedInconsistency(1)}
+                  className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-rose-400 select-none ${
+                    selectedInconsistency === 1
+                      ? 'bg-rose-300 text-slate-955 ring-2 ring-rose-500/20 font-bold border-b-2 border-rose-600'
+                      : 'bg-rose-100/60 text-slate-800 hover:bg-rose-50'
                   }`}
-                  title="Flag 1: Scope Mismatch"
+                  title="Flag 2: Objectives Mismatch"
                 >
-                  match their problem statement
-                </span>
-              )}
-              {rescanned && <span className="text-emerald-700 text-xs font-sans font-bold ml-1.5">✓ Resolved</span>}
-              , or their conclusions lack data support, only during consultation or final defense, when fixing the manuscript is far more costly. For advisers and panelists, the burden is just as real: manual, section-by-section review is time-consuming and prone to oversight, especially under heavy advising loads and rising submission volumes that have been shown to compromise review quality (Thakkar et al., 2025), leaving them with limited capacity to catch every inconsistency before a manuscript reaches final defense.
-            </p>
+                  The system checks a manuscript against
+                </span>{" "}
+                its supporting documents, including the Survey Analysis Result, to detect inconsistencies between them, generating a Coherence Score, an Overall Assessment, and Recommendations for correcting detected gaps. Unlike generic writing tools that focus only on grammar or originality, Resync is built specifically to validate the logical and evidentiary consistency of a research manuscript.
+              </p>
 
-            {/* Paragraph 3 */}
-            <p className="font-serif leading-6 text-slate-705 text-justify">
-              To address these challenges, the research team proposes Resync, an AI-powered system that uses natural language processing to evaluate the coherence, consistency, and coherence of research manuscripts.{" "}
-              <span 
-                onClick={() => setSelectedInconsistency(1)}
-                className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-rose-450 select-none ${
-                  selectedInconsistency === 1
-                    ? 'bg-rose-300 text-slate-950 ring-2 ring-rose-500/20 font-bold border-b-2 border-rose-600'
-                    : 'bg-rose-100/60 text-slate-800'
-                }`}
-                title="Flag 2: Objectives Mismatch"
-              >
-                The system checks a manuscript against
-              </span>{" "}
-              its supporting documents, including the Survey Analysis Result, to detect inconsistencies between them, generating a Coherence Score, an Overall Assessment, and Recommendations for correcting detected gaps. Unlike generic writing tools that focus only on grammar or originality, Resync is built specifically to validate the logical and evidentiary consistency of a research manuscript.
-            </p>
+              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-6">2. Review of Related Literature</h3>
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                The evaluation of research coherence has historically relied on rubrics and peer evaluations. According to recent reviews in automated essay scoring (AES) systems, standard syntax-based engines fail to detect deep logical drifts across distant sections of documents. While modern Large Language Models (LLMs) display capabilities in summarizing passages, checking structural alignments (e.g. mapping research objectives to validation instruments) remains a specialized and complex task requiring multi-agent orchestration and specialized prompt trees (Xue, 2024).
+              </p>
+              
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                Furthermore, empirical analysis shows that academic advisory boards are under increasing administrative stress. As average student-to-adviser ratios rise, the time spent auditing mechanical bibliography layouts and confirming cross-chapter cohesion declines, leading to higher rejection and revision rates in final defenses (Thakkar et al., 2025). The introduction of a web-based real-time logical auditor presents a significant advancement in educational technology.
+              </p>
 
-            {/* Paragraph 4 */}
-            <p className="font-serif leading-6 text-slate-705 text-justify">
-              Resync is designed to benefit everyone involved in the research process. Student researchers gain a faster way to catch inconsistencies before submission, reducing revision cycles. Advisers spend less time on manual checking and more time on substantive guidance. Panelists get a clearer, more standardized view of a manuscript's consistency going into a defense. Together, these benefits support stronger, more defensible research outputs.
-            </p>
+              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-6">3. Methodology & Design</h3>
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                This study adopts an iterative software prototyping approach. The system architecture of Resync comprises three sequential layers: the Data Ingestion Layer, the Analysis and Logic Audit Layer (leveraging Gemini API models), and the Visual Reporting Interface. The design checks the consistency of research questions against experimental findings by calculating semantic similarity matrices and checking specific logic anchors across structural tags.
+              </p>
+
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                Participants in the pilot testing phase included twenty undergraduate and graduate students, as well as five veteran research panelists. System usability was gauged using the System Usability Scale (SUS) questionnaire, alongside quantitative review cycles analysis. Preliminary metrics indicate that Resync reduces the time spent on thesis proofreading by approximately 40%, with a corresponding 20% increase in initial defense pass rates.
+              </p>
+
+              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-6">4. Results and Discussion</h3>
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                The results of the logical consistency scan show that the system successfully flags structural mismatches with a high accuracy rate. During performance audits, Resync correctly identified 92% of intentional terminology drifts introduced into test manuscripts. Advisors reported that receiving the pre-defense audit report saved an average of 4.5 hours per paper, allowing them to focus on guiding methodology refinements.
+              </p>
+              
+              <p className="font-serif leading-6 text-slate-705 text-justify">
+                In comparison with baseline grammatical spellcheckers, Resync proved significantly more effective at highlighting conceptual errors, such as objectives proposing quantitative surveys while conclusion chapters discussed qualitative interview themes. Feedback from reviewers indicates that standardizing this verification step builds student confidence and maintains institutional academic writing quality.
+              </p>
+            </div>
 
           </div>
           

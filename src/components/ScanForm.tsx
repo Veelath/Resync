@@ -63,12 +63,28 @@ export default function ScanForm({
     return [];
   };
 
-  // Navigation Steps: 1 = Choose type, 2 = Select chapters, 3 = Upload docs
-  const [step, setStep] = useState(isRescan ? 3 : 1);
-  const [uploadType, setUploadType] = useState<'chapter' | 'manuscript' | null>(isRescan ? (initialUploadType || 'manuscript') : null);
-  const [selectedChapters, setSelectedChapters] = useState<number[]>(isRescan ? parseChapters(initialChaptersString) : []);
-  const [uploadSource, setUploadSource] = useState<'link' | 'file'>(isRescan ? 'file' : 'link');
-  const [success, setSuccess] = useState(false);
+    // Fields
+    const [documentLink, setDocumentLink] = useState('');
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [customTopic, setCustomTopic] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [stepIndex, setStepIndex] = useState(0);
+    const [dragActive, setDragActive] = useState(false);
+    
+    const [supportingSource, setSupportingSource] = useState<'link' | 'file'>('link');
+    const [supportingLink, setSupportingLink] = useState('');
+    const [supportingFile, setSupportingFile] = useState<File | null>(null);
+    
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const supportingFileInputRef = useRef<HTMLInputElement>(null);
+
+    // Navigation Steps: 1 = Choose type, 2 = Select chapters, 3 = Upload docs
+    const [step, setStep] = useState(isRescan ? 3 : 1);
+    const [uploadType, setUploadType] = useState<'chapter' | 'manuscript' | null>(isRescan ? (initialUploadType || 'manuscript') : null);
+    const [selectedChapters, setSelectedChapters] = useState<number[]>(isRescan ? parseChapters(initialChaptersString) : []);
+    const [uploadSource, setUploadSource] = useState<'link' | 'file'>(isRescan ? 'file' : 'link');
+    const [success, setSuccess] = useState(false);
   const [showRescanConfirmModal, setShowRescanConfirmModal] = useState(false);
   const [researchType, setResearchType] = useState<'quantitative' | 'qualitative'>('quantitative');
   const [latestScanResult, setLatestScanResult] = useState<ScanResult | null>(null);
@@ -215,21 +231,7 @@ Details: ${r.explanation}
   const modStatus = getFileModificationStatus();
   const prevFileName = initialDocumentLink ? initialDocumentLink.replace('file://', '') : '';
   
-  // Fields
-  const [documentLink, setDocumentLink] = useState('');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [customTopic, setCustomTopic] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [stepIndex, setStepIndex] = useState(0);
-  const [dragActive, setDragActive] = useState(false);
-  
-  const [supportingSource, setSupportingSource] = useState<'link' | 'file'>('link');
-  const [supportingLink, setSupportingLink] = useState('');
-  const [supportingFile, setSupportingFile] = useState<File | null>(null);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const supportingFileInputRef = useRef<HTMLInputElement>(null);
+    // States moved to top
 
   // Rotate loading messages while analyzing
   useEffect(() => {
