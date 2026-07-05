@@ -1402,69 +1402,68 @@ export default function App() {
                         {/* Slide-out Hover Analytics Detail Sheet */}
                         {isHovered && (
                           <div 
-                            className={`absolute top-0 h-full w-[310px] bg-white border border-slate-200/90 shadow-2xl rounded-2xl p-5 z-30 animate-fade-in transition-all flex flex-col justify-between text-left cursor-default ${expandClass}`}
+                            className={`absolute top-0 h-full w-[310px] bg-white border border-slate-200/80 shadow-2xl rounded-2xl p-6 z-30 animate-fade-in transition-all flex flex-col justify-between text-left cursor-default ${expandClass}`}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
-                              <span className="text-[9px] font-bold text-indigo-655 uppercase tracking-widest font-mono bg-indigo-50 px-2 py-0.5 rounded">
-                                Report Details
+                              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-mono">
+                                REPORT DETAILS
                               </span>
-                              <span className="text-[9px] text-slate-400 font-mono">Quick Inspect</span>
+                              <span className="text-[10px] font-bold text-slate-450 font-sans">Quick Inspect</span>
                             </div>
 
-                            <div className="space-y-3.5 flex-1 pt-3.5">
-                              <h5 className="font-serif text-xs font-bold text-slate-800 leading-snug line-clamp-2">
+                            <div className="space-y-4 flex-1 pt-4">
+                              <h5 className="font-serif text-xs font-bold text-slate-800 leading-snug truncate max-w-full">
                                 {scan.title}
                               </h5>
 
-                              <div className="space-y-2 pt-1.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="text-slate-400 font-mono font-semibold">Coherence Score:</span>
-                                  <span className={`font-mono font-extrabold ${scan.coherenceScore >= 85 ? 'text-emerald-600' : scan.coherenceScore >= 70 ? 'text-amber-500' : 'text-rose-500'}`}>
-                                    {scan.coherenceScore}/100
-                                  </span>
+                              <div className="space-y-2 pt-1">
+                                <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
+                                  <span className="text-slate-505 text-slate-500 font-sans font-medium">Coherence Score:</span>
+                                  <span className="font-mono font-bold text-slate-800">{scan.coherenceScore}/100</span>
                                 </div>
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="text-slate-400 font-mono font-semibold">Duplication rate:</span>
-                                  <span className="font-mono font-bold text-slate-700">{scan.duplicationScore || 0}%</span>
+                                <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
+                                  <span className="text-slate-505 text-slate-500 font-sans font-medium">Duplication rate:</span>
+                                  <span className="font-mono font-bold text-slate-800">{scan.duplicationScore || 0}%</span>
                                 </div>
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="text-slate-400 font-mono font-semibold">Logic Flags:</span>
-                                  <span className="font-mono font-bold text-slate-700">
+                                <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
+                                  <span className="text-slate-505 text-slate-500 font-sans font-medium">Logic Flags:</span>
+                                  <span className="font-mono font-bold text-slate-800">
                                     {scan.correlationReport?.length || 0} consistency flags
                                   </span>
                                 </div>
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="text-slate-400 font-mono font-semibold">Audited Citations:</span>
-                                  <span className="font-mono font-bold text-slate-700">
+                                <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
+                                  <span className="text-slate-505 text-slate-500 font-sans font-medium">Audited Citations:</span>
+                                  <span className="font-mono font-bold text-slate-800">
                                     {scan.references?.length || 0} checks
                                   </span>
                                 </div>
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="text-slate-400 font-mono font-semibold">Paradigm Type:</span>
-                                  <span className="font-mono font-bold text-slate-700 capitalize">
-                                    {scan.researchType || 'quantitative'}
+                                <div className="flex items-center justify-between text-[11px] py-0.5">
+                                  <span className="text-slate-505 text-slate-500 font-sans font-medium">Paradigm Type:</span>
+                                  <span className="font-mono font-bold text-slate-800 capitalize">
+                                    {scan.researchType || 'Quantitative'}
                                   </span>
                                 </div>
                               </div>
 
                               {scan.missingSections && scan.missingSections.length > 0 && (
-                                <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                                    Missing Structure
+                                <div className="space-y-2.5 pt-2.5 border-t border-slate-100">
+                                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block font-mono">
+                                    MISSING STRUCTURE
                                   </span>
-                                  <div className="flex flex-col gap-1">
+                                  <div className="flex flex-col gap-1.5">
                                     {scan.missingSections.slice(0, 2).map((sec, idx) => (
-                                      <span key={idx} className="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded truncate max-w-full">
-                                        ⚠️ {sec}
-                                      </span>
+                                      <div key={idx} className="bg-rose-50 border border-rose-100/60 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-sans shadow-xs">
+                                        <span>⚠️</span>
+                                        <span>{sec}</span>
+                                      </div>
                                     ))}
                                   </div>
                                 </div>
                               )}
                             </div>
 
-                            <div className="border-t border-slate-100 pt-2 text-center text-[9px] font-extrabold text-indigo-650 flex items-center justify-center gap-1">
+                            <div className="border-t border-slate-100 pt-3 text-center text-[10px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center justify-center gap-1 cursor-pointer">
                               Click card to view full manuscript report &rarr;
                             </div>
                           </div>
