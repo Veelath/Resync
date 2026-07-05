@@ -1341,26 +1341,21 @@ export default function App() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
-                  {scans.map((scan, index) => {
+                  {scans.map((scan) => {
                     const scanDate = new Date(scan.timestamp);
                     const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const isSelected = selectedScan?.id === scan.id;
                     const isHovered = hoveredCardId === scan.id;
-
-                    const isRightHalf = (index % 4) >= 2;
-                    const expandClass = isRightHalf 
-                      ? 'right-0' 
-                      : 'left-0';
 
                     return (
                       <div
                         key={scan.id}
                         onMouseEnter={() => setHoveredCardId(scan.id)}
                         onMouseLeave={() => setHoveredCardId(null)}
-                        className="relative h-[120px] w-full"
+                        className="w-full transition-all duration-300"
                       >
                         {isHovered ? (
-                          /* Combined Horizontal Expanded Card on Hover */
+                          /* Combined Vertical Card on Hover in normal flow */
                           <div
                             onClick={() => {
                               setSelectedScan(scan);
@@ -1368,16 +1363,16 @@ export default function App() {
                               setActiveTab('overview');
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className={`absolute top-0 w-[530px] h-[128px] bg-white border border-slate-350 shadow-2xl rounded-2xl p-4.5 z-30 transition-all flex flex-row items-center gap-4.5 cursor-pointer scale-102 translate-y-[-4px] ${expandClass}`}
+                            className="bg-white border border-slate-350 shadow-2xl rounded-3xl p-5 flex flex-col justify-between text-left cursor-pointer transition-all duration-300 scale-102 min-h-[310px] w-full"
                           >
-                            {/* Left part: Circle score + Title details */}
-                            <div className="flex items-center gap-3.5 w-[210px] shrink-0 text-left relative h-full">
+                            {/* Top row: circle score and text details side-by-side */}
+                            <div className="flex items-center gap-4 relative">
                               <div className="shrink-0">
-                                <ScoreRing score={scan.coherenceScore} size={60} strokeWidth={5.5} showDetails={false} />
+                                <ScoreRing score={scan.coherenceScore} size={60} strokeWidth={5} showDetails={false} />
                               </div>
 
                               <div className="flex-1 min-w-0 space-y-0.5">
-                                <span className="text-[9px] font-bold text-indigo-650 font-mono tracking-widest uppercase bg-indigo-50 px-2 py-0.5 rounded inline-block">
+                                <span className="text-[9px] font-bold text-indigo-655 font-mono tracking-widest uppercase bg-indigo-50 px-2 py-0.5 rounded inline-block">
                                   {scan.chapterType || 'Chapters'}
                                 </span>
                                 <h4 className="text-xs font-serif font-extrabold text-slate-805 truncate block">
@@ -1388,7 +1383,7 @@ export default function App() {
                                 </span>
                               </div>
 
-                              {/* Absolute Delete Button */}
+                              {/* Absolute Delete Button inside hovered card */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -1401,11 +1396,11 @@ export default function App() {
                               </button>
                             </div>
 
-                            {/* Vertical Line Divider */}
-                            <div className="w-[1px] h-[85px] bg-slate-100 shrink-0 self-center" />
+                            {/* Separator Divider */}
+                            <div className="border-t border-slate-100 my-3" />
 
-                            {/* Right part: Analytics metrics list */}
-                            <div className="flex-1 space-y-1.5 text-left pl-1">
+                            {/* Middle part: details attributes list */}
+                            <div className="space-y-2 pb-1.5 flex-grow flex flex-col justify-center">
                               <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
                                 <span className="text-slate-500 font-sans font-medium">duplication</span>
                                 <span className="font-mono font-bold text-slate-800">{scan.duplicationScore || 0}%</span>
@@ -1422,14 +1417,25 @@ export default function App() {
                                   {scan.researchType || 'quantitative'}
                                 </span>
                               </div>
+                            </div>
 
-                              {/* Warnings Alert block */}
-                              {scan.missingSections && scan.missingSections.length > 0 && (
-                                <div className="bg-rose-50 border border-rose-100/60 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1.5 font-sans truncate shadow-xs">
-                                  <span>⚠️</span>
-                                  <span className="truncate">{scan.missingSections[0].toLowerCase()}</span>
+                            {/* Warnings Alert callout */}
+                            {scan.missingSections && scan.missingSections.length > 0 && (
+                              <div className="pt-2 border-t border-slate-100 border-dashed">
+                                <div className="flex flex-col gap-1.5">
+                                  {scan.missingSections.slice(0, 1).map((sec, idx) => (
+                                    <div key={idx} className="bg-rose-50 border border-rose-100/60 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-sans shadow-xs truncate">
+                                      <span>⚠️</span>
+                                      <span className="truncate">{sec.toLowerCase()}</span>
+                                    </div>
+                                  ))}
                                 </div>
-                              )}
+                              </div>
+                            )}
+
+                            {/* Footer link click */}
+                            <div className="border-t border-slate-100 pt-2.5 mt-2 text-center text-[10px] font-bold text-indigo-650 flex items-center justify-center gap-1">
+                              Click to open full report &rarr;
                             </div>
                           </div>
                         ) : (
@@ -1441,7 +1447,7 @@ export default function App() {
                               setActiveTab('overview');
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className={`bg-white border rounded-2xl p-4 flex items-center gap-4 text-left transition-all duration-200 cursor-pointer w-full h-full shadow-xs relative ${
+                            className={`bg-white border rounded-2xl p-4 flex items-center gap-4 text-left transition-all duration-200 cursor-pointer w-full h-[120px] shadow-xs relative ${
                               isSelected
                                 ? 'border-indigo-650 ring-1 ring-indigo-605 shadow-sm'
                                 : 'border-slate-200 hover:border-indigo-500 hover:shadow-md'
