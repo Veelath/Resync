@@ -28,6 +28,8 @@ interface ScanFormProps {
   isRescan?: boolean;
   initialUploadType?: 'chapter' | 'manuscript' | null;
   initialChaptersString?: string;
+  initialDocumentLink?: string;
+  prevScanTimestamp?: string;
 }
 
 const ANALYSIS_STEPS = [
@@ -46,7 +48,9 @@ export default function ScanForm({
   onScanSuccess,
   isRescan = false,
   initialUploadType = null,
-  initialChaptersString = ''
+  initialChaptersString = '',
+  initialDocumentLink = '',
+  prevScanTimestamp = ''
 }: ScanFormProps) {
   
   const parseChapters = (chapterStr?: string): number[] => {
@@ -64,6 +68,42 @@ export default function ScanForm({
   const [selectedChapters, setSelectedChapters] = useState<number[]>(isRescan ? parseChapters(initialChaptersString) : []);
   const [uploadSource, setUploadSource] = useState<'link' | 'file'>(isRescan ? 'file' : 'link');
   const [success, setSuccess] = useState(false);
+  const [showRescanConfirmModal, setShowRescanConfirmModal] = useState(false);
+
+  // Check if file is modified
+  const getFileModificationStatus = () => {
+    if (!isRescan || !uploadedFile || !initialDocumentLink) {
+      return { isModified: true, reason: '' };
+    }
+
+    const prevFileName = initialDocumentLink.replace('file://', '');
+    const hasDifferentName = uploadedFile.name !== prevFileName;
+    
+    const prevScanTime = prevScanTimestamp ? new Date(prevScanTimestamp).getTime() : 0;
+    const hasNewerModifiedTime = uploadedFile.lastModified > prevScanTime;
+
+    if (hasDifferentName) {
+      return { 
+        isModified: true, 
+        reason: `You uploaded a different file ("${uploadedFile.name}" instead of "${prevFileName}").`
+      };
+    }
+
+    if (hasNewerModifiedTime) {
+      return { 
+        isModified: true, 
+        reason: `The file has been modified since your last scan.`
+      };
+    }
+
+    return { 
+      isModified: false, 
+      reason: `No changes detected. The file has the same name and has not been modified since your last scan.`
+    };
+  };
+
+  const modStatus = getFileModificationStatus();
+  const prevFileName = initialDocumentLink ? initialDocumentLink.replace('file://', '') : '';
   
   // Fields
   const [documentLink, setDocumentLink] = useState('');
@@ -74,7 +114,12 @@ export default function ScanForm({
   const [stepIndex, setStepIndex] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   
+  const [supportingSource, setSupportingSource] = useState<'link' | 'file'>('link');
+  const [supportingLink, setSupportingLink] = useState('');
+  const [supportingFile, setSupportingFile] = useState<File | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const supportingFileInputRef = useRef<HTMLInputElement>(null);
 
   // Rotate loading messages while analyzing
   useEffect(() => {
@@ -140,15 +185,23 @@ export default function ScanForm({
     }
 
     if (isRescan) {
-      const confirmRescan = window.confirm("Are you sure you want to rescan?");
-      if (!confirmRescan) {
-        return;
-      }
+      setShowRescanConfirmModal(true);
+    } else {
+      executeScan();
     }
+  };
 
+  const executeScan = async () => {
     setLoading(true);
     setError('');
     setSuccess(false);
+
+    let linkToSend = documentLink;
+    if (uploadSource === 'file') {
+      if (uploadedFile) {
+        linkToSend = 'file://' + uploadedFile.name;
+      }
+    }
 
     // Format section category based on step selection
     let formattedCategory = 'Full Manuscript';
@@ -159,6 +212,10 @@ export default function ScanForm({
     // Set topic to research topic, or default to uploaded file name if using file path
     const resolvedTopic = customTopic.trim() || (uploadSource === 'file' ? uploadedFile?.name : undefined);
 
+    const supportingDocVal = supportingSource === 'file' 
+      ? (supportingFile ? 'file://' + supportingFile.name : '') 
+      : supportingLink;
+
     try {
       const response = await fetch('/api/scans/run', {
         method: 'POST',
@@ -167,7 +224,8 @@ export default function ScanForm({
           email,
           documentLink: linkToSend,
           chapterType: formattedCategory,
-          customTopic: resolvedTopic
+          customTopic: resolvedTopic,
+          supportingDoc: supportingDocVal
         })
       });
 
@@ -184,12 +242,15 @@ export default function ScanForm({
       setDocumentLink('');
       setUploadedFile(null);
       setCustomTopic('');
+      setSupportingLink('');
+      setSupportingFile(null);
     } catch (err: any) {
       setError(err.message || 'An error occurred during scanning.');
     } finally {
       setLoading(false);
     }
   };
+
 
   // Helper to load sample credentials instantly
   const loadDemoSample = () => {
@@ -270,31 +331,31 @@ export default function ScanForm({
           </div>
 
           {success && (
-            <div className="flex items-start gap-2.5 bg-emerald-50 text-emerald-800 text-xs p-3.5 rounded-lg border border-emerald-100 animate-fade-in relative">
-              <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="space-y-0.5 pr-6 text-left">
-                <span className="font-semibold block">Scan Completed Successfully</span>
-                <p className="text-[11px] leading-relaxed text-slate-650">
+            <div className="flex items-start gap-3 bg-emerald-50 text-emerald-800 text-sm p-4 rounded-xl border border-emerald-100 animate-fade-in relative">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-1 pr-6 text-left">
+                <span className="font-semibold block font-serif">Scan Completed Successfully</span>
+                <p className="text-xs leading-relaxed text-slate-650">
                   Your manuscript has been successfully analyzed. You can view the report in the Dashboard or Results Archive.
                 </p>
               </div>
               <button 
                 type="button" 
                 onClick={() => setSuccess(false)}
-                className="absolute top-3.5 right-3.5 text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                className="absolute top-4 right-4 text-emerald-650 hover:text-emerald-850 cursor-pointer"
                 title="Close Notice"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4.5 h-4.5" />
               </button>
             </div>
           )}
 
           {error && (
-            <div className="flex items-start gap-2.5 bg-rose-50 text-rose-800 text-xs p-3.5 rounded-lg border border-rose-100 animate-fade-in">
-              <AlertCircle className="w-4.5 h-4.5 text-rose-600 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <span className="font-semibold block">Scan Notice</span>
-                <p className="text-[11px] leading-relaxed">{error}</p>
+            <div className="flex items-start gap-3 bg-rose-50 text-rose-800 text-sm p-4 rounded-xl border border-rose-100 animate-fade-in text-left">
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-semibold block font-serif">Scan Notice</span>
+                <p className="text-xs leading-relaxed">{error}</p>
               </div>
             </div>
           )}
@@ -303,8 +364,8 @@ export default function ScanForm({
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center md:text-left space-y-1">
-                <h3 className="text-sm font-bold text-slate-800">How would you like to upload your manuscript?</h3>
-                <p className="text-xs text-slate-400">Select whether you want to scan individual sections or the entire draft.</p>
+                <h3 className="text-base sm:text-lg font-bold text-slate-800 font-serif">How would you like to upload your manuscript?</h3>
+                <p className="text-sm text-slate-400">Select whether you want to scan individual sections or the entire draft.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -315,12 +376,12 @@ export default function ScanForm({
                   }}
                   className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 hover:border-indigo-500 hover:shadow-md rounded-2xl p-6 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-4"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center">
                     <Layers className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-extrabold text-slate-800">Per chapter</h4>
-                    <p className="text-xs text-slate-400 mt-1">Upload and scan one or more chapters</p>
+                    <h4 className="text-base font-extrabold text-slate-800 font-serif">Per chapter</h4>
+                    <p className="text-sm text-slate-450 mt-1">Upload and scan one or more chapters</p>
                   </div>
                 </div>
 
@@ -331,12 +392,12 @@ export default function ScanForm({
                   }}
                   className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 hover:border-indigo-500 hover:shadow-md rounded-2xl p-6 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-4"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center">
                     <BookOpen className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-extrabold text-slate-800">Whole manuscript</h4>
-                    <p className="text-xs text-slate-400 mt-1">Upload and scan the full draft at once</p>
+                    <h4 className="text-base font-extrabold text-slate-800 font-serif">Whole manuscript</h4>
+                    <p className="text-sm text-slate-450 mt-1">Upload and scan the full draft at once</p>
                   </div>
                 </div>
               </div>
@@ -347,8 +408,8 @@ export default function ScanForm({
           {step === 2 && uploadType === 'chapter' && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center md:text-left space-y-1">
-                <h3 className="text-sm font-bold text-slate-800 font-serif">Which chapters are you uploading?</h3>
-                <p className="text-xs text-slate-400">Select one or more chapters to analyze compatibility.</p>
+                <h3 className="text-base sm:text-lg font-bold text-slate-800 font-serif">Which chapters are you uploading?</h3>
+                <p className="text-sm text-slate-400">Select one or more chapters to analyze compatibility.</p>
               </div>
 
               <div className="flex flex-wrap gap-2.5 justify-center md:justify-start">
@@ -359,13 +420,13 @@ export default function ScanForm({
                       key={num}
                       type="button"
                       onClick={() => toggleChapter(num)}
-                      className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-5 py-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                         isSelected 
                           ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-500/10'
                           : 'bg-white border-slate-200 text-slate-650 hover:border-slate-350 hover:bg-slate-50'
                       }`}
                     >
-                      {isSelected && <Check className="w-3.5 h-3.5" />}
+                      {isSelected && <Check className="w-4 h-4" />}
                       Chapter {num}
                     </button>
                   );
@@ -376,38 +437,39 @@ export default function ScanForm({
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-4 py-2 rounded-xl transition-all cursor-pointer"
+                  className="text-sm font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-5 py-3 rounded-xl transition-all cursor-pointer"
                 >
                   &larr; Back
                 </button>
                 
                 <div className="flex items-center gap-4">
-                  <span className="text-[11px] text-slate-450 font-mono">
+                  <span className="text-xs text-slate-455 font-mono">
                     {selectedChapters.length} {selectedChapters.length === 1 ? 'chapter' : 'chapters'} selected
                   </span>
                   <button
                     type="button"
                     disabled={selectedChapters.length === 0}
                     onClick={() => setStep(3)}
-                    className="text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
+                    className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
                   >
                     <span>Continue</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             </div>
           )}
 
+
           {/* STEP 3: Upload Document */}
           {step === 3 && (
             <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
               <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide block font-mono">
+                <div className="text-left">
+                  <span className="text-xs font-bold text-indigo-650 uppercase tracking-wide block font-mono">
                     Uploading
                   </span>
-                  <h3 className="text-sm font-bold text-slate-805">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-855 font-serif">
                     {uploadType === 'chapter' 
                       ? `Chapters ${selectedChapters.join(', ')}`
                       : 'Full manuscript draft'}
@@ -420,39 +482,39 @@ export default function ScanForm({
                 <button
                   type="button"
                   onClick={() => setUploadSource('link')}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-5 py-3 text-sm font-semibold border-b-2 -mb-[2px] transition-all cursor-pointer ${
                     uploadSource === 'link'
                       ? 'border-indigo-600 text-indigo-600'
                       : 'border-transparent text-slate-400 hover:text-slate-650'
                   }`}
                 >
-                  <Link className="w-3.5 h-3.5" />
+                  <Link className="w-4 h-4" />
                   <span>Google Docs link</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setUploadSource('file')}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-5 py-3 text-sm font-semibold border-b-2 -mb-[2px] transition-all cursor-pointer ${
                     uploadSource === 'file'
                       ? 'border-indigo-600 text-indigo-600'
                       : 'border-transparent text-slate-400 hover:text-slate-650'
                   }`}
                 >
-                  <FileText className="w-3.5 h-3.5" />
+                  <FileText className="w-4 h-4" />
                   <span>Word document</span>
                 </button>
               </div>
 
               {/* Inputs section */}
               {uploadSource === 'link' ? (
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="space-y-2 text-left">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Google Docs URL
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      <Link className="w-4 h-4" />
+                      <Link className="w-4.5 h-4.5" />
                     </div>
                     <input
                       type="url"
@@ -460,34 +522,41 @@ export default function ScanForm({
                       value={documentLink}
                       onChange={(e) => setDocumentLink(e.target.value)}
                       placeholder="https://docs.google.com/document/d/.../edit?usp=sharing"
-                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-850 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-10 pr-3 py-3.5 text-sm text-slate-850 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
                     />
                   </div>
-                  <p className="text-[10px] text-slate-400">
-                    Note: Make sure your document is set to <strong className="text-slate-500 font-semibold">"Anyone with the link can view"</strong> so our engine can fetch its text.
+                  <p className="text-xs text-slate-450">
+                    Note: Make sure your document is set to <strong className="text-slate-500 font-semibold font-serif">"Anyone with the link can view"</strong> so our engine can fetch its text.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Upload Word Document (.docx)
-                  </label>
+                <div className="space-y-2 text-left">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Upload Word Document (.docx)
+                    </label>
+                    {isRescan && prevFileName && (
+                      <span className="text-xs text-indigo-650 font-semibold">
+                        Previous file: {prevFileName}
+                      </span>
+                    )}
+                  </div>
                   
                   {uploadedFile ? (
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between animate-fade-in">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div className="min-w-0 text-left">
-                          <p className="text-xs font-bold text-slate-800 truncate">{uploadedFile.name}</p>
-                          <p className="text-[10px] text-slate-405">{(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          <p className="text-sm font-bold text-slate-800 truncate font-serif">{uploadedFile.name}</p>
+                          <p className="text-xs text-slate-405">{(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setUploadedFile(null)}
-                        className="p-1 rounded-lg text-slate-400 hover:text-slate-650 hover:bg-slate-100 transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-655 hover:bg-slate-100 transition-all cursor-pointer"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -499,7 +568,7 @@ export default function ScanForm({
                       onDragLeave={handleDrag}
                       onDrop={handleDrop}
                       onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-3 ${
+                      className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-3 ${
                         dragActive 
                           ? 'border-indigo-500 bg-indigo-50/10'
                           : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/30'
@@ -512,51 +581,176 @@ export default function ScanForm({
                         onChange={handleFileChange}
                         className="hidden"
                       />
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                        <Upload className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-450">
+                        <Upload className="w-6 h-6" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-700">Drag your .docx here or click to browse</p>
-                        <p className="text-[10px] text-slate-400 mt-1 font-mono">Word documents only, up to 25 MB</p>
+                        <p className="text-sm font-bold text-slate-700 font-serif">Drag your .docx here or click to browse</p>
+                        <p className="text-xs text-slate-450 mt-1 font-mono">Word documents only, up to 25 MB</p>
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Research theme description field */}
-              <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Research Theme or Focus (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={customTopic}
-                  onChange={(e) => setCustomTopic(e.target.value)}
-                  placeholder="e.g. Edge intelligence for wearable telemetry and healthcare monitoring"
-                  className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2.5 text-xs text-slate-850 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-                />
+              {/* Supporting Documents tabbed inputs */}
+              <div className="space-y-3 pt-4 border-t border-slate-100 text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Supporting Documents (Optional)
+                  </label>
+                  
+                  {/* Selector tabs for supporting doc source */}
+                  <div className="flex bg-slate-100 rounded-xl p-0.5 self-start sm:self-auto border border-slate-200/40">
+                    <button
+                      type="button"
+                      onClick={() => setSupportingSource('link')}
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                        supportingSource === 'link'
+                          ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                          : 'text-slate-400 hover:text-slate-655'
+                      }`}
+                    >
+                      Docs Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSupportingSource('file')}
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                        supportingSource === 'file'
+                          ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                          : 'text-slate-400 hover:text-slate-655'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                  </div>
+                </div>
+
+                {supportingSource === 'link' ? (
+                  <div className="relative animate-fade-in">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Link className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="url"
+                      value={supportingLink}
+                      onChange={(e) => setSupportingLink(e.target.value)}
+                      placeholder="https://drive.google.com/file/... or survey URL"
+                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-9 pr-3 py-3 text-sm text-slate-850 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                    />
+                  </div>
+                ) : (
+                  <div className="animate-fade-in">
+                    {supportingFile ? (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between border-dashed">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                            <FileText className="w-4.5 h-4.5" />
+                          </div>
+                          <div className="min-w-0 text-left">
+                            <p className="text-sm font-bold text-slate-800 truncate font-serif">{supportingFile.name}</p>
+                            <p className="text-[10px] text-slate-405">{(supportingFile.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSupportingFile(null)}
+                          className="p-1 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => supportingFileInputRef.current?.click()}
+                        className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-4 px-6 text-center cursor-pointer transition-all flex items-center justify-center gap-2"
+                      >
+                        <input
+                          ref={supportingFileInputRef}
+                          type="file"
+                          accept=".docx,.pdf,.xlsx,.csv,.txt"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setSupportingFile(e.target.files[0]);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <Upload className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs font-bold text-slate-650">Select supporting file (survey, datasheet, PDF...)</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Step 3 Footer buttons */}
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setStep(uploadType === 'chapter' ? 2 : 1)}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-4 py-2 rounded-xl transition-all cursor-pointer"
+                  className="text-sm font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-5 py-3 rounded-xl transition-all cursor-pointer"
                 >
                   &larr; Back
                 </button>
                 
                 <button
                   type="submit"
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer group focus:outline-none"
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm sm:text-base px-6 py-3.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer group focus:outline-none shadow-md shadow-slate-900/10 hover:shadow-lg"
                 >
                   <span>Analyze manuscript</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
             </form>
+          )}
+          {/* Rescan Confirmation Modal */}
+          {showRescanConfirmModal && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden max-w-md w-full p-6 relative space-y-6 text-left">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg shrink-0 ${modStatus.isModified ? 'bg-indigo-50 text-indigo-650' : 'bg-amber-50 text-amber-605'}`}>
+                    {modStatus.isModified ? <Sparkles className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-serif text-base font-bold text-slate-900">
+                      {modStatus.isModified ? "Confirm Rescan" : "No Changes Detected"}
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      {modStatus.isModified 
+                        ? `Are you sure you want to rescan this manuscript? ${modStatus.reason}`
+                        : `It looks like "${uploadedFile?.name}" has not been modified since your last scan. Are you sure you want to scan it again?`
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowRescanConfirmModal(false)}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-4 py-2 rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRescanConfirmModal(false);
+                      executeScan();
+                    }}
+                    className={`text-white font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                      modStatus.isModified 
+                        ? 'bg-indigo-600 hover:bg-indigo-700' 
+                        : 'bg-amber-500 hover:bg-amber-600'
+                    }`}
+                  >
+                    {modStatus.isModified ? "Yes, Rescan" : "Rescan Anyway"}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}

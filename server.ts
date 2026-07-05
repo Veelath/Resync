@@ -130,7 +130,7 @@ async function startServer() {
   // Run Manuscript Coherence Analysis
   app.post('/api/scans/run', async (req, res) => {
     try {
-      const { email, documentLink, chapterType, customTopic } = req.body;
+      const { email, documentLink, chapterType, customTopic, supportingDoc } = req.body;
       if (!email) {
         return res.status(401).json({ error: 'Unauthorized. Please log in first.' });
       }
@@ -153,7 +153,8 @@ async function startServer() {
         correlationReport: analysis.correlationReport,
         suggestions: analysis.suggestions,
         references: analysis.references,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        supportingDoc: supportingDoc || ''
       };
 
       db.scans.push(newScan);

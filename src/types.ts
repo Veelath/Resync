@@ -45,4 +45,5 @@ export interface ScanResult {
   suggestions: Suggestion[];
   references: CitedReference[];
   timestamp: string;
+  supportingDoc?: string;
 }
