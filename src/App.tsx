@@ -92,6 +92,7 @@ export default function App() {
 
   // Live Hover Preview State for History/Archive Reports
   const [hoveredScan, setHoveredScan] = useState<ScanResult | null>(null);
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   // Persist sessions in local storage
   useEffect(() => {
@@ -1339,92 +1340,133 @@ export default function App() {
                   No results recorded. Run a manuscript scan first.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-8 bg-slate-50/30 items-start">
-                  
-                  {/* Left Column: Expanded Live Hover Preview (Rectangle size details) */}
-                  <div className="lg:col-span-6 xl:col-span-5 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm max-h-[850px] overflow-y-auto space-y-6 text-left animate-fade-in">
-                    <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold text-indigo-650 uppercase tracking-wider block font-mono">
-                          Live Report Inspector
-                        </span>
-                        <h4 className="font-serif text-base font-bold text-slate-800">Hover Preview Sheet</h4>
-                      </div>
-                      <span className="text-[9px] bg-indigo-50 text-indigo-650 border border-indigo-100 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">
-                        Active Inspect
-                      </span>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
+                  {scans.map((scan) => {
+                    const scanDate = new Date(scan.timestamp);
+                    const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const isSelected = selectedScan?.id === scan.id;
+                    const isHovered = hoveredCardId === scan.id;
 
-                    <ResultDetails 
-                      scan={hoveredScan || scans[0]} 
-                      onRescan={(rescanItem) => {
-                        if (rescanItem) {
-                          setRescanScan(rescanItem);
-                        }
-                        setLatestUploadedScan(null);
-                        setActiveTab('scan');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                    />
-                  </div>
+                    return (
+                      <div
+                        key={scan.id}
+                        onMouseEnter={() => setHoveredCardId(scan.id)}
+                        onMouseLeave={() => setHoveredCardId(null)}
+                        onClick={() => {
+                          setSelectedScan(scan);
+                          setShowFullReport(true);
+                          setActiveTab('overview');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`bg-white border rounded-3xl p-6 flex flex-col items-center justify-between text-center transition-all duration-300 hover:shadow-2xl cursor-pointer min-h-[380px] relative overflow-hidden ${
+                          isSelected
+                            ? 'border-indigo-650 ring-1 ring-indigo-605 shadow-md scale-102'
+                            : 'border-slate-200 hover:border-indigo-500 shadow-sm hover:scale-102'
+                        }`}
+                      >
+                        {isHovered ? (
+                          /* Hover Analytics details view */
+                          <div className="w-full h-full flex flex-col justify-between text-left space-y-3.5 animate-fade-in relative z-10">
+                            {/* Card Header */}
+                            <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-indigo-655 uppercase tracking-wider font-mono bg-indigo-50 px-2 py-0.5 rounded">
+                                {scan.chapterType || 'Chapters'}
+                              </span>
+                              <span className="text-[9px] text-slate-400 font-mono font-bold uppercase">Analytics</span>
+                            </div>
 
-                  {/* Right Column: Grid of scanned documents history cards */}
-                  <div className="lg:col-span-6 xl:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {scans.map((scan) => {
-                      const scanDate = new Date(scan.timestamp);
-                      const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                      const isHovered = (hoveredScan || scans[0])?.id === scan.id;
-
-                      return (
-                        <div
-                          key={scan.id}
-                          onMouseEnter={() => setHoveredScan(scan)}
-                          onClick={() => {
-                            setSelectedScan(scan);
-                            setShowFullReport(true);
-                            setActiveTab('overview');
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className={`bg-white border rounded-2xl p-6 flex flex-col items-center justify-between text-center transition-all duration-205 hover:shadow-lg cursor-pointer min-h-[360px] relative select-none ${
-                            isHovered
-                              ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md scale-102'
-                              : 'border-slate-200 hover:border-slate-350 shadow-xs'
-                          }`}
-                        >
-                          {/* Absolute Delete Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteScan(scan.id);
-                            }}
-                            className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer z-10"
-                            title="Delete Scan Record"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Top: Large Score gauge circle */}
-                          <div className="flex-1 flex items-center justify-center my-2 shrink-0">
-                            <ScoreRing score={scan.coherenceScore} size={110} strokeWidth={8} showDetails={false} />
-                          </div>
-
-                          {/* Bottom: Details block */}
-                          <div className="space-y-2 mt-4 w-full flex flex-col items-center">
-                            <span className="text-[10px] font-bold text-indigo-650 font-mono tracking-widest uppercase truncate max-w-full block bg-indigo-50 px-2 py-0.5 rounded">
-                              {scan.chapterType || 'Chapters'}
-                            </span>
-                            <h4 className="text-xs font-serif font-extrabold text-slate-805 line-clamp-2 max-w-full leading-normal text-center px-1">
+                            {/* Title */}
+                            <h4 className="text-xs font-serif font-extrabold text-slate-800 line-clamp-1 max-w-full">
                               {scan.title}
                             </h4>
-                            <span className="text-[10px] text-slate-400 font-mono block mt-1">
-                              {formattedDate}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
 
+                            {/* Analytics Grid */}
+                            <div className="grid grid-cols-2 gap-2.5 pt-1">
+                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
+                                <span className="text-sm font-extrabold text-slate-850 font-mono">{scan.coherenceScore}</span>
+                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Coherence</span>
+                              </div>
+
+                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
+                                <span className="text-sm font-extrabold text-indigo-650 font-mono">{scan.duplicationScore || 0}%</span>
+                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Duplication</span>
+                              </div>
+
+                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
+                                <span className="text-sm font-extrabold text-slate-850 font-mono">
+                                  {(scan.correlationReport?.length || 0) + (scan.suggestions?.length || 0)}
+                                </span>
+                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Issues</span>
+                              </div>
+
+                              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-2 flex flex-col items-center justify-center text-center">
+                                <span className="text-sm font-extrabold text-slate-850 font-mono">{scan.references?.length || 0}</span>
+                                <span className="text-[8px] text-slate-405 font-mono font-extrabold uppercase mt-0.5">Citations</span>
+                              </div>
+                            </div>
+
+                            {/* Paradigm & Missing warning list */}
+                            <div className="space-y-1.5 border-t border-slate-100 pt-2 flex-grow flex flex-col justify-end">
+                              <div className="flex items-center justify-between text-[9px]">
+                                <span className="text-slate-400 font-mono font-semibold">Paradigm:</span>
+                                <span className="font-bold text-slate-700 capitalize font-mono">{scan.researchType || 'quantitative'}</span>
+                              </div>
+                              
+                              {scan.missingSections && scan.missingSections.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                  {scan.missingSections.slice(0, 1).map((sec, idx) => (
+                                    <span key={idx} className="bg-rose-50 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded border border-rose-100 truncate max-w-full block">
+                                      ⚠️ {sec}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Prompt Hint Link */}
+                            <div className="pt-2 text-center border-t border-slate-100">
+                              <span className="text-[9px] font-extrabold text-indigo-600 hover:underline">
+                                Click to open full audit &rarr;
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Normal View */
+                          <>
+                            {/* Absolute Delete Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteScan(scan.id);
+                              }}
+                              className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer z-10"
+                              title="Delete Scan Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Top: Large Score gauge circle */}
+                            <div className="flex-1 flex items-center justify-center my-2 shrink-0">
+                              <ScoreRing score={scan.coherenceScore} size={110} strokeWidth={8} showDetails={false} />
+                            </div>
+
+                            {/* Bottom: Details block */}
+                            <div className="space-y-2 mt-4 w-full flex flex-col items-center">
+                              <span className="text-[10px] font-bold text-indigo-650 font-mono tracking-widest uppercase truncate max-w-full block bg-indigo-50 px-2 py-0.5 rounded">
+                                {scan.chapterType || 'Chapters'}
+                              </span>
+                              <h4 className="text-xs font-serif font-extrabold text-slate-850 line-clamp-2 max-w-full leading-normal text-center px-1">
+                                {scan.title}
+                              </h4>
+                              <span className="text-[10px] text-slate-400 font-mono block mt-1">
+                                {formattedDate}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
