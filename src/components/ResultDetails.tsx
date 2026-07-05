@@ -17,7 +17,7 @@ import ScoreRing from './ScoreRing.tsx';
 
 interface ResultDetailsProps {
   scan: ScanResult;
-  onRescan?: () => void;
+  onRescan?: (scan: ScanResult) => void;
 }
 
 export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
@@ -46,7 +46,7 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
     } else {
       // Word document takes user back to scan tab to upload updated file (Page 8)
       if (onRescan) {
-        onRescan();
+        onRescan(scan);
       }
     }
   };

@@ -25,6 +25,9 @@ import {
 interface ScanFormProps {
   email: string;
   onScanSuccess: (scan: ScanResult) => void;
+  isRescan?: boolean;
+  initialUploadType?: 'chapter' | 'manuscript' | null;
+  initialChaptersString?: string;
 }
 
 const ANALYSIS_STEPS = [
@@ -38,12 +41,28 @@ const ANALYSIS_STEPS = [
   "Assembling final coherence report..."
 ];
 
-export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
+export default function ScanForm({ 
+  email, 
+  onScanSuccess,
+  isRescan = false,
+  initialUploadType = null,
+  initialChaptersString = ''
+}: ScanFormProps) {
+  
+  const parseChapters = (chapterStr?: string): number[] => {
+    if (!chapterStr) return [];
+    const match = chapterStr.match(/\d+/g);
+    if (match) {
+      return match.map(Number);
+    }
+    return [];
+  };
+
   // Navigation Steps: 1 = Choose type, 2 = Select chapters, 3 = Upload docs
-  const [step, setStep] = useState(1);
-  const [uploadType, setUploadType] = useState<'chapter' | 'manuscript' | null>(null);
-  const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
-  const [uploadSource, setUploadSource] = useState<'link' | 'file'>('link');
+  const [step, setStep] = useState(isRescan ? 3 : 1);
+  const [uploadType, setUploadType] = useState<'chapter' | 'manuscript' | null>(isRescan ? (initialUploadType || 'manuscript') : null);
+  const [selectedChapters, setSelectedChapters] = useState<number[]>(isRescan ? parseChapters(initialChaptersString) : []);
+  const [uploadSource, setUploadSource] = useState<'link' | 'file'>(isRescan ? 'file' : 'link');
   const [success, setSuccess] = useState(false);
   
   // Fields
@@ -116,6 +135,13 @@ export default function ScanForm({ email, onScanSuccess }: ScanFormProps) {
     } else {
       if (!documentLink) {
         setError('Please provide a Google Docs link.');
+        return;
+      }
+    }
+
+    if (isRescan) {
+      const confirmRescan = window.confirm("Are you sure you want to rescan?");
+      if (!confirmRescan) {
         return;
       }
     }

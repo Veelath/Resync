@@ -61,6 +61,7 @@ export default function App() {
   const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [latestUploadedScan, setLatestUploadedScan] = useState<ScanResult | null>(null);
+  const [rescanScan, setRescanScan] = useState<ScanResult | null>(null);
 
   // Persist sessions in local storage
   useEffect(() => {
@@ -156,6 +157,7 @@ export default function App() {
     setSelectedScan(null);
     setScans([]);
     setLatestUploadedScan(null);
+    setRescanScan(null);
     localStorage.removeItem('resync_user');
     setActiveTab('overview');
   };
@@ -541,6 +543,10 @@ export default function App() {
                   key={item.id}
                   onClick={() => {
                     setActiveTab(item.id as any);
+                    if (item.id === 'scan') {
+                      setLatestUploadedScan(null);
+                      setRescanScan(null);
+                    }
                     if (item.id === 'overview' && scans.length > 0) {
                       setSelectedScan(scans[0]);
                     }
@@ -618,6 +624,10 @@ export default function App() {
                       onClick={() => {
                         setActiveTab(item.id as any);
                         setMobileMenuOpen(false);
+                        if (item.id === 'scan') {
+                          setLatestUploadedScan(null);
+                          setRescanScan(null);
+                        }
                         if (item.id === 'overview' && scans.length > 0) {
                           setSelectedScan(scans[0]);
                         }
@@ -705,6 +715,10 @@ export default function App() {
                       key={item.id}
                       onClick={() => {
                         setActiveTab(item.id as any);
+                        if (item.id === 'scan') {
+                          setLatestUploadedScan(null);
+                          setRescanScan(null);
+                        }
                         if (item.id === 'overview' && scans.length > 0) {
                           setSelectedScan(scans[0]);
                         }
@@ -937,7 +951,11 @@ export default function App() {
                       </div>
                       <ResultDetails 
                         scan={activeScan} 
-                        onRescan={() => {
+                        onRescan={(scan) => {
+                          if (scan) {
+                            setRescanScan(scan);
+                          }
+                          setLatestUploadedScan(null);
                           setActiveTab('scan');
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }} 
@@ -1120,7 +1138,10 @@ export default function App() {
                   </div>
                   <ResultDetails 
                     scan={latestUploadedScan} 
-                    onRescan={() => {
+                    onRescan={(scan) => {
+                      if (scan) {
+                        setRescanScan(scan);
+                      }
                       setLatestUploadedScan(null);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }} 
@@ -1130,10 +1151,14 @@ export default function App() {
             ) : (
               <ScanForm
                 email={currentUser.email}
+                isRescan={!!rescanScan}
+                initialUploadType={rescanScan?.chapterType?.toLowerCase().includes('chapter') ? 'chapter' : 'manuscript'}
+                initialChaptersString={rescanScan?.chapterType || ''}
                 onScanSuccess={(newScan) => {
                   setScans([newScan, ...scans]);
                   setSelectedScan(newScan);
                   setLatestUploadedScan(newScan);
+                  setRescanScan(null);
                   setShowFullReport(true);
                 }}
               />
