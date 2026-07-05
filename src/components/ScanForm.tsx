@@ -368,20 +368,20 @@ export default function ScanForm({
                 <p className="text-sm text-slate-400">Select whether you want to scan individual sections or the entire draft.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div 
                   onClick={() => {
                     setUploadType('chapter');
                     setStep(2);
                   }}
-                  className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 hover:border-indigo-500 hover:shadow-md rounded-2xl p-6 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-4"
+                  className="bg-slate-50/50 hover:bg-slate-50 border-2 border-slate-250/70 hover:border-indigo-500 hover:shadow-lg rounded-3xl p-8 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-5 hover:scale-[1.02] duration-200"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center">
-                    <Layers className="w-5 h-5" />
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-55 bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                    <Layers className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-base font-extrabold text-slate-800 font-serif">Per chapter</h4>
-                    <p className="text-sm text-slate-450 mt-1">Upload and scan one or more chapters</p>
+                    <h4 className="text-lg font-extrabold text-slate-805 font-serif">Per chapter</h4>
+                    <p className="text-sm text-slate-450 mt-1.5">Upload and scan one or more chapters</p>
                   </div>
                 </div>
 
@@ -390,14 +390,14 @@ export default function ScanForm({
                     setUploadType('manuscript');
                     setStep(3);
                   }}
-                  className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 hover:border-indigo-500 hover:shadow-md rounded-2xl p-6 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-4"
+                  className="bg-slate-50/50 hover:bg-slate-50 border-2 border-slate-255/70 hover:border-indigo-500 hover:shadow-lg rounded-3xl p-8 text-center md:text-left cursor-pointer transition-all flex flex-col justify-between space-y-5 hover:scale-[1.02] duration-200"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center">
-                    <BookOpen className="w-5 h-5" />
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-55 bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-base font-extrabold text-slate-800 font-serif">Whole manuscript</h4>
-                    <p className="text-sm text-slate-450 mt-1">Upload and scan the full draft at once</p>
+                    <h4 className="text-lg font-extrabold text-slate-805 font-serif">Whole manuscript</h4>
+                    <p className="text-sm text-slate-450 mt-1.5">Upload and scan the full draft at once</p>
                   </div>
                 </div>
               </div>
@@ -412,7 +412,7 @@ export default function ScanForm({
                 <p className="text-sm text-slate-400">Select one or more chapters to analyze compatibility.</p>
               </div>
 
-              <div className="flex flex-wrap gap-2.5 justify-center md:justify-start">
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                 {[1, 2, 3, 4, 5].map((num) => {
                   const isSelected = selectedChapters.includes(num);
                   return (
@@ -420,40 +420,40 @@ export default function ScanForm({
                       key={num}
                       type="button"
                       onClick={() => toggleChapter(num)}
-                      className={`px-5 py-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-8 py-4 rounded-2xl border-2 text-base font-bold transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95 duration-150 ${
                         isSelected 
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-500/10'
-                          : 'bg-white border-slate-200 text-slate-650 hover:border-slate-350 hover:bg-slate-50'
+                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                          : 'bg-white border-slate-200 text-slate-650 hover:border-indigo-600 hover:text-indigo-600'
                       }`}
                     >
-                      {isSelected && <Check className="w-4 h-4" />}
+                      {isSelected && <Check className="w-5 h-5" />}
                       Chapter {num}
                     </button>
                   );
                 })}
               </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-sm font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-5 py-3 rounded-xl transition-all cursor-pointer"
+                  className="text-base font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200/80 px-8 py-4 rounded-xl transition-all cursor-pointer hover:scale-102 active:scale-98 duration-100 text-left"
                 >
                   &larr; Back
                 </button>
                 
                 <div className="flex items-center gap-4">
-                  <span className="text-xs text-slate-455 font-mono">
+                  <span className="text-sm text-slate-455 font-mono">
                     {selectedChapters.length} {selectedChapters.length === 1 ? 'chapter' : 'chapters'} selected
                   </span>
                   <button
                     type="button"
                     disabled={selectedChapters.length === 0}
                     onClick={() => setStep(3)}
-                    className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
+                    className="text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed px-9 py-4 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer hover:scale-102 active:scale-98 duration-100 shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20"
                   >
                     <span>Continue</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -686,21 +686,21 @@ export default function ScanForm({
               </div>
 
               {/* Step 3 Footer buttons */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setStep(uploadType === 'chapter' ? 2 : 1)}
-                  className="text-sm font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-5 py-3 rounded-xl transition-all cursor-pointer"
+                  className="text-base font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200/80 px-8 py-4 rounded-xl transition-all cursor-pointer hover:scale-102 active:scale-98 duration-100 text-left"
                 >
                   &larr; Back
                 </button>
                 
                 <button
                   type="submit"
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm sm:text-base px-6 py-3.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer group focus:outline-none shadow-md shadow-slate-900/10 hover:shadow-lg"
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-base sm:text-lg px-9 py-4.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer group focus:outline-none shadow-md shadow-slate-900/10 hover:shadow-lg hover:scale-102 active:scale-98 duration-100"
                 >
                   <span>Analyze manuscript</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
             </form>
