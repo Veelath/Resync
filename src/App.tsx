@@ -1,5 +1,5 @@
 /**
- * @license
+   * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -60,6 +60,7 @@ export default function App() {
   const [scans, setScans] = useState<ScanResult[]>([]);
   const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [latestUploadedScan, setLatestUploadedScan] = useState<ScanResult | null>(null);
 
   // Persist sessions in local storage
   useEffect(() => {
@@ -154,6 +155,7 @@ export default function App() {
     setCurrentUser(null);
     setSelectedScan(null);
     setScans([]);
+    setLatestUploadedScan(null);
     localStorage.removeItem('resync_user');
     setActiveTab('overview');
   };
@@ -979,9 +981,13 @@ export default function App() {
                                 : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-300'
                             }`}
                           >
-                            <div className="space-y-1 min-w-0">
-                              <h4 className="text-xs font-bold text-slate-800 truncate">{scan.chapterType || scan.title}</h4>
-                              <p className="text-[9px] text-slate-400 font-mono">{formattedDate}</p>
+                            <div className="space-y-1 min-w-0 text-left">
+                              <h4 className="text-xs font-bold text-slate-800 truncate max-w-[170px] sm:max-w-[200px]" title={scan.title}>
+                                {scan.title}
+                              </h4>
+                              <p className="text-[9px] text-slate-400 font-mono">
+                                {formattedDate} <span className="text-slate-300">•</span> <span className="text-indigo-650">{scan.chapterType || 'Full Manuscript'}</span>
+                              </p>
                             </div>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${scoreBadgeColor}`}>
                               {scan.coherenceScore}
@@ -1010,14 +1016,128 @@ export default function App() {
 
           {/* 2. SCAN FORM TAB */}
           {activeTab === 'scan' && (
-            <ScanForm
-              email={currentUser.email}
-              onScanSuccess={(newScan) => {
-                setScans([newScan, ...scans]);
-                setSelectedScan(newScan);
-                setShowFullReport(true);
-              }}
-            />
+            latestUploadedScan ? (
+              <div className="space-y-6 animate-fade-in">
+                {/* Header Title Bar with Back Button */}
+                <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
+                  <div className="text-left">
+                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block font-mono">
+                      Scan Completed
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+                      Scan Report
+                    </h1>
+                  </div>
+                  <button
+                    onClick={() => setLatestUploadedScan(null)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer text-left"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Run new scan</span>
+                  </button>
+                </div>
+
+                {/* Score gauge & statistics */}
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+                  <div className="text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                      Result Analytics
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row gap-6 justify-between items-center md:items-start">
+                    {/* Left: circular gauge & meta */}
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+                        <svg className="w-20 h-20 -rotate-90">
+                          <circle cx="40" cy="40" r={radius} className="stroke-slate-100" strokeWidth={strokeWidth} fill="transparent" />
+                          <circle cx="40" cy="40" r={radius} className={latestUploadedScan.coherenceScore >= 85 ? 'stroke-indigo-600' : latestUploadedScan.coherenceScore >= 70 ? 'stroke-amber-500' : 'stroke-rose-500'} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={circumference} strokeDashoffset={circumference - (latestUploadedScan.coherenceScore / 100) * circumference} strokeLinecap="round" />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-lg font-bold text-slate-800 font-mono">{latestUploadedScan.coherenceScore}</span>
+                          <span className="text-[9px] text-slate-400 -mt-1 font-mono">/100</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 text-left">
+                        <h3 className="text-md font-bold text-slate-800 leading-tight">Manuscript integrity</h3>
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${
+                            latestUploadedScan.coherenceScore >= 85 
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                              : latestUploadedScan.coherenceScore >= 70 
+                              ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                              : 'bg-rose-50 text-rose-700 border-rose-200'
+                          }`}>
+                            {latestUploadedScan.coherenceScore >= 85 ? 'High Coherence' : latestUploadedScan.coherenceScore >= 70 ? 'Moderate Coherence' : 'Low Coherence'}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {new Date(latestUploadedScan.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(latestUploadedScan.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: stat boxes */}
+                    <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
+                      <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
+                        <span className="text-xl font-extrabold text-slate-800 font-mono">
+                          {(latestUploadedScan.correlationReport?.length || 0) + (latestUploadedScan.suggestions?.length || 0)}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Issues<br/>flagged</span>
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
+                        <span className="text-xl font-extrabold text-slate-800 font-mono">
+                          {latestUploadedScan.references?.length || 0}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Citations<br/>checked</span>
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
+                        <span className="text-xl font-extrabold text-slate-800 font-mono">
+                          {latestUploadedScan.references?.filter(ref => ref.status !== 'Accessible').length || 0}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Report Panel */}
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+                  <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-between border border-slate-200/60">
+                    <div className="text-left">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
+                      <h4 className="text-xs font-bold text-slate-800">{latestUploadedScan.title}</h4>
+                    </div>
+                    {latestUploadedScan.documentLink && !latestUploadedScan.documentLink.startsWith('file://') && (
+                      <a href={latestUploadedScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-650 hover:text-indigo-650 font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-xs flex items-center gap-1">
+                        <Link className="w-3 h-3" />
+                        <span>Google Doc</span>
+                      </a>
+                    )}
+                  </div>
+                  <ResultDetails 
+                    scan={latestUploadedScan} 
+                    onRescan={() => {
+                      setLatestUploadedScan(null);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }} 
+                  />
+                </div>
+              </div>
+            ) : (
+              <ScanForm
+                email={currentUser.email}
+                onScanSuccess={(newScan) => {
+                  setScans([newScan, ...scans]);
+                  setSelectedScan(newScan);
+                  setLatestUploadedScan(newScan);
+                  setShowFullReport(true);
+                }}
+              />
+            )
           )}
 
           {/* 3. RESULTS ARCHIVE LIST TAB */}
