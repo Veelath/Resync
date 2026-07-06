@@ -49,4 +49,5 @@ export interface ScanResult {
   duplicationScore?: number;
   missingSections?: string[];
   researchType?: 'quantitative' | 'qualitative';
+  parentScanId?: string;
 }

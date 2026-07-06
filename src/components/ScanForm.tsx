@@ -31,6 +31,7 @@ interface ScanFormProps {
   initialChaptersString?: string;
   initialDocumentLink?: string;
   prevScanTimestamp?: string;
+  parentScanId?: string;
 }
 
 const ANALYSIS_STEPS = [
@@ -51,7 +52,8 @@ export default function ScanForm({
   initialUploadType = null,
   initialChaptersString = '',
   initialDocumentLink = '',
-  prevScanTimestamp = ''
+  prevScanTimestamp = '',
+  parentScanId = ''
 }: ScanFormProps) {
   
   const parseChapters = (chapterStr?: string): number[] => {
@@ -338,7 +340,8 @@ Details: ${r.explanation}
           chapterType: formattedCategory,
           customTopic: resolvedTopic,
           supportingDoc: supportingDocVal,
-          researchType
+          researchType,
+          parentScanId: isRescan ? parentScanId : undefined
         })
       });
 

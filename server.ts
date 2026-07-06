@@ -130,7 +130,7 @@ async function startServer() {
   // Run Manuscript Coherence Analysis
   app.post('/api/scans/run', async (req, res) => {
     try {
-      const { email, documentLink, chapterType, customTopic, supportingDoc, researchType } = req.body;
+      const { email, documentLink, chapterType, customTopic, supportingDoc, researchType, parentScanId } = req.body;
       if (!email) {
         return res.status(401).json({ error: 'Unauthorized. Please log in first.' });
       }
@@ -169,7 +169,8 @@ async function startServer() {
         supportingDoc: supportingDoc || '',
         duplicationScore,
         missingSections,
-        researchType: researchType || 'quantitative'
+        researchType: researchType || 'quantitative',
+        parentScanId: parentScanId || undefined
       };
 
       db.scans.push(newScan);

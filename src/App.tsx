@@ -949,6 +949,12 @@ export default function App() {
                           setSelectedScan(updatedScan);
                           setScans(prev => prev.map(s => s.id === updatedScan.id ? updatedScan : s));
                         }}
+                        onCompareVersions={(baseId, targetId) => {
+                          setCompareScanAId(baseId);
+                          setCompareScanBId(targetId);
+                          setActiveTab('compare');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
                       />
                     </div>
                   )}
@@ -1153,6 +1159,12 @@ export default function App() {
                       setLatestUploadedScan(updatedScan);
                       setScans(prev => prev.map(s => s.id === updatedScan.id ? updatedScan : s));
                     }}
+                    onCompareVersions={(baseId, targetId) => {
+                      setCompareScanAId(baseId);
+                      setCompareScanBId(targetId);
+                      setActiveTab('compare');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                   />
                 </div>
               </div>
@@ -1164,7 +1176,12 @@ export default function App() {
                 initialChaptersString={rescanScan?.chapterType || ''}
                 initialDocumentLink={rescanScan?.documentLink || ''}
                 prevScanTimestamp={rescanScan?.timestamp || ''}
+                parentScanId={rescanScan?.id || ''}
                 onScanSuccess={(newScan) => {
+                  if (rescanScan) {
+                    setCompareScanAId(rescanScan.id);
+                    setCompareScanBId(newScan.id);
+                  }
                   setScans([newScan, ...scans]);
                   setSelectedScan(newScan);
                   setLatestUploadedScan(newScan);

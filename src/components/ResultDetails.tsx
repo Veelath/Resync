@@ -13,7 +13,8 @@ import {
   Loader2,
   AlertTriangle,
   AlertCircle,
-  Download
+  Download,
+  ArrowRightLeft
 } from 'lucide-react';
 import ScoreRing from './ScoreRing.tsx';
 
@@ -21,9 +22,10 @@ interface ResultDetailsProps {
   scan: ScanResult;
   onRescan?: (scan: ScanResult) => void;
   onScanUpdate?: (updatedScan: ScanResult) => void;
+  onCompareVersions?: (baseScanId: string, targetScanId: string) => void;
 }
 
-export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDetailsProps) {
+export default function ResultDetails({ scan, onRescan, onScanUpdate, onCompareVersions }: ResultDetailsProps) {
   const [isRescanning, setIsRescanning] = useState(false);
   const [rescanned, setRescanned] = useState(false);
   const [selectedInconsistency, setSelectedInconsistency] = useState<number | null>(0);
@@ -171,6 +173,15 @@ Details: ${r.explanation}
                 <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200 animate-pulse font-sans">
                   Rescanned just now
                 </span>
+              )}
+              {scan.parentScanId && onCompareVersions && (
+                <button
+                  onClick={() => onCompareVersions(scan.parentScanId!, scan.id)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl border border-indigo-500 shadow-sm transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 duration-100 shrink-0"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  <span>Compare Revisions</span>
+                </button>
               )}
               <div className={`px-4 py-2 rounded-full border text-sm font-extrabold ${tier.color}`}>
                 Score: {displayScore}/100
@@ -512,6 +523,16 @@ ${s.explanation}
               <span>Rescan document</span>
             </button>
             
+            {scan.parentScanId && onCompareVersions && (
+              <button
+                onClick={() => onCompareVersions(scan.parentScanId!, scan.id)}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-550 text-white font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
+              >
+                <ArrowRightLeft className="w-4 h-4" />
+                <span>Compare Revisions</span>
+              </button>
+            )}
+
             <button
               onClick={() => handleDownloadReport(scan)}
               className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
