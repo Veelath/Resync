@@ -63,7 +63,10 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate, onCompareV
           setIsRescanning(false);
           setRescanned(true);
           if (onScanUpdate) {
-            onScanUpdate(data.scan);
+            onScanUpdate({
+              ...data.scan,
+              parentScanId: scan.id
+            });
           }
         } else {
           throw new Error(data.error || 'Failed to rescan.');
