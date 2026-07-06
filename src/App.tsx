@@ -737,8 +737,7 @@ export default function App() {
               </button>
             );
           })}
-        </nav>>
-        </header>
+        </nav>
 
         {/* Main Content Area */}
         <div className="flex-grow flex flex-col min-w-0">
