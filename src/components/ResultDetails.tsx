@@ -20,9 +20,10 @@ import ScoreRing from './ScoreRing.tsx';
 interface ResultDetailsProps {
   scan: ScanResult;
   onRescan?: (scan: ScanResult) => void;
+  onScanUpdate?: (updatedScan: ScanResult) => void;
 }
 
-export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
+export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDetailsProps) {
   const [isRescanning, setIsRescanning] = useState(false);
   const [rescanned, setRescanned] = useState(false);
   const [selectedInconsistency, setSelectedInconsistency] = useState<number | null>(0);
@@ -44,6 +45,14 @@ export default function ResultDetails({ scan, onRescan }: ResultDetailsProps) {
       setTimeout(() => {
         setIsRescanning(false);
         setRescanned(true);
+        if (onScanUpdate) {
+          onScanUpdate({
+            ...scan,
+            coherenceScore: 89,
+            // remove first logical inconsistency
+            correlationReport: scan.correlationReport.slice(1)
+          });
+        }
       }, 3000);
     } else {
       // Word document takes user back to scan tab to upload updated file (Page 8)
