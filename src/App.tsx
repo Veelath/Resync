@@ -1536,8 +1536,11 @@ export default function App() {
                           {/* Base Scan Details Column */}
                           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 text-left">
                             <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-                              <h4 className="font-serif font-bold text-slate-800 truncate max-w-[200px]" title={scanA.title}>{scanA.title}</h4>
-                              <span className="text-[10px] bg-slate-150 bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded font-mono uppercase">Base Version</span>
+                              <div className="flex flex-col min-w-0">
+                                <h4 className="font-serif font-bold text-slate-800 truncate max-w-[180px] sm:max-w-[220px]" title={scanA.title}>{scanA.title}</h4>
+                                <span className="text-[10px] text-slate-450 font-mono mt-0.5">Initial Score: <strong className="text-slate-600 font-bold">{scanA.coherenceScore}/100</strong></span>
+                              </div>
+                              <span className="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0">Base Version</span>
                             </div>
 
                             <div className="space-y-4">
@@ -1580,8 +1583,11 @@ export default function App() {
                           {/* Target Scan Details Column */}
                           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 text-left">
                             <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-                              <h4 className="font-serif font-bold text-slate-800 truncate max-w-[200px]" title={scanB.title}>{scanB.title}</h4>
-                              <span className="text-[10px] bg-indigo-50 text-indigo-650 font-bold px-2 py-0.5 rounded font-mono uppercase">Target Version</span>
+                              <div className="flex flex-col min-w-0">
+                                <h4 className="font-serif font-bold text-slate-800 truncate max-w-[180px] sm:max-w-[220px]" title={scanB.title}>{scanB.title}</h4>
+                                <span className="text-[10px] text-indigo-600 font-mono mt-0.5">New Score: <strong className="text-indigo-700 font-bold">{scanB.coherenceScore}/100</strong></span>
+                              </div>
+                              <span className="text-[10px] bg-indigo-50 text-indigo-650 font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0">Target Version</span>
                             </div>
 
                             <div className="space-y-4">
