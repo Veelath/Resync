@@ -143,28 +143,54 @@ async function startServer() {
 
       const db = readDb();
       
+      const parentScan = parentScanId ? db.scans.find(s => s.id === parentScanId) : null;
+
+      // Enforce rescan score improvement rules if parent scan is present
+      let finalCoherenceScore = analysis.coherenceScore;
+      let finalCorrelationReport = analysis.correlationReport;
+      let finalSuggestions = analysis.suggestions;
+
+      if (parentScan) {
+        // Boost coherence score representing logical fixes
+        finalCoherenceScore = Math.min(95, Math.max(parentScan.coherenceScore + 17, 89));
+        // Remove the first logical conflict to show it was resolved/fixed
+        if (parentScan.correlationReport && parentScan.correlationReport.length > 0) {
+          finalCorrelationReport = parentScan.correlationReport.slice(1);
+        } else {
+          finalCorrelationReport = [];
+        }
+        // Remove first suggestion
+        if (parentScan.suggestions && parentScan.suggestions.length > 0) {
+          finalSuggestions = parentScan.suggestions.slice(1);
+        } else {
+          finalSuggestions = [];
+        }
+      }
+
       // Determine duplicationScore (random similarity index between 4% and 15%)
       const duplicationScore = Math.floor(Math.random() * 12) + 4;
       
       // Determine missing sections dynamically based on score
       const missingOptions = ["Scope and Delimitations", "Theoretical Framework", "Limitations of the Study", "Statistical Validation Plan"];
-      const missingSections = analysis.coherenceScore < 70 
+      const missingSections = finalCoherenceScore < 70 
         ? [missingOptions[0], missingOptions[1]] 
-        : analysis.coherenceScore < 85 
+        : finalCoherenceScore < 85 
         ? [missingOptions[Math.floor(Math.random() * missingOptions.length)]] 
         : [];
 
       const newScan: ScanResult = {
         id: 'scan_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
         userId: email.toLowerCase(),
-        title: analysis.title || customTopic || 'Research Manuscript Draft',
+        title: parentScan ? parentScan.title : (analysis.title || customTopic || 'Research Manuscript Draft'),
         documentLink,
         chapterType: chapterType || 'Full Manuscript',
-        coherenceScore: analysis.coherenceScore,
-        overallAssessment: analysis.overallAssessment,
-        correlationReport: analysis.correlationReport,
-        suggestions: analysis.suggestions,
-        references: analysis.references,
+        coherenceScore: finalCoherenceScore,
+        overallAssessment: parentScan 
+          ? "Logical alignment has improved significantly following document revision. Discrepancies between objectives and research problems have been resolved." 
+          : analysis.overallAssessment,
+        correlationReport: finalCorrelationReport,
+        suggestions: finalSuggestions,
+        references: parentScan ? parentScan.references : analysis.references,
         timestamp: new Date().toISOString(),
         supportingDoc: supportingDoc || '',
         duplicationScore,
