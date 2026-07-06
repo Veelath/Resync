@@ -40,22 +40,39 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate, onCompareV
     return { label: 'Low coherence', color: 'bg-rose-50 text-rose-800 border-rose-250' };
   };
 
-  const handleRescanClick = () => {
+  const handleRescanClick = async () => {
     if (isGoogleDoc) {
       // Simulate live Google Doc re-fetch (Page 9 & 13)
       setIsRescanning(true);
-      setTimeout(() => {
-        setIsRescanning(false);
-        setRescanned(true);
-        if (onScanUpdate) {
-          onScanUpdate({
-            ...scan,
-            coherenceScore: 89,
-            // remove first logical inconsistency
-            correlationReport: scan.correlationReport.slice(1)
-          });
+      try {
+        const response = await fetch('/api/scans/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: scan.userId,
+            documentLink: scan.documentLink,
+            chapterType: scan.chapterType,
+            customTopic: scan.title,
+            supportingDoc: scan.supportingDoc,
+            researchType: scan.researchType,
+            parentScanId: scan.id
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setIsRescanning(false);
+          setRescanned(true);
+          if (onScanUpdate) {
+            onScanUpdate(data.scan);
+          }
+        } else {
+          throw new Error(data.error || 'Failed to rescan.');
         }
-      }, 3000);
+      } catch (err: any) {
+        console.error("Rescan error:", err);
+        setIsRescanning(false);
+        alert(err.message || 'An error occurred during scanning.');
+      }
     } else {
       // Word document takes user back to scan tab to upload updated file (Page 8)
       if (onRescan) {
