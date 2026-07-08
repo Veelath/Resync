@@ -86,6 +86,98 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
     downloadReport(reportScan);
   };
 
+  const handleExportDocument = () => {
+    const element = document.getElementById(`manuscript-content-${scan.id}`);
+    if (!element) return;
+    
+    // Clone the element to print a clean version
+    const clone = element.cloneNode(true) as HTMLElement;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${scan.title}</title>
+            <style>
+              body {
+                font-family: Georgia, serif;
+                line-height: 1.8;
+                color: #1e293b;
+                padding: 40px;
+                max-width: 800px;
+                margin: 0 auto;
+              }
+              .text-center {
+                text-align: center;
+              }
+              .space-y-1\\.5 > * + * {
+                margin-top: 6px;
+              }
+              h1 {
+                font-size: 20px;
+                font-weight: bold;
+                margin-bottom: 20px;
+                text-transform: uppercase;
+                font-family: sans-serif;
+              }
+              h2 {
+                font-size: 12px;
+                color: #4f46e5;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                font-family: monospace;
+                margin-bottom: 5px;
+              }
+              h3 {
+                font-size: 14px;
+                font-weight: bold;
+                border-bottom: 1px solid #e2e8f0;
+                padding-bottom: 4px;
+                margin-top: 30px;
+                text-transform: uppercase;
+                font-family: sans-serif;
+              }
+              p {
+                text-align: justify;
+                margin-bottom: 16px;
+              }
+              /* Clean text print styling without annotations or buttons */
+              .bg-amber-105, .bg-amber-100, .bg-rose-100, .bg-amber-300, .bg-rose-300, .bg-emerald-100, .bg-emerald-105 {
+                background-color: transparent !important;
+                border-bottom: none !important;
+                color: inherit !important;
+                font-weight: normal !important;
+                text-decoration: none !important;
+              }
+              .line-through {
+                text-decoration: none !important;
+              }
+              span.text-emerald-700 {
+                display: none !important;
+              }
+              .font-bold {
+                font-weight: bold;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="manuscript">
+              ${clone.innerHTML}
+            </div>
+            <script>
+              window.onload = function() {
+                window.print();
+                setTimeout(() => window.close(), 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   const displayScore = rescanned ? 89 : scan.coherenceScore;
   const tier = getCoherenceTier(displayScore);
 
@@ -139,7 +231,7 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
           </div>
           
           {/* Main Document Content Sheet */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[700px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed scroll-smooth">
+          <div id={`manuscript-content-${scan.id}`} className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[700px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed scroll-smooth">
             
             {/* Title / Chapter Header block */}
             <div className="text-center space-y-1.5 pb-4 border-b border-slate-100">
@@ -250,7 +342,7 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
             </div>
           )}
 
-          {/* Section 1: Coherence Score Gauge & Duplication */}
+          {/* Section 1: Coherence Score Gauge */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col items-center justify-center text-center space-y-4">
             <div>
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2.5">
@@ -263,21 +355,6 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
                     +17 pts
                   </div>
                 )}
-              </div>
-            </div>
-
-            <div className="w-full border-t border-slate-100 pt-4 flex flex-col items-center">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2">
-                Duplication Similarity
-              </span>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center font-bold font-mono">
-                  {scan.duplicationScore || 8}%
-                </div>
-                <div className="text-left">
-                  <span className="text-xs font-bold text-slate-800 block">Duplication rate</span>
-                  <span className="text-[10px] text-slate-455 block font-mono">Acceptable range (under 15%)</span>
-                </div>
               </div>
             </div>
           </div>
@@ -475,11 +552,11 @@ ${s.explanation}
 
 
             <button
-              onClick={() => handleDownloadReport(scan)}
+              onClick={handleExportDocument}
               className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
             >
               <Download className="w-4 h-4" />
-              <span>Export Report</span>
+              <span>Export Document</span>
             </button>
           </div>
 
