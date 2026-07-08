@@ -45,6 +45,9 @@ export default function App() {
   // Auth Form Fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [institution, setInstitution] = useState('');
   const [role, setRole] = useState('Researcher');
@@ -158,11 +161,17 @@ export default function App() {
     e.preventDefault();
     setAuthLoading(true);
     setAuthError('');
+    if (password !== confirmPassword) {
+      setAuthError('Passwords do not match.');
+      setAuthLoading(false);
+      return;
+    }
     try {
+      const combinedName = `${firstName.trim()} ${lastName.trim()}`;
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, password, institution, role })
+        body: JSON.stringify({ email, name: combinedName, password, institution, role })
       });
       const data = await response.json();
       if (!response.ok) {
@@ -424,29 +433,30 @@ export default function App() {
               {/* Authentication Forms */}
               <form onSubmit={authTab === 'login' ? handleLogin : handleRegister} className="space-y-4">
                 {authTab === 'register' && (
-                  <>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Your Name</label>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
                       <input
                         type="text"
                         required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Evelyn Sterling"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="Evelyn"
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Affiliation (Optional)</label>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
                       <input
                         type="text"
-                        value={institution}
-                        onChange={(e) => setInstitution(e.target.value)}
-                        placeholder="e.g. Independent, Company, University"
+                        required
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="Sterling"
                         className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
                       />
                     </div>
-                  </>
+                  </div>
                 )}
 
                 <div>
@@ -472,6 +482,20 @@ export default function App() {
                     className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
                   />
                 </div>
+
+                {authTab === 'register' && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Confirm Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
+                    />
+                  </div>
+                )}
 
                 <button
                   type="submit"
