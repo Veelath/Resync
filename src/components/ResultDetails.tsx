@@ -16,6 +16,7 @@ import {
   Download
 } from 'lucide-react';
 import ScoreRing from './ScoreRing.tsx';
+import { getScoreTier, downloadReport } from '../utils.js';
 
 interface ResultDetailsProps {
   scan: ScanResult;
@@ -33,9 +34,8 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
 
   // Coherence level tier helper
   const getCoherenceTier = (score: number) => {
-    if (score >= 85) return { label: 'High coherence', color: 'bg-emerald-50 text-emerald-800 border-emerald-250' };
-    if (score >= 70) return { label: 'Moderate coherence', color: 'bg-amber-50 text-amber-700 border-amber-200' };
-    return { label: 'Low coherence', color: 'bg-rose-50 text-rose-800 border-rose-250' };
+    const tier = getScoreTier(score);
+    return { label: tier.label, color: `${tier.bgColor} ${tier.textColor} ${tier.borderColor}` };
   };
 
   const handleRescanClick = async () => {
@@ -83,68 +83,7 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
   };
 
   const handleDownloadReport = (reportScan: ScanResult) => {
-    const sectionsText = reportScan.missingSections && reportScan.missingSections.length > 0 
-      ? reportScan.missingSections.join(', ') 
-      : 'None';
-    const text = `==================================================
-RESYNC MANUSCRIPT COHERENCE AUDIT REPORT
-==================================================
-Title: ${reportScan.title}
-Date Scanned: ${new Date(reportScan.timestamp).toLocaleString()}
-Coherence Score: ${reportScan.coherenceScore}/100
-Duplication Rate: ${reportScan.duplicationScore || 0}%
-Research paradigm: ${reportScan.researchType ? reportScan.researchType.toUpperCase() : 'QUANTITATIVE'}
-Document Source: ${reportScan.documentLink}
-==================================================
-
-OVERALL ASSESSMENT:
-${reportScan.overallAssessment}
-
-==================================================
-LOGICAL CONSISTENCY FLAGS DETECTED:
-${reportScan.correlationReport.length === 0 ? 'No consistency conflicts detected.' : 
-  reportScan.correlationReport.map((c, i) => `
-[Flag #${i + 1}]
-Type: ${c.inconsistencyType.replace('_', ' ').toUpperCase()}
-Severity: ${c.severity}
-Sections: ${c.sectionA} <-> ${c.sectionB}
-Conflict: ${c.description}
-Actionable Fix: ${c.howToFix}
---------------------------------------------------`).join('\n')}
-
-==================================================
-MISSING MANUSCRIPT SECTIONS:
-${sectionsText}
-
-==================================================
-SUGGESTED REVISIONS & RECOMMENDATIONS:
-${reportScan.suggestions.length === 0 ? 'No suggestions available.' : 
-  reportScan.suggestions.map((s, i) => `
-[Revision #${i + 1}]
-Category: ${s.category}
-Issue: ${s.issue}
-Remedy: ${s.remedy}
-Explainable Rationale: ${s.explanation}
---------------------------------------------------`).join('\n')}
-
-==================================================
-BIBLIOGRAPHICAL CITATION AUDIT:
-${reportScan.references.length === 0 ? 'No references audited.' : 
-  reportScan.references.map((r, i) => `
-[Citation #${i + 1}]
-Reference: ${r.citation}
-Status: ${r.status}
-Details: ${r.explanation}
---------------------------------------------------`).join('\n')}
-`;
-
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Resync_Audit_Report_${reportScan.title.replace(/\s+/g, '_')}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadReport(reportScan);
   };
 
   const displayScore = rescanned ? 89 : scan.coherenceScore;

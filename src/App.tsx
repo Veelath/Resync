@@ -35,6 +35,7 @@ import ScanForm from './components/ScanForm.tsx';
 import ResultDetails from './components/ResultDetails.tsx';
 import ProfileView from './components/ProfileView.tsx';
 import ScoreRing from './components/ScoreRing.tsx';
+import { getScoreTier } from './utils.js';
 
 export default function App() {
   // Authentication State
@@ -527,28 +528,13 @@ export default function App() {
     scanDateString = `Scanned ${formattedDate} at ${formattedTime}`;
   }
 
-  let scoreColor = 'stroke-rose-500';
   let scoreBadge = 'bg-rose-50 text-rose-700 border-rose-200';
   let scoreLabel = 'Low Coherence';
   if (activeScan) {
-    const scoreVal = activeScan.coherenceScore;
-    if (scoreVal >= 85) {
-      scoreColor = 'stroke-indigo-600';
-      scoreBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      scoreLabel = 'High Coherence';
-    } else if (scoreVal >= 70) {
-      scoreColor = 'stroke-amber-500';
-      scoreBadge = 'bg-amber-50 text-amber-700 border-amber-200';
-      scoreLabel = 'Moderate Coherence';
-    }
+    const tier = getScoreTier(activeScan.coherenceScore);
+    scoreBadge = tier.badgeClass;
+    scoreLabel = tier.label;
   }
-
-  const radius = 32;
-  const strokeWidth = 6;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = activeScan
-    ? circumference - (activeScan.coherenceScore / 100) * circumference
-    : circumference;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col w-full">
@@ -851,16 +837,14 @@ export default function App() {
                     <div className="flex flex-col md:flex-row gap-6 justify-between items-center md:items-start">
                       {/* Left: circular gauge & meta */}
                       <div className="flex items-center gap-4">
-                        <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-                          <svg className="w-20 h-20 -rotate-90">
-                            <circle cx="40" cy="40" r={radius} className="stroke-slate-100" strokeWidth={strokeWidth} fill="transparent" />
-                            <circle cx="40" cy="40" r={radius} className={scoreColor} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-lg font-bold text-slate-800 font-mono">{activeScan.coherenceScore}</span>
-                            <span className="text-xs text-slate-400 -mt-1 font-mono">/100</span>
-                          </div>
-                        </div>
+                        <ScoreRing 
+                          score={activeScan.coherenceScore} 
+                          size={80} 
+                          strokeWidth={6} 
+                          showDetails={false} 
+                          showSubtext={true} 
+                          className="p-0 shrink-0" 
+                        />
 
                         <div className="space-y-1 text-left">
                           <h3 className="text-md font-bold text-slate-800 leading-tight">Manuscript integrity</h3>
@@ -1069,16 +1053,14 @@ export default function App() {
                   <div className="flex flex-col md:flex-row gap-6 justify-between items-center md:items-start">
                     {/* Left: circular gauge & meta */}
                     <div className="flex items-center gap-4 text-left">
-                      <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-                        <svg className="w-20 h-20 -rotate-90">
-                          <circle cx="40" cy="40" r={radius} className="stroke-slate-100" strokeWidth={strokeWidth} fill="transparent" />
-                          <circle cx="40" cy="40" r={radius} className={latestUploadedScan.coherenceScore >= 85 ? 'stroke-indigo-600' : latestUploadedScan.coherenceScore >= 70 ? 'stroke-amber-500' : 'stroke-rose-500'} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={circumference} strokeDashoffset={circumference - (latestUploadedScan.coherenceScore / 100) * circumference} strokeLinecap="round" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-lg font-bold text-slate-800 font-mono">{latestUploadedScan.coherenceScore}</span>
-                          <span className="text-xs text-slate-400 -mt-1 font-mono">/100</span>
-                        </div>
-                      </div>
+                      <ScoreRing 
+                        score={latestUploadedScan.coherenceScore} 
+                        size={80} 
+                        strokeWidth={6} 
+                        showDetails={false} 
+                        showSubtext={true} 
+                        className="p-0 shrink-0" 
+                      />
 
                       <div className="space-y-1 text-left">
                         <h3 className="text-md font-bold text-slate-800 leading-tight">Manuscript integrity</h3>
@@ -1396,7 +1378,6 @@ export default function App() {
                   })}
                 </div>
               )}
-          )}
             </div>
           )}
 
