@@ -36,6 +36,7 @@ import ResultDetails from './components/ResultDetails.tsx';
 import ProfileView from './components/ProfileView.tsx';
 import ScoreRing from './components/ScoreRing.tsx';
 import { getScoreTier } from './utils.js';
+import Logo from './components/Logo.tsx';
 
 export default function App() {
   // Authentication State
@@ -243,12 +244,9 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             
             {/* Logo & Platform Name */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-serif text-lg font-bold tracking-tight text-slate-900">Resync</span>
+            <div className="flex items-center gap-3">
+              <Logo className="h-9" variant="full" />
+              <div className="border-l border-slate-200 pl-3">
                 <span className="text-xs block font-mono text-indigo-650 uppercase tracking-wider font-bold">Manuscript Coherence</span>
               </div>
             </div>
@@ -375,9 +373,7 @@ export default function App() {
         <footer className="bg-white border-t border-slate-200 mt-16 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-slate-400">
-                <Sparkles className="w-3 h-3" />
-              </div>
+              <Logo className="h-5 w-5" variant="icon" />
               <span className="font-serif font-bold text-slate-700">Resync</span>
               <span>— AI-Powered Coherence</span>
             </div>
@@ -571,12 +567,9 @@ export default function App() {
             
             {/* Logo block */}
             <div className="flex items-center gap-3 select-none shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div className="text-left">
-                <span className="font-serif text-lg font-bold tracking-tight text-slate-900 block leading-none">Resync</span>
-                <span className="text-xs block font-mono text-indigo-650 uppercase tracking-widest font-bold mt-1">Manuscript Coherence</span>
+              <Logo className="h-9" variant="full" />
+              <div className="border-l border-slate-200 pl-3 text-left hidden sm:block">
+                <span className="text-xs block font-mono text-indigo-650 uppercase tracking-widest font-bold">Manuscript Coherence</span>
               </div>
             </div>
 
@@ -1421,9 +1414,7 @@ export default function App() {
         {/* Logged in Footer */}
         <footer className="bg-white border-t border-slate-200 py-6 px-8 mt-auto text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-slate-400">
-              <Sparkles className="w-3 h-3" />
-            </div>
+            <Logo className="h-5 w-5" variant="icon" />
             <span className="font-serif font-bold text-slate-700">Resync</span>
             <span>— AI-Powered Coherence</span>
           </div>
