@@ -926,6 +926,20 @@ export default function App() {
                               )}
                             </div>
                           )}
+                          {activeScan.styleGuideLink && (
+                            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
+                              <span>📘 STYLE GUIDE:</span>
+                              {activeScan.styleGuideLink.startsWith('file://') ? (
+                                <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
+                                  {activeScan.styleGuideLink.replace('file://', '')}
+                                </span>
+                              ) : (
+                                <a href={activeScan.styleGuideLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
+                                  Go to Link &rarr;
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-655 hover:text-indigo-655 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1">
                           <Link className="w-3.5 h-3.5" />
@@ -1139,6 +1153,20 @@ export default function App() {
                             </span>
                           ) : (
                             <a href={latestUploadedScan.supportingDoc} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
+                              Go to Link &rarr;
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {latestUploadedScan.styleGuideLink && (
+                        <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
+                          <span>📘 STYLE GUIDE:</span>
+                          {latestUploadedScan.styleGuideLink.startsWith('file://') ? (
+                            <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
+                              {latestUploadedScan.styleGuideLink.replace('file://', '')}
+                            </span>
+                          ) : (
+                            <a href={latestUploadedScan.styleGuideLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
                               Go to Link &rarr;
                             </a>
                           )}

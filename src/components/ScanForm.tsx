@@ -20,7 +20,8 @@ import {
   Upload,
   FileText,
   X,
-  Download
+  Download,
+  PlusCircle
 } from 'lucide-react';
 import { downloadReport } from '../utils.js';
 
@@ -75,13 +76,18 @@ export default function ScanForm({
   const [stepIndex, setStepIndex] = useState(0);
   const [dragActive, setDragActive] = useState(false);
 
+  const [showSupportingDocs, setShowSupportingDocs] = useState(false);
   const [supportingSource, setSupportingSource] = useState<'link' | 'file'>('link');
   const [supportingLink, setSupportingLink] = useState('');
   const [supportingFile, setSupportingFile] = useState<File | null>(null);
+
+  const [styleGuideSource, setStyleGuideSource] = useState<'link' | 'file'>('link');
   const [styleGuideLink, setStyleGuideLink] = useState('');
+  const [styleGuideFile, setStyleGuideFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supportingFileInputRef = useRef<HTMLInputElement>(null);
+  const styleGuideFileInputRef = useRef<HTMLInputElement>(null);
 
   // Navigation Steps: 1 = Choose type, 2 = Select chapters, 3 = Upload docs
   const [step, setStep] = useState(isRescan ? 3 : 1);
@@ -267,9 +273,15 @@ export default function ScanForm({
     // Set topic to research topic, or default to uploaded file name if using file path
     const resolvedTopic = customTopic.trim() || (uploadSource === 'file' ? uploadedFile?.name : undefined);
 
-    const supportingDocVal = supportingSource === 'file'
-      ? (supportingFile ? 'file://' + supportingFile.name : '')
-      : supportingLink;
+    const supportingDocVal = showSupportingDocs
+      ? (supportingSource === 'file'
+        ? (supportingFile ? 'file://' + supportingFile.name : '')
+        : supportingLink)
+      : '';
+
+    const styleGuideVal = styleGuideSource === 'file'
+      ? (styleGuideFile ? 'file://' + styleGuideFile.name : '')
+      : styleGuideLink;
 
     try {
       const response = await fetch('/api/scans/run', {
@@ -281,7 +293,7 @@ export default function ScanForm({
           chapterType: formattedCategory,
           customTopic: resolvedTopic,
           supportingDoc: supportingDocVal,
-          styleGuideLink: styleGuideLink || undefined,
+          styleGuideLink: styleGuideVal || undefined,
           researchType,
           parentScanId: isRescan ? parentScanId : undefined
         })
@@ -304,9 +316,12 @@ export default function ScanForm({
       setDocumentLink('');
       setUploadedFile(null);
       setCustomTopic('');
+      setShowSupportingDocs(false);
       setSupportingLink('');
       setSupportingFile(null);
       setStyleGuideLink('');
+      setStyleGuideFile(null);
+      setStyleGuideSource('link');
     } catch (err: any) {
       setError(err.message || 'An error occurred during scanning.');
     } finally {
@@ -709,33 +724,151 @@ export default function ScanForm({
                     </div>
                   )}
                 </div>
+              )}              {/* Supporting Documents toggle button */}
+              {!showSupportingDocs ? (
+                <div className="pt-5 border-t border-slate-100 text-left">
+                  <button
+                    type="button"
+                    onClick={() => setShowSupportingDocs(true)}
+                    className="flex items-center gap-2 text-sm font-semibold text-indigo-650 hover:text-indigo-850 transition-colors cursor-pointer group"
+                  >
+                    <PlusCircle className="w-5 h-5 text-indigo-500 group-hover:scale-105 transition-transform" />
+                    <span>Add Supporting Documents (Optional)</span>
+                  </button>
+                </div>
+              ) : (
+                /* Supporting Documents tabbed inputs */
+                <div className="space-y-4 pt-5 border-t border-slate-100 text-left animate-fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
+                        Supporting Documents (Optional)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSupportingDocs(false);
+                        }}
+                        className="text-xs text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                      >
+                        (Hide)
+                      </button>
+                    </div>
+
+                    {/* Selector tabs for supporting doc source */}
+                    <div className="flex bg-slate-100 rounded-xl p-0.5 self-start sm:self-auto border border-slate-200/40">
+                      <button
+                        type="button"
+                        onClick={() => setSupportingSource('link')}
+                        className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${supportingSource === 'link'
+                            ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                            : 'text-slate-400 hover:text-slate-650'
+                          }`}
+                      >
+                        Docs Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSupportingSource('file')}
+                        className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${supportingSource === 'file'
+                            ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                            : 'text-slate-400 hover:text-slate-650'
+                          }`}
+                      >
+                        Upload File
+                      </button>
+                    </div>
+                  </div>
+
+                  {supportingSource === 'link' ? (
+                    <div className="relative animate-fade-in">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Link className="w-5 h-5" />
+                      </div>
+                      <input
+                        type="url"
+                        value={supportingLink}
+                        onChange={(e) => setSupportingLink(e.target.value)}
+                        placeholder="https://drive.google.com/file/... or survey URL"
+                        className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                      />
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in">
+                      {supportingFile ? (
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 flex items-center justify-between border-dashed">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                              <FileText className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0 text-left">
+                              <p className="text-base font-bold text-slate-800 truncate font-serif">{supportingFile.name}</p>
+                              <p className="text-xs text-slate-405">{(supportingFile.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSupportingFile(null)}
+                            className="p-2 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => supportingFileInputRef.current?.click()}
+                          className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-5 px-8 text-center cursor-pointer transition-all flex items-center justify-center gap-2.5"
+                        >
+                          <input
+                            ref={supportingFileInputRef}
+                            type="file"
+                            accept=".docx,.pdf,.xlsx,.csv,.txt"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                setSupportingFile(e.target.files[0]);
+                              }
+                            }}
+                            className="hidden"
+                          />
+                          <Upload className="w-5 h-5 text-slate-450" />
+                          <span className="text-sm font-bold text-slate-650">Select supporting file (survey, datasheet, PDF...)</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
-              {/* Supporting Documents tabbed inputs */}
-              <div className="space-y-4 pt-5 border-t border-slate-100 text-left">
+              {/* Department Style Guide Reference */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                    Supporting Documents (Optional)
-                  </label>
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                      Department Style Guide
+                    </h4>
+                  </div>
 
-                  {/* Selector tabs for supporting doc source */}
+                  {/* Selector tabs for style guide source */}
                   <div className="flex bg-slate-100 rounded-xl p-0.5 self-start sm:self-auto border border-slate-200/40">
                     <button
                       type="button"
-                      onClick={() => setSupportingSource('link')}
-                      className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${supportingSource === 'link'
+                      onClick={() => setStyleGuideSource('link')}
+                      className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'link'
                           ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                          : 'text-slate-400 hover:text-slate-655'
+                          : 'text-slate-400 hover:text-slate-650'
                         }`}
                     >
                       Docs Link
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSupportingSource('file')}
-                      className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${supportingSource === 'file'
+                      onClick={() => setStyleGuideSource('file')}
+                      className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'file'
                           ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                          : 'text-slate-400 hover:text-slate-655'
+                          : 'text-slate-400 hover:text-slate-650'
                         }`}
                     >
                       Upload File
@@ -743,35 +876,39 @@ export default function ScanForm({
                   </div>
                 </div>
 
-                {supportingSource === 'link' ? (
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Optional. {styleGuideSource === 'link' ? "Paste a public Google Docs or GDrive link containing your department's specific formatting or structural guidelines." : "Upload a PDF, Word document, or text file containing your department's formatting guidelines."}
+                </p>
+
+                {styleGuideSource === 'link' ? (
                   <div className="relative animate-fade-in">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                       <Link className="w-5 h-5" />
                     </div>
                     <input
                       type="url"
-                      value={supportingLink}
-                      onChange={(e) => setSupportingLink(e.target.value)}
-                      placeholder="https://drive.google.com/file/... or survey URL"
+                      value={styleGuideLink}
+                      onChange={(e) => setStyleGuideLink(e.target.value)}
+                      placeholder="https://docs.google.com/document/d/..."
                       className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
                     />
                   </div>
                 ) : (
                   <div className="animate-fade-in">
-                    {supportingFile ? (
+                    {styleGuideFile ? (
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 flex items-center justify-between border-dashed">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
                             <FileText className="w-5 h-5" />
                           </div>
                           <div className="min-w-0 text-left">
-                            <p className="text-base font-bold text-slate-800 truncate font-serif">{supportingFile.name}</p>
-                            <p className="text-xs text-slate-405">{(supportingFile.size / 1024).toFixed(1)} KB</p>
+                            <p className="text-base font-bold text-slate-800 truncate font-serif">{styleGuideFile.name}</p>
+                            <p className="text-xs text-slate-405">{(styleGuideFile.size / 1024).toFixed(1)} KB</p>
                           </div>
                         </div>
                         <button
                           type="button"
-                          onClick={() => setSupportingFile(null)}
+                          onClick={() => setStyleGuideFile(null)}
                           className="p-2 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
                         >
                           <X className="w-5 h-5" />
@@ -779,53 +916,26 @@ export default function ScanForm({
                       </div>
                     ) : (
                       <div
-                        onClick={() => supportingFileInputRef.current?.click()}
+                        onClick={() => styleGuideFileInputRef.current?.click()}
                         className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-5 px-8 text-center cursor-pointer transition-all flex items-center justify-center gap-2.5"
                       >
                         <input
-                          ref={supportingFileInputRef}
+                          ref={styleGuideFileInputRef}
                           type="file"
-                          accept=".docx,.pdf,.xlsx,.csv,.txt"
+                          accept=".docx,.pdf,.txt"
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
-                              setSupportingFile(e.target.files[0]);
+                              setStyleGuideFile(e.target.files[0]);
                             }
                           }}
                           className="hidden"
                         />
                         <Upload className="w-5 h-5 text-slate-450" />
-                        <span className="text-sm font-bold text-slate-650">Select supporting file (survey, datasheet, PDF...)</span>
+                        <span className="text-sm font-bold text-slate-650">Select style guide file (PDF, DOCX, TXT...)</span>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
-
-              {/* Department Style Guide Reference */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-left">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-                    <BookOpen className="w-5 h-5" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                    Department Style Guide
-                  </h4>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Optional. Paste a public Google Docs or GDrive link containing your department's specific formatting or structural guidelines.
-                </p>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Link className="w-5 h-5" />
-                  </div>
-                  <input
-                    type="url"
-                    value={styleGuideLink}
-                    onChange={(e) => setStyleGuideLink(e.target.value)}
-                    placeholder="https://docs.google.com/document/d/..."
-                    className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-                  />
-                </div>
               </div>
 
               {/* Step 3 Footer buttons */}
