@@ -36,7 +36,7 @@ import ResultDetails from './components/ResultDetails.tsx';
 import ProfileView from './components/ProfileView.tsx';
 import ScoreRing from './components/ScoreRing.tsx';
 import { getScoreTier } from './utils.js';
-import Logo from './components/Logo.tsx';
+import logoPng from './assets/logo.png';
 
 export default function App() {
   // Authentication State
@@ -245,7 +245,7 @@ export default function App() {
             
             {/* Logo & Platform Name */}
             <div className="flex items-center gap-3">
-              <Logo className="h-9" variant="full" />
+              <img src={logoPng} alt="Resync Logo" className="h-9 w-auto object-contain select-none" />
               <div className="border-l border-slate-200 pl-3">
                 <span className="text-xs block font-mono text-indigo-650 uppercase tracking-wider font-bold">Manuscript Coherence</span>
               </div>
@@ -373,7 +373,7 @@ export default function App() {
         <footer className="bg-white border-t border-slate-200 mt-16 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
             <div className="flex items-center gap-2">
-              <Logo className="h-5 w-5" variant="icon" />
+              <img src={logoPng} alt="Resync Logo" className="h-5 w-auto object-contain select-none" />
               <span className="font-serif font-bold text-slate-700">Resync</span>
               <span>— AI-Powered Coherence</span>
             </div>
@@ -567,7 +567,7 @@ export default function App() {
             
             {/* Logo block */}
             <div className="flex items-center gap-3 select-none shrink-0">
-              <Logo className="h-9" variant="full" />
+              <img src={logoPng} alt="Resync Logo" className="h-9 w-auto object-contain" />
               <div className="border-l border-slate-200 pl-3 text-left hidden sm:block">
                 <span className="text-xs block font-mono text-indigo-650 uppercase tracking-widest font-bold">Manuscript Coherence</span>
               </div>
@@ -1414,7 +1414,7 @@ export default function App() {
         {/* Logged in Footer */}
         <footer className="bg-white border-t border-slate-200 py-6 px-8 mt-auto text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Logo className="h-5 w-5" variant="icon" />
+            <img src={logoPng} alt="Resync Logo" className="h-5 w-auto object-contain select-none" />
             <span className="font-serif font-bold text-slate-700">Resync</span>
             <span>— AI-Powered Coherence</span>
           </div>
