@@ -1,0 +1,264 @@
+{
+  "users": [
+    {
+      "email": "admin@lalamove.ph",
+      "name": "test1",
+      "passwordHash": "admin1234",
+      "institution": "marky",
+      "role": "Researcher",
+      "bio": ""
+    },
+    {
+      "email": "xcbbx@gmail.com",
+      "name": "zdxzv",
+      "passwordHash": "cvxvxc",
+      "institution": "xvvxcv",
+      "role": "Researcher",
+      "bio": ""
+    },
+    {
+      "email": "logan@gmail.com",
+      "name": "mark logan",
+      "passwordHash": "test123",
+      "institution": "",
+      "role": "Researcher",
+      "bio": ""
+    }
+  ],
+  "scans": [
+    {
+      "id": "scan_mr3tedsh25ng",
+      "userId": "admin@lalamove.ph",
+      "title": "Edge Computing Wearable Analysis",
+      "documentLink": "https://docs.google.com/document/d/1lFg9_k3YrFwBNh-lfL5mWN33B-7dqhITzR1ujYK_W_o/edit?usp=sharing",
+      "chapterType": "Full Manuscript",
+      "coherenceScore": 72,
+      "overallAssessment": "Analysis fell back to standard template due to an API error: {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\"}},{\"@type\":\"type.googleapis.com/google.rpc.LocalizedMessage\",\"locale\":\"en-US\",\"message\":\"API key not valid. Please pass a valid API key.\"}]}}",
+      "correlationReport": [
+        {
+          "sectionA": "Chapter 1: Introduction",
+          "sectionB": "Chapter 3: Methodology",
+          "inconsistencyType": "contradiction",
+          "description": "Chapter 1 defines INT8 low-power quantizations but Chapter 3 implements FP32 floating point computations.",
+          "severity": "High",
+          "howToFix": "Synchronize the hardware precision mode across both sections."
+        }
+      ],
+      "suggestions": [
+        {
+          "category": "Methodology",
+          "issue": "Precision Discrepancy",
+          "explanation": "Inconsistent mathematical precisions listed.",
+          "remedy": "Align target data representations."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Smith et al. (2021)",
+          "status": "Accessible",
+          "explanation": "Matches valid journal record DOI."
+        }
+      ],
+      "timestamp": "2026-07-02T18:05:11.633Z"
+    },
+    {
+      "id": "scan_mr3y6hca04pb",
+      "userId": "admin@lalamove.ph",
+      "title": "Edge Heart Wearable anomaly detection",
+      "documentLink": "https://docs.google.com/document/d/1B_8_DemoAcademicManuscriptEdgeWearables/edit?usp=sharing",
+      "chapterType": "Full Manuscript",
+      "coherenceScore": 72,
+      "overallAssessment": "Analysis fell back to standard template due to an API error: {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\"}},{\"@type\":\"type.googleapis.com/google.rpc.LocalizedMessage\",\"locale\":\"en-US\",\"message\":\"API key not valid. Please pass a valid API key.\"}]}}",
+      "correlationReport": [
+        {
+          "sectionA": "Chapter 1: Introduction",
+          "sectionB": "Chapter 3: Methodology",
+          "inconsistencyType": "contradiction",
+          "description": "Chapter 1 defines INT8 low-power quantizations but Chapter 3 implements FP32 floating point computations.",
+          "severity": "High",
+          "howToFix": "Synchronize the hardware precision mode across both sections."
+        }
+      ],
+      "suggestions": [
+        {
+          "category": "Methodology",
+          "issue": "Precision Discrepancy",
+          "explanation": "Inconsistent mathematical precisions listed.",
+          "remedy": "Align target data representations."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Smith et al. (2021)",
+          "status": "Accessible",
+          "explanation": "Matches valid journal record DOI."
+        }
+      ],
+      "timestamp": "2026-07-02T20:19:01.067Z"
+    },
+    {
+      "id": "scan_mrdo4kah228d",
+      "userId": "xcbbx@gmail.com",
+      "title": "Edge Heart Wearable anomaly detection",
+      "documentLink": "https://docs.google.com/document/d/1B_8_DemoAcademicManuscriptEdgeWearables/edit?usp=sharing",
+      "chapterType": "Chapters: 1, 3, 4",
+      "coherenceScore": 72,
+      "overallAssessment": "Analysis fell back to standard template due to an API error: {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\"}},{\"@type\":\"type.googleapis.com/google.rpc.LocalizedMessage\",\"locale\":\"en-US\",\"message\":\"API key not valid. Please pass a valid API key.\"}]}}",
+      "correlationReport": [
+        {
+          "sectionA": "Chapter 1: Introduction",
+          "sectionB": "Chapter 3: Methodology",
+          "inconsistencyType": "contradiction",
+          "description": "Chapter 1 defines INT8 low-power quantizations but Chapter 3 implements FP32 floating point computations.",
+          "severity": "High",
+          "howToFix": "Synchronize the hardware precision mode across both sections."
+        }
+      ],
+      "suggestions": [
+        {
+          "category": "Methodology",
+          "issue": "Precision Discrepancy",
+          "explanation": "Inconsistent mathematical precisions listed.",
+          "remedy": "Align target data representations."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Smith et al. (2021)",
+          "status": "Accessible",
+          "explanation": "Matches valid journal record DOI."
+        }
+      ],
+      "timestamp": "2026-07-09T15:35:17.177Z",
+      "supportingDoc": "",
+      "duplicationScore": 5,
+      "missingSections": [
+        "Theoretical Framework"
+      ],
+      "researchType": "quantitative"
+    },
+    {
+      "id": "scan_mrdo7h8ou1gx",
+      "userId": "xcbbx@gmail.com",
+      "title": "Edge Heart Wearable anomaly detection",
+      "documentLink": "https://docs.google.com/document/d/1B_8_DemoAcademicManuscriptEdgeWearables/edit?usp=sharing",
+      "chapterType": "Chapters: 1, 3, 4",
+      "coherenceScore": 72,
+      "overallAssessment": "Analysis fell back to standard template due to an API error: {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\"}},{\"@type\":\"type.googleapis.com/google.rpc.LocalizedMessage\",\"locale\":\"en-US\",\"message\":\"API key not valid. Please pass a valid API key.\"}]}}",
+      "correlationReport": [
+        {
+          "sectionA": "Chapter 1: Introduction",
+          "sectionB": "Chapter 3: Methodology",
+          "inconsistencyType": "contradiction",
+          "description": "Chapter 1 defines INT8 low-power quantizations but Chapter 3 implements FP32 floating point computations.",
+          "severity": "High",
+          "howToFix": "Synchronize the hardware precision mode across both sections."
+        }
+      ],
+      "suggestions": [
+        {
+          "category": "Methodology",
+          "issue": "Precision Discrepancy",
+          "explanation": "Inconsistent mathematical precisions listed.",
+          "remedy": "Align target data representations."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Smith et al. (2021)",
+          "status": "Accessible",
+          "explanation": "Matches valid journal record DOI."
+        }
+      ],
+      "timestamp": "2026-07-09T15:37:33.192Z",
+      "supportingDoc": "",
+      "duplicationScore": 11,
+      "missingSections": [
+        "Theoretical Framework"
+      ],
+      "researchType": "quantitative"
+    },
+    {
+      "id": "scan_mrdum79k2bqp",
+      "userId": "logan@gmail.com",
+      "title": "Edge Heart Wearable anomaly detection",
+      "documentLink": "https://docs.google.com/document/d/1B_8_DemoAcademicManuscriptEdgeWearables/edit?usp=sharing",
+      "chapterType": "Chapters: 1, 3, 4",
+      "coherenceScore": 72,
+      "overallAssessment": "Analysis fell back to standard template due to an API error: {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\"}},{\"@type\":\"type.googleapis.com/google.rpc.LocalizedMessage\",\"locale\":\"en-US\",\"message\":\"API key not valid. Please pass a valid API key.\"}]}}",
+      "correlationReport": [
+        {
+          "sectionA": "Chapter 1: Introduction",
+          "sectionB": "Chapter 3: Methodology",
+          "inconsistencyType": "contradiction",
+          "description": "Chapter 1 defines INT8 low-power quantizations but Chapter 3 implements FP32 floating point computations.",
+          "severity": "High",
+          "howToFix": "Synchronize the hardware precision mode across both sections."
+        }
+      ],
+      "suggestions": [
+        {
+          "category": "Methodology",
+          "issue": "Precision Discrepancy",
+          "explanation": "Inconsistent mathematical precisions listed.",
+          "remedy": "Align target data representations."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Smith et al. (2021)",
+          "status": "Accessible",
+          "explanation": "Matches valid journal record DOI."
+        }
+      ],
+      "timestamp": "2026-07-09T18:36:57.801Z",
+      "supportingDoc": "",
+      "duplicationScore": 9,
+      "missingSections": [
+        "Limitations of the Study"
+      ],
+      "researchType": "quantitative"
+    },
+    {
+      "id": "scan_mrdv1ba6022g",
+      "userId": "logan@gmail.com",
+      "title": "Edge Heart Wearable anomaly detection",
+      "documentLink": "https://docs.google.com/document/d/1B_8_DemoAcademicManuscriptEdgeWearables/edit?usp=sharing",
+      "chapterType": "Chapters: 1, 3, 4",
+      "coherenceScore": 72,
+      "overallAssessment": "Analysis fell back to standard template due to an API error: {\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\"}},{\"@type\":\"type.googleapis.com/google.rpc.LocalizedMessage\",\"locale\":\"en-US\",\"message\":\"API key not valid. Please pass a valid API key.\"}]}}",
+      "correlationReport": [
+        {
+          "sectionA": "Chapter 1: Introduction",
+          "sectionB": "Chapter 3: Methodology",
+          "inconsistencyType": "contradiction",
+          "description": "Chapter 1 defines INT8 low-power quantizations but Chapter 3 implements FP32 floating point computations.",
+          "severity": "High",
+          "howToFix": "Synchronize the hardware precision mode across both sections."
+        }
+      ],
+      "suggestions": [
+        {
+          "category": "Methodology",
+          "issue": "Precision Discrepancy",
+          "explanation": "Inconsistent mathematical precisions listed.",
+          "remedy": "Align target data representations."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Smith et al. (2021)",
+          "status": "Accessible",
+          "explanation": "Matches valid journal record DOI."
+        }
+      ],
+      "timestamp": "2026-07-09T18:48:42.846Z",
+      "supportingDoc": "",
+      "duplicationScore": 11,
+      "missingSections": [
+        "Theoretical Framework"
+      ],
+      "researchType": "quantitative"
+    }
+  ]
+}

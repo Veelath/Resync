@@ -46,6 +46,7 @@ export interface ScanResult {
   references: CitedReference[];
   timestamp: string;
   supportingDoc?: string;
+  styleGuideLink?: string;
   duplicationScore?: number;
   missingSections?: string[];
   researchType?: 'quantitative' | 'qualitative';
