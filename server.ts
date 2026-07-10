@@ -9,6 +9,24 @@ import { createServer as createViteServer } from 'vite';
 import { readDb, writeDb } from './src/server/db.js';
 import { analyzeManuscript } from './src/server/analyzer.js';
 import { ScanResult, User } from './src/types.js';
+import fs from 'fs';
+
+// Copy logo PNG from user's brain folder to src/assets
+try {
+  const source = 'C:/Users/Nitro 5/.gemini/antigravity-ide/brain/3535eaeb-7c0c-4cab-8b72-d33117c9cbd4/media__1783689243353.png';
+  const destDir = path.resolve(process.cwd(), 'src/assets');
+  const dest = path.join(destDir, 'logo.png');
+
+  if (fs.existsSync(source)) {
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    fs.copyFileSync(source, dest);
+    console.log('Successfully copied logo.png to assets');
+  }
+} catch (err) {
+  console.error('Failed to copy logo.png in server.ts:', err);
+}
 
 async function startServer() {
   const app = express();
