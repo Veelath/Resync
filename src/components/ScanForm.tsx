@@ -265,38 +265,17 @@ export default function ScanForm({
     }
   };
 
-  // Helper to load sample credentials instantly
-  const loadDemoSample = () => {
-    setSuccess(false);
-    // Create a dummy file to represent the demo document
-    const dummyFile = new File(["demo content"], "DemoAcademicManuscriptEdgeWearables.docx", {
-      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    });
-    setUploadedFile(dummyFile);
-    setCustomTopic('Edge Heart Wearable anomaly detection');
-  };
-
   return (
     <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm animate-fade-in space-y-8">
       {/* Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 pb-5">
-        <div className="flex items-center gap-4 text-left">
-          <div className="p-3 rounded-xl bg-indigo-50 text-indigo-650">
-            <Compass className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="font-serif text-lg sm:text-xl font-bold text-slate-855">Manuscript Coherence Scan Engine</h2>
-            <p className="text-xs sm:text-sm text-slate-450 mt-1">Fetch, analyze, and diagnose logical flow in seconds.</p>
-          </div>
+      <div className="flex items-center gap-4 border-b border-slate-100 pb-5 text-left">
+        <div className="p-3 rounded-xl bg-indigo-50 text-indigo-655">
+          <Compass className="w-6 h-6" />
         </div>
-
-        <button
-          type="button"
-          onClick={loadDemoSample}
-          className="text-xs sm:text-sm text-indigo-600 font-bold hover:underline bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl transition-all self-start cursor-pointer hover:scale-102 active:scale-98 duration-100"
-        >
-          Load Interactive Demo Link
-        </button>
+        <div>
+          <h2 className="font-serif text-lg sm:text-xl font-bold text-slate-855">Manuscript Coherence Scan Engine</h2>
+          <p className="text-xs sm:text-sm text-slate-450 mt-1">Fetch, analyze, and diagnose logical flow in seconds.</p>
+        </div>
       </div>
 
       {loading ? (
