@@ -51,7 +51,7 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
             documentLink: scan.documentLink,
             chapterType: scan.chapterType,
             customTopic: scan.title,
-            supportingDoc: scan.supportingDoc,
+            supportingDoc: '',
             researchType: scan.researchType,
             parentScanId: scan.id
           })
@@ -286,7 +286,7 @@ export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDe
                 >
                   The system checks a manuscript against
                 </span>{" "}
-                its supporting documents, including the Survey Analysis Result, to detect inconsistencies between them, generating a Coherence Score, an Overall Assessment, and Recommendations for correcting detected gaps. Unlike generic writing tools that focus only on grammar or originality, Resync is built specifically to validate the logical and evidentiary consistency of a research manuscript.
+                the document to detect logical inconsistencies, generating a Coherence Score, an Overall Assessment, and Recommendations for correcting detected gaps. Unlike generic writing tools that focus only on grammar or originality, Resync is built specifically to validate the logical and evidentiary consistency of a research manuscript.
               </p>
 
               <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-6">2. Review of Related Literature</h3>

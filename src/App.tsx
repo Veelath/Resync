@@ -912,20 +912,7 @@ export default function App() {
                         <div className="text-left">
                           <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
                           <h4 className="text-xs font-bold text-slate-800">{activeScan.title}</h4>
-                          {activeScan.supportingDoc && (
-                            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
-                              <span>📎 SUPPORTING:</span>
-                              {activeScan.supportingDoc.startsWith('file://') ? (
-                                <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
-                                  {activeScan.supportingDoc.replace('file://', '')}
-                                </span>
-                              ) : (
-                                <a href={activeScan.supportingDoc} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
-                                  Go to Link &rarr;
-                                </a>
-                              )}
-                            </div>
-                          )}
+
                           {activeScan.styleGuideLink && (
                             <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
                               <span>📘 STYLE GUIDE:</span>
@@ -1144,20 +1131,7 @@ export default function App() {
                     <div className="text-left">
                       <span className="text-xs font-mono text-slate-400 uppercase">Active Report Source</span>
                       <h4 className="text-xs font-bold text-slate-800">{latestUploadedScan.title}</h4>
-                      {latestUploadedScan.supportingDoc && (
-                        <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
-                          <span>📎 SUPPORTING:</span>
-                          {latestUploadedScan.supportingDoc.startsWith('file://') ? (
-                            <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
-                              {latestUploadedScan.supportingDoc.replace('file://', '')}
-                            </span>
-                          ) : (
-                            <a href={latestUploadedScan.supportingDoc} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
-                              Go to Link &rarr;
-                            </a>
-                          )}
-                        </div>
-                      )}
+
                       {latestUploadedScan.styleGuideLink && (
                         <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
                           <span>📘 STYLE GUIDE:</span>
@@ -1225,8 +1199,6 @@ export default function App() {
               <ScanForm
                 email={currentUser.email}
                 isRescan={!!rescanScan}
-                initialUploadType={rescanScan?.chapterType?.toLowerCase().includes('chapter') ? 'chapter' : 'manuscript'}
-                initialChaptersString={rescanScan?.chapterType || ''}
                 initialDocumentLink={rescanScan?.documentLink || ''}
                 prevScanTimestamp={rescanScan?.timestamp || ''}
                 parentScanId={rescanScan?.id || ''}
