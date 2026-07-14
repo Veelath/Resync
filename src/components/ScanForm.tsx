@@ -16,7 +16,8 @@ import {
   FileText,
   X,
   Download,
-  BookOpen
+  BookOpen,
+  Link
 } from 'lucide-react';
 import { downloadReport } from '../utils.js';
 
@@ -52,6 +53,7 @@ export default function ScanForm({
 }: ScanFormProps) {
 
   // Fields
+  const [documentLink, setDocumentLink] = useState(isRescan && !initialDocumentLink.startsWith('file://') ? initialDocumentLink : '');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customTopic, setCustomTopic] = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,7 @@ export default function ScanForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const styleGuideFileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadSource = 'file';
+  const [uploadSource, setUploadSource] = useState<'link' | 'file'>(isRescan && initialDocumentLink.startsWith('file://') ? 'file' : 'link');
   const uploadType = 'manuscript';
   const [success, setSuccess] = useState(false);
   const [showRescanConfirmModal, setShowRescanConfirmModal] = useState(false);
@@ -121,7 +123,7 @@ export default function ScanForm({
 
   // Check if file is modified
   const getFileModificationStatus = () => {
-    if (!isRescan || !uploadedFile || !initialDocumentLink) {
+    if (!isRescan || uploadSource !== 'file' || !uploadedFile || !initialDocumentLink) {
       return { isModified: true, reason: '' };
     }
 
@@ -194,9 +196,16 @@ export default function ScanForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!uploadedFile) {
-      setError('Please select or upload a Word document.');
-      return;
+    if (uploadSource === 'file') {
+      if (!uploadedFile) {
+        setError('Please select or upload a Word document.');
+        return;
+      }
+    } else {
+      if (!documentLink) {
+        setError('Please provide a Google Docs link.');
+        return;
+      }
     }
 
     if (isRescan) {
@@ -211,16 +220,18 @@ export default function ScanForm({
     setError('');
     setSuccess(false);
 
-    let linkToSend = '';
-    if (uploadedFile) {
-      linkToSend = 'file://' + uploadedFile.name;
+    let linkToSend = documentLink;
+    if (uploadSource === 'file') {
+      if (uploadedFile) {
+        linkToSend = 'file://' + uploadedFile.name;
+      }
     }
 
     // Format section category - always Full Manuscript now
     const formattedCategory = 'Full Manuscript';
 
     // Set topic to research topic, or default to uploaded file name
-    const resolvedTopic = customTopic.trim() || uploadedFile?.name;
+    const resolvedTopic = customTopic.trim() || (uploadSource === 'file' ? uploadedFile?.name : undefined);
 
     const styleGuideVal = styleGuideSource === 'file'
       ? (styleGuideFile ? 'file://' + styleGuideFile.name : '')
@@ -254,6 +265,7 @@ export default function ScanForm({
       setLatestScanResult(data.scan);
       setSuccess(true);
       setUploadedFile(null);
+      setDocumentLink('');
       setCustomTopic('');
       setStyleGuideLink('');
       setStyleGuideFile(null);
@@ -404,7 +416,7 @@ export default function ScanForm({
                 </div>
               </div>
 
-              <p className="text-xs text-slate-505 font-sans italic leading-relaxed">
+              <p className="text-xs text-slate-550 font-sans italic leading-relaxed">
                 {researchType === 'quantitative'
                   ? "★ Calibrated for statistical significance tests, data matrices, validation surveys, and empirical logic gates."
                   : "★ Calibrated for interview scripts, thematic analysis codes, conceptual schemas, and literature matrices."
@@ -412,67 +424,119 @@ export default function ScanForm({
               </p>
             </div>
 
-            {/* Word Document Upload Input */}
-            <div className="space-y-3 text-left">
-              <div className="flex justify-between items-center">
+            {/* Tabs selector */}
+            <div className="flex border-b border-slate-200">
+              <button
+                type="button"
+                onClick={() => setUploadSource('link')}
+                className={`flex items-center gap-2 px-6 py-4 text-base font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${uploadSource === 'link'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                  }`}
+              >
+                <Link className="w-5 h-5" />
+                <span>Google Docs link</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setUploadSource('file')}
+                className={`flex items-center gap-2 px-6 py-4 text-base font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${uploadSource === 'file'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                  }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span>Word document</span>
+              </button>
+            </div>
+
+            {/* Inputs section */}
+            {uploadSource === 'link' ? (
+              <div className="space-y-3 text-left animate-fade-in">
                 <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                  Upload Word Document (.docx)
+                  Google Docs URL
                 </label>
-                {isRescan && prevFileName && (
-                  <span className="text-sm text-indigo-650 font-semibold">
-                    Previous file: {prevFileName}
-                  </span>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Link className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="url"
+                    required={uploadSource === 'link'}
+                    value={documentLink}
+                    onChange={(e) => setDocumentLink(e.target.value)}
+                    placeholder="https://docs.google.com/document/d/.../edit?usp=sharing"
+                    className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                  />
+                </div>
+                <p className="text-sm text-slate-450 leading-relaxed">
+                  Note: Make sure your document is set to <strong className="text-slate-500 font-semibold font-serif">"Anyone with the link can view"</strong> so our engine can fetch its text.
+                </p>
+              </div>
+            ) : (
+              /* Word Document Upload Input */
+              <div className="space-y-3 text-left animate-fade-in">
+                <div className="flex justify-between items-center">
+                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
+                    Upload Word Document (.docx)
+                  </label>
+                  {isRescan && prevFileName && (
+                    <span className="text-sm text-indigo-650 font-semibold">
+                      Previous file: {prevFileName}
+                    </span>
+                  )}
+                </div>
+
+                {uploadedFile ? (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center justify-between animate-fade-in">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <p className="text-base font-bold text-slate-800 truncate font-serif">{uploadedFile.name}</p>
+                        <p className="text-sm text-slate-405">{(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setUploadedFile(null)}
+                      className="p-2 rounded-lg text-slate-400 hover:text-slate-655 hover:bg-slate-100 transition-all cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onDragEnter={handleDrag}
+                    onDragOver={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-4 ${dragActive
+                        ? 'border-indigo-500 bg-indigo-50/10'
+                        : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/30'
+                      }`}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".docx"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-450">
+                      <Upload className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-slate-705 font-serif">Drag your .docx here or click to browse</p>
+                      <p className="text-sm text-slate-450 mt-1.5 font-mono">Word documents only, up to 25 MB</p>
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {uploadedFile ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center justify-between animate-fade-in">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
-                      <FileText className="w-6 h-6" />
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <p className="text-base font-bold text-slate-800 truncate font-serif">{uploadedFile.name}</p>
-                      <p className="text-sm text-slate-405">{(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setUploadedFile(null)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-slate-655 hover:bg-slate-100 transition-all cursor-pointer"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onDragEnter={handleDrag}
-                  onDragOver={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-4 ${dragActive
-                      ? 'border-indigo-500 bg-indigo-50/10'
-                      : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/30'
-                    }`}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".docx"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-450">
-                    <Upload className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-slate-705 font-serif">Drag your .docx here or click to browse</p>
-                    <p className="text-sm text-slate-450 mt-1.5 font-mono">Word documents only, up to 25 MB</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Department Style Guide Reference */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-left">
@@ -533,7 +597,7 @@ export default function ScanForm({
                   {styleGuideFile ? (
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 flex items-center justify-between border-dashed">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-655 flex items-center justify-center shrink-0">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div className="min-w-0 text-left">
@@ -590,7 +654,7 @@ export default function ScanForm({
             <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
               <div className="bg-white/95 rounded-2xl border border-slate-200/80 shadow-2xl overflow-hidden max-w-md w-full p-6 relative space-y-6 text-left">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg shrink-0 ${modStatus.isModified ? 'bg-indigo-50 text-indigo-650' : 'bg-amber-50 text-amber-605'}`}>
+                  <div className={`p-2 rounded-lg shrink-0 ${modStatus.isModified ? 'bg-indigo-50 text-indigo-655' : 'bg-amber-50 text-amber-605'}`}>
                     {modStatus.isModified ? <Sparkles className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                   </div>
                   <div className="space-y-1">
