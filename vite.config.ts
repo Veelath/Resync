@@ -6,7 +6,7 @@ import fs from 'fs';
 
 // Automatically copy the logo PNG from the user's brain directory to src/assets
 try {
-  const source = 'C:/Users/Nitro 5/.gemini/antigravity-ide/brain/3535eaeb-7c0c-4cab-8b72-d33117c9cbd4/media__1783689243353.png';
+  const source = 'C:/Users/Nitro 5/.gemini/antigravity-ide/brain/dc0c307d-51d7-4add-bf65-94e0f7c6e172/media__1784691744287.png';
   const destDir = path.resolve(__dirname, 'src/assets');
   const dest = path.join(destDir, 'logo.png');
 
