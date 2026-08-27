@@ -225,9 +225,36 @@ export default function ScanForm({
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean);
+
+    // An uploaded Style Guide .txt was previously sent only as
+    // style_reference_url ('file://' + name) which the backend never
+    // reads -- the scan silently ran on auto-detect while the report's
+    // "STYLE GUIDE" chip implied a department template drove it. Parse it
+    // into template_toc the same way pasted Advanced-options text is
+    // parsed, handling both a plain one-heading-per-line file and the
+    // quoted-comma-separated export shape ("Heading", per line).
+    let styleGuideTemplateToc: string[] | undefined;
+    if (parsedCustomToc.length === 0 && styleGuideSource === 'file' && styleGuideFile && /\.txt$/i.test(styleGuideFile.name)) {
+      try {
+        const rawText = await styleGuideFile.text();
+        const parsed = rawText
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => line.replace(/,\s*$/, ''))
+          .map((line) => line.replace(/^"(.*)"$/, '$1').trim())
+          .filter(Boolean);
+        if (parsed.length > 0) styleGuideTemplateToc = parsed;
+      } catch {
+        // Unreadable as text (e.g. a mis-named binary) -- fall through to
+        // auto-detect rather than sending a garbled template_toc.
+      }
+    }
+
     const resolvedTemplateToc = parsedCustomToc.length > 0
       ? parsedCustomToc
-      : (templateToc && templateToc.length > 0 ? templateToc : undefined);
+      : styleGuideTemplateToc
+      ?? (templateToc && templateToc.length > 0 ? templateToc : undefined);
 
     try {
       const activeUserId = userId;

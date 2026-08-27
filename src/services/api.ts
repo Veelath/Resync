@@ -426,10 +426,22 @@ export function mapScanResponseToScanResult(
     chapterType: options?.chapterType || 'Full Manuscript',
     overall_coherence_score: response.overall_coherence_score,
     coherenceScore: coherence,
-    overallAssessment:
-      response.missing_sections && response.missing_sections.length > 0
-        ? `Scan completed with overall coherence score of ${coherence}/100. Missing mandatory sections detected: ${response.missing_sections.join(', ')}.`
-        : `Scan completed successfully with overall coherence score of ${coherence}/100 across ${response.sections_analyzed?.length || 0} analyzed sections.`,
+    // Sourced from score_breakdown.structural_detail, not response.missing_sections --
+    // that field uses parser.py's <20-char gate (a different, stricter bar
+    // than the <40-word stub/absent split scoring.py actually scores
+    // against), so it could claim a section was "missing" when it had
+    // been written just under the scoring threshold, or vice versa.
+    overallAssessment: (() => {
+      const missingRequired = response.score_breakdown?.structural_detail?.missing_required || [];
+      const stubSections = response.score_breakdown?.structural_detail?.stub_sections || [];
+      const parts: string[] = [];
+      if (missingRequired.length > 0) parts.push(`missing required section(s): ${missingRequired.join(', ')}`);
+      if (stubSections.length > 0) parts.push(`under-developed section(s): ${stubSections.join(', ')}`);
+      const bandSuffix = response.score_breakdown?.band ? ` (${response.score_breakdown.band})` : '';
+      return parts.length > 0
+        ? `Scan completed with overall coherence score of ${coherence}/100${bandSuffix}. Found ${parts.join('; ')}.`
+        : `Scan completed successfully with overall coherence score of ${coherence}/100${bandSuffix} across ${response.sections_analyzed?.length || 0} analyzed sections.`;
+    })(),
     inconsistencies: mappedInconsistencies,
     correlationReport: mappedInconsistencies,
     citations: mappedCitations,

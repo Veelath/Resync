@@ -38,7 +38,7 @@ function getCitationStatusBadge(cit: CitedReference): { label: string; className
 }
 
 export default function ResultDetails({ scan }: ResultDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'inconsistencies' | 'strong_coherence' | 'citations'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'inconsistencies' | 'coherence_links' | 'citations'>('overview');
 
   // Accordion state maps
   const [expandedInconsistencies, setExpandedInconsistencies] = useState<Record<number, boolean>>({});
@@ -53,8 +53,8 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
     setExpandedCitations(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  const getCoherenceTier = (score: number) => {
-    const tier = getScoreTier(score);
+  const getCoherenceTier = (score: number, band?: string) => {
+    const tier = getScoreTier(score, band);
     return { label: tier.label, color: `${tier.bgColor} ${tier.textColor} ${tier.borderColor}` };
   };
 
@@ -62,28 +62,31 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
   const handlePrint = () => window.print();
 
   const displayScore = scan.coherenceScore;
-  const tier = getCoherenceTier(displayScore);
+  const tier = getCoherenceTier(displayScore, scan.score_breakdown?.band);
   const breakdown = scan.score_breakdown;
 
   const inconsistenciesList = (scan.inconsistencies && scan.inconsistencies.length > 0) ? scan.inconsistencies : (scan.correlationReport && scan.correlationReport.length > 0 ? scan.correlationReport : []);
+  const dismissedPairsList = scan.score_breakdown?.coherence_detail?.dismissed_pairs || [];
 
-  // Mirrors services/scoring.py::PAR_SCORE. The Strong Coherence tab used
-  // to read scan.section_scores (the deprecated linear adjacent-pair
-  // scale, filtered at an unrelated >=70 cutoff, and never populated at
-  // all for a scan reloaded from history) -- it now reads the calibrated
-  // role-pair scores that actually decide what "strong" means, and
-  // attaches the model's substantive-vs-superficial verification note
-  // for each one.
+  // Mirrors services/scoring.py::PAR_SCORE. A pair the strong-pair
+  // verifier called "superficial" is demoted below PAR by
+  // apply_verification_verdicts before this ever reaches the frontend --
+  // so this tab has to be keyed off "was this pair verified" (unordered
+  // role-pair match), not "does it currently score >= PAR", or every
+  // demoted pair would silently vanish from the report instead of
+  // showing up amber with its raw score.
   const PAR_SCORE = 80;
   const verificationByPair = new Map(
-    (scan.verifications || []).map(v => [`${v.role_a}|${v.role_b}`, v])
+    (scan.verifications || []).map(v => [[v.role_a, v.role_b].sort().join('|'), v])
   );
-  const strongCoherenceList = (scan.score_breakdown?.coherence_detail?.pair_scores || [])
-    .filter(p => p.included && (p.score ?? 0) >= PAR_SCORE)
+  const coherenceLinksList = (scan.score_breakdown?.coherence_detail?.pair_scores || [])
+    .filter(p => p.included)
     .map(p => ({
       ...p,
-      verification: verificationByPair.get(`${p.role_a}|${p.role_b}`),
-    }));
+      verification: verificationByPair.get([p.role_a, p.role_b].sort().join('|')),
+    }))
+    .filter(p => p.verification || (p.score ?? 0) >= PAR_SCORE);
+  const verificationUnavailable = scan.score_breakdown?.coherence_detail?.verification_unavailable ?? false;
 
   const citationsList = (scan.citations && scan.citations.length > 0) ? scan.citations : (scan.references && scan.references.length > 0 ? scan.references : []);
 
@@ -106,7 +109,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
         {[ 
           { id: 'overview', label: 'Overview' },
           { id: 'inconsistencies', label: `Inconsistencies (${inconsistenciesList.length})` },
-          { id: 'strong_coherence', label: `Strong Coherence (${strongCoherenceList.length})` },
+          { id: 'coherence_links', label: `Coherence Links (${coherenceLinksList.length})` },
           { id: 'citations', label: `Citations (${citationsList.length})` }
         ].map(tab => (
           <button
@@ -134,16 +137,40 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
               <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">Summary</span>
                 <p className="text-sm text-slate-700 leading-relaxed">{scan.overallAssessment}</p>
-                {scan.missingSections && scan.missingSections.length > 0 && (
-                  <div className="mt-4 bg-rose-50/30 border border-rose-250 rounded-xl p-4">
-                    <span className="text-xs font-bold text-rose-800 uppercase block mb-2">Missing Sections:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {scan.missingSections.map((sec, idx) => (
-                        <span key={idx} className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">⚠️ {sec}</span>
-                      ))}
+                {/* Sourced from structural_detail, not scan.missingSections --
+                    that list uses a <20-char parser gate that can't tell a
+                    genuinely absent section from one that's merely a stub,
+                    so it produced false "MISSING SECTIONS" claims for
+                    sections that were written but short. */}
+                {(() => {
+                  const missingRequired = scan.score_breakdown?.structural_detail?.missing_required || [];
+                  const stubSections = scan.score_breakdown?.structural_detail?.stub_sections || [];
+                  if (missingRequired.length === 0 && stubSections.length === 0) return null;
+                  return (
+                    <div className="mt-4 space-y-3">
+                      {missingRequired.length > 0 && (
+                        <div className="bg-rose-50/30 border border-rose-250 rounded-xl p-4">
+                          <span className="text-xs font-bold text-rose-800 uppercase block mb-2">Missing Sections:</span>
+                          <div className="flex flex-wrap gap-2">
+                            {missingRequired.map((sec, idx) => (
+                              <span key={idx} className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">⚠️ {sec}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {stubSections.length > 0 && (
+                        <div className="bg-amber-50/30 border border-amber-200 rounded-xl p-4">
+                          <span className="text-xs font-bold text-amber-800 uppercase block mb-2">Underdeveloped Sections:</span>
+                          <div className="flex flex-wrap gap-2">
+                            {stubSections.map((sec, idx) => (
+                              <span key={idx} className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">✎ {sec}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
 
@@ -370,15 +397,45 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                 </div>
               );
             })}
-            {inconsistenciesList.length === 0 && <p className="text-slate-500 text-sm">No inconsistencies detected.</p>}
+            {inconsistenciesList.length === 0 && dismissedPairsList.length === 0 && (
+              <p className="text-slate-500 text-sm">No section pairs scored low enough to require a coherence check.</p>
+            )}
+            {inconsistenciesList.length === 0 && dismissedPairsList.length > 0 && (
+              <p className="text-slate-500 text-sm">
+                No material inconsistency found. {dismissedPairsList.length} low-scoring pair{dismissedPairsList.length === 1 ? '' : 's'} below were checked and cleared — see "Checked, no material issue" below.
+              </p>
+            )}
+
+            {dismissedPairsList.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                  Checked, no material issue ({dismissedPairsList.length})
+                </span>
+                {dismissedPairsList.map((d, idx) => (
+                  <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-slate-700">{d.role_a} ↔ {d.role_b}</span>
+                      <span className="ml-auto text-xs font-bold px-2 py-1 rounded bg-slate-200 text-slate-700">Score: {d.score}</span>
+                    </div>
+                    <p className="text-sm text-slate-500 leading-relaxed">{d.reason}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* TAB 3: STRONG COHERENCE */}
-        {activeTab === 'strong_coherence' && (
+        {/* TAB 3: COHERENCE LINKS */}
+        {activeTab === 'coherence_links' && (
           <div className="space-y-4">
-            {strongCoherenceList.map((item, idx) => {
-              const isSuperficial = item.verification?.alignment === 'superficial';
+            {verificationUnavailable && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600">
+                Strong-link verification was unavailable for this scan — the scores below have not
+                been checked for shared-vocabulary false positives.
+              </div>
+            )}
+            {coherenceLinksList.map((item, idx) => {
+              const isSuperficial = item.alignment === 'superficial' || item.verification?.alignment === 'superficial';
               return (
                 <div
                   key={idx}
@@ -388,27 +445,29 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                   <div className="flex items-center gap-2">
                     <CheckCircle className={`w-5 h-5 ${isSuperficial ? 'text-amber-600' : 'text-emerald-600'}`} />
                     <span className={`text-sm font-bold ${isSuperficial ? 'text-amber-900' : 'text-emerald-900'}`}>{item.role_a} ↔ {item.role_b}</span>
-                    {item.verification && (
+                    {(item.alignment || item.verification) && (
                       <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
                         }`}>
-                        {item.verification.alignment}
+                        {item.alignment || item.verification?.alignment}
                       </span>
                     )}
                     <span className={`ml-auto text-xs font-bold px-2 py-1 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}>Score: {item.score}</span>
+                      }`}>
+                      {item.raw_score != null ? `Score: ${item.raw_score} → ${item.score}` : `Score: ${item.score}`}
+                    </span>
                   </div>
                   {item.verification?.note && (
                     <p className={`text-sm leading-relaxed ml-7 ${isSuperficial ? 'text-amber-700' : 'text-emerald-700'}`}>
                       {item.verification.note}
                     </p>
                   )}
-                  {!item.verification && (
+                  {!item.verification && !item.alignment && (
                     <p className="text-sm text-slate-500 leading-relaxed ml-7">Verification pending or unavailable for this pair.</p>
                   )}
                 </div>
               );
             })}
-            {strongCoherenceList.length === 0 && <p className="text-slate-500 text-sm">No strong coherence links reported.</p>}
+            {coherenceLinksList.length === 0 && <p className="text-slate-500 text-sm">No coherence links reported.</p>}
           </div>
         )}
 

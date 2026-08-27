@@ -41,7 +41,7 @@ import ResultDetails from './components/ResultDetails.tsx';
 import ProfileView, { CreditHistoryPanel } from './components/ProfileView.tsx';
 import ScoreRing from './components/ScoreRing.tsx';
 import TopUpModal from './components/TopUpModal.tsx';
-import { getScoreTier } from './utils.js';
+import { getScoreTier, isCitationDefect } from './utils.js';
 import { getCreditBalance } from './services/api.js';
 import logoPng from './assets/logo.png';
 
@@ -824,14 +824,20 @@ export default function App() {
   ];
 
   const activeScan = selectedScan || scans[0];
-  const issuesFlagged = activeScan 
-    ? (activeScan.correlationReport?.length || 0) + (activeScan.suggestions?.length || 0)
+  // Distinct sources, not correlationReport.length + suggestions.length --
+  // suggestions is derived from the same inconsistencies array
+  // (services/api.ts), so that expression double-counted every issue and
+  // ignored missing sections and citation defects entirely.
+  const issuesFlagged = activeScan
+    ? (activeScan.inconsistencies?.length || activeScan.correlationReport?.length || 0)
+      + (activeScan.missingSections?.length || 0)
+      + (activeScan.citations || activeScan.references || []).filter(isCitationDefect).length
     : 0;
-  const citationsChecked = activeScan 
+  const citationsChecked = activeScan
     ? activeScan.references?.length || 0
     : 0;
   const citationsFlagged = activeScan
-    ? activeScan.references?.filter(ref => ref.status !== 'Accessible').length || 0
+    ? (activeScan.citations || activeScan.references || []).filter(isCitationDefect).length
     : 0;
 
   let scanDateString = '';
@@ -853,7 +859,7 @@ export default function App() {
   let scoreBadge = 'bg-rose-50 text-rose-700 border-rose-200';
   let scoreLabel = 'Low Coherence';
   if (activeScan) {
-    const tier = getScoreTier(activeScan.coherenceScore);
+    const tier = getScoreTier(activeScan.coherenceScore, activeScan.score_breakdown?.band);
     scoreBadge = tier.badgeClass;
     scoreLabel = tier.label;
   }
@@ -1368,15 +1374,14 @@ export default function App() {
                       <div className="space-y-1 text-left">
                         <h3 className="text-md font-bold text-slate-800 leading-tight">Manuscript integrity</h3>
                         <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
-                            latestUploadedScan.coherenceScore >= 85 
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                              : latestUploadedScan.coherenceScore >= 70 
-                              ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
-                          }`}>
-                            {latestUploadedScan.coherenceScore >= 85 ? 'High Coherence' : latestUploadedScan.coherenceScore >= 70 ? 'Moderate Coherence' : 'Low Coherence'}
-                          </span>
+                          {(() => {
+                            const uploadedTier = getScoreTier(latestUploadedScan.coherenceScore, latestUploadedScan.score_breakdown?.band);
+                            return (
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded border ${uploadedTier.badgeClass}`}>
+                                {uploadedTier.label}
+                              </span>
+                            );
+                          })()}
                           <span className="text-xs text-slate-400 font-mono">
                             {new Date(latestUploadedScan.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(latestUploadedScan.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                           </span>
@@ -1388,7 +1393,9 @@ export default function App() {
                     <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
                       <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                         <span className="text-xl font-extrabold text-slate-800 font-mono">
-                          {(latestUploadedScan.correlationReport?.length || 0) + (latestUploadedScan.suggestions?.length || 0)}
+                          {(latestUploadedScan.inconsistencies?.length || latestUploadedScan.correlationReport?.length || 0)
+                            + (latestUploadedScan.missingSections?.length || 0)
+                            + (latestUploadedScan.citations || latestUploadedScan.references || []).filter(isCitationDefect).length}
                         </span>
                         <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Issues<br/>flagged</span>
                       </div>
@@ -1402,7 +1409,7 @@ export default function App() {
 
                       <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                         <span className="text-xl font-extrabold text-slate-800 font-mono">
-                          {latestUploadedScan.references?.filter(ref => ref.status !== 'Accessible').length || 0}
+                          {(latestUploadedScan.citations || latestUploadedScan.references || []).filter(isCitationDefect).length}
                         </span>
                         <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
                       </div>

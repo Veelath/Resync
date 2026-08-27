@@ -53,6 +53,11 @@ export interface RolePairScore {
   score?: number;
   raw_similarity?: number;
   reason?: string;
+  // Present only when a strong-pair verification verdict of 'superficial'
+  // demoted this pair's score (services/scoring.py::apply_verification_verdicts).
+  // raw_score is the pre-penalty calibrated score.
+  raw_score?: number;
+  alignment?: 'substantive' | 'superficial';
 }
 
 // A high-scoring (>= PAR) role pair, checked for whether its calibrated
@@ -126,6 +131,10 @@ export interface ScoreBreakdown {
     unevaluable_weight_fraction: number;
     dismissed_pairs?: DismissedPair[];
     verifications?: Verification[];
+    // True when one or more pairs scored high enough to need verification
+    // existed, but the verification call itself failed -- those pairs'
+    // scores are unconfirmed, not proven substantive.
+    verification_unavailable?: boolean;
   };
   citation_detail?: {
     well_formed_ratio: number;

@@ -16,29 +16,46 @@ export interface ScoreTier {
 
 /**
  * Categorizes coherence scores into standardized tiers and styling classes.
+ * Thresholds mirror services/scoring.py::_band_for exactly (85/70/55) --
+ * previously this used 80/50 while App.tsx's inline ternary used 85, so an
+ * 82 could render "High Coherence" in one place and "Moderate Coherence"
+ * in another on the same report. When the backend-computed band string is
+ * available (scan.score_breakdown.band), pass it as `band` so the label
+ * itself comes from the single source of truth rather than being
+ * re-derived client-side; older cached scans without score_breakdown fall
+ * back to the score-only labels below.
  */
-export function getScoreTier(score: number): ScoreTier {
-  if (score >= 80) {
+export function getScoreTier(score: number, band?: string): ScoreTier {
+  if (score >= 85) {
     return {
-      label: 'High Coherence',
+      label: band ?? 'Strong',
       strokeColor: 'stroke-emerald-500',
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-700',
       borderColor: 'border-emerald-200',
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
     };
-  } else if (score >= 50) {
+  } else if (score >= 70) {
     return {
-      label: 'Moderate Coherence',
+      label: band ?? 'Solid',
       strokeColor: 'stroke-amber-500',
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-800',
       borderColor: 'border-amber-200',
       badgeClass: 'bg-amber-50 text-amber-700 border-amber-200'
     };
+  } else if (score >= 55) {
+    return {
+      label: band ?? 'Needs Revision',
+      strokeColor: 'stroke-orange-500',
+      bgColor: 'bg-orange-50',
+      textColor: 'text-orange-800',
+      borderColor: 'border-orange-200',
+      badgeClass: 'bg-orange-50 text-orange-700 border-orange-200'
+    };
   } else {
     return {
-      label: 'Low Coherence',
+      label: band ?? 'Major Revision',
       strokeColor: 'stroke-rose-500',
       bgColor: 'bg-rose-50',
       textColor: 'text-rose-700',
@@ -46,6 +63,23 @@ export function getScoreTier(score: number): ScoreTier {
       badgeClass: 'bg-rose-50 text-rose-700 border-rose-200'
     };
   }
+}
+
+// Mirrors services/scoring.py::compute_citation_integrity's link_resolution_rate
+// definition of a defect -- no_link (print-only reference) and bot_wall
+// (publisher blocked automated verification, benefit of the doubt) are not
+// counted there, so the UI's "citations flagged" count must not sweep them
+// in either. Previously `status !== 'Accessible'` counted both as flagged,
+// producing 34 flagged against a citation-integrity score of 83 on the
+// same report.
+export function isCitationDefect(c: { citation_status?: string; status?: string }): boolean {
+  if (c.citation_status) {
+    return c.citation_status === 'broken'
+      || c.citation_status === 'metadata_mismatch'
+      || c.citation_status === 'unknown_error';
+  }
+  // Legacy fallback for rows with no citation_status ladder value.
+  return c.status === 'Broken Link';
 }
 
 /**
