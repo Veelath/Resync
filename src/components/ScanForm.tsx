@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ScanResult } from '../types.js';
+import { executeManuscriptScan, mapScanResponseToScanResult, InsufficientCreditsError } from '../services/api.js';
 import {
   Compass,
   CheckCircle2,
@@ -17,43 +18,52 @@ import {
   X,
   Download,
   BookOpen,
-  Link
+  Link,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+  Zap,
+  ListTree
 } from 'lucide-react';
 import { downloadReport } from '../utils.js';
 
 interface ScanFormProps {
   email: string;
+  userId?: string;
+  templateToc?: string[];
   onScanSuccess: (scan: ScanResult) => void;
-  isRescan?: boolean;
-  initialDocumentLink?: string;
-  prevScanTimestamp?: string;
-  parentScanId?: string;
   initialUploadType?: 'chapter' | 'manuscript' | null;
   initialChaptersString?: string;
+  scanCredits: number;
+  setScanCredits: React.Dispatch<React.SetStateAction<number>>;
+  setShowTopUpModal: React.Dispatch<React.SetStateAction<boolean>>;
+  onScanningChange?: (isScanning: boolean) => void;
 }
 
 const ANALYSIS_STEPS = [
-  "Securing file connection...",
-  "Retrieving document layout and paragraphs...",
-  "Analyzing terminology and semantic consistency...",
-  "Mapping logic gates between adjacent sections...",
-  "Cross-checking methodologies vs conclusions...",
-  "Parsing bibliographical reference tags...",
-  "Running accessibility check on citation URLs...",
-  "Assembling final coherence report..."
+  "Downloading document…",
+  "Analyzing sections…",
+  "Generating report…"
 ];
+
+// How often the full-screen loading overlay rotates its status copy. Kept
+// short (relative to the up-to-5-minute scan timeout) so the overlay always
+// feels alive even on a long-running scan, since it just loops the 3 steps.
+const ANALYSIS_STEP_INTERVAL_MS = 9000;
 
 export default function ScanForm({
   email,
+  userId,
+  templateToc,
   onScanSuccess,
-  isRescan = false,
-  initialDocumentLink = '',
-  prevScanTimestamp = '',
-  parentScanId = ''
+  scanCredits,
+  setScanCredits,
+  setShowTopUpModal,
+  onScanningChange
 }: ScanFormProps) {
 
   // Fields
-  const [documentLink, setDocumentLink] = useState(isRescan && !initialDocumentLink.startsWith('file://') ? initialDocumentLink : '');
+  const [documentLink, setDocumentLink] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customTopic, setCustomTopic] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,12 +78,16 @@ export default function ScanForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const styleGuideFileInputRef = useRef<HTMLInputElement>(null);
 
-  const [uploadSource, setUploadSource] = useState<'link' | 'file'>(isRescan && initialDocumentLink.startsWith('file://') ? 'file' : 'link');
+  const [uploadSource, setUploadSource] = useState<'link' | 'file'>('link');
   const uploadType = 'manuscript';
   const [success, setSuccess] = useState(false);
-  const [showRescanConfirmModal, setShowRescanConfirmModal] = useState(false);
   const [researchType, setResearchType] = useState<'quantitative' | 'qualitative'>('quantitative');
   const [latestScanResult, setLatestScanResult] = useState<ScanResult | null>(null);
+
+  // "Scan and go": everything below is optional/secondary and lives behind
+  // a collapsed-by-default "Advanced options" disclosure.
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [customTocText, setCustomTocText] = useState('');
 
   const playSuccessChime = () => {
     try {
@@ -121,41 +135,6 @@ export default function ScanForm({
     downloadReport(scan);
   };
 
-  // Check if file is modified
-  const getFileModificationStatus = () => {
-    if (!isRescan || uploadSource !== 'file' || !uploadedFile || !initialDocumentLink) {
-      return { isModified: true, reason: '' };
-    }
-
-    const prevFileName = initialDocumentLink.replace('file://', '');
-    const hasDifferentName = uploadedFile.name !== prevFileName;
-
-    const prevScanTime = prevScanTimestamp ? new Date(prevScanTimestamp).getTime() : 0;
-    const hasNewerModifiedTime = uploadedFile.lastModified > prevScanTime;
-
-    if (hasDifferentName) {
-      return {
-        isModified: true,
-        reason: `You uploaded a different file ("${uploadedFile.name}" instead of "${prevFileName}").`
-      };
-    }
-
-    if (hasNewerModifiedTime) {
-      return {
-        isModified: true,
-        reason: `The file has been modified since your last scan.`
-      };
-    }
-
-    return {
-      isModified: false,
-      reason: `No changes detected. The file has the same name and has not been modified since your last scan.`
-    };
-  };
-
-  const modStatus = getFileModificationStatus();
-  const prevFileName = initialDocumentLink ? initialDocumentLink.replace('file://', '') : '';
-
   // Rotate loading messages while analyzing
   useEffect(() => {
     let interval: any;
@@ -163,7 +142,7 @@ export default function ScanForm({
       setStepIndex(0);
       interval = setInterval(() => {
         setStepIndex((prev) => (prev + 1) % ANALYSIS_STEPS.length);
-      }, 3500);
+      }, ANALYSIS_STEP_INTERVAL_MS);
     }
     return () => clearInterval(interval);
   }, [loading]);
@@ -196,6 +175,11 @@ export default function ScanForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (scanCredits < 1) {
+      setShowTopUpModal(true);
+      return;
+    }
+
     if (uploadSource === 'file') {
       if (!uploadedFile) {
         setError('Please select or upload a Word document.');
@@ -208,15 +192,12 @@ export default function ScanForm({
       }
     }
 
-    if (isRescan) {
-      setShowRescanConfirmModal(true);
-    } else {
-      executeScan();
-    }
+    executeScan();
   };
 
   const executeScan = async () => {
     setLoading(true);
+    if (onScanningChange) onScanningChange(true);
     setError('');
     setSuccess(false);
 
@@ -237,32 +218,55 @@ export default function ScanForm({
       ? (styleGuideFile ? 'file://' + styleGuideFile.name : '')
       : styleGuideLink;
 
+    // Optional custom TOC pasted in Advanced options, one heading per line.
+    // When left blank, no template_toc is sent and the backend's
+    // auto-detection path determines sections instead.
+    const parsedCustomToc = customTocText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const resolvedTemplateToc = parsedCustomToc.length > 0
+      ? parsedCustomToc
+      : (templateToc && templateToc.length > 0 ? templateToc : undefined);
+
     try {
-      const response = await fetch('/api/scans/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          documentLink: linkToSend,
-          chapterType: formattedCategory,
-          customTopic: resolvedTopic,
-          supportingDoc: '',
-          styleGuideLink: styleGuideVal || undefined,
-          researchType,
-          parentScanId: isRescan ? parentScanId : undefined
-        })
+      const activeUserId = userId;
+      if (!activeUserId) {
+        setError('Authentication error: no user ID available. Please log out and log in again.');
+        setLoading(false);
+        return;
+      }
+
+      // No manuscript_id sent: the backend creates a fresh manuscript row
+      // per scan-and-go submission, keyed off manuscript_title + doc_url.
+      const rawResponse = await executeManuscriptScan({
+        user_id: activeUserId,
+        manuscript_title: resolvedTopic,
+        doc_url: linkToSend,
+        template_toc: resolvedTemplateToc,
+        style_reference_url: styleGuideVal || undefined
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to scan manuscript.');
-      }
+      // Map live backend ScanResponse into React ScanResult state
+      const mappedScan = mapScanResponseToScanResult(rawResponse, {
+        title: resolvedTopic,
+        customTopic: resolvedTopic,
+        chapterType: formattedCategory,
+        researchType,
+        styleGuideLink: styleGuideVal || undefined
+      });
 
       // Play synthesized completion chime
       playSuccessChime();
 
-      onScanSuccess(data.scan);
-      setLatestScanResult(data.scan);
+      if (typeof rawResponse.credits_remaining === 'number') {
+        setScanCredits(rawResponse.credits_remaining);
+      } else {
+        setScanCredits(prev => Math.max(0, prev - 1));
+      }
+
+      onScanSuccess(mappedScan);
+      setLatestScanResult(mappedScan);
       setSuccess(true);
       setUploadedFile(null);
       setDocumentLink('');
@@ -270,45 +274,88 @@ export default function ScanForm({
       setStyleGuideLink('');
       setStyleGuideFile(null);
       setStyleGuideSource('link');
+      setCustomTocText('');
     } catch (err: any) {
-      setError(err.message || 'An error occurred during scanning.');
+      if (err instanceof InsufficientCreditsError) {
+        setScanCredits(err.balance);
+        setShowTopUpModal(true);
+      } else {
+        setError(err.message || 'An error occurred during scanning.');
+      }
     } finally {
       setLoading(false);
+      if (onScanningChange) onScanningChange(false);
     }
   };
 
+  const handleLoadDemo = () => {
+    setUploadSource('link');
+    setDocumentLink('https://docs.google.com/document/d/1XHPdreNeC2ivez4Zaqlr78-f9L3aa4bgX48QBiss-No/edit?usp=sharing');
+    setCustomTopic('PAPAIA: An AI-Powered System for Papaya Disease Identification');
+    setResearchType('quantitative');
+    setStyleGuideSource('link');
+    setStyleGuideLink('https://docs.google.com/document/d/demo-department-style-guide-template');
+    setError('');
+  };
+
+
   return (
     <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm animate-fade-in space-y-8">
-      {/* Header bar */}
-      <div className="flex items-center gap-4 border-b border-slate-100 pb-5 text-left">
-        <div className="p-3 rounded-xl bg-indigo-50 text-indigo-655">
-          <Compass className="w-6 h-6" />
+      {/* Header bar with Try Demo Scan Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 text-left">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-indigo-50 text-indigo-655">
+            <Compass className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="font-serif text-lg sm:text-xl font-bold text-slate-855">Manuscript Coherence Scan Engine</h2>
+            <p className="text-xs sm:text-sm text-slate-450 mt-1">
+              Fetch, analyze, and diagnose logical flow in seconds. Our AI audits for:
+            </p>
+            <div className="flex gap-3 mt-2 text-[11px] font-semibold text-slate-500">
+              <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-indigo-500" /> Coherence</span>
+              <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-emerald-500" /> Structure</span>
+              <span className="flex items-center gap-1"><Link className="w-3 h-3 text-amber-500" /> Citations</span>
+            </div>
+          </div>
         </div>
-        <div>
-          <h2 className="font-serif text-lg sm:text-xl font-bold text-slate-855">Manuscript Coherence Scan Engine</h2>
-          <p className="text-xs sm:text-sm text-slate-450 mt-1">Fetch, analyze, and diagnose logical flow in seconds.</p>
-        </div>
+
+        <button
+          type="button"
+          onClick={handleLoadDemo}
+          disabled={loading}
+          className="self-start sm:self-auto bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer hover:scale-102 active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed"
+          title="Auto-fill sample manuscript data for instant test scan"
+        >
+          <Sparkles className="w-4 h-4 text-emerald-600" />
+          <span>Try Demo Scan</span>
+        </button>
       </div>
 
-      {loading ? (
-        <div className="py-16 flex flex-col items-center justify-center text-center space-y-6 animate-fade-in">
-          <div className="relative">
-            <div className="absolute inset-0 bg-indigo-100/50 rounded-full blur-2xl animate-pulse"></div>
-            <Loader2 className="w-12 h-12 text-indigo-600 animate-spin relative" />
-          </div>
 
-          <div className="space-y-2.5 max-w-md">
-            <h3 className="font-serif text-lg font-bold text-slate-850 animate-pulse">Analyzing Coherence...</h3>
-            <p className="text-sm sm:text-base text-indigo-600 font-bold font-mono min-h-[35px] px-6 transition-all">
-              {ANALYSIS_STEPS[stepIndex]}
-            </p>
-            <p className="text-xs sm:text-sm text-slate-450 leading-relaxed">
-              Our AI is auditing logical consistency and citation maps. This may take up to 20 seconds.
-            </p>
+      {/* Full-screen blocking loading overlay (fixed inset-0, blurred indigo scrim). */}
+      {loading && (
+        <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-white/95 rounded-2xl p-10 border border-slate-200/80 max-w-sm w-full text-center space-y-6 shadow-2xl">
+            <div className="relative mx-auto w-fit">
+              <div className="absolute inset-0 bg-indigo-100/50 rounded-full blur-2xl animate-pulse"></div>
+              <Loader2 className="w-12 h-12 text-indigo-600 animate-spin relative" />
+            </div>
+
+            <div className="space-y-2.5">
+              <h3 className="font-serif text-lg font-bold text-slate-850 animate-pulse">Scanning your manuscript…</h3>
+              <p className="text-sm sm:text-base text-indigo-600 font-bold font-mono min-h-[35px] px-2 transition-all">
+                {ANALYSIS_STEPS[stepIndex]}
+              </p>
+              <p className="text-xs sm:text-sm text-slate-450 leading-relaxed">
+                Our AI is auditing logical consistency and citation maps. Larger manuscripts can take a couple of minutes — this won't get stuck.
+              </p>
+            </div>
           </div>
         </div>
-      ) : (
-        <div className="space-y-8">
+      )}
+
+      <div className="space-y-8">
           {success && latestScanResult && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-emerald-50 text-emerald-800 text-sm p-5 rounded-xl border border-emerald-100 animate-fade-in relative">
               <div className="flex items-start gap-3">
@@ -316,7 +363,7 @@ export default function ScanForm({
                 <div className="space-y-1 pr-6 text-left">
                   <span className="font-semibold block font-serif text-emerald-900">Scan Completed Successfully</span>
                   <p className="text-xs leading-relaxed text-slate-650">
-                    Your manuscript has been successfully analyzed with Coherence Score: <strong className="text-emerald-800 font-bold">{latestScanResult.coherenceScore}/100</strong> and Duplication Rate: <strong className="text-emerald-800 font-bold">{latestScanResult.duplicationScore}%</strong>. You can download the report here or browse details.
+                    Your manuscript has been successfully analyzed with Coherence Score: <strong className="text-emerald-800 font-bold">{latestScanResult.coherenceScore}/100</strong>. You can download the report here or browse details.
                   </p>
                 </div>
               </div>
@@ -357,73 +404,8 @@ export default function ScanForm({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <div className="text-left">
-                <span className="text-sm font-bold text-indigo-650 uppercase tracking-wide block font-mono">
-                  Uploading
-                </span>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-855 font-serif">
-                  Full manuscript draft
-                </h3>
-              </div>
-            </div>
-
-            {/* Custom Topic field */}
-            <div className="space-y-3 text-left">
-              <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                Research Project Title or Topic
-              </label>
-              <input
-                type="text"
-                value={customTopic}
-                onChange={(e) => setCustomTopic(e.target.value)}
-                placeholder="e.g. Edge Heart Wearable anomaly detection (Optional)"
-                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-              />
-            </div>
-
-            {/* Research Paradigm Selector */}
-            <div className="space-y-4 text-left p-5 bg-indigo-50/15 border border-indigo-100/50 rounded-2xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
-                    Research Methodology Paradigm
-                  </label>
-                  <p className="text-xs text-slate-455 mt-0.5">Select your primary design paradigm to calibrate scanning parameters</p>
-                </div>
-
-                <div className="flex bg-slate-100 rounded-xl p-0.5 border border-slate-200/40 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setResearchType('quantitative')}
-                    className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${researchType === 'quantitative'
-                        ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                        : 'text-slate-400 hover:text-slate-655'
-                      }`}
-                  >
-                    Quantitative
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setResearchType('qualitative')}
-                    className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${researchType === 'qualitative'
-                        ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                        : 'text-slate-400 hover:text-slate-655'
-                      }`}
-                  >
-                    Qualitative
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-550 font-sans italic leading-relaxed">
-                {researchType === 'quantitative'
-                  ? "★ Calibrated for statistical significance tests, data matrices, validation surveys, and empirical logic gates."
-                  : "★ Calibrated for interview scripts, thematic analysis codes, conceptual schemas, and literature matrices."
-                }
-              </p>
-            </div>
-
+            {/* Primary "scan and go" input: source tabs + the document input
+                are the visual centerpiece. Everything else is secondary. */}
             {/* Tabs selector */}
             <div className="flex border-b border-slate-200">
               <button
@@ -481,11 +463,6 @@ export default function ScanForm({
                   <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
                     Upload Word Document (.docx)
                   </label>
-                  {isRescan && prevFileName && (
-                    <span className="text-sm text-indigo-650 font-semibold">
-                      Previous file: {prevFileName}
-                    </span>
-                  )}
                 </div>
 
                 {uploadedFile ? (
@@ -538,165 +515,218 @@ export default function ScanForm({
               </div>
             )}
 
-            {/* Department Style Guide Reference */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-indigo-50 text-indigo-655">
-                    <BookOpen className="w-5 h-5" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                    Department Style Guide
-                  </h4>
-                </div>
+            {/* Big, obvious primary CTA — sits right under the input so the
+                whole "scan and go" path is: pick source, paste/drop, go. */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-lg sm:text-xl px-9 py-5 rounded-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer group focus:outline-none shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:scale-101 active:scale-99 duration-150"
+            >
+              <Zap className="w-5 h-5" />
+              <span>Scan Now</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
 
-                {/* Selector tabs for style guide source */}
-                <div className="flex bg-slate-100 rounded-xl p-0.5 self-start sm:self-auto border border-slate-200/40">
-                  <button
-                    type="button"
-                    onClick={() => setStyleGuideSource('link')}
-                    className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'link'
-                        ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                        : 'text-slate-400 hover:text-slate-655'
-                      }`}
-                  >
-                    Docs Link
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStyleGuideSource('file')}
-                    className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'file'
-                        ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                        : 'text-slate-400 hover:text-slate-655'
-                      }`}
-                  >
-                    Upload File
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Optional. {styleGuideSource === 'link' ? "Paste a public Google Docs or GDrive link containing your department's specific formatting or structural guidelines." : "Upload a PDF, Word document, or text file containing your department's formatting guidelines."}
-              </p>
-
-              {styleGuideSource === 'link' ? (
-                <div className="relative animate-fade-in">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <input
-                    type="url"
-                    value={styleGuideLink}
-                    onChange={(e) => setStyleGuideLink(e.target.value)}
-                    placeholder="https://docs.google.com/document/d/..."
-                    className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-                  />
-                </div>
-              ) : (
-                <div className="animate-fade-in">
-                  {styleGuideFile ? (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 flex items-center justify-between border-dashed">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-655 flex items-center justify-center shrink-0">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0 text-left">
-                          <p className="text-base font-bold text-slate-800 truncate font-serif">{styleGuideFile.name}</p>
-                          <p className="text-xs text-slate-405">{(styleGuideFile.size / 1024).toFixed(1)} KB</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setStyleGuideFile(null)}
-                        className="p-2 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => styleGuideFileInputRef.current?.click()}
-                      className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-5 px-8 text-center cursor-pointer transition-all flex items-center justify-center gap-2.5"
-                    >
-                      <input
-                        ref={styleGuideFileInputRef}
-                        type="file"
-                        accept=".docx,.pdf,.txt"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            setStyleGuideFile(e.target.files[0]);
-                          }
-                        }}
-                        className="hidden"
-                      />
-                      <Upload className="w-5 h-5 text-slate-450" />
-                      <span className="text-sm font-bold text-slate-655">Select style guide file (PDF, DOCX, TXT...)</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Footer actions */}
-            <div className="pt-6 border-t border-slate-100 flex justify-end">
+            {/* Advanced options — collapsed by default. Title/topic,
+                methodology paradigm, a custom TOC, and the style guide are
+                all optional and secondary to the primary scan path. */}
+            <div className="rounded-2xl border border-slate-200 overflow-hidden">
               <button
-                type="submit"
-                className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-base sm:text-lg px-9 py-4.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer group focus:outline-none shadow-md shadow-slate-900/10 hover:shadow-lg hover:scale-102 active:scale-98 duration-100"
+                type="button"
+                onClick={() => setShowAdvanced((v) => !v)}
+                className="w-full flex items-center justify-between gap-3 px-5 py-4 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer text-left"
               >
-                <span>Analyze manuscript</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+                <div className="flex items-center gap-2.5">
+                  <SlidersHorizontal className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">Advanced options</span>
+                  <span className="hidden sm:inline text-xs font-normal normal-case text-slate-400">
+                    Title, methodology, table of contents, style guide
+                  </span>
+                </div>
+                {showAdvanced ? <ChevronUp className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />}
               </button>
-            </div>
-          </form>
-          
-          {/* Rescan Confirmation Modal */}
-          {showRescanConfirmModal && (
-            <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
-              <div className="bg-white/95 rounded-2xl border border-slate-200/80 shadow-2xl overflow-hidden max-w-md w-full p-6 relative space-y-6 text-left">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg shrink-0 ${modStatus.isModified ? 'bg-indigo-50 text-indigo-655' : 'bg-amber-50 text-amber-605'}`}>
-                    {modStatus.isModified ? <Sparkles className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+
+              {showAdvanced && (
+                <div className="p-5 sm:p-6 space-y-8 border-t border-slate-200 animate-fade-in">
+                  {/* Custom Topic field */}
+                  <div className="space-y-3 text-left">
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
+                      Research Project Title or Topic
+                    </label>
+                    <input
+                      type="text"
+                      value={customTopic}
+                      onChange={(e) => setCustomTopic(e.target.value)}
+                      placeholder="e.g. Edge Heart Wearable anomaly detection (Optional)"
+                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="font-serif text-base font-bold text-slate-900">
-                      {modStatus.isModified ? "Confirm Rescan" : "No Changes Detected"}
-                    </h3>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      {modStatus.isModified
-                        ? `Are you sure you want to rescan this manuscript? ${modStatus.reason}`
-                        : `It looks like "${uploadedFile?.name}" has not been modified since your last scan. Are you sure you want to scan it again?`
+
+                  {/* Research Paradigm Selector */}
+                  <div className="space-y-4 text-left p-5 bg-indigo-50/15 border border-indigo-100/50 rounded-2xl">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
+                          Research Methodology Paradigm
+                        </label>
+                        <p className="text-xs text-slate-455 mt-0.5">Select your primary design paradigm to calibrate scanning parameters</p>
+                      </div>
+
+                      <div className="flex bg-slate-100 rounded-xl p-0.5 border border-slate-200/40 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setResearchType('quantitative')}
+                          className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${researchType === 'quantitative'
+                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                              : 'text-slate-400 hover:text-slate-655'
+                            }`}
+                        >
+                          Quantitative
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setResearchType('qualitative')}
+                          className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${researchType === 'qualitative'
+                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                              : 'text-slate-400 hover:text-slate-655'
+                            }`}
+                        >
+                          Qualitative
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-550 font-sans italic leading-relaxed">
+                      {researchType === 'quantitative'
+                        ? "★ Calibrated for statistical significance tests, data matrices, validation surveys, and empirical logic gates."
+                        : "★ Calibrated for interview scripts, thematic analysis codes, conceptual schemas, and literature matrices."
                       }
                     </p>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowRescanConfirmModal(false)}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/70 px-4 py-2 rounded-xl transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowRescanConfirmModal(false);
-                      executeScan();
-                    }}
-                    className={`text-white font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer ${modStatus.isModified
-                        ? 'bg-indigo-600 hover:bg-indigo-700'
-                        : 'bg-amber-500 hover:bg-amber-600'
-                      }`}
-                  >
-                    {modStatus.isModified ? "Yes, Rescan" : "Rescan Anyway"}
-                  </button>
+                  {/* Custom Table of Contents (optional) */}
+                  <div className="space-y-3 text-left">
+                    <div className="flex items-center gap-2">
+                      <ListTree className="w-4 h-4 text-slate-500" />
+                      <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
+                        Custom Table of Contents
+                      </label>
+                    </div>
+                    <p className="text-xs text-slate-450 leading-relaxed">
+                      Optional. Paste your manuscript's section headings, one per line, to guide the scan. Leave this blank to let our engine auto-detect sections instead.
+                    </p>
+                    <textarea
+                      value={customTocText}
+                      onChange={(e) => setCustomTocText(e.target.value)}
+                      placeholder={"e.g.\nIntroduction\nLiterature Review\nMethodology\nResults\nDiscussion\nConclusion"}
+                      rows={5}
+                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3.5 text-sm text-slate-855 font-mono focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner resize-y"
+                    />
+                  </div>
+
+                  {/* Department Style Guide Reference */}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-left">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-lg bg-indigo-50 text-indigo-655">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                          Department Style Guide
+                        </h4>
+                      </div>
+
+                      {/* Selector tabs for style guide source */}
+                      <div className="flex bg-slate-100 rounded-xl p-0.5 self-start sm:self-auto border border-slate-200/40">
+                        <button
+                          type="button"
+                          onClick={() => setStyleGuideSource('link')}
+                          className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'link'
+                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                              : 'text-slate-400 hover:text-slate-655'
+                            }`}
+                        >
+                          Docs Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStyleGuideSource('file')}
+                          className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'file'
+                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
+                              : 'text-slate-400 hover:text-slate-655'
+                            }`}
+                        >
+                          Upload File
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Optional. {styleGuideSource === 'link' ? "Paste a public Google Docs or GDrive link containing your department's specific formatting or structural guidelines." : "Upload a PDF, Word document, or text file containing your department's formatting guidelines."}
+                    </p>
+
+                    {styleGuideSource === 'link' ? (
+                      <div className="relative animate-fade-in">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <input
+                          type="url"
+                          value={styleGuideLink}
+                          onChange={(e) => setStyleGuideLink(e.target.value)}
+                          placeholder="https://docs.google.com/document/d/..."
+                          className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
+                        />
+                      </div>
+                    ) : (
+                      <div className="animate-fade-in">
+                        {styleGuideFile ? (
+                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 flex items-center justify-between border-dashed">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-655 flex items-center justify-center shrink-0">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0 text-left">
+                                <p className="text-base font-bold text-slate-800 truncate font-serif">{styleGuideFile.name}</p>
+                                <p className="text-xs text-slate-405">{(styleGuideFile.size / 1024).toFixed(1)} KB</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setStyleGuideFile(null)}
+                              className="p-2 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => styleGuideFileInputRef.current?.click()}
+                            className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-5 px-8 text-center cursor-pointer transition-all flex items-center justify-center gap-2.5"
+                          >
+                            <input
+                              ref={styleGuideFileInputRef}
+                              type="file"
+                              accept=".docx,.pdf,.txt"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  setStyleGuideFile(e.target.files[0]);
+                                }
+                              }}
+                              className="hidden"
+                            />
+                            <Upload className="w-5 h-5 text-slate-450" />
+                            <span className="text-sm font-bold text-slate-655">Select style guide file (PDF, DOCX, TXT...)</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </form>
+      </div>
     </div>
   );
 }

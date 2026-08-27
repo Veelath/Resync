@@ -18,16 +18,16 @@ export interface ScoreTier {
  * Categorizes coherence scores into standardized tiers and styling classes.
  */
 export function getScoreTier(score: number): ScoreTier {
-  if (score >= 85) {
+  if (score >= 80) {
     return {
       label: 'High Coherence',
-      strokeColor: 'stroke-indigo-600',
+      strokeColor: 'stroke-emerald-500',
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-700',
       borderColor: 'border-emerald-200',
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
     };
-  } else if (score >= 70) {
+  } else if (score >= 50) {
     return {
       label: 'Moderate Coherence',
       strokeColor: 'stroke-amber-500',
@@ -61,9 +61,11 @@ RESYNC MANUSCRIPT COHERENCE AUDIT REPORT
 ==================================================
 Title: ${scan.title}
 Date Scanned: ${new Date(scan.timestamp).toLocaleString()}
-Coherence Score: ${scan.coherenceScore}/100
-Duplication Rate: ${scan.duplicationScore || 0}%
-Research paradigm: ${scan.researchType ? scan.researchType.toUpperCase() : 'QUANTITATIVE'}
+Coherence Score: ${scan.coherenceScore}/100${scan.score_breakdown ? ` (${scan.score_breakdown.band})` : ''}
+${scan.score_breakdown ? `Structural Completeness: ${scan.score_breakdown.structural_completeness_score ?? 'N/A'}
+Cross-Chapter Coherence: ${scan.score_breakdown.cross_chapter_coherence_score ?? 'N/A'}
+Citation Integrity: ${scan.score_breakdown.citation_integrity_score ?? 'N/A'}
+` : ''}Research paradigm: ${scan.researchType ? scan.researchType.toUpperCase() : 'QUANTITATIVE'}
 Document Source: ${scan.documentLink}
 ==================================================
 

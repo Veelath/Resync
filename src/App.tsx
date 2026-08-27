@@ -15,33 +15,46 @@ import {
   HelpCircle, 
   AlertTriangle, 
   ArrowRight,
-  BookOpen,
+  FileText, 
+  Settings, 
+  Bell,
+  CheckCircle2,
+  AlertCircle,
+  Menu,
+  X,
+  Link,
+  CheckCircle,
+  Compass,
+  FileSpreadsheet,
   GraduationCap,
   PlusCircle,
-  FileSpreadsheet,
-  Trash2,
-  Lock,
-  User as UserIcon,
-  Compass,
-  CheckCircle,
-  AlertCircle,
-  Link,
-  X,
-  LayoutGrid,
+  BookOpen,
   Upload,
-  Bell
+  Trash2,
+  LayoutGrid,
+  User as UserIcon,
+  Lock
 } from 'lucide-react';
-import ScanForm from './components/ScanForm.tsx';
+import ScanForm from './components/ScanForm.js';
+import { supabase } from './lib/supabase.js';
 import ResultDetails from './components/ResultDetails.tsx';
-import ProfileView from './components/ProfileView.tsx';
+import ProfileView, { CreditHistoryPanel } from './components/ProfileView.tsx';
 import ScoreRing from './components/ScoreRing.tsx';
+import TopUpModal from './components/TopUpModal.tsx';
 import { getScoreTier } from './utils.js';
+import { getCreditBalance } from './services/api.js';
 import logoPng from './assets/logo.png';
 
 export default function App() {
   // Authentication State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [authTab, setAuthTab] = useState<'login' | 'register' | 'forgot'>('login');
+
+  // Credits State — server-derived (real balance from the credit_wallet
+  // ledger) rather than client-only state, so it survives a page reload
+  // and can't be inflated by editing React state in devtools.
+  const [scanCredits, setScanCredits] = useState<number>(0);
+  const [showTopUpModal, setShowTopUpModal] = useState<boolean>(false);
   
   // Auth Form Fields
   const [email, setEmail] = useState('');
@@ -54,6 +67,12 @@ export default function App() {
   const [role, setRole] = useState('Researcher');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+
+  // Archive Filter & Search
+  const [archiveFilter, setArchiveFilter] = useState<'all' | 'high' | 'needs_review'>('all');
+  const [archiveSearch, setArchiveSearch] = useState('');
 
   // System Navigation
   const [activeTab, setActiveTab] = useState<'overview' | 'scan' | 'results' | 'profile'>('overview');
@@ -65,7 +84,7 @@ export default function App() {
   const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [latestUploadedScan, setLatestUploadedScan] = useState<ScanResult | null>(null);
-  const [rescanScan, setRescanScan] = useState<ScanResult | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Notifications State
   interface AppNotification {
@@ -96,15 +115,48 @@ export default function App() {
 
   // Persist sessions in local storage
   useEffect(() => {
-    const savedUser = localStorage.getItem('resync_user');
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        setCurrentUser(parsed);
-      } catch (err) {
-        console.error('Failed to parse saved user', err);
+    // Restore session from Supabase auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const userObj: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Researcher',
+          institution: session.user.user_metadata?.institution || '',
+          role: session.user.user_metadata?.role || 'Researcher',
+          bio: session.user.user_metadata?.bio || '',
+        };
+        setCurrentUser(userObj);
+        localStorage.setItem('resync_user', JSON.stringify(userObj));
+      } else {
+        // Fallback: try localStorage for offline scenarios
+        const savedUser = localStorage.getItem('resync_user');
+        if (savedUser) {
+          try { setCurrentUser(JSON.parse(savedUser)); } catch { /* ignore */ }
+        }
       }
-    }
+    });
+
+    // Listen for auth state changes (login/logout across tabs)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const userObj: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name || 'Researcher',
+          institution: session.user.user_metadata?.institution || '',
+          role: session.user.user_metadata?.role || 'Researcher',
+          bio: session.user.user_metadata?.bio || '',
+        };
+        setCurrentUser(userObj);
+        localStorage.setItem('resync_user', JSON.stringify(userObj));
+      } else {
+        setCurrentUser(null);
+        localStorage.removeItem('resync_user');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Sync scan history when user changes or returns to overview/results
@@ -114,21 +166,176 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // Fetch the real server-side credit balance whenever the user changes —
+  // replaces the old client-only `useState(1)` that reset to 1 on every
+  // page reload and was never actually enforced by the backend.
+  useEffect(() => {
+    if (currentUser?.id) {
+      getCreditBalance(currentUser.id)
+        .then((res) => setScanCredits(res.balance))
+        .catch((err) => console.warn('[Resync] Failed to fetch credit balance:', err.message));
+    } else {
+      setScanCredits(0);
+    }
+  }, [currentUser]);
+
   const fetchScanHistory = async () => {
     if (!currentUser) return;
     setHistoryLoading(true);
     try {
-      const response = await fetch(`/api/scans/history?email=${encodeURIComponent(currentUser.email)}`);
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setScans(data.scans || []);
-        // Set the most recent scan as selected by default to display stats
-        if (data.scans && data.scans.length > 0 && !selectedScan) {
-          setSelectedScan(data.scans[0]);
-        }
+      const userId = currentUser.id;
+      if (!userId) {
+        console.warn('[Resync] fetchScanHistory: no user UUID available, skipping.');
+        return;
+      }
+
+      // Query Supabase directly — analysis_run table with joined inconsistency and citation children
+      const { data, error } = await supabase
+        .from('analysis_run')
+        .select(`
+          analysis_run_id,
+          doc_url,
+          overall_coherence_score,
+          created_at,
+          status,
+          sections_analyzed,
+          missing_sections,
+          has_all_required_sections,
+          inconsistencies_found,
+          citations_audited,
+          structural_completeness_score,
+          cross_chapter_coherence_score,
+          citation_integrity_score,
+          functional_metric_score,
+          functional_metric_band,
+          biggest_lever_detail,
+          score_breakdown_json,
+          inconsistency (
+            analysis_run_id, section_a, section_b, coherence_score,
+            explanation_what, explanation_why, suggested_fix, severity,
+            evidence_a, evidence_b, evidence_verified, objectives_unaddressed
+          ),
+          citation (
+            analysis_run_id, citation_raw_reference_text, citation_is_accessible,
+            citation_status, citation_primary_link, citation_authors_parsed,
+            citation_year_parsed, citation_crossref_title, citation_title_match_score,
+            citation_is_cited_in_text
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.warn('[Resync] Supabase history fetch error:', error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const mapped: ScanResult[] = data.map((row: any) => ({
+          id: row.analysis_run_id,
+          userId: userId,
+          title: row.doc_url ? row.doc_url.slice(0, 60) : 'Manuscript Scan',
+          documentLink: row.doc_url,
+          chapterType: 'Full Manuscript',
+          coherenceScore: Math.round(row.overall_coherence_score ?? 0),
+          overall_coherence_score: row.overall_coherence_score,
+          overallAssessment: `Coherence Score: ${Math.round(row.overall_coherence_score ?? 0)}/100`,
+          inconsistencies: (row.inconsistency || []).map((inc: any) => ({
+            section_a: inc.section_a,
+            section_b: inc.section_b,
+            coherence_score: inc.coherence_score,
+            explanation_what: inc.explanation_what,
+            explanation_why: inc.explanation_why,
+            suggested_fix: inc.suggested_fix,
+            // Previously dropped on reload entirely -- see migration 007.
+            evidence_a: inc.evidence_a,
+            evidence_b: inc.evidence_b,
+            evidence_verified: inc.evidence_verified,
+            objectives_unaddressed: inc.objectives_unaddressed,
+            sectionA: inc.section_a,
+            sectionB: inc.section_b,
+            description: inc.explanation_what,
+            howToFix: inc.suggested_fix,
+            severity: inc.severity || 'Medium',
+            inconsistencyType: 'contradiction' as const,
+          })),
+          correlationReport: (row.inconsistency || []).map((inc: any) => ({
+            section_a: inc.section_a,
+            section_b: inc.section_b,
+            coherence_score: inc.coherence_score,
+            explanation_what: inc.explanation_what,
+            explanation_why: inc.explanation_why,
+            suggested_fix: inc.suggested_fix,
+            evidence_a: inc.evidence_a,
+            evidence_b: inc.evidence_b,
+            evidence_verified: inc.evidence_verified,
+            objectives_unaddressed: inc.objectives_unaddressed,
+            sectionA: inc.section_a,
+            sectionB: inc.section_b,
+            description: inc.explanation_what,
+            howToFix: inc.suggested_fix,
+            severity: inc.severity || 'Medium',
+            inconsistencyType: 'contradiction' as const,
+          })),
+          citations: (row.citation || []).map((cit: any) => ({
+            citation_raw_reference_text: cit.citation_raw_reference_text,
+            citation_is_accessible: cit.citation_is_accessible,
+            citation_status: cit.citation_status,
+            citation_primary_link: cit.citation_primary_link,
+            citation_authors_parsed: cit.citation_authors_parsed,
+            citation_year_parsed: cit.citation_year_parsed,
+            citation_crossref_title: cit.citation_crossref_title,
+            citation_title_match_score: cit.citation_title_match_score,
+            citation_is_cited_in_text: cit.citation_is_cited_in_text,
+            citation: cit.citation_raw_reference_text,
+            status: cit.citation_is_accessible ? 'Accessible' : 'Broken Link',
+            explanation: cit.citation_is_accessible ? 'Verified accessible reference.' : 'Unreachable or broken reference link.',
+          })),
+          references: (row.citation || []).map((cit: any) => ({
+            citation_raw_reference_text: cit.citation_raw_reference_text,
+            citation_is_accessible: cit.citation_is_accessible,
+            citation_status: cit.citation_status,
+            citation_primary_link: cit.citation_primary_link,
+            citation_authors_parsed: cit.citation_authors_parsed,
+            citation_year_parsed: cit.citation_year_parsed,
+            citation_crossref_title: cit.citation_crossref_title,
+            citation_title_match_score: cit.citation_title_match_score,
+            citation_is_cited_in_text: cit.citation_is_cited_in_text,
+            citation: cit.citation_raw_reference_text,
+            status: cit.citation_is_accessible ? 'Accessible' : 'Broken Link',
+            explanation: cit.citation_is_accessible ? 'Verified accessible reference.' : 'Unreachable or broken reference link.',
+          })),
+          score_breakdown: row.functional_metric_score != null ? {
+            overall_score: row.functional_metric_score,
+            band: row.functional_metric_band || '',
+            structural_completeness_score: row.structural_completeness_score,
+            cross_chapter_coherence_score: row.cross_chapter_coherence_score,
+            citation_integrity_score: row.citation_integrity_score,
+            biggest_lever: row.biggest_lever_detail || null,
+            // Strong Coherence tab's calibrated role-pair scores +
+            // verification notes live in this jsonb blob -- without it,
+            // a history-loaded scan shows an empty Strong Coherence tab.
+            coherence_detail: row.score_breakdown_json?.coherence_detail,
+          } : undefined,
+          verifications: row.score_breakdown_json?.coherence_detail?.verifications || [],
+          suggestions: [],
+          timestamp: row.created_at,
+          supportingDoc: '',
+          styleGuideLink: '',
+          missing_sections: row.missing_sections || [],
+          missingSections: row.missing_sections || [],
+          sections_analyzed: row.sections_analyzed || [],
+          has_all_required_sections: row.has_all_required_sections ?? true,
+          researchType: 'quantitative',
+          analysis_run_id: row.analysis_run_id,
+          status: row.status,
+        }));
+        setScans(mapped);
+        if (mapped.length > 0 && !selectedScan) setSelectedScan(mapped[0]);
       }
     } catch (err) {
-      console.error('Failed to fetch scans:', err);
+      console.error('[Resync] fetchScanHistory failed:', err);
     } finally {
       setHistoryLoading(false);
     }
@@ -139,20 +346,23 @@ export default function App() {
     setAuthLoading(true);
     setAuthError('');
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Authentication failed.');
-      }
-      setCurrentUser(data.user);
-      localStorage.setItem('resync_user', JSON.stringify(data.user));
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error('Login failed — no user returned.');
+
+      const userObj: User = {
+        id: data.user.id,
+        email: data.user.email || email,
+        name: data.user.user_metadata?.name || email.split('@')[0],
+        institution: data.user.user_metadata?.institution || '',
+        role: data.user.user_metadata?.role || 'Researcher',
+        bio: data.user.user_metadata?.bio || '',
+      };
+      setCurrentUser(userObj);
+      localStorage.setItem('resync_user', JSON.stringify(userObj));
       setShowAuthModal(false);
     } catch (err: any) {
-      setAuthError(err.message);
+      setAuthError(err.message || 'Authentication failed.');
     } finally {
       setAuthLoading(false);
     }
@@ -169,32 +379,62 @@ export default function App() {
     }
     try {
       const combinedName = `${firstName.trim()} ${lastName.trim()}`;
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name: combinedName, password, institution, role })
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name: combinedName, institution, role }
+        }
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed.');
-      }
-      // Auto login after registration
-      setCurrentUser(data.user);
-      localStorage.setItem('resync_user', JSON.stringify(data.user));
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error('Registration failed — no user returned.');
+
+      // Email confirmation is DISABLED — signUp immediately returns authenticated session
+      const userObj: User = {
+        id: data.user.id,
+        email: data.user.email || email,
+        name: combinedName,
+        institution,
+        role,
+        bio: '',
+      };
+      setCurrentUser(userObj);
+      localStorage.setItem('resync_user', JSON.stringify(userObj));
       setShowAuthModal(false);
     } catch (err: any) {
-      setAuthError(err.message);
+      setAuthError(err.message || 'Registration failed.');
     } finally {
       setAuthLoading(false);
     }
   };
 
-  const handleLogout = () => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      setAuthError('Please enter your registered email address.');
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw new Error(error.message);
+      setForgotSuccess(true);
+    } catch (err: any) {
+      setAuthError(err.message || 'Failed to send recovery instructions.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
     setSelectedScan(null);
     setScans([]);
     setLatestUploadedScan(null);
-    setRescanScan(null);
     localStorage.removeItem('resync_user');
     setActiveTab('overview');
   };
@@ -204,32 +444,31 @@ export default function App() {
     if (!confirm('Are you sure you want to delete this scan from history?')) return;
 
     const deletedScan = scans.find(s => s.id === scanId);
-
     try {
-      const response = await fetch(`/api/scans/${scanId}?email=${encodeURIComponent(currentUser.email)}`, {
-        method: 'DELETE'
-      });
-      if (response.ok) {
-        setScans(scans.filter(s => s.id !== scanId));
-        if (selectedScan && selectedScan.id === scanId) {
-          const remaining = scans.filter(s => s.id !== scanId);
-          setSelectedScan(remaining.length > 0 ? remaining[0] : null);
-        }
-        
-        // Add built-in deletion notification
-        setNotifications((prev) => [
-          {
-            id: 'notif_' + Date.now().toString(36),
-            title: 'Scan Record Deleted',
-            message: `The scan record "${deletedScan?.title || 'Unknown'}" was deleted from history.`,
-            timestamp: new Date().toISOString(),
-            read: false
-          },
-          ...prev
-        ]);
+      const { error } = await supabase
+        .from('analysis_run')
+        .delete()
+        .eq('analysis_run_id', scanId)
+        .eq('user_id', currentUser.id || '');
+
+      if (error) throw new Error(error.message);
+
+      setScans(scans.filter(s => s.id !== scanId));
+      if (selectedScan && selectedScan.id === scanId) {
+        const remaining = scans.filter(s => s.id !== scanId);
+        setSelectedScan(remaining.length > 0 ? remaining[0] : null);
       }
-    } catch (err) {
-      console.error('Delete scan failed:', err);
+
+      setNotifications(prev => [{
+        id: 'notif_' + Date.now().toString(36),
+        title: 'Scan Record Deleted',
+        message: `The scan record "${deletedScan?.title || 'Unknown'}" was deleted from history.`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        scanId: undefined,
+      }, ...prev]);
+    } catch (err: any) {
+      console.error('[Resync] Delete scan failed:', err.message);
     }
   };
 
@@ -400,111 +639,174 @@ export default function App() {
               </button>
 
               {/* Auth Tabs Toggle */}
-              <div className="flex border-b border-slate-100 pb-3">
-                <button
-                  onClick={() => { setAuthTab('login'); setAuthError(''); }}
-                  className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                    authTab === 'login' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={() => { setAuthTab('register'); setAuthError(''); }}
-                  className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                    authTab === 'register' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  Create Account
-                </button>
-              </div>
+              {authTab !== 'forgot' ? (
+                <div className="flex border-b border-slate-100 pb-3">
+                  <button
+                    onClick={() => { setAuthTab('login'); setAuthError(''); setForgotSuccess(false); setEmail(''); setPassword(''); setConfirmPassword(''); }}
+                    className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+                      authTab === 'login' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    Log In
+                  </button>
+                  <button
+                    onClick={() => { setAuthTab('register'); setAuthError(''); setForgotSuccess(false); setEmail(''); setPassword(''); setConfirmPassword(''); }}
+                    className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+                      authTab === 'register' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+              ) : (
+                <div className="border-b border-slate-100 pb-3 text-left">
+                  <h3 className="text-base font-serif font-bold text-slate-800">Reset Your Password</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Enter your account email to receive recovery instructions.</p>
+                </div>
+              )}
 
               {authError && (
-                <div className="flex items-center gap-2 bg-rose-50 text-rose-800 text-xs p-3 rounded border border-rose-100">
+                <div className="flex items-center gap-2 bg-rose-50 text-rose-800 text-xs p-3 rounded border border-rose-100 text-left">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{authError}</span>
                 </div>
               )}
 
-              {/* Authentication Forms */}
-              <form onSubmit={authTab === 'login' ? handleLogin : handleRegister} className="space-y-4">
-                {authTab === 'register' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="Evelyn"
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        placeholder="Sterling"
-                        className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="evelyn@example.com"
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
-                  />
-                </div>
-
-                {authTab === 'register' && (
+              {forgotSuccess && authTab === 'forgot' && (
+                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 text-xs p-3.5 rounded-lg border border-emerald-200 text-left">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Confirm Password</label>
+                    <strong className="block font-bold">Password Reset Instructions Sent!</strong>
+                    <span>If an account exists for <code className="font-mono">{forgotEmail}</code>, an instant reset link has been dispatched.</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Authentication Forms */}
+              {authTab === 'forgot' ? (
+                <form onSubmit={handleForgotPassword} className="space-y-4 text-left">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Registered Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="evelyn@example.com"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authLoading || forgotSuccess}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-4 cursor-pointer"
+                  >
+                    {authLoading ? 'Sending...' : forgotSuccess ? 'Reset Link Dispatched' : 'Send Recovery Instructions'}
+                  </button>
+
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setAuthTab('login'); setAuthError(''); setForgotSuccess(false); setEmail(''); setPassword(''); setConfirmPassword(''); }}
+                      className="text-xs text-indigo-600 font-bold hover:underline cursor-pointer"
+                    >
+                      ← Back to Log In
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={authTab === 'login' ? handleLogin : handleRegister} className="space-y-4 text-left">
+                  {authTab === 'register' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="Evelyn"
+                          className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder="Sterling"
+                          className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="evelyn@example.com"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Password</label>
+                      {authTab === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => { setAuthTab('forgot'); setAuthError(''); setForgotSuccess(false); setForgotEmail(email); }}
+                          className="text-[11px] text-indigo-600 font-bold hover:underline cursor-pointer"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="password"
                       required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
                     />
                   </div>
-                )}
 
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-6 cursor-pointer"
-                >
-                  {authLoading ? 'Authenticating...' : authTab === 'login' ? 'Log In' : 'Initialize Account'}
-                </button>
-              </form>
+                  {authTab === 'register' && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Confirm Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all"
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-6 cursor-pointer"
+                  >
+                    {authLoading ? 'Authenticating...' : authTab === 'login' ? 'Log In' : 'Initialize Account'}
+                  </button>
+                </form>
+              )}
 
               <div className="text-center pt-2">
                 <p className="text-xs text-slate-400 font-mono">Secure TLS 1.3 Encryption Standard</p>
               </div>
+
 
             </div>
           </div>
@@ -582,17 +884,19 @@ export default function App() {
                   return (
                     <button
                       key={item.id}
+                      disabled={isScanning}
                       onClick={() => {
                         setActiveTab(item.id as any);
                         if (item.id === 'scan') {
                           setLatestUploadedScan(null);
-                          setRescanScan(null);
                         }
                         if (item.id === 'overview' && scans.length > 0) {
                           setSelectedScan(scans[0]);
                         }
                       }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                        isScanning ? 'opacity-50 cursor-not-allowed' : ''
+                      } ${
                         isActive
                           ? 'bg-slate-900 text-white shadow-sm'
                           : 'text-slate-500 hover:text-slate-950 hover:bg-slate-50'
@@ -608,6 +912,16 @@ export default function App() {
 
             {/* Right: Notifications & User profile & Log Out */}
             <div className="flex items-center gap-3 sm:gap-4">
+              {/* Credits Badge */}
+              <button
+                onClick={() => setShowTopUpModal(true)}
+                className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-indigo-100 shadow-sm"
+                title="Top up scan credits"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Credits: {scanCredits}</span>
+              </button>
+
               {/* Notification Bell Button */}
               <div className="relative">
                 <button
@@ -715,17 +1029,19 @@ export default function App() {
             return (
               <button
                 key={item.id}
+                disabled={isScanning}
                 onClick={() => {
                   setActiveTab(item.id as any);
                   if (item.id === 'scan') {
                     setLatestUploadedScan(null);
-                    setRescanScan(null);
                   }
                   if (item.id === 'overview' && scans.length > 0) {
                     setSelectedScan(scans[0]);
                   }
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  isScanning ? 'opacity-50 cursor-not-allowed' : ''
+                } ${
                   isActive
                     ? 'bg-slate-900 text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
@@ -933,38 +1249,7 @@ export default function App() {
                           <span>Google Doc</span>
                         </a>
                       </div>
-                      <ResultDetails 
-                        scan={activeScan} 
-                        onRescan={(scan) => {
-                          if (scan) {
-                            setRescanScan(scan);
-                          }
-                          setLatestUploadedScan(null);
-                          setActiveTab('scan');
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }} 
-                        onScanUpdate={(updatedScan) => {
-                          const finalizedScan = updatedScan.parentScanId 
-                            ? {
-                                ...updatedScan,
-                                coherenceScore: 89,
-                                missingSections: [],
-                                correlationReport: updatedScan.correlationReport && updatedScan.correlationReport.length > 0
-                                  ? updatedScan.correlationReport.slice(1)
-                                  : []
-                              }
-                            : updatedScan;
-                          setSelectedScan(finalizedScan);
-                          if (finalizedScan.parentScanId) {
-                            setScans(prev => {
-                              if (prev.some(s => s.id === finalizedScan.id)) return prev;
-                              return [finalizedScan, ...prev];
-                            });
-                          } else {
-                            setScans(prev => prev.map(s => s.id === finalizedScan.id ? finalizedScan : s));
-                          }
-                        }}
-                      />
+                      <ResultDetails scan={activeScan} />
                     </div>
                   )}
 
@@ -1154,79 +1439,30 @@ export default function App() {
                       </a>
                     )}
                   </div>
-                  <ResultDetails 
-                    scan={latestUploadedScan} 
-                    onRescan={(scan) => {
-                      if (scan) {
-                        setRescanScan(scan);
-                      }
-                      setLatestUploadedScan(null);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }} 
-                    onScanUpdate={(updatedScan) => {
-                       const finalizedScan = updatedScan.parentScanId 
-                         ? {
-                             ...updatedScan,
-                             coherenceScore: 89,
-                             missingSections: [],
-                             correlationReport: updatedScan.correlationReport && updatedScan.correlationReport.length > 0
-                               ? updatedScan.correlationReport.slice(1)
-                               : []
-                           }
-                         : updatedScan;
-                       setLatestUploadedScan(finalizedScan);
-                       if (finalizedScan.parentScanId) {
-                         setScans(prev => {
-                           if (prev.some(s => s.id === finalizedScan.id)) return prev;
-                           return [finalizedScan, ...prev];
-                         });
-                         setCompareScanAId(finalizedScan.parentScanId);
-                         setCompareScanBId(finalizedScan.id);
-                       } else {
-                         setScans(prev => prev.map(s => s.id === finalizedScan.id ? finalizedScan : s));
-                       }
-                     }}
-                    onCompareVersions={(baseId, targetId) => {
-                      setCompareScanAId(baseId);
-                      setCompareScanBId(targetId);
-                      setActiveTab('compare');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                  />
+                  <ResultDetails scan={latestUploadedScan} />
                 </div>
               </div>
             ) : (
               <ScanForm
                 email={currentUser.email}
-                isRescan={!!rescanScan}
-                initialDocumentLink={rescanScan?.documentLink || ''}
-                prevScanTimestamp={rescanScan?.timestamp || ''}
-                parentScanId={rescanScan?.id || ''}
+                userId={currentUser?.id}
+                scanCredits={scanCredits}
+                setScanCredits={setScanCredits}
+                setShowTopUpModal={setShowTopUpModal}
+                onScanningChange={setIsScanning}
                 onScanSuccess={(newScan) => {
-                  const finalizedScan = rescanScan
-                    ? {
-                        ...newScan,
-                        coherenceScore: 89,
-                        missingSections: [],
-                        correlationReport: newScan.correlationReport && newScan.correlationReport.length > 0
-                          ? newScan.correlationReport.slice(1)
-                          : []
-                      }
-                    : newScan;
-
-                  setScans([finalizedScan, ...scans]);
-                  setSelectedScan(finalizedScan);
-                  setLatestUploadedScan(finalizedScan);
-                  setRescanScan(null);
+                  setScans([newScan, ...scans]);
+                  setSelectedScan(newScan);
+                  setLatestUploadedScan(newScan);
                   setShowFullReport(true);
                   setNotifications((prev) => [
                     {
                       id: 'notif_' + Date.now().toString(36),
                       title: 'Scan Completed Successfully',
-                      message: `"${finalizedScan.title}" (${finalizedScan.chapterType}) has been audited. Coherence Score: ${finalizedScan.coherenceScore}/100.`,
+                      message: `"${newScan.title}" (${newScan.chapterType}) has been audited. Coherence Score: ${newScan.coherenceScore}/100.`,
                       timestamp: new Date().toISOString(),
                       read: false,
-                      scanId: finalizedScan.id
+                      scanId: newScan.id
                     },
                     ...prev
                   ]);
@@ -1236,20 +1472,103 @@ export default function App() {
           )}
 
           {/* 3. RESULTS ARCHIVE LIST TAB */}
-          {activeTab === 'results' && (
-            <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 shadow-sm animate-fade-in relative">
-              <div className="p-6 border-b border-slate-200/60 bg-white flex items-center justify-between">
-                <h3 className="font-serif text-lg font-bold text-slate-800">Manuscript Reports Archive</h3>
-                <span className="text-xs text-slate-400 font-mono">Securely stored inside Resync persistent engine</span>
-              </div>
+          {activeTab === 'results' && (() => {
+            const highScoreCount = scans.filter(s => (s.overall_coherence_score ?? s.coherenceScore) >= 80).length;
+            const needsReviewCount = scans.filter(s => (s.overall_coherence_score ?? s.coherenceScore) < 80).length;
 
-              {scans.length === 0 ? (
-                <div className="p-12 text-center text-slate-400 font-serif italic bg-white">
-                  No results recorded. Run a manuscript scan first.
+            const filteredScans = scans.filter((s) => {
+              const score = s.overall_coherence_score ?? s.coherenceScore;
+              const matchesFilter =
+                archiveFilter === 'all' ? true :
+                archiveFilter === 'high' ? score >= 80 :
+                score < 80;
+
+              const matchesSearch = archiveSearch.trim() === '' ||
+                s.title.toLowerCase().includes(archiveSearch.toLowerCase()) ||
+                (s.chapterType && s.chapterType.toLowerCase().includes(archiveSearch.toLowerCase()));
+
+              return matchesFilter && matchesSearch;
+            });
+
+            return (
+              <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 shadow-sm animate-fade-in relative">
+                {/* Header with Title and Search/Filters */}
+                <div className="p-6 border-b border-slate-200/60 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-slate-800">Manuscript Reports Archive</h3>
+                    <span className="text-xs text-slate-400 font-mono">Securely stored inside Resync persistent engine</span>
+                  </div>
+
+                  {/* Filter Chips and Search Bar */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Search Input */}
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        value={archiveSearch}
+                        onChange={(e) => setArchiveSearch(e.target.value)}
+                        placeholder="Search reports..."
+                        className="bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 w-44 sm:w-56 transition-all"
+                      />
+                      {archiveSearch && (
+                        <button
+                          onClick={() => setArchiveSearch('')}
+                          className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Filter Buttons */}
+                    <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setArchiveFilter('all')}
+                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                          archiveFilter === 'all'
+                            ? 'bg-white text-indigo-700 shadow-xs font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        All ({scans.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setArchiveFilter('high')}
+                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                          archiveFilter === 'high'
+                            ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        High Score ({highScoreCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setArchiveFilter('needs_review')}
+                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                          archiveFilter === 'needs_review'
+                            ? 'bg-white text-rose-700 shadow-xs font-bold'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Needs Review ({needsReviewCount})
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
-                  {scans.map((scan) => {
+
+                {filteredScans.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 font-serif italic bg-white">
+                    {scans.length === 0
+                      ? 'No results recorded. Run a manuscript scan first.'
+                      : 'No manuscript reports match your active search or filter.'}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
+                    {filteredScans.map((scan) => {
                     const scanDate = new Date(scan.timestamp);
                     const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const isSelected = selectedScan?.id === scan.id;
@@ -1310,8 +1629,10 @@ export default function App() {
                             {/* Middle part: details attributes list */}
                             <div className="space-y-2 pb-1.5 flex-grow flex flex-col justify-center">
                               <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
-                                <span className="text-slate-500 font-sans font-medium">duplication</span>
-                                <span className="font-mono font-bold text-slate-800">{scan.duplicationScore || 0}%</span>
+                                <span className="text-slate-500 font-sans font-medium">citation integrity</span>
+                                <span className="font-mono text-[10px] font-bold text-slate-600">
+                                  {scan.score_breakdown?.citation_integrity_score != null ? `${Math.round(scan.score_breakdown.citation_integrity_score)}/100` : 'N/A'}
+                                </span>
                               </div>
                               <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
                                 <span className="text-slate-500 font-sans font-medium">logic flags</span>
@@ -1396,17 +1717,22 @@ export default function App() {
                 </div>
               )}
             </div>
-          )}
+          );
+        })()}
+
 
           {/* 4. PROFILE TAB */}
           {activeTab === 'profile' && (
-            <ProfileView
-              user={currentUser}
-              onUpdate={(updatedUser) => {
-                setCurrentUser(updatedUser);
-                localStorage.setItem('resync_user', JSON.stringify(updatedUser));
-              }}
-            />
+            <>
+              <ProfileView
+                user={currentUser}
+                onUpdate={(updatedUser) => {
+                  setCurrentUser(updatedUser);
+                  localStorage.setItem('resync_user', JSON.stringify(updatedUser));
+                }}
+              />
+              {currentUser.id && <CreditHistoryPanel userId={currentUser.id} />}
+            </>
           )}
 
         </main>
@@ -1425,8 +1751,16 @@ export default function App() {
           </div>
         </footer>
 
+        {showTopUpModal && (
+          <TopUpModal
+            userId={currentUser.id}
+            onClose={() => setShowTopUpModal(false)}
+            onSuccess={(newBalance) => setScanCredits(newBalance)}
+          />
+        )}
       </div>
     </div>
   </div>
   );
 }
+

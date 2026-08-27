@@ -3,13 +3,88 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types.js';
-import { UserCheck, Shield, GraduationCap, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserCheck, Shield, GraduationCap, FileText, CheckCircle, AlertCircle, Receipt, ArrowUpCircle, ArrowDownCircle, Gift, RotateCcw } from 'lucide-react';
+import { supabase } from '../lib/supabase.js';
+import { getCreditHistory, CreditLedgerEntry } from '../services/api.js';
 
 interface ProfileViewProps {
   user: User;
   onUpdate: (updatedUser: User) => void;
+}
+
+const LEDGER_ICONS: Record<CreditLedgerEntry['kind'], { icon: any; className: string }> = {
+  grant: { icon: Gift, className: 'text-indigo-600 bg-indigo-50' },
+  purchase: { icon: ArrowUpCircle, className: 'text-emerald-600 bg-emerald-50' },
+  debit: { icon: ArrowDownCircle, className: 'text-slate-500 bg-slate-100' },
+  refund: { icon: RotateCcw, className: 'text-amber-600 bg-amber-50' },
+};
+
+const LEDGER_LABELS: Record<CreditLedgerEntry['kind'], string> = {
+  grant: 'Free credit granted',
+  purchase: 'Credits purchased',
+  debit: 'Scan credit used',
+  refund: 'Scan credit refunded',
+};
+
+function CreditHistoryPanel({ userId }: { userId: string }) {
+  const [entries, setEntries] = useState<CreditLedgerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCreditHistory(userId, 20)
+      .then((res) => { if (!cancelled) setEntries(res.entries); })
+      .catch(() => { /* non-critical — leave the panel empty on failure */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  return (
+    <div className="max-w-2xl mx-auto bg-white rounded-xl border border-slate-200/80 p-8 shadow-sm animate-fade-in mt-6">
+      <div className="flex items-center gap-3 border-b border-slate-100 pb-5 mb-5">
+        <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600">
+          <Receipt className="w-6 h-6" />
+        </div>
+        <div>
+          <h2 className="font-serif text-xl font-bold text-slate-800">Credit History</h2>
+          <p className="text-xs text-slate-400">Every scan debit, purchase, and refund on your account.</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-slate-400">Loading history...</p>
+      ) : entries.length === 0 ? (
+        <p className="text-sm text-slate-400">No credit activity yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {entries.map((e) => {
+            const { icon: Icon, className } = LEDGER_ICONS[e.kind];
+            return (
+              <div key={e.ledger_id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50/60 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`p-2 rounded-lg shrink-0 ${className}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{e.note || LEDGER_LABELS[e.kind]}</p>
+                    <p className="text-xs text-slate-400 font-mono">{new Date(e.created_at).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className={`text-sm font-bold font-mono ${e.delta >= 0 ? 'text-emerald-600' : 'text-slate-600'}`}>
+                    {e.delta >= 0 ? '+' : ''}{e.delta}
+                  </span>
+                  <p className="text-[10px] text-slate-400">balance: {e.balance_after}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ProfileView({ user, onUpdate }: ProfileViewProps) {
@@ -28,27 +103,32 @@ export default function ProfileView({ user, onUpdate }: ProfileViewProps) {
     setError('');
 
     try {
-      const response = await fetch('/api/profile/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user.email,
+      const { data, error: updateError } = await supabase.auth.updateUser({
+        data: {
           name,
           institution,
           role,
           bio
-        })
+        }
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update profile.');
+      if (updateError) {
+        throw new Error(updateError.message || 'Failed to update profile.');
       }
 
+      const updatedUser: User = {
+        id: data.user?.id || user.id,
+        email: data.user?.email || user.email,
+        name: data.user?.user_metadata?.name || name,
+        institution: data.user?.user_metadata?.institution || institution,
+        role: data.user?.user_metadata?.role || role,
+        bio: data.user?.user_metadata?.bio || bio
+      };
+
       setSuccess(true);
-      onUpdate(data.user);
+      onUpdate(updatedUser);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to update profile.');
     } finally {
       setLoading(false);
     }
@@ -153,3 +233,5 @@ export default function ProfileView({ user, onUpdate }: ProfileViewProps) {
     </div>
   );
 }
+
+export { CreditHistoryPanel };
