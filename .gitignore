@@ -7,3 +7,4 @@ graphify-out/
 *.log
 .env*
 !.env.example
+.claude/worktrees/
