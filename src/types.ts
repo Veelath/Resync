@@ -187,7 +187,6 @@ export interface ScanResult {
   score_breakdown?: ScoreBreakdown;
   ai_text_indicator?: AITextIndicator;
 
-  researchType?: 'quantitative' | 'qualitative';
   analysis_run_id?: string;
   status?: string;
   db_save_status?: string;

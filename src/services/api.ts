@@ -33,7 +33,9 @@ export interface ScanRequest {
   manuscript_id?: string;
   manuscript_title?: string;
   doc_url: string;
-  template_toc?: string[];
+  // No template_toc: scan-and-go is auto-detect only -- see
+  // ManuscriptParserService.parse_manuscript_sections, which routes a
+  // genuinely omitted template_toc to its auto-detection path.
   style_reference_url?: string;
 }
 
@@ -136,8 +138,10 @@ export class InsufficientCreditsError extends Error {
 /** How long to wait between status polls while a scan job runs. */
 const POLL_INTERVAL_MS = 2500;
 
-/** Consecutive poll failures tolerated before giving up on a running job. */
-const MAX_CONSECUTIVE_POLL_FAILURES = 4;
+/** Consecutive poll failures tolerated before giving up on a running job.
+ * 12 * 2.5s = 30s -- enough to ride out a Render container restart, which
+ * the previous 10s budget was too thin to survive. */
+const MAX_CONSECUTIVE_POLL_FAILURES = 12;
 
 /**
  * Extracts the most useful human-readable message from a failed response.
@@ -319,7 +323,6 @@ export function mapScanResponseToScanResult(
     title?: string;
     customTopic?: string;
     chapterType?: string;
-    researchType?: 'quantitative' | 'qualitative';
     styleGuideLink?: string;
     supportingDoc?: string;
   }
@@ -448,7 +451,6 @@ export function mapScanResponseToScanResult(
     detection_confidence: response.detection_confidence,
     score_breakdown: response.score_breakdown as any,
     ai_text_indicator: response.ai_text_indicator as any,
-    researchType: options?.researchType || 'quantitative',
     analysis_run_id: response.analysis_run_id,
     status: response.status,
   };

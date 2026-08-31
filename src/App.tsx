@@ -5,18 +5,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, ScanResult } from './types.js';
-import { 
-  Sparkles, 
-  Search, 
-  History, 
-  Layers, 
-  UserCheck, 
-  LogOut, 
-  HelpCircle, 
-  AlertTriangle, 
+import {
+  Sparkles,
+  Layers,
+  UserCheck,
+  LogOut,
+  HelpCircle,
+  AlertTriangle,
   ArrowRight,
-  FileText, 
-  Settings, 
+  FileText,
+  Settings,
   Bell,
   CheckCircle2,
   AlertCircle,
@@ -25,15 +23,19 @@ import {
   Link,
   CheckCircle,
   Compass,
-  FileSpreadsheet,
   GraduationCap,
   PlusCircle,
   BookOpen,
   Upload,
-  Trash2,
   LayoutGrid,
   User as UserIcon,
-  Lock
+  Lock,
+  Download,
+  Coins,
+  Zap,
+  ListChecks,
+  ShieldCheck,
+  Quote
 } from 'lucide-react';
 import ScanForm from './components/ScanForm.js';
 import { supabase } from './lib/supabase.js';
@@ -41,9 +43,41 @@ import ResultDetails from './components/ResultDetails.tsx';
 import ProfileView, { CreditHistoryPanel } from './components/ProfileView.tsx';
 import ScoreRing from './components/ScoreRing.tsx';
 import TopUpModal from './components/TopUpModal.tsx';
-import { getScoreTier } from './utils.js';
+import { getScoreTier, computeRevisionPlan, downloadReport, REVISION_WEIGHTS } from './utils.js';
 import { getCreditBalance } from './services/api.js';
 import logoPng from './assets/logo.png';
+
+// Dashboard empty-state content. The weights are read from REVISION_WEIGHTS
+// (utils.ts), which mirrors services/scoring.py -- so this shows the real
+// rubric rather than decorative placeholder tiles, letting a user judge what
+// a scan credit actually buys before spending one. Ordered heaviest first.
+const SCAN_CRITERIA = [
+  {
+    key: 'coherence' as const,
+    icon: Layers,
+    label: 'Cross-chapter coherence',
+    detail: 'Every section pair is scored for whether it genuinely follows from the others.',
+  },
+  {
+    key: 'structural' as const,
+    icon: ListChecks,
+    label: 'Structural completeness',
+    detail: 'Required sections are detected; missing or too-thin ones are named.',
+  },
+  {
+    key: 'citation' as const,
+    icon: BookOpen,
+    label: 'Citation integrity',
+    detail: 'References are resolved against Crossref metadata and checked for reachable links.',
+  },
+];
+
+const SCAN_DELIVERABLES = [
+  { icon: ShieldCheck, label: 'An integrity score out of 100', detail: 'With the three sub-scores that produced it.' },
+  { icon: Quote, label: 'Inconsistencies with evidence', detail: 'Each finding quotes the exact sentences it rests on.' },
+  { icon: BookOpen, label: 'A verified reference list', detail: 'Verified, unresolved, or broken — per citation.' },
+  { icon: Zap, label: 'A ranked revision plan', detail: 'Ordered by how many points each fix would recover.' },
+];
 
 export default function App() {
   // Authentication State
@@ -70,19 +104,14 @@ export default function App() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState(false);
 
-  // Archive Filter & Search
-  const [archiveFilter, setArchiveFilter] = useState<'all' | 'high' | 'needs_review'>('all');
-  const [archiveSearch, setArchiveSearch] = useState('');
-
   // System Navigation
-  const [activeTab, setActiveTab] = useState<'overview' | 'scan' | 'results' | 'profile'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'scan' | 'profile'>('overview');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showFullReport, setShowFullReport] = useState(false);
-  
-  // Scans State
-  const [scans, setScans] = useState<ScanResult[]>([]);
+
+  // Current scan (scan-and-go: no history is fetched or persisted client-side --
+  // this holds only the scan the user is looking at in this session).
   const [selectedScan, setSelectedScan] = useState<ScanResult | null>(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [latestUploadedScan, setLatestUploadedScan] = useState<ScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
 
@@ -106,12 +135,6 @@ export default function App() {
     }
   ]);
   const [showNotifications, setShowNotifications] = useState(false);
-
-
-
-  // Live Hover Preview State for History/Archive Reports
-  const [hoveredScan, setHoveredScan] = useState<ScanResult | null>(null);
-  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   // Persist sessions in local storage
   useEffect(() => {
@@ -159,13 +182,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Sync scan history when user changes or returns to overview/results
-  useEffect(() => {
-    if (currentUser) {
-      fetchScanHistory();
-    }
-  }, [currentUser]);
-
   // Fetch the real server-side credit balance whenever the user changes —
   // replaces the old client-only `useState(1)` that reset to 1 on every
   // page reload and was never actually enforced by the backend.
@@ -178,168 +194,6 @@ export default function App() {
       setScanCredits(0);
     }
   }, [currentUser]);
-
-  const fetchScanHistory = async () => {
-    if (!currentUser) return;
-    setHistoryLoading(true);
-    try {
-      const userId = currentUser.id;
-      if (!userId) {
-        console.warn('[Resync] fetchScanHistory: no user UUID available, skipping.');
-        return;
-      }
-
-      // Query Supabase directly — analysis_run table with joined inconsistency and citation children
-      const { data, error } = await supabase
-        .from('analysis_run')
-        .select(`
-          analysis_run_id,
-          doc_url,
-          overall_coherence_score,
-          created_at,
-          status,
-          sections_analyzed,
-          missing_sections,
-          has_all_required_sections,
-          inconsistencies_found,
-          citations_audited,
-          structural_completeness_score,
-          cross_chapter_coherence_score,
-          citation_integrity_score,
-          functional_metric_score,
-          functional_metric_band,
-          biggest_lever_detail,
-          score_breakdown_json,
-          inconsistency (
-            analysis_run_id, section_a, section_b, coherence_score,
-            explanation_what, explanation_why, suggested_fix, severity,
-            evidence_a, evidence_b, evidence_verified, objectives_unaddressed
-          ),
-          citation (
-            analysis_run_id, citation_raw_reference_text, citation_is_accessible,
-            citation_status, citation_primary_link, citation_authors_parsed,
-            citation_year_parsed, citation_crossref_title, citation_title_match_score,
-            citation_is_cited_in_text
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) {
-        console.warn('[Resync] Supabase history fetch error:', error.message);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        const mapped: ScanResult[] = data.map((row: any) => ({
-          id: row.analysis_run_id,
-          userId: userId,
-          title: row.doc_url ? row.doc_url.slice(0, 60) : 'Manuscript Scan',
-          documentLink: row.doc_url,
-          chapterType: 'Full Manuscript',
-          coherenceScore: Math.round(row.overall_coherence_score ?? 0),
-          overall_coherence_score: row.overall_coherence_score,
-          overallAssessment: `Coherence Score: ${Math.round(row.overall_coherence_score ?? 0)}/100`,
-          inconsistencies: (row.inconsistency || []).map((inc: any) => ({
-            section_a: inc.section_a,
-            section_b: inc.section_b,
-            coherence_score: inc.coherence_score,
-            explanation_what: inc.explanation_what,
-            explanation_why: inc.explanation_why,
-            suggested_fix: inc.suggested_fix,
-            // Previously dropped on reload entirely -- see migration 007.
-            evidence_a: inc.evidence_a,
-            evidence_b: inc.evidence_b,
-            evidence_verified: inc.evidence_verified,
-            objectives_unaddressed: inc.objectives_unaddressed,
-            sectionA: inc.section_a,
-            sectionB: inc.section_b,
-            description: inc.explanation_what,
-            howToFix: inc.suggested_fix,
-            severity: inc.severity || 'Medium',
-            inconsistencyType: 'contradiction' as const,
-          })),
-          correlationReport: (row.inconsistency || []).map((inc: any) => ({
-            section_a: inc.section_a,
-            section_b: inc.section_b,
-            coherence_score: inc.coherence_score,
-            explanation_what: inc.explanation_what,
-            explanation_why: inc.explanation_why,
-            suggested_fix: inc.suggested_fix,
-            evidence_a: inc.evidence_a,
-            evidence_b: inc.evidence_b,
-            evidence_verified: inc.evidence_verified,
-            objectives_unaddressed: inc.objectives_unaddressed,
-            sectionA: inc.section_a,
-            sectionB: inc.section_b,
-            description: inc.explanation_what,
-            howToFix: inc.suggested_fix,
-            severity: inc.severity || 'Medium',
-            inconsistencyType: 'contradiction' as const,
-          })),
-          citations: (row.citation || []).map((cit: any) => ({
-            citation_raw_reference_text: cit.citation_raw_reference_text,
-            citation_is_accessible: cit.citation_is_accessible,
-            citation_status: cit.citation_status,
-            citation_primary_link: cit.citation_primary_link,
-            citation_authors_parsed: cit.citation_authors_parsed,
-            citation_year_parsed: cit.citation_year_parsed,
-            citation_crossref_title: cit.citation_crossref_title,
-            citation_title_match_score: cit.citation_title_match_score,
-            citation_is_cited_in_text: cit.citation_is_cited_in_text,
-            citation: cit.citation_raw_reference_text,
-            status: cit.citation_is_accessible ? 'Accessible' : 'Broken Link',
-            explanation: cit.citation_is_accessible ? 'Verified accessible reference.' : 'Unreachable or broken reference link.',
-          })),
-          references: (row.citation || []).map((cit: any) => ({
-            citation_raw_reference_text: cit.citation_raw_reference_text,
-            citation_is_accessible: cit.citation_is_accessible,
-            citation_status: cit.citation_status,
-            citation_primary_link: cit.citation_primary_link,
-            citation_authors_parsed: cit.citation_authors_parsed,
-            citation_year_parsed: cit.citation_year_parsed,
-            citation_crossref_title: cit.citation_crossref_title,
-            citation_title_match_score: cit.citation_title_match_score,
-            citation_is_cited_in_text: cit.citation_is_cited_in_text,
-            citation: cit.citation_raw_reference_text,
-            status: cit.citation_is_accessible ? 'Accessible' : 'Broken Link',
-            explanation: cit.citation_is_accessible ? 'Verified accessible reference.' : 'Unreachable or broken reference link.',
-          })),
-          score_breakdown: row.functional_metric_score != null ? {
-            overall_score: row.functional_metric_score,
-            band: row.functional_metric_band || '',
-            structural_completeness_score: row.structural_completeness_score,
-            cross_chapter_coherence_score: row.cross_chapter_coherence_score,
-            citation_integrity_score: row.citation_integrity_score,
-            biggest_lever: row.biggest_lever_detail || null,
-            // Strong Coherence tab's calibrated role-pair scores +
-            // verification notes live in this jsonb blob -- without it,
-            // a history-loaded scan shows an empty Strong Coherence tab.
-            coherence_detail: row.score_breakdown_json?.coherence_detail,
-          } : undefined,
-          verifications: row.score_breakdown_json?.coherence_detail?.verifications || [],
-          suggestions: [],
-          timestamp: row.created_at,
-          supportingDoc: '',
-          styleGuideLink: '',
-          missing_sections: row.missing_sections || [],
-          missingSections: row.missing_sections || [],
-          sections_analyzed: row.sections_analyzed || [],
-          has_all_required_sections: row.has_all_required_sections ?? true,
-          researchType: 'quantitative',
-          analysis_run_id: row.analysis_run_id,
-          status: row.status,
-        }));
-        setScans(mapped);
-        if (mapped.length > 0 && !selectedScan) setSelectedScan(mapped[0]);
-      }
-    } catch (err) {
-      console.error('[Resync] fetchScanHistory failed:', err);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -433,46 +287,10 @@ export default function App() {
     await supabase.auth.signOut();
     setCurrentUser(null);
     setSelectedScan(null);
-    setScans([]);
     setLatestUploadedScan(null);
     localStorage.removeItem('resync_user');
     setActiveTab('overview');
   };
-
-  const handleDeleteScan = async (scanId: string) => {
-    if (!currentUser) return;
-    if (!confirm('Are you sure you want to delete this scan from history?')) return;
-
-    const deletedScan = scans.find(s => s.id === scanId);
-    try {
-      const { error } = await supabase
-        .from('analysis_run')
-        .delete()
-        .eq('analysis_run_id', scanId)
-        .eq('user_id', currentUser.id || '');
-
-      if (error) throw new Error(error.message);
-
-      setScans(scans.filter(s => s.id !== scanId));
-      if (selectedScan && selectedScan.id === scanId) {
-        const remaining = scans.filter(s => s.id !== scanId);
-        setSelectedScan(remaining.length > 0 ? remaining[0] : null);
-      }
-
-      setNotifications(prev => [{
-        id: 'notif_' + Date.now().toString(36),
-        title: 'Scan Record Deleted',
-        message: `The scan record "${deletedScan?.title || 'Unknown'}" was deleted from history.`,
-        timestamp: new Date().toISOString(),
-        read: false,
-        scanId: undefined,
-      }, ...prev]);
-    } catch (err: any) {
-      console.error('[Resync] Delete scan failed:', err.message);
-    }
-  };
-
-  const latestScan = scans[0] || null;
 
   if (!currentUser) {
     return (
@@ -819,20 +637,28 @@ export default function App() {
   const menuItems = [
     { id: 'overview', label: 'Dashboard', icon: Layers },
     { id: 'scan', label: 'Upload & Scan', icon: Compass },
-    { id: 'results', label: 'Reports', icon: FileSpreadsheet },
     { id: 'profile', label: 'Academic Profile', icon: GraduationCap }
   ];
 
-  const activeScan = selectedScan || scans[0];
+  const activeScan = selectedScan;
   const issuesFlagged = activeScan 
     ? (activeScan.correlationReport?.length || 0) + (activeScan.suggestions?.length || 0)
     : 0;
   const citationsChecked = activeScan 
     ? activeScan.references?.length || 0
     : 0;
+  // 'Missing Context' (no DOI/URL supplied) is normal for print-only sources
+  // and was never claimed to be a live link -- only a broken or unresolved
+  // link is an actual problem worth flagging.
   const citationsFlagged = activeScan
-    ? activeScan.references?.filter(ref => ref.status !== 'Accessible').length || 0
+    ? activeScan.references?.filter(ref => ref.status === 'Broken Link' || ref.status === 'Unresolved').length || 0
     : 0;
+
+  // The dashboard surfaces only the single highest-value fix; the full ranked
+  // plan already lives in the report (ResultDetails' Overview tab).
+  const revisionPlan = activeScan ? computeRevisionPlan(activeScan) : null;
+  const topFix = revisionPlan?.items[0] ?? null;
+  const greetingName = currentUser?.name?.trim().split(/\s+/)[0] || '';
 
   let scanDateString = '';
   if (activeScan) {
@@ -864,7 +690,7 @@ export default function App() {
       <div className="flex-grow flex flex-col min-w-0">
         
         {/* Top Header Navigation Bar */}
-        <header className="bg-white border-b border-slate-200/80 w-full sticky top-0 z-40 px-6 py-4">
+        <header className="bg-white border-b border-slate-200/80 w-full sticky top-0 z-40 px-6 py-4 print:hidden">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             
             {/* Logo block */}
@@ -889,9 +715,6 @@ export default function App() {
                         setActiveTab(item.id as any);
                         if (item.id === 'scan') {
                           setLatestUploadedScan(null);
-                        }
-                        if (item.id === 'overview' && scans.length > 0) {
-                          setSelectedScan(scans[0]);
                         }
                       }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
@@ -962,14 +785,12 @@ export default function App() {
                             key={notif.id}
                             onClick={() => {
                               setNotifications(notifications.map(n => n.id === notif.id ? { ...n, read: true } : n));
-                              if (notif.scanId) {
-                                const foundScan = scans.find(s => s.id === notif.scanId);
-                                if (foundScan) {
-                                  setSelectedScan(foundScan);
-                                  setLatestUploadedScan(foundScan);
-                                  setActiveTab('scan');
-                                  setShowNotifications(false);
-                                }
+                              // Scan-and-go keeps no history to search -- only the
+                              // scan still held in this session can be reopened.
+                              if (notif.scanId && selectedScan?.id === notif.scanId) {
+                                setLatestUploadedScan(selectedScan);
+                                setActiveTab('scan');
+                                setShowNotifications(false);
                               }
                             }}
                             className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
@@ -1022,7 +843,7 @@ export default function App() {
         </header>
 
         {/* Mobile Navigation Bar */}
-        <nav className="flex md:hidden bg-white border-b border-slate-200 overflow-x-auto scrollbar-none px-4 py-3 gap-1.5 sticky top-[73px] z-30">
+        <nav className="flex md:hidden bg-white border-b border-slate-200 overflow-x-auto scrollbar-none px-4 py-3 gap-1.5 sticky top-[73px] z-30 print:hidden">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -1034,9 +855,6 @@ export default function App() {
                   setActiveTab(item.id as any);
                   if (item.id === 'scan') {
                     setLatestUploadedScan(null);
-                  }
-                  if (item.id === 'overview' && scans.length > 0) {
-                    setSelectedScan(scans[0]);
                   }
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
@@ -1064,97 +882,64 @@ export default function App() {
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-fade-in">
               {/* Header Title Bar */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
-                <div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-200/60">
+                <div className="min-w-0">
                   <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block font-mono">
                     Resync Academic Workspace
                   </span>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-                    Dashboard
+                  <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5 text-balance">
+                    {greetingName ? `Welcome back, ${greetingName}` : 'Dashboard'}
                   </h1>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {currentUser?.institution
+                      ? `${currentUser.role || 'Researcher'} · ${currentUser.institution}`
+                      : 'Coherence, citation integrity, and structural completeness in a single pass.'}
+                  </p>
                 </div>
                 <button
                   onClick={() => setActiveTab('scan')}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer animate-fade-in"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer animate-fade-in print:hidden shrink-0"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>New scan</span>
                 </button>
               </div>
 
-              {scans.length === 0 ? (
-                /* NEW USER DASHBOARD */
-                <div className="space-y-6">
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm space-y-8 flex flex-col md:flex-row md:items-start md:gap-8">
-                    {/* Circle Sparkle Graphic */}
-                    <div className="flex-shrink-0 flex justify-center md:justify-start">
-                      <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-350 bg-slate-50 flex items-center justify-center text-slate-400 relative animate-pulse">
+              {/* Main content + persistent account rail. The rail is what keeps
+                  this page composed in the empty state, which -- because scans
+                  are never persisted -- is what most visits actually land on. */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+              {!activeScan ? (
+                /* NO SCAN YET — the product's real front door */
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6 h-full">
+                    <div className="shrink-0 flex justify-center sm:justify-start">
+                      <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center relative">
                         <div className="absolute inset-1 rounded-full border border-slate-200/50"></div>
                         <Sparkles className="w-7 h-7 text-indigo-500" />
                       </div>
                     </div>
 
-                    {/* Content Block */}
-                    <div className="flex-grow space-y-6 text-center md:text-left">
+                    <div className="flex-grow space-y-4 text-center sm:text-left">
                       <div className="space-y-2">
-                        <h2 className="text-xl font-bold text-slate-800">Scan your first chapter</h2>
-                        <p className="text-sm text-slate-400 max-w-xl leading-relaxed">
-                          You'll get an integrity score, flagged issues, and a citation check in under a minute.
+                        <h2 className="font-serif text-xl font-bold text-slate-800">Scan your first chapter</h2>
+                        <p className="text-sm text-slate-500 max-w-xl leading-relaxed">
+                          Paste a Google Doc link and get an integrity score, flagged inconsistencies,
+                          and a verified reference list in under a minute.
                         </p>
                       </div>
 
-                      {/* Stat Summary Cards */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
-                        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                            <CheckCircle className="w-5 h-5" />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs font-bold text-slate-800 leading-tight">Integrity score</p>
-                            <p className="text-xs text-slate-400 mt-0.5">out of 100</p>
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <AlertTriangle className="w-5 h-5" />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs font-bold text-slate-800 leading-tight">Issues flagged</p>
-                            <p className="text-xs text-slate-400 mt-0.5">for review</p>
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                            <BookOpen className="w-5 h-5" />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs font-bold text-slate-800 leading-tight">Citations</p>
-                            <p className="text-xs text-slate-400 mt-0.5">checked</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Button */}
-                      <div className="pt-2 flex justify-center md:justify-start">
+                      <div className="flex justify-center sm:justify-start">
                         <button
                           onClick={() => setActiveTab('scan')}
                           className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer"
                         >
-                          <Upload className="w-4.5 h-4.5" />
+                          <Upload className="w-4 h-4" />
                           <span>Upload a chapter to begin</span>
                         </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Empty History Status Card */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3 text-slate-500">
-                    <History className="w-5 h-5 text-slate-400 shrink-0" />
-                    <span className="text-xs font-medium">Scanned chapters will appear here with their scores.</span>
-                  </div>
-                </div>
               ) : (
                 /* OLD USER DASHBOARD WITH DATA */
                 <div className="space-y-6">
@@ -1209,6 +994,69 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* The one question a scan-and-go tool has to answer: what do
+                        I fix first? Only the top item -- the full ranked plan
+                        already lives in the report's Overview tab. */}
+                    {topFix ? (
+                      <div className="rounded-xl border border-indigo-200/70 bg-indigo-50/40 p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                            <Zap className="w-5 h-5" />
+                          </div>
+                          <div className="min-w-0 flex-grow">
+                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider font-mono">
+                              Biggest win
+                            </span>
+                            <p className="text-sm font-bold text-slate-800 mt-0.5 leading-snug">{topFix.label}</p>
+                            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{topFix.detail}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-sm font-extrabold font-mono text-indigo-700">+{topFix.pointGain}</span>
+                            <p className="text-[10px] text-slate-400 font-mono">pts</p>
+                          </div>
+                        </div>
+
+                        {revisionPlan && revisionPlan.items.length > 1 && (
+                          <button
+                            onClick={() => setShowFullReport(true)}
+                            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <span>
+                              See all {revisionPlan.items.length} fixes — projected {revisionPlan.currentScore} &rarr; {revisionPlan.projectedScore}
+                            </span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                        <p className="text-sm text-emerald-800 font-semibold leading-relaxed">
+                          No actionable fixes left — this manuscript scores clean on every criterion we can quantify.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Nothing is persisted server-side (see the scan-and-go note
+                        on selectedScan), so navigating away loses the audit.
+                        Say so plainly and offer the existing text export. */}
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-900 leading-relaxed">
+                          This report lives only in this session — it isn't saved to your account.
+                          Download it before you navigate away.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => downloadReport(activeScan)}
+                        className="bg-white border border-amber-300 text-amber-900 hover:bg-amber-100/60 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download</span>
+                      </button>
+                    </div>
+
                     {/* Collapsible Trigger Link */}
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                       <button
@@ -1221,102 +1069,166 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Expanded Report Panel */}
-                  {showFullReport && (
-                    <div className="pt-2 border-t border-slate-200/60 animate-fade-in space-y-4">
-                      <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-between border border-slate-200/60">
-                        <div className="text-left">
-                          <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
-                          <h4 className="text-xs font-bold text-slate-800">{activeScan.title}</h4>
+                </div>
+              )}
+                </div>
 
-                          {activeScan.styleGuideLink && (
-                            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
-                              <span>📘 STYLE GUIDE:</span>
-                              {activeScan.styleGuideLink.startsWith('file://') ? (
-                                <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
-                                  {activeScan.styleGuideLink.replace('file://', '')}
-                                </span>
-                              ) : (
-                                <a href={activeScan.styleGuideLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
-                                  Go to Link &rarr;
-                                </a>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-655 hover:text-indigo-655 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1">
-                          <Link className="w-3.5 h-3.5" />
-                          <span>Google Doc</span>
-                        </a>
+                {/* Account rail. For a pay-per-scan tool the wallet is a
+                    first-class object, not just a header pill -- and it gives
+                    the empty state a second column so the page reads composed. */}
+                <aside className="space-y-6">
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                          Scan Credits
+                        </span>
+                        <p className="text-3xl font-extrabold font-mono text-slate-900 mt-2 leading-none">
+                          {scanCredits}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-2">1 credit = 1 full manuscript scan</p>
                       </div>
-                      <ResultDetails scan={activeScan} />
+                      <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <Coins className="w-5 h-5" />
+                      </div>
+                    </div>
+
+                    {scanCredits === 0 && (
+                      <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5 leading-relaxed">
+                        You're out of credits — top up to run another scan.
+                      </p>
+                    )}
+
+                    <button
+                      onClick={() => setShowTopUpModal(true)}
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Top up credits</span>
+                    </button>
+                  </div>
+
+                  {activeScan?.ai_text_indicator?.overall_score != null && (
+                    <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                        Writing Style
+                      </span>
+                      <p className="text-3xl font-extrabold font-mono text-slate-900 mt-2 leading-none">
+                        {Math.round(activeScan.ai_text_indicator.overall_score)}
+                        <span className="text-base text-slate-400 font-bold">/100</span>
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                        Advisory only — a stylometric reading, not an authorship or integrity
+                        verdict, and no part of the score above.
+                      </p>
                     </div>
                   )}
 
-                  {/* Document History section */}
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
+                  {currentUser && (
+                    <CreditHistoryPanel userId={currentUser.id} limit={4} compact />
+                  )}
+                </aside>
+              </div>
+
+              {/* Empty-state explainers run the full page width rather than
+                  inside the narrow column -- the rail is only two short cards
+                  here, so keeping these beside it just moved the dead space
+                  to the right-hand side. */}
+              {!activeScan && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  {/* The rubric, stated plainly. An integrity tool that hides how
+                      it scores doesn't earn the credit it charges. */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 h-full">
                     <div>
-                      <span className="text-xs font-bold text-slate-455 uppercase tracking-wider block font-mono">
-                        Document History
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                        What a scan checks
                       </span>
+                      <p className="text-xs text-slate-400 mt-1.5">
+                        Three weighted criteria produce the single integrity score.
+                      </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {scans.slice(0, 3).map((scan) => {
-                        const isSelected = activeScan?.id === scan.id;
-                        const scanDate = new Date(scan.timestamp);
-                        const formattedDate = scanDate.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        });
-
-                        let scoreBadgeColor = 'bg-rose-50 text-rose-700 border-rose-100';
-                        if (scan.coherenceScore >= 85) scoreBadgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                        else if (scan.coherenceScore >= 70) scoreBadgeColor = 'bg-amber-50 text-amber-700 border-amber-100';
-
+                    <div className="space-y-2.5">
+                      {SCAN_CRITERIA.map((c) => {
+                        const Icon = c.icon;
+                        const weight = Math.round(REVISION_WEIGHTS[c.key] * 100);
                         return (
-                          <div
-                            key={scan.id}
-                            onClick={() => {
-                              setSelectedScan(scan);
-                              setShowFullReport(true);
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-4 ${
-                              isSelected
-                                ? 'border-indigo-500 bg-indigo-50/10 shadow-xs ring-1 ring-indigo-500'
-                                : 'border-slate-200 bg-slate-50/20 hover:bg-slate-50 hover:border-slate-300'
-                            }`}
-                          >
-                            <div className="space-y-1 min-w-0 text-left">
-                              <h4 className="text-xs font-bold text-slate-800 truncate max-w-[170px] sm:max-w-[200px]" title={scan.title}>
-                                {scan.title}
-                              </h4>
-                              <p className="text-xs text-slate-400 font-mono">
-                                {formattedDate} <span className="text-slate-300">•</span> <span className="text-indigo-650">{scan.chapterType || 'Full Manuscript'}</span>
-                              </p>
+                          <div key={c.key} className="flex items-start gap-3 bg-slate-50 border border-slate-200/70 rounded-xl p-3.5">
+                            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                              <Icon className="w-5 h-5" />
                             </div>
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${scoreBadgeColor}`}>
-                              {scan.coherenceScore}
+                            <div className="min-w-0 flex-grow">
+                              <p className="text-sm font-bold text-slate-800 leading-tight">{c.label}</p>
+                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{c.detail}</p>
+                            </div>
+                            <span className="text-xs font-extrabold font-mono text-slate-600 bg-white border border-slate-200 rounded-md px-2 py-1 shrink-0">
+                              {weight}%
                             </span>
                           </div>
                         );
                       })}
                     </div>
-
-                    <div className="pt-4 border-t border-slate-100 flex justify-start">
-                      <button
-                        onClick={() => setActiveTab('results')}
-                        className="text-xs font-bold text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>View all</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
                   </div>
 
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 h-full">
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                        What you get back
+                      </span>
+                      <p className="text-xs text-slate-400 mt-1.5">
+                        Every scan returns the same four artefacts, whatever it finds.
+                      </p>
+                    </div>
+                    <div className="space-y-2.5">
+                      {SCAN_DELIVERABLES.map((d) => {
+                        const Icon = d.icon;
+                        return (
+                          <div key={d.label} className="flex items-start gap-3 bg-slate-50 border border-slate-200/70 rounded-xl p-3.5">
+                            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-slate-800 leading-tight">{d.label}</p>
+                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{d.detail}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Expanded report — full width below the grid, since the citation
+                  and coherence tables inside it need the room. */}
+              {activeScan && showFullReport && (
+                <div className="pt-2 border-t border-slate-200/60 animate-fade-in space-y-4">
+                  <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-between border border-slate-200/60">
+                    <div className="text-left">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
+                      <h4 className="text-xs font-bold text-slate-800">{activeScan.title}</h4>
+
+                      {activeScan.styleGuideLink && (
+                        <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
+                          <span>📘 STYLE GUIDE:</span>
+                          {activeScan.styleGuideLink.startsWith('file://') ? (
+                            <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
+                              {activeScan.styleGuideLink.replace('file://', '')}
+                            </span>
+                          ) : (
+                            <a href={activeScan.styleGuideLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
+                              Go to Link &rarr;
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-655 hover:text-indigo-655 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1">
+                      <Link className="w-3.5 h-3.5" />
+                      <span>Google Doc</span>
+                    </a>
+                  </div>
+                  <ResultDetails scan={activeScan} />
                 </div>
               )}
             </div>
@@ -1338,7 +1250,7 @@ export default function App() {
                   </div>
                   <button
                     onClick={() => setLatestUploadedScan(null)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer text-left"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer text-left print:hidden"
                   >
                     <PlusCircle className="w-4 h-4" />
                     <span>Run new scan</span>
@@ -1402,7 +1314,7 @@ export default function App() {
 
                       <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                         <span className="text-xl font-extrabold text-slate-800 font-mono">
-                          {latestUploadedScan.references?.filter(ref => ref.status !== 'Accessible').length || 0}
+                          {latestUploadedScan.references?.filter(ref => ref.status === 'Broken Link' || ref.status === 'Unresolved').length || 0}
                         </span>
                         <span className="text-xs text-slate-405 font-bold mt-1 leading-snug">Citations<br/>flagged</span>
                       </div>
@@ -1451,7 +1363,6 @@ export default function App() {
                 setShowTopUpModal={setShowTopUpModal}
                 onScanningChange={setIsScanning}
                 onScanSuccess={(newScan) => {
-                  setScans([newScan, ...scans]);
                   setSelectedScan(newScan);
                   setLatestUploadedScan(newScan);
                   setShowFullReport(true);
@@ -1471,255 +1382,6 @@ export default function App() {
             )
           )}
 
-          {/* 3. RESULTS ARCHIVE LIST TAB */}
-          {activeTab === 'results' && (() => {
-            const highScoreCount = scans.filter(s => (s.overall_coherence_score ?? s.coherenceScore) >= 80).length;
-            const needsReviewCount = scans.filter(s => (s.overall_coherence_score ?? s.coherenceScore) < 80).length;
-
-            const filteredScans = scans.filter((s) => {
-              const score = s.overall_coherence_score ?? s.coherenceScore;
-              const matchesFilter =
-                archiveFilter === 'all' ? true :
-                archiveFilter === 'high' ? score >= 80 :
-                score < 80;
-
-              const matchesSearch = archiveSearch.trim() === '' ||
-                s.title.toLowerCase().includes(archiveSearch.toLowerCase()) ||
-                (s.chapterType && s.chapterType.toLowerCase().includes(archiveSearch.toLowerCase()));
-
-              return matchesFilter && matchesSearch;
-            });
-
-            return (
-              <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 shadow-sm animate-fade-in relative">
-                {/* Header with Title and Search/Filters */}
-                <div className="p-6 border-b border-slate-200/60 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-serif text-lg font-bold text-slate-800">Manuscript Reports Archive</h3>
-                    <span className="text-xs text-slate-400 font-mono">Securely stored inside Resync persistent engine</span>
-                  </div>
-
-                  {/* Filter Chips and Search Bar */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    {/* Search Input */}
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        value={archiveSearch}
-                        onChange={(e) => setArchiveSearch(e.target.value)}
-                        placeholder="Search reports..."
-                        className="bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 w-44 sm:w-56 transition-all"
-                      />
-                      {archiveSearch && (
-                        <button
-                          onClick={() => setArchiveSearch('')}
-                          className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Filter Buttons */}
-                    <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
-                      <button
-                        type="button"
-                        onClick={() => setArchiveFilter('all')}
-                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                          archiveFilter === 'all'
-                            ? 'bg-white text-indigo-700 shadow-xs font-bold'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        All ({scans.length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setArchiveFilter('high')}
-                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                          archiveFilter === 'high'
-                            ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        High Score ({highScoreCount})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setArchiveFilter('needs_review')}
-                        className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                          archiveFilter === 'needs_review'
-                            ? 'bg-white text-rose-700 shadow-xs font-bold'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        Needs Review ({needsReviewCount})
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {filteredScans.length === 0 ? (
-                  <div className="p-12 text-center text-slate-400 font-serif italic bg-white">
-                    {scans.length === 0
-                      ? 'No results recorded. Run a manuscript scan first.'
-                      : 'No manuscript reports match your active search or filter.'}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50/30">
-                    {filteredScans.map((scan) => {
-                    const scanDate = new Date(scan.timestamp);
-                    const formattedDate = scanDate.toLocaleDateString() + ' ' + scanDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const isSelected = selectedScan?.id === scan.id;
-                    const isHovered = hoveredCardId === scan.id;
-
-                    return (
-                      <div
-                        key={scan.id}
-                        onMouseEnter={() => setHoveredCardId(scan.id)}
-                        onMouseLeave={() => setHoveredCardId(null)}
-                        className="w-full transition-all duration-300"
-                      >
-                        {isHovered ? (
-                          /* Combined Vertical Card on Hover in normal flow */
-                          <div
-                            onClick={() => {
-                              setSelectedScan(scan);
-                              setShowFullReport(true);
-                              setActiveTab('overview');
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            className="bg-white border border-slate-350 shadow-2xl rounded-3xl p-5 flex flex-col justify-between text-left cursor-pointer transition-all duration-300 scale-102 min-h-[310px] w-full"
-                          >
-                            {/* Top row: circle score and text details side-by-side */}
-                            <div className="flex items-center gap-4 relative">
-                              <div className="shrink-0">
-                                <ScoreRing score={scan.coherenceScore} size={60} strokeWidth={5} showDetails={false} />
-                              </div>
-
-                              <div className="flex-1 min-w-0 space-y-0.5">
-                                <span className="text-[9px] font-bold text-indigo-655 font-mono tracking-widest uppercase bg-indigo-50 px-2 py-0.5 rounded inline-block">
-                                  {scan.chapterType || 'Chapters'}
-                                </span>
-                                <h4 className="text-xs font-serif font-extrabold text-slate-805 truncate block">
-                                  {scan.title}
-                                </h4>
-                                <span className="text-[10px] text-slate-400 font-mono block">
-                                  {formattedDate}
-                                </span>
-                              </div>
-
-                              {/* Absolute Delete Button inside hovered card */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteScan(scan.id);
-                                }}
-                                className="absolute top-0 right-0 p-1 rounded text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer z-40"
-                                title="Delete Scan Record"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-
-                            {/* Separator Divider */}
-                            <div className="border-t border-slate-100 my-3" />
-
-                            {/* Middle part: details attributes list */}
-                            <div className="space-y-2 pb-1.5 flex-grow flex flex-col justify-center">
-                              <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
-                                <span className="text-slate-500 font-sans font-medium">citation integrity</span>
-                                <span className="font-mono text-[10px] font-bold text-slate-600">
-                                  {scan.score_breakdown?.citation_integrity_score != null ? `${Math.round(scan.score_breakdown.citation_integrity_score)}/100` : 'N/A'}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-[11px] py-0.5 border-b border-slate-50/50">
-                                <span className="text-slate-500 font-sans font-medium">logic flags</span>
-                                <span className="font-mono font-bold text-slate-800">
-                                  {(scan.correlationReport?.length || 0) + (scan.suggestions?.length || 0)}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-[11px] py-0.5">
-                                <span className="text-slate-500 font-sans font-medium">paradigm</span>
-                                <span className="font-mono font-bold text-slate-800 capitalize">
-                                  {scan.researchType || 'quantitative'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Warnings Alert callout */}
-                            {scan.missingSections && scan.missingSections.length > 0 && (
-                              <div className="pt-2 border-t border-slate-100 border-dashed">
-                                <div className="flex flex-col gap-1.5">
-                                  {scan.missingSections.slice(0, 1).map((sec, idx) => (
-                                    <div key={idx} className="bg-rose-50 border border-rose-100/60 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-sans shadow-xs truncate">
-                                      <span>⚠️</span>
-                                      <span className="truncate">{sec.toLowerCase()}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Footer link click */}
-                            <div className="border-t border-slate-100 pt-2.5 mt-2 text-center text-[10px] font-bold text-indigo-650 flex items-center justify-center gap-1">
-                              Click to open full report &rarr;
-                            </div>
-                          </div>
-                        ) : (
-                          /* Normal Side-by-Side Card */
-                          <div
-                            onClick={() => {
-                              setSelectedScan(scan);
-                              setShowFullReport(true);
-                              setActiveTab('overview');
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            className={`bg-white border rounded-2xl p-4 flex items-center gap-4 text-left transition-all duration-200 cursor-pointer w-full h-[120px] shadow-xs relative ${
-                              isSelected
-                                ? 'border-indigo-650 ring-1 ring-indigo-605 shadow-sm'
-                                : 'border-slate-200 hover:border-indigo-500 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="shrink-0">
-                              <ScoreRing score={scan.coherenceScore} size={60} strokeWidth={5.5} showDetails={false} />
-                            </div>
-
-                            <div className="flex-1 min-w-0 space-y-0.5">
-                              <span className="text-[9px] font-bold text-indigo-655 font-mono tracking-widest uppercase bg-indigo-50 px-2 py-0.5 rounded inline-block">
-                                {scan.chapterType || 'Chapters'}
-                              </span>
-                              <h4 className="text-xs font-serif font-extrabold text-slate-805 truncate block">
-                                {scan.title}
-                              </h4>
-                              <span className="text-[10px] text-slate-400 font-mono block">
-                                {formattedDate}
-                              </span>
-                            </div>
-
-                            {/* Absolute Delete Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteScan(scan.id);
-                              }}
-                              className="absolute top-2.5 right-2.5 p-1 rounded text-slate-300 hover:text-rose-655 hover:bg-rose-50/50 transition-all cursor-pointer"
-                              title="Delete Scan Record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
 
           {/* 4. PROFILE TAB */}
           {activeTab === 'profile' && (
@@ -1738,7 +1400,7 @@ export default function App() {
         </main>
 
         {/* Logged in Footer */}
-        <footer className="bg-white border-t border-slate-200 py-6 px-8 mt-auto text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <footer className="bg-white border-t border-slate-200 py-6 px-8 mt-auto text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-2">
             <img src={logoPng} alt="Resync Logo" className="h-5 w-auto object-contain select-none" />
             <span className="font-serif font-bold text-slate-700">Resync</span>

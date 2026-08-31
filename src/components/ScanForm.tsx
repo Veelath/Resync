@@ -22,15 +22,13 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
-  Zap,
-  ListTree
+  Zap
 } from 'lucide-react';
 import { downloadReport } from '../utils.js';
 
 interface ScanFormProps {
   email: string;
   userId?: string;
-  templateToc?: string[];
   onScanSuccess: (scan: ScanResult) => void;
   initialUploadType?: 'chapter' | 'manuscript' | null;
   initialChaptersString?: string;
@@ -54,7 +52,6 @@ const ANALYSIS_STEP_INTERVAL_MS = 9000;
 export default function ScanForm({
   email,
   userId,
-  templateToc,
   onScanSuccess,
   scanCredits,
   setScanCredits,
@@ -81,13 +78,11 @@ export default function ScanForm({
   const [uploadSource, setUploadSource] = useState<'link' | 'file'>('link');
   const uploadType = 'manuscript';
   const [success, setSuccess] = useState(false);
-  const [researchType, setResearchType] = useState<'quantitative' | 'qualitative'>('quantitative');
   const [latestScanResult, setLatestScanResult] = useState<ScanResult | null>(null);
 
   // "Scan and go": everything below is optional/secondary and lives behind
   // a collapsed-by-default "Advanced options" disclosure.
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [customTocText, setCustomTocText] = useState('');
 
   const playSuccessChime = () => {
     try {
@@ -218,17 +213,6 @@ export default function ScanForm({
       ? (styleGuideFile ? 'file://' + styleGuideFile.name : '')
       : styleGuideLink;
 
-    // Optional custom TOC pasted in Advanced options, one heading per line.
-    // When left blank, no template_toc is sent and the backend's
-    // auto-detection path determines sections instead.
-    const parsedCustomToc = customTocText
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const resolvedTemplateToc = parsedCustomToc.length > 0
-      ? parsedCustomToc
-      : (templateToc && templateToc.length > 0 ? templateToc : undefined);
-
     try {
       const activeUserId = userId;
       if (!activeUserId) {
@@ -243,7 +227,6 @@ export default function ScanForm({
         user_id: activeUserId,
         manuscript_title: resolvedTopic,
         doc_url: linkToSend,
-        template_toc: resolvedTemplateToc,
         style_reference_url: styleGuideVal || undefined
       });
 
@@ -252,7 +235,6 @@ export default function ScanForm({
         title: resolvedTopic,
         customTopic: resolvedTopic,
         chapterType: formattedCategory,
-        researchType,
         styleGuideLink: styleGuideVal || undefined
       });
 
@@ -274,7 +256,6 @@ export default function ScanForm({
       setStyleGuideLink('');
       setStyleGuideFile(null);
       setStyleGuideSource('link');
-      setCustomTocText('');
     } catch (err: any) {
       if (err instanceof InsufficientCreditsError) {
         setScanCredits(err.balance);
@@ -292,7 +273,6 @@ export default function ScanForm({
     setUploadSource('link');
     setDocumentLink('https://docs.google.com/document/d/1XHPdreNeC2ivez4Zaqlr78-f9L3aa4bgX48QBiss-No/edit?usp=sharing');
     setCustomTopic('PAPAIA: An AI-Powered System for Papaya Disease Identification');
-    setResearchType('quantitative');
     setStyleGuideSource('link');
     setStyleGuideLink('https://docs.google.com/document/d/demo-department-style-guide-template');
     setError('');
@@ -540,7 +520,7 @@ export default function ScanForm({
                   <SlidersHorizontal className="w-4 h-4 text-slate-500" />
                   <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">Advanced options</span>
                   <span className="hidden sm:inline text-xs font-normal normal-case text-slate-400">
-                    Title, methodology, table of contents, style guide
+                    Title, style guide
                   </span>
                 </div>
                 {showAdvanced ? <ChevronUp className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />}
@@ -559,68 +539,6 @@ export default function ScanForm({
                       onChange={(e) => setCustomTopic(e.target.value)}
                       placeholder="e.g. Edge Heart Wearable anomaly detection (Optional)"
                       className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-                    />
-                  </div>
-
-                  {/* Research Paradigm Selector */}
-                  <div className="space-y-4 text-left p-5 bg-indigo-50/15 border border-indigo-100/50 rounded-2xl">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">
-                          Research Methodology Paradigm
-                        </label>
-                        <p className="text-xs text-slate-455 mt-0.5">Select your primary design paradigm to calibrate scanning parameters</p>
-                      </div>
-
-                      <div className="flex bg-slate-100 rounded-xl p-0.5 border border-slate-200/40 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setResearchType('quantitative')}
-                          className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${researchType === 'quantitative'
-                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                              : 'text-slate-400 hover:text-slate-655'
-                            }`}
-                        >
-                          Quantitative
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setResearchType('qualitative')}
-                          className={`px-4.5 py-2 text-sm font-bold rounded-lg transition-all cursor-pointer ${researchType === 'qualitative'
-                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                              : 'text-slate-400 hover:text-slate-655'
-                            }`}
-                        >
-                          Qualitative
-                        </button>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-550 font-sans italic leading-relaxed">
-                      {researchType === 'quantitative'
-                        ? "★ Calibrated for statistical significance tests, data matrices, validation surveys, and empirical logic gates."
-                        : "★ Calibrated for interview scripts, thematic analysis codes, conceptual schemas, and literature matrices."
-                      }
-                    </p>
-                  </div>
-
-                  {/* Custom Table of Contents (optional) */}
-                  <div className="space-y-3 text-left">
-                    <div className="flex items-center gap-2">
-                      <ListTree className="w-4 h-4 text-slate-500" />
-                      <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                        Custom Table of Contents
-                      </label>
-                    </div>
-                    <p className="text-xs text-slate-450 leading-relaxed">
-                      Optional. Paste your manuscript's section headings, one per line, to guide the scan. Leave this blank to let our engine auto-detect sections instead.
-                    </p>
-                    <textarea
-                      value={customTocText}
-                      onChange={(e) => setCustomTocText(e.target.value)}
-                      placeholder={"e.g.\nIntroduction\nLiterature Review\nMethodology\nResults\nDiscussion\nConclusion"}
-                      rows={5}
-                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3.5 text-sm text-slate-855 font-mono focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner resize-y"
                     />
                   </div>
 

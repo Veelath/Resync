@@ -47,3 +47,17 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Report export via window.print(): keep badge/status background colors
+   (Chrome drops them by default) and stop a card splitting mid-way across
+   a page break. ResultDetails.tsx forces every tab/accordion open before
+   printing -- Tailwind's print: variant handles hiding chrome elsewhere. */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .break-inside-avoid-page {
+    break-inside: avoid;
+  }
+}

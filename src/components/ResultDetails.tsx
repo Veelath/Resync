@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScanResult, CitedReference } from '../types.js';
 import { API_BASE_URL, authHeaders } from '../services/api.js';
 import {
-  Download, Printer, ChevronDown, ChevronUp, CheckCircle, ListTree, ShieldCheck, Gauge, Link2, ExternalLink
+  Download, Printer, ChevronDown, ChevronUp, CheckCircle, ListTree, ShieldCheck, Gauge, Link2, ExternalLink, AlertTriangle, Info
 } from 'lucide-react';
 import ScoreRing from './ScoreRing.tsx';
-import { getScoreTier, downloadReport } from '../utils.js';
+import { getScoreTier, downloadReport, computeRevisionPlan, formatRoleLabel, PAR_SCORE } from '../utils.js';
 
 interface ResultDetailsProps {
   scan: ScanResult;
@@ -37,13 +37,29 @@ function getCitationStatusBadge(cit: CitedReference): { label: string; className
   }
 }
 
+const DEFAULT_AI_TEXT_DISCLAIMER =
+  'Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features and cannot verify authorship. Well-written human academic prose commonly scores 40-60 on this scale; this indicator must never be used to block a submission or as an integrity charge on its own.';
+
 export default function ResultDetails({ scan }: ResultDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'inconsistencies' | 'strong_coherence' | 'citations'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'inconsistencies' | 'strong_coherence' | 'citations' | 'originality'>('overview');
 
   // Accordion state maps
   const [expandedInconsistencies, setExpandedInconsistencies] = useState<Record<number, boolean>>({});
   const [expandedCitations, setExpandedCitations] = useState<Record<number, boolean>>({});
   const [feedbackMap, setFeedbackMap] = useState<Record<number, 'up' | 'down' | null>>({});
+
+  // While true, every tab renders at once and every accordion is forced
+  // open -- window.print() only captures what's in the DOM, and React's
+  // conditional tab/accordion rendering means an unopened tab is never
+  // there to print. Reset on the browser's own afterprint event so this
+  // also recovers if printing was cancelled or triggered via Ctrl+P.
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    const reset = () => setIsPrinting(false);
+    window.addEventListener('afterprint', reset);
+    return () => window.removeEventListener('afterprint', reset);
+  }, []);
 
   const toggleInconsistency = (idx: number) => {
     setExpandedInconsistencies(prev => ({ ...prev, [idx]: !prev[idx] }));
@@ -59,38 +75,61 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
   };
 
   const handleDownloadReport = () => downloadReport(scan);
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    setIsPrinting(true);
+    // Double rAF: give React a full commit+paint cycle to render every
+    // section/accordion open before the browser captures the print layout.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.print());
+    });
+  };
 
   const displayScore = scan.coherenceScore;
   const tier = getCoherenceTier(displayScore);
   const breakdown = scan.score_breakdown;
+  const revisionPlan = computeRevisionPlan(scan);
 
   const inconsistenciesList = (scan.inconsistencies && scan.inconsistencies.length > 0) ? scan.inconsistencies : (scan.correlationReport && scan.correlationReport.length > 0 ? scan.correlationReport : []);
 
-  // Mirrors services/scoring.py::PAR_SCORE. The Strong Coherence tab used
-  // to read scan.section_scores (the deprecated linear adjacent-pair
-  // scale, filtered at an unrelated >=70 cutoff, and never populated at
-  // all for a scan reloaded from history) -- it now reads the calibrated
-  // role-pair scores that actually decide what "strong" means, and
-  // attaches the model's substantive-vs-superficial verification note
-  // for each one.
-  const PAR_SCORE = 80;
+  // Every included role-pair, strong and weak alike -- previously filtered
+  // to >= PAR_SCORE only, which kept the praise on screen and quietly
+  // dropped the pairs that actually need attention.
   const verificationByPair = new Map(
     (scan.verifications || []).map(v => [`${v.role_a}|${v.role_b}`, v])
   );
-  const strongCoherenceList = (scan.score_breakdown?.coherence_detail?.pair_scores || [])
-    .filter(p => p.included && (p.score ?? 0) >= PAR_SCORE)
+  const allPairs = (breakdown?.coherence_detail?.pair_scores || [])
+    .filter(p => p.included)
     .map(p => ({
       ...p,
       verification: verificationByPair.get(`${p.role_a}|${p.role_b}`),
-    }));
+    }))
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const strongPairs = allPairs.filter(p => (p.score ?? 0) >= PAR_SCORE);
+  const weakPairs = allPairs.filter(p => (p.score ?? 0) < PAR_SCORE);
+  const dismissedPairs = breakdown?.coherence_detail?.dismissed_pairs || [];
 
   const citationsList = (scan.citations && scan.citations.length > 0) ? scan.citations : (scan.references && scan.references.length > 0 ? scan.references : []);
+
+  const stubSections = breakdown?.structural_detail?.stub_sections || [];
+  const unevaluableFraction = breakdown?.coherence_detail?.unevaluable_weight_fraction;
+
+  const aiText = scan.ai_text_indicator;
+  const showOriginalityTab = aiText?.overall_score != null;
+
+  const tabs: Array<{ id: typeof activeTab; label: string }> = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'inconsistencies', label: `Inconsistencies (${inconsistenciesList.length})` },
+    { id: 'strong_coherence', label: `Coherence Pairs (${allPairs.length})` },
+    { id: 'citations', label: `Citations (${citationsList.length})` },
+    ...(showOriginalityTab ? [{ id: 'originality' as const, label: 'Writing Style' }] : []),
+  ];
+
+  const shouldShow = (id: typeof activeTab) => isPrinting || activeTab === id;
 
   return (
     <div className="space-y-6 animate-fade-in text-left relative" id={`scan-report-${scan.id}`}>
       {/* Action Footer Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-4 border-b border-slate-200 justify-end">
+      <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-4 border-b border-slate-200 justify-end print:hidden">
         <button onClick={handleDownloadReport} className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer">
           <Download className="w-4 h-4" />
           <span>Download</span>
@@ -102,16 +141,11 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
       </div>
 
       {/* Custom Tabs Navigation */}
-      <div className="flex border-b border-slate-200">
-        {[ 
-          { id: 'overview', label: 'Overview' },
-          { id: 'inconsistencies', label: `Inconsistencies (${inconsistenciesList.length})` },
-          { id: 'strong_coherence', label: `Strong Coherence (${strongCoherenceList.length})` },
-          { id: 'citations', label: `Citations (${citationsList.length})` }
-        ].map(tab => (
+      <div className="flex border-b border-slate-200 print:hidden">
+        {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-6 py-4 text-sm font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${activeTab === tab.id
                 ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -124,8 +158,9 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
 
       <div className="pt-4">
         {/* TAB 1: OVERVIEW */}
-        {activeTab === 'overview' && (
+        {shouldShow('overview') && (
           <div className="space-y-6">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mb-3">Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col items-center justify-center text-center space-y-4">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2.5">Coherence Score</span>
@@ -140,6 +175,16 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                     <div className="flex flex-wrap gap-2">
                       {scan.missingSections.map((sec, idx) => (
                         <span key={idx} className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">⚠️ {sec}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {stubSections.length > 0 && (
+                  <div className="mt-4 bg-amber-50/30 border border-amber-200 rounded-xl p-4">
+                    <span className="text-xs font-bold text-amber-800 uppercase block mb-2">Thin Sections (under 40 words):</span>
+                    <div className="flex flex-wrap gap-2">
+                      {stubSections.map((sec, idx) => (
+                        <span key={idx} className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">✎ {formatRoleLabel(sec)}</span>
                       ))}
                     </div>
                   </div>
@@ -189,20 +234,33 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                   ))}
                 </div>
 
-                {breakdown.biggest_lever && (
-                  <div className="bg-indigo-50/40 border border-indigo-150 rounded-xl p-4 flex items-start gap-3">
-                    <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
-                      <Gauge className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-indigo-700 uppercase tracking-wide block mb-0.5">
-                        Biggest lever: {breakdown.biggest_lever.criterion.replace(/_/g, ' ')}
+                {unevaluableFraction != null && unevaluableFraction > 0 && (
+                  <p className="text-[11px] text-slate-450 flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <span>{Math.round(unevaluableFraction * 100)}% of section-pairs could not be evaluated (e.g. a missing section), which can cap the Cross-Chapter Coherence score.</span>
+                  </p>
+                )}
+
+                {revisionPlan.items.length > 0 && (
+                  <div className="bg-indigo-50/40 border border-indigo-150 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Revision Plan</span>
+                      <span className="text-xs font-mono font-bold text-indigo-700">
+                        Projected {revisionPlan.currentScore} &rarr; {revisionPlan.projectedScore}
                       </span>
-                      <p className="text-sm text-indigo-950">{breakdown.biggest_lever.reason}</p>
-                      <p className="text-xs text-indigo-600 mt-1">
-                        Fixing this could gain up to {breakdown.biggest_lever.potential_point_gain} points.
-                      </p>
                     </div>
+                    <ol className="space-y-2">
+                      {revisionPlan.items.slice(0, 5).map((item, i) => (
+                        <li key={item.id} className="flex items-start gap-3 bg-white/70 border border-indigo-100 rounded-lg p-3">
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-800">{item.label}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.detail}</p>
+                          </div>
+                          <span className="shrink-0 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg font-mono">+{item.pointGain}</span>
+                        </li>
+                      ))}
+                    </ol>
                   </div>
                 )}
               </div>
@@ -243,10 +301,11 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
         )}
 
         {/* TAB 2: INCONSISTENCIES (Accordions & XAI) */}
-        {activeTab === 'inconsistencies' && (
+        {shouldShow('inconsistencies') && (
           <div className="space-y-4">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Inconsistencies</h2>
             {inconsistenciesList.map((inc, idx) => {
-              const isExpanded = expandedInconsistencies[idx];
+              const isExpanded = isPrinting || expandedInconsistencies[idx];
               const secA = inc.section_a || inc.sectionA || `Section A`;
               const secB = inc.section_b || inc.sectionB || `Section B`;
               const whatText = inc.explanation_what || inc.description || "Inconsistency found.";
@@ -254,15 +313,15 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
               const fixText = inc.suggested_fix || inc.howToFix || "Harmonize text.";
 
               return (
-                <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
                   <button onClick={() => toggleInconsistency(idx)} className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
                     <div className="flex items-center gap-3">
                       <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Flag {idx + 1}</span>
                       <span className="text-sm font-bold text-slate-800">{secA} ↔ {secB}</span>
                     </div>
-                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
                   </button>
-                  
+
                   {isExpanded && (
                     <div className="p-5 border-t border-slate-200 space-y-4 text-sm leading-relaxed text-slate-700">
                       <div className="bg-slate-50 rounded-lg p-3 border border-slate-150">
@@ -314,7 +373,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                       )}
 
                       {/* Feedback Buttons */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2">
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2 print:hidden">
                         <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Was this helpful?</span>
                         <button
                           disabled={feedbackMap[idx] != null}
@@ -374,54 +433,99 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
           </div>
         )}
 
-        {/* TAB 3: STRONG COHERENCE */}
-        {activeTab === 'strong_coherence' && (
-          <div className="space-y-4">
-            {strongCoherenceList.map((item, idx) => {
-              const isSuperficial = item.verification?.alignment === 'superficial';
-              return (
-                <div
-                  key={idx}
-                  className={`border rounded-xl p-5 shadow-xs flex flex-col gap-2 ${isSuperficial ? 'bg-amber-50/30 border-amber-200' : 'bg-emerald-50/30 border-emerald-200'
-                    }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className={`w-5 h-5 ${isSuperficial ? 'text-amber-600' : 'text-emerald-600'}`} />
-                    <span className={`text-sm font-bold ${isSuperficial ? 'text-amber-900' : 'text-emerald-900'}`}>{item.role_a} ↔ {item.role_b}</span>
-                    {item.verification && (
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                        }`}>
-                        {item.verification.alignment}
-                      </span>
+        {/* TAB 3: COHERENCE PAIRS (strong + weak + checked-and-cleared) */}
+        {shouldShow('strong_coherence') && (
+          <div className="space-y-6">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Coherence Pairs</h2>
+
+            {weakPairs.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block">Needs Attention</span>
+                {weakPairs.map((item, idx) => (
+                  <div key={idx} className="border rounded-xl p-5 shadow-xs flex flex-col gap-2 bg-rose-50/30 border-rose-200 break-inside-avoid-page">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <AlertTriangle className="w-5 h-5 text-rose-600" />
+                      <span className="text-sm font-bold text-rose-900">{formatRoleLabel(item.role_a)} ↔ {formatRoleLabel(item.role_b)}</span>
+                      <span className="ml-auto text-xs font-bold px-2 py-1 rounded bg-rose-100 text-rose-800">Score: {item.score ?? 'N/A'}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 ml-7">weight {item.weight.toFixed(2)}{item.raw_similarity != null ? ` · raw similarity ${Math.round(item.raw_similarity * 100)}%` : ''}</p>
+                    {item.verification?.note && (
+                      <p className="text-sm leading-relaxed ml-7 text-rose-700">{item.verification.note}</p>
                     )}
-                    <span className={`ml-auto text-xs font-bold px-2 py-1 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}>Score: {item.score}</span>
                   </div>
-                  {item.verification?.note && (
-                    <p className={`text-sm leading-relaxed ml-7 ${isSuperficial ? 'text-amber-700' : 'text-emerald-700'}`}>
-                      {item.verification.note}
-                    </p>
-                  )}
-                  {!item.verification && (
-                    <p className="text-sm text-slate-500 leading-relaxed ml-7">Verification pending or unavailable for this pair.</p>
-                  )}
-                </div>
-              );
-            })}
-            {strongCoherenceList.length === 0 && <p className="text-slate-500 text-sm">No strong coherence links reported.</p>}
+                ))}
+              </div>
+            )}
+
+            {strongPairs.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block">Strong</span>
+                {strongPairs.map((item, idx) => {
+                  const isSuperficial = item.verification?.alignment === 'superficial';
+                  return (
+                    <div
+                      key={idx}
+                      className={`border rounded-xl p-5 shadow-xs flex flex-col gap-2 break-inside-avoid-page ${isSuperficial ? 'bg-amber-50/30 border-amber-200' : 'bg-emerald-50/30 border-emerald-200'
+                        }`}
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CheckCircle className={`w-5 h-5 ${isSuperficial ? 'text-amber-600' : 'text-emerald-600'}`} />
+                        <span className={`text-sm font-bold ${isSuperficial ? 'text-amber-900' : 'text-emerald-900'}`}>{formatRoleLabel(item.role_a)} ↔ {formatRoleLabel(item.role_b)}</span>
+                        {item.verification && (
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                            {item.verification.alignment}
+                          </span>
+                        )}
+                        <span className={`ml-auto text-xs font-bold px-2 py-1 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                          }`}>Score: {item.score}</span>
+                      </div>
+                      {item.verification?.note && (
+                        <p className={`text-sm leading-relaxed ml-7 ${isSuperficial ? 'text-amber-700' : 'text-emerald-700'}`}>
+                          {item.verification.note}
+                        </p>
+                      )}
+                      {!item.verification && (
+                        <p className="text-sm text-slate-500 leading-relaxed ml-7">Verification pending or unavailable for this pair.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {allPairs.length === 0 && <p className="text-slate-500 text-sm">No coherence pairs reported.</p>}
+
+            {dismissedPairs.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block">Checked and Cleared</span>
+                <p className="text-xs text-slate-450">These pairs scored low but the model reviewed them individually and found no material inconsistency.</p>
+                {dismissedPairs.map((d, idx) => (
+                  <div key={idx} className="border rounded-xl p-4 shadow-xs bg-slate-50 border-slate-200 break-inside-avoid-page">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <ShieldCheck className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm font-bold text-slate-700">{formatRoleLabel(d.role_a)} ↔ {formatRoleLabel(d.role_b)}</span>
+                      <span className="ml-auto text-xs font-bold px-2 py-1 rounded bg-slate-200 text-slate-700">Score: {d.score}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1.5 ml-6">{d.reason}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* TAB 4: CITATIONS (Accordions) */}
-        {activeTab === 'citations' && (
+        {shouldShow('citations') && (
           <div className="space-y-4">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Citations</h2>
             {citationsList.map((cit, idx) => {
-              const isExpanded = expandedCitations[idx];
+              const isExpanded = isPrinting || expandedCitations[idx];
               const rawText = cit.citation_raw_reference_text || cit.citation || "Reference entry";
               const badge = getCitationStatusBadge(cit);
 
               return (
-                <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
                   <button onClick={() => toggleCitation(idx)} className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
                     <div className="flex items-start gap-3 w-4/5">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-0.5 shrink-0 ${badge.className}`}>
@@ -429,7 +533,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                       </span>
                       <span className="text-sm font-bold text-slate-800 truncate">{rawText}</span>
                     </div>
-                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
                   </button>
 
                   {isExpanded && (
@@ -467,6 +571,52 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
               );
             })}
             {citationsList.length === 0 && <p className="text-slate-500 text-sm">No citations detected.</p>}
+          </div>
+        )}
+
+        {/* TAB 5: WRITING STYLE (advisory only, excluded from the score) */}
+        {showOriginalityTab && shouldShow('originality') && aiText && (
+          <div className="space-y-4">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Writing Style Advisory</h2>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-2.5 text-xs text-slate-600 leading-relaxed">
+              <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+              <p>{aiText.disclaimer || DEFAULT_AI_TEXT_DISCLAIMER}</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">Writing Style Reading</span>
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                  <div className="h-full bg-indigo-400" style={{ width: `${Math.max(4, aiText.overall_score ?? 0)}%` }} />
+                </div>
+                <span className="text-sm font-extrabold text-slate-800 font-mono w-10 text-right">{Math.round(aiText.overall_score ?? 0)}</span>
+              </div>
+              <p className="text-xs text-slate-450">Well-written human academic prose commonly scores 40-60 on this scale — this is a style observation, not a verdict, and plays no part in the coherence score above.</p>
+            </div>
+
+            {aiText.section_scores && Object.keys(aiText.section_scores).length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-3">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">By Section</span>
+                {Object.entries(aiText.section_scores).map(([sec, val]) => (
+                  <div key={sec} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600 font-medium">{formatRoleLabel(sec)}</span>
+                    <span className="font-mono font-bold text-slate-800">{val == null ? 'N/A' : Math.round(val)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {aiText.flagged_sections && aiText.flagged_sections.length > 0 && (
+              <div className="bg-amber-50/40 border border-amber-200/60 rounded-xl p-4">
+                <span className="text-xs font-bold text-amber-700 uppercase block mb-2">Sections with unusually uniform phrasing</span>
+                <div className="flex flex-wrap gap-2">
+                  {aiText.flagged_sections.map((sec, i) => (
+                    <span key={i} className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-lg">{formatRoleLabel(sec)}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

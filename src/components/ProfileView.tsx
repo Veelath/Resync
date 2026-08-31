@@ -28,21 +28,39 @@ const LEDGER_LABELS: Record<CreditLedgerEntry['kind'], string> = {
   refund: 'Scan credit refunded',
 };
 
-function CreditHistoryPanel({ userId }: { userId: string }) {
+/**
+ * `compact` renders the panel as a dashboard rail card (tighter shell, smaller
+ * header, no max-width centering); `limit` caps how many ledger entries are
+ * fetched and shown. Defaults reproduce the original full-width Profile panel.
+ */
+function CreditHistoryPanel({ userId, limit = 20, compact = false }: { userId: string; limit?: number; compact?: boolean }) {
   const [entries, setEntries] = useState<CreditLedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed fetch previously rendered as "No credit activity yet." -- on a
+  // billing surface that reads as an authoritative (and wrong) statement about
+  // the user's ledger, so failure is now reported as failure.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    getCreditHistory(userId, 20)
+    setLoading(true);
+    setFailed(false);
+    getCreditHistory(userId, limit)
       .then((res) => { if (!cancelled) setEntries(res.entries); })
-      .catch(() => { /* non-critical — leave the panel empty on failure */ })
+      .catch(() => { if (!cancelled) setFailed(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [userId, limit]);
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-xl border border-slate-200/80 p-8 shadow-sm animate-fade-in mt-6">
+    <div className={compact
+      ? 'bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm animate-fade-in'
+      : 'max-w-2xl mx-auto bg-white rounded-xl border border-slate-200/80 p-8 shadow-sm animate-fade-in mt-6'}>
+      {compact ? (
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-4">
+          Recent Activity
+        </span>
+      ) : (
       <div className="flex items-center gap-3 border-b border-slate-100 pb-5 mb-5">
         <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600">
           <Receipt className="w-6 h-6" />
@@ -52,9 +70,12 @@ function CreditHistoryPanel({ userId }: { userId: string }) {
           <p className="text-xs text-slate-400">Every scan debit, purchase, and refund on your account.</p>
         </div>
       </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-slate-400">Loading history...</p>
+      ) : failed ? (
+        <p className="text-sm text-amber-700">Couldn't load your credit history — your balance is unaffected.</p>
       ) : entries.length === 0 ? (
         <p className="text-sm text-slate-400">No credit activity yet.</p>
       ) : (
