@@ -30,6 +30,17 @@
   animation: pulseBorder 2s infinite ease-in-out;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+.bg-grid-pattern {
+  background-size: 44px 44px;
+  background-image: 
+    linear-gradient(to right, rgba(226, 232, 240, 0.7) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(226, 232, 240, 0.7) 1px, transparent 1px);
+}
+
 /* Custom styles for academic report paper style */
 .academic-card {
   background: white;
@@ -47,3 +58,4 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
