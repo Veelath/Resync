@@ -218,21 +218,8 @@ export default function App() {
       localStorage.setItem('resync_user', JSON.stringify(userObj));
       setShowAuthModal(false);
     } catch (err: any) {
-      console.warn('[Resync Auth] Supabase login error, falling back to local session:', err?.message || err);
-      // Fallback for local development so you can test immediately
-      const localName = email.split('@')[0] || 'Researcher';
-      const userObj: User = {
-        id: `local_user_${Date.now()}`,
-        email,
-        name: localName.charAt(0).toUpperCase() + localName.slice(1),
-        institution: 'Academic Institution',
-        role: 'Researcher',
-        bio: '',
-      };
-      setCurrentUser(userObj);
-      setScanCredits((prev) => (prev > 0 ? prev : 3));
-      localStorage.setItem('resync_user', JSON.stringify(userObj));
-      setShowAuthModal(false);
+      console.error('[Resync Auth] Supabase login error:', err?.message || err);
+      setAuthError(err?.message || 'Invalid login credentials.');
     } finally {
       setAuthLoading(false);
     }
