@@ -302,133 +302,155 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
 
         {/* TAB 2: INCONSISTENCIES (Accordions & XAI) */}
         {shouldShow('inconsistencies') && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Inconsistencies</h2>
-            {inconsistenciesList.map((inc, idx) => {
-              const isExpanded = isPrinting || expandedInconsistencies[idx];
-              const secA = inc.section_a || inc.sectionA || `Section A`;
-              const secB = inc.section_b || inc.sectionB || `Section B`;
-              const whatText = inc.explanation_what || inc.description || "Inconsistency found.";
-              const whyText = inc.explanation_why || "Logical disconnect.";
-              const fixText = inc.suggested_fix || inc.howToFix || "Harmonize text.";
+            {(() => {
+              const grouped = inconsistenciesList.reduce((acc: Record<string, any[]>, inc: any) => {
+                const groupKey = inc.section_a || inc.sectionA || 'General';
+                if (!acc[groupKey]) acc[groupKey] = [];
+                acc[groupKey].push(inc);
+                return acc;
+              }, {});
 
-              return (
-                <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
-                  <button onClick={() => toggleInconsistency(idx)} className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Flag {idx + 1}</span>
-                      <span className="text-sm font-bold text-slate-800">{secA} ↔ {secB}</span>
-                    </div>
-                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
-                  </button>
+              let globalIdx = 0;
+              return Object.entries(grouped).map(([sectionName, issues]) => (
+                <div key={sectionName} className="mb-4">
+                  <h3 className="font-serif font-bold text-slate-800 text-base mb-2.5 pb-1 border-b border-slate-200 flex items-center justify-between">
+                    <span>{sectionName} <span className="text-slate-450 font-normal text-sm ml-1">({issues.length} {issues.length === 1 ? 'issue' : 'issues'})</span></span>
+                  </h3>
+                  <div className="space-y-3">
+                    {issues.map((inc) => {
+                      const idx = globalIdx++;
+                      const isExpanded = isPrinting || expandedInconsistencies[idx];
+                      const secB = inc.section_b || inc.sectionB || `Section B`;
+                      const whatText = inc.explanation_what || inc.description || "Inconsistency found.";
+                      const whyText = inc.explanation_why || "Logical disconnect.";
+                      const fixText = inc.suggested_fix || inc.howToFix || "Harmonize text.";
 
-                  {isExpanded && (
-                    <div className="p-5 border-t border-slate-200 space-y-4 text-sm leading-relaxed text-slate-700">
-                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-150">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">🔍 What Was Found:</span>
-                        <p>{whatText}</p>
-                      </div>
-                      <div className="bg-amber-50/40 rounded-lg p-3 border border-amber-200/60 text-amber-900">
-                        <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">💡 Why It Matters:</span>
-                        <p>{whyText}</p>
-                      </div>
-                      <div className="border-l-4 border-indigo-500 pl-4 py-2 text-indigo-950">
-                        <span className="text-[10px] font-bold text-indigo-700 uppercase block mb-1">🛠️ Suggested Fix:</span>
-                        <p className="font-medium text-base">{fixText}</p>
-                      </div>
-                      {/* Evidence Citation Block */}
-                      {(inc.evidence_a || inc.evidence_b) && (
-                        <div className="bg-indigo-50/30 rounded-lg p-3 border border-indigo-100 mt-1">
-                          <span className="text-[10px] font-bold text-indigo-600 uppercase block mb-2 flex items-center gap-2">
-                            📎 Grounding Evidence:
-                            {inc.evidence_verified === false && (
-                              <span className="text-[9px] font-bold normal-case bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded" title="This quote could not be re-verified against the source section text.">
-                                unverified
+                      return (
+                        <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
+                          <button onClick={() => toggleInconsistency(idx)} className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
+                            <div className="flex items-center gap-3">
+                              <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0">Flag {idx + 1}</span>
+                              <span className="text-sm font-bold text-slate-800 line-clamp-1">Conflicts with {secB}</span>
+                              <span className="hidden sm:inline-flex items-center gap-1 bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase shrink-0">
+                                ✦ AI analysis
                               </span>
-                            )}
-                          </span>
-                          {inc.evidence_a && (
-                            <p className="italic text-slate-600 text-xs border-l-2 border-indigo-300 pl-3 mb-2">
-                              <span className="font-bold not-italic text-indigo-500">Section A: </span>&ldquo;{inc.evidence_a}&rdquo;
-                            </p>
-                          )}
-                          {inc.evidence_b && (
-                            <p className="italic text-slate-600 text-xs border-l-2 border-rose-300 pl-3">
-                              <span className="font-bold not-italic text-rose-500">Section B: </span>&ldquo;{inc.evidence_b}&rdquo;
-                            </p>
+                            </div>
+                            {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400 print:hidden shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 print:hidden shrink-0" />}
+                          </button>
+
+                          {isExpanded && (
+                            <div className="p-4 border-t border-slate-200 space-y-3 text-sm leading-relaxed text-slate-700">
+                              <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-150">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">🔍 What Was Found:</span>
+                                <p className="text-[13px]">{whatText}</p>
+                              </div>
+                              <div className="bg-amber-50/40 rounded-lg p-2.5 border border-amber-200/60 text-amber-900">
+                                <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">💡 Why It Matters:</span>
+                                <p className="text-[13px]">{whyText}</p>
+                              </div>
+                              <div className="border-l-4 border-indigo-500 pl-3 py-1.5 text-indigo-950">
+                                <span className="text-[10px] font-bold text-indigo-700 uppercase block mb-1">🛠️ Suggested Fix:</span>
+                                <p className="font-medium text-sm">{fixText}</p>
+                              </div>
+                              {/* Evidence Citation Block */}
+                              {(inc.evidence_a || inc.evidence_b) && (
+                                <div className="bg-indigo-50/30 rounded-lg p-2.5 border border-indigo-100 mt-1">
+                                  <span className="text-[10px] font-bold text-indigo-600 uppercase block mb-2 flex items-center gap-2">
+                                    📎 Grounding Evidence:
+                                    {inc.evidence_verified === false && (
+                                      <span className="text-[9px] font-bold normal-case bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded" title="This quote could not be re-verified against the source section text.">
+                                        unverified
+                                      </span>
+                                    )}
+                                  </span>
+                                  {inc.evidence_a && (
+                                    <p className="italic text-slate-600 text-xs border-l-2 border-indigo-300 pl-2.5 mb-2">
+                                      <span className="font-bold not-italic text-indigo-500">Source: </span>&ldquo;{inc.evidence_a}&rdquo;
+                                    </p>
+                                  )}
+                                  {inc.evidence_b && (
+                                    <p className="italic text-slate-600 text-xs border-l-2 border-rose-300 pl-2.5">
+                                      <span className="font-bold not-italic text-rose-500">Conflict: </span>&ldquo;{inc.evidence_b}&rdquo;
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Unaddressed Objectives Block */}
+                              {inc.objectives_unaddressed && inc.objectives_unaddressed.length > 0 && (
+                                <div className="bg-amber-50/40 rounded-lg p-2.5 border border-amber-200/60">
+                                  <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">⚠️ Unaddressed Objectives:</span>
+                                  <ul className="list-disc list-inside space-y-0.5">
+                                    {inc.objectives_unaddressed.map((obj: string, i: number) => (
+                                      <li key={i} className="text-xs text-amber-900 italic">{obj}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {/* Feedback Buttons */}
+                              <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2 print:hidden">
+                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Was this helpful?</span>
+                                <button
+                                  disabled={feedbackMap[idx] != null}
+                                  onClick={async () => {
+                                    const issueId = inc.inconsistency_id;
+                                    const userId = scan.user_id || scan.userId || '';
+                                    const apiBase = API_BASE_URL;
+                                    setFeedbackMap(prev => ({ ...prev, [idx]: 'up' }));
+                                    if (issueId) {
+                                      fetch(`${apiBase}/api/issues/${issueId}/feedback`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+                                        body: JSON.stringify({ helpful: true }),
+                                      }).catch(() => {});
+                                    }
+                                  }}
+                                  className={`text-lg px-2 py-0.5 rounded transition-all ${
+                                    feedbackMap[idx] === 'up'
+                                      ? 'bg-indigo-100 text-indigo-600 opacity-60 cursor-not-allowed'
+                                      : feedbackMap[idx] === 'down'
+                                      ? 'opacity-30 cursor-not-allowed'
+                                      : 'hover:bg-indigo-50 cursor-pointer'
+                                  }`}
+                                  title="Helpful"
+                                >👍</button>
+                                <button
+                                  disabled={feedbackMap[idx] != null}
+                                  onClick={async () => {
+                                    const issueId = inc.inconsistency_id;
+                                    const userId = scan.user_id || scan.userId || '';
+                                    const apiBase = API_BASE_URL;
+                                    setFeedbackMap(prev => ({ ...prev, [idx]: 'down' }));
+                                    if (issueId) {
+                                      fetch(`${apiBase}/api/issues/${issueId}/feedback`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+                                        body: JSON.stringify({ helpful: false }),
+                                      }).catch(() => {});
+                                    }
+                                  }}
+                                  className={`text-lg px-2 py-0.5 rounded transition-all ${
+                                    feedbackMap[idx] === 'down'
+                                      ? 'bg-rose-100 text-rose-600 opacity-60 cursor-not-allowed'
+                                      : feedbackMap[idx] === 'up'
+                                      ? 'opacity-30 cursor-not-allowed'
+                                      : 'hover:bg-rose-50 cursor-pointer'
+                                  }`}
+                                  title="Not helpful"
+                                >👎</button>
+                              </div>
+                            </div>
                           )}
                         </div>
-                      )}
-
-                      {/* Unaddressed Objectives Block */}
-                      {inc.objectives_unaddressed && inc.objectives_unaddressed.length > 0 && (
-                        <div className="bg-amber-50/40 rounded-lg p-3 border border-amber-200/60">
-                          <span className="text-[10px] font-bold text-amber-700 uppercase block mb-2">⚠️ Unaddressed Objectives:</span>
-                          <ul className="list-disc list-inside space-y-1">
-                            {inc.objectives_unaddressed.map((obj, i) => (
-                              <li key={i} className="text-xs text-amber-900 italic">{obj}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Feedback Buttons */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2 print:hidden">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Was this helpful?</span>
-                        <button
-                          disabled={feedbackMap[idx] != null}
-                          onClick={async () => {
-                            const issueId = inc.inconsistency_id;
-                            const userId = scan.user_id || scan.userId || '';
-                            const apiBase = API_BASE_URL;
-                            setFeedbackMap(prev => ({ ...prev, [idx]: 'up' }));
-                            if (issueId) {
-                              fetch(`${apiBase}/api/issues/${issueId}/feedback`, {
-                                method: 'POST',
-                                headers: await authHeaders({ 'Content-Type': 'application/json', 'X-User-Id': userId }),
-                                body: JSON.stringify({ helpful: true }),
-                              }).catch(() => {});
-                            }
-                          }}
-                          className={`text-lg px-2 py-0.5 rounded transition-all ${
-                            feedbackMap[idx] === 'up'
-                              ? 'bg-indigo-100 text-indigo-600 opacity-60 cursor-not-allowed'
-                              : feedbackMap[idx] === 'down'
-                              ? 'opacity-30 cursor-not-allowed'
-                              : 'hover:bg-indigo-50 cursor-pointer'
-                          }`}
-                          title="Helpful"
-                        >👍</button>
-                        <button
-                          disabled={feedbackMap[idx] != null}
-                          onClick={async () => {
-                            const issueId = inc.inconsistency_id;
-                            const userId = scan.user_id || scan.userId || '';
-                            const apiBase = API_BASE_URL;
-                            setFeedbackMap(prev => ({ ...prev, [idx]: 'down' }));
-                            if (issueId) {
-                              fetch(`${apiBase}/api/issues/${issueId}/feedback`, {
-                                method: 'POST',
-                                headers: await authHeaders({ 'Content-Type': 'application/json', 'X-User-Id': userId }),
-                                body: JSON.stringify({ helpful: false }),
-                              }).catch(() => {});
-                            }
-                          }}
-                          className={`text-lg px-2 py-0.5 rounded transition-all ${
-                            feedbackMap[idx] === 'down'
-                              ? 'bg-rose-100 text-rose-600 opacity-60 cursor-not-allowed'
-                              : feedbackMap[idx] === 'up'
-                              ? 'opacity-30 cursor-not-allowed'
-                              : 'hover:bg-rose-50 cursor-pointer'
-                          }`}
-                          title="Not helpful"
-                        >👎</button>
-                      </div>
-                    </div>
-                  )}
+                      );
+                    })}
+                  </div>
                 </div>
-              );
-            })}
+              ));
+            })()}
             {inconsistenciesList.length === 0 && <p className="text-slate-500 text-sm">No inconsistencies detected.</p>}
           </div>
         )}

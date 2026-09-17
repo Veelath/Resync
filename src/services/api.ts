@@ -33,9 +33,7 @@ export interface ScanRequest {
   manuscript_id?: string;
   manuscript_title?: string;
   doc_url: string;
-  // No template_toc: scan-and-go is auto-detect only -- see
-  // ManuscriptParserService.parse_manuscript_sections, which routes a
-  // genuinely omitted template_toc to its auto-detection path.
+  template_toc?: string[];
   style_reference_url?: string;
 }
 

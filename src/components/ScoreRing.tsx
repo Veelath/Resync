@@ -60,9 +60,14 @@ export default function ScoreRing({
         </div>
       </div>
       {showDetails && (
-        <span className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
-          {label}
-        </span>
+        <div className="flex flex-col items-center mt-3 space-y-1">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
+            {label}
+          </span>
+          <span className="text-[10px] text-slate-400 text-center max-w-[140px] leading-tight mt-1">
+            Scores above 92 are rare. 100 is not expected.
+          </span>
+        </div>
       )}
     </div>
   );

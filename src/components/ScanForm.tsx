@@ -59,10 +59,10 @@ export default function ScanForm({
   onScanningChange
 }: ScanFormProps) {
 
-  // Fields
   const [documentLink, setDocumentLink] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customTopic, setCustomTopic] = useState('');
+  const [customTemplate, setCustomTemplate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stepIndex, setStepIndex] = useState(0);
@@ -222,12 +222,12 @@ export default function ScanForm({
       }
 
       // No manuscript_id sent: the backend creates a fresh manuscript row
-      // per scan-and-go submission, keyed off manuscript_title + doc_url.
       const rawResponse = await executeManuscriptScan({
         user_id: activeUserId,
         manuscript_title: resolvedTopic,
         doc_url: linkToSend,
-        style_reference_url: styleGuideVal || undefined
+        style_reference_url: styleGuideVal || undefined,
+        template_toc: customTemplate.trim() ? customTemplate.split('\n').map(s => s.trim()).filter(Boolean) : undefined
       });
 
       // Map live backend ScanResponse into React ScanResult state
@@ -316,21 +316,27 @@ export default function ScanForm({
       {/* Full-screen blocking loading overlay (fixed inset-0, blurred indigo scrim). */}
       {loading && (
         <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in p-4">
-          <div className="bg-white/95 rounded-2xl p-10 border border-slate-200/80 max-w-sm w-full text-center space-y-6 shadow-2xl">
-            <div className="relative mx-auto w-fit">
-              <div className="absolute inset-0 bg-indigo-100/50 rounded-full blur-2xl animate-pulse"></div>
-              <Loader2 className="w-12 h-12 text-indigo-600 animate-spin relative" />
+          <div className="bg-white/95 rounded-2xl p-8 border border-slate-200/80 max-w-md w-full text-left space-y-6 shadow-2xl">
+            <h3 className="font-serif text-xl font-bold text-slate-850">Scanning Manuscript...</h3>
+            <div className="space-y-4">
+              {ANALYSIS_STEPS.map((step, idx) => (
+                <div key={idx} className={`flex items-center gap-3 ${idx > stepIndex ? 'opacity-40' : 'opacity-100'}`}>
+                  {idx < stepIndex ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  ) : idx === stepIndex ? (
+                    <Loader2 className="w-5 h-5 text-indigo-600 animate-spin shrink-0" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-slate-200 shrink-0" />
+                  )}
+                  <span className={`text-sm font-medium ${idx === stepIndex ? 'text-indigo-900 font-bold' : 'text-slate-600'}`}>
+                    {step}
+                  </span>
+                </div>
+              ))}
             </div>
-
-            <div className="space-y-2.5">
-              <h3 className="font-serif text-lg font-bold text-slate-850 animate-pulse">Scanning your manuscript…</h3>
-              <p className="text-sm sm:text-base text-indigo-600 font-bold font-mono min-h-[35px] px-2 transition-all">
-                {ANALYSIS_STEPS[stepIndex]}
-              </p>
-              <p className="text-xs sm:text-sm text-slate-450 leading-relaxed">
-                Our AI is auditing logical consistency and citation maps. Larger manuscripts can take a couple of minutes — this won't get stuck.
-              </p>
-            </div>
+            <p className="text-xs text-slate-450 leading-relaxed border-t border-slate-100 pt-4">
+              Our AI is auditing logical consistency and citation maps. Larger manuscripts can take a couple of minutes — this won't get stuck.
+            </p>
           </div>
         </div>
       )}
@@ -384,8 +390,35 @@ export default function ScanForm({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-            {/* Primary "scan and go" input: source tabs + the document input
-                are the visual centerpiece. Everything else is secondary. */}
+            {/* Read-Only Pre-Scan Standards (B2) */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-left mb-6">
+              <h3 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                Evaluation Standards
+              </h3>
+              <p className="text-xs text-slate-500 mb-3">
+                Resync will automatically evaluate your manuscript against these fixed criteria:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] font-medium text-slate-700">
+                <div className="bg-white p-3 border border-slate-100 rounded-lg shadow-sm">
+                  <span className="block text-indigo-700 font-bold mb-1">Structural (25%)</span>
+                  Checks presence of required academic sections.
+                </div>
+                <div className="bg-white p-3 border border-slate-100 rounded-lg shadow-sm">
+                  <span className="block text-indigo-700 font-bold mb-1">Coherence (50%)</span>
+                  Analyzes logical alignment across 7 canonical section pairs.
+                </div>
+                <div className="bg-white p-3 border border-slate-100 rounded-lg shadow-sm">
+                  <span className="block text-indigo-700 font-bold mb-1">Citations (25%)</span>
+                  Verifies reference accessibility and in-text matching.
+                </div>
+              </div>
+            </div>
+
+            <div className="text-left font-serif font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <span className="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">1</span>
+              Choose Source
+            </div>
             {/* Tabs selector */}
             <div className="flex border-b border-slate-200">
               <button
@@ -405,7 +438,7 @@ export default function ScanForm({
                 onClick={() => setUploadSource('file')}
                 className={`flex items-center gap-2 px-6 py-4 text-base font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${uploadSource === 'file'
                     ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                    : 'border-transparent text-slate-400 hover:text-slate-655'
                   }`}
               >
                 <FileText className="w-5 h-5" />
@@ -495,21 +528,11 @@ export default function ScanForm({
               </div>
             )}
 
-            {/* Big, obvious primary CTA — sits right under the input so the
-                whole "scan and go" path is: pick source, paste/drop, go. */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-lg sm:text-xl px-9 py-5 rounded-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer group focus:outline-none shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:scale-101 active:scale-99 duration-150"
-            >
-              <Zap className="w-5 h-5" />
-              <span>Scan Now</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-
-            {/* Advanced options — collapsed by default. Title/topic,
-                methodology paradigm, a custom TOC, and the style guide are
-                all optional and secondary to the primary scan path. */}
+            {/* Advanced options — collapsed by default. */}
+            <div className="text-left font-serif font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2">
+              <span className="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
+              Configure (Optional)
+            </div>
             <div className="rounded-2xl border border-slate-200 overflow-hidden">
               <button
                 type="button"
@@ -640,9 +663,41 @@ export default function ScanForm({
                       </div>
                     )}
                   </div>
+
+                  {/* Custom Section Template (B3) */}
+                  <div className="space-y-3 text-left border-t border-slate-100 pt-6">
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
+                      Section Template (Optional)
+                    </label>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Leave blank to auto-detect your manuscript's structure. If your department requires specific headings, paste them here (one per line).
+                    </p>
+                    <textarea
+                      value={customTemplate}
+                      onChange={(e) => setCustomTemplate(e.target.value)}
+                      placeholder="e.g.&#10;Introduction&#10;Objectives of the Study&#10;Methodology"
+                      rows={4}
+                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner resize-none font-mono"
+                    />
+                  </div>
                 </div>
               )}
             </div>
+
+            <div className="text-left font-serif font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2">
+              <span className="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">3</span>
+              Analyze
+            </div>
+            {/* Big, obvious primary CTA */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-lg sm:text-xl px-9 py-5 rounded-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer group focus:outline-none shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:scale-101 active:scale-99 duration-150"
+            >
+              <Zap className="w-5 h-5" />
+              <span>Scan Now</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
           </form>
       </div>
     </div>

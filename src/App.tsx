@@ -469,6 +469,10 @@ export default function App() {
                     Resync scans your manuscript for logic gaps, contradictions, redundancies, and broken citations — giving you a full coherence report in about 2 minutes.
                   </p>
 
+                  <div className="bg-amber-50/80 border border-amber-200/80 text-amber-800 rounded-lg p-3 max-w-lg text-sm font-medium">
+                    <span className="font-bold">Note:</span> Designed exclusively for BSIT capstone and IT research manuscripts. Documents outside this domain may produce inaccurate results.
+                  </div>
+
                   {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
                     <button
@@ -628,7 +632,7 @@ export default function App() {
                   <span className="text-xs sm:text-sm text-slate-600 font-medium">Per full thesis</span>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-[#131bb4] font-mono">.docx + GDocs</span>
+                  <span className="text-2xl sm:text-3xl font-black text-[#131bb4] font-mono whitespace-nowrap">.docx, .pdf, GDocs</span>
                   <span className="text-xs sm:text-sm text-slate-600 font-medium">Accepted formats</span>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
