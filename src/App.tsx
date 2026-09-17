@@ -880,32 +880,12 @@ export default function App() {
               </button>
 
               {/* Auth Tabs Toggle */}
-<<<<<<< HEAD
-              <div className="flex border-b border-slate-100 pb-3">
-                <button
-                  onClick={() => { setAuthTab('login'); setAuthError(''); }}
-                  className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                    authTab === 'login' ? 'border-[#131bb4] text-[#131bb4]' : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={() => { setAuthTab('register'); setAuthError(''); }}
-                  className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                    authTab === 'register' ? 'border-[#131bb4] text-[#131bb4]' : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  Create Account
-                </button>
-              </div>
-=======
               {authTab !== 'forgot' ? (
                 <div className="flex border-b border-slate-100 pb-3">
                   <button
                     onClick={() => { setAuthTab('login'); setAuthError(''); setForgotSuccess(false); setEmail(''); setPassword(''); setConfirmPassword(''); }}
                     className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                      authTab === 'login' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+                      authTab === 'login' ? 'border-[#131bb4] text-[#131bb4]' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     Log In
@@ -913,7 +893,7 @@ export default function App() {
                   <button
                     onClick={() => { setAuthTab('register'); setAuthError(''); setForgotSuccess(false); setEmail(''); setPassword(''); setConfirmPassword(''); }}
                     className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                      authTab === 'register' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+                      authTab === 'register' ? 'border-[#131bb4] text-[#131bb4]' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     Create Account
@@ -925,7 +905,6 @@ export default function App() {
                   <p className="text-xs text-slate-400 mt-0.5">Enter your account email to receive recovery instructions.</p>
                 </div>
               )}
->>>>>>> 8291f61b0f35bcd2744605b7a43b22f2d48490e8
 
               {authError && (
                 <div className="flex items-center gap-2 bg-rose-50 text-rose-800 text-xs p-3 rounded border border-rose-100 text-left">
@@ -962,7 +941,7 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={authLoading || forgotSuccess}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-4 cursor-pointer"
+                    className="w-full bg-[#131bb4] hover:bg-[#0e148e] text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-4 cursor-pointer"
                   >
                     {authLoading ? 'Sending...' : forgotSuccess ? 'Reset Link Dispatched' : 'Send Recovery Instructions'}
                   </button>
@@ -971,7 +950,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => { setAuthTab('login'); setAuthError(''); setForgotSuccess(false); setEmail(''); setPassword(''); setConfirmPassword(''); }}
-                      className="text-xs text-indigo-600 font-bold hover:underline cursor-pointer"
+                      className="text-xs text-[#131bb4] font-bold hover:underline cursor-pointer"
                     >
                       ← Back to Log In
                     </button>
@@ -1025,7 +1004,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => { setAuthTab('forgot'); setAuthError(''); setForgotSuccess(false); setForgotEmail(email); }}
-                          className="text-[11px] text-indigo-600 font-bold hover:underline cursor-pointer"
+                          className="text-[11px] text-[#131bb4] font-bold hover:underline cursor-pointer"
                         >
                           Forgot password?
                         </button>
@@ -1041,16 +1020,6 @@ export default function App() {
                     />
                   </div>
 
-<<<<<<< HEAD
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full bg-[#131bb4] hover:bg-[#0e148e] text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-6 cursor-pointer"
-                >
-                  {authLoading ? 'Authenticating...' : authTab === 'login' ? 'Log In' : 'Initialize Account'}
-                </button>
-              </form>
-=======
                   {authTab === 'register' && (
                     <div>
                       <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Confirm Password</label>
@@ -1068,13 +1037,12 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={authLoading}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-6 cursor-pointer"
+                    className="w-full bg-[#131bb4] hover:bg-[#0e148e] text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-6 cursor-pointer"
                   >
                     {authLoading ? 'Authenticating...' : authTab === 'login' ? 'Log In' : 'Initialize Account'}
                   </button>
                 </form>
               )}
->>>>>>> 8291f61b0f35bcd2744605b7a43b22f2d48490e8
 
               <div className="text-center pt-2">
                 <p className="text-xs text-slate-400 font-mono">Secure TLS 1.3 Encryption Standard</p>
