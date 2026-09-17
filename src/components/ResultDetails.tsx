@@ -1,569 +1,626 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { useState } from 'react';
-import { ScanResult } from '../types.js';
-import { 
-  FileText, 
-  RefreshCw,
-  Sparkles,
-  Compass,
-  Loader2,
-  AlertTriangle,
-  AlertCircle,
-  Download
+import React, { useState, useEffect } from 'react';
+import { ScanResult, CitedReference } from '../types.js';
+import { API_BASE_URL, authHeaders } from '../services/api.js';
+import {
+  Download, Printer, ChevronDown, ChevronUp, CheckCircle, ListTree, ShieldCheck, Gauge, Link2, ExternalLink, AlertTriangle, Info
 } from 'lucide-react';
 import ScoreRing from './ScoreRing.tsx';
-import { getScoreTier, downloadReport } from '../utils.js';
+import { getScoreTier, downloadReport, computeRevisionPlan, formatRoleLabel, PAR_SCORE } from '../utils.js';
 
 interface ResultDetailsProps {
   scan: ScanResult;
-  onRescan?: (scan: ScanResult) => void;
-  onScanUpdate?: (updatedScan: ScanResult) => void;
 }
 
-export default function ResultDetails({ scan, onRescan, onScanUpdate }: ResultDetailsProps) {
-  const [isRescanning, setIsRescanning] = useState(false);
-  const [rescanned, setRescanned] = useState(false);
-  const [selectedInconsistency, setSelectedInconsistency] = useState<number | null>(0);
+function getCitationStatusBadge(cit: CitedReference): { label: string; className: string; detail: string } {
+  switch (cit.citation_status) {
+    case 'verified_metadata':
+      return { label: '✓ Verified', className: 'bg-emerald-100 text-emerald-800', detail: 'Confirmed against Crossref metadata — the DOI resolves to this exact work.' };
+    case 'accessible':
+      return { label: '✓ Accessible', className: 'bg-emerald-100 text-emerald-800', detail: 'The link responded successfully.' };
+    case 'metadata_mismatch':
+      return { label: '⚠ Details Mismatch', className: 'bg-amber-100 text-amber-800', detail: 'The DOI resolves, but its title/year does not match this reference — check for a wrong or mistyped DOI.' };
+    case 'bot_wall':
+      return { label: '⚠ Restricted', className: 'bg-amber-100 text-amber-800', detail: 'The publisher blocked automated verification (paywall or bot defense) — not necessarily broken, just unverifiable automatically.' };
+    case 'broken':
+      return { label: '✕ Broken', className: 'bg-rose-100 text-rose-800', detail: 'Unreachable or broken reference link.' };
+    case 'no_link':
+      return { label: 'No Link', className: 'bg-slate-100 text-slate-600', detail: 'This reference has no URL or DOI to verify (common for print-only sources).' };
+    case 'unknown_error':
+      return { label: '? Unverified', className: 'bg-slate-100 text-slate-600', detail: 'Verification failed for a transient reason — try scanning again.' };
+    default: {
+      // Legacy fallback for history rows saved before the status ladder existed.
+      const isAccessible = cit.citation_is_accessible !== undefined ? cit.citation_is_accessible : (cit.status === 'Accessible');
+      return isAccessible
+        ? { label: '✓ Accessible', className: 'bg-emerald-100 text-emerald-800', detail: 'Verified accessible reference.' }
+        : { label: '✕ Broken', className: 'bg-rose-100 text-rose-800', detail: 'Unreachable or broken reference link.' };
+    }
+  }
+}
 
-  // Check if it's a live Google Doc URL or an uploaded Word Document file
-  const isGoogleDoc = scan.documentLink ? scan.documentLink.startsWith('https://docs.google.com') : true;
+const DEFAULT_AI_TEXT_DISCLAIMER =
+  'Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features and cannot verify authorship. Well-written human academic prose commonly scores 40-60 on this scale; this indicator must never be used to block a submission or as an integrity charge on its own.';
 
-  // Coherence level tier helper
+export default function ResultDetails({ scan }: ResultDetailsProps) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'inconsistencies' | 'strong_coherence' | 'citations' | 'originality'>('overview');
+
+  // Accordion state maps
+  const [expandedInconsistencies, setExpandedInconsistencies] = useState<Record<number, boolean>>({});
+  const [expandedCitations, setExpandedCitations] = useState<Record<number, boolean>>({});
+  const [feedbackMap, setFeedbackMap] = useState<Record<number, 'up' | 'down' | null>>({});
+
+  // While true, every tab renders at once and every accordion is forced
+  // open -- window.print() only captures what's in the DOM, and React's
+  // conditional tab/accordion rendering means an unopened tab is never
+  // there to print. Reset on the browser's own afterprint event so this
+  // also recovers if printing was cancelled or triggered via Ctrl+P.
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    const reset = () => setIsPrinting(false);
+    window.addEventListener('afterprint', reset);
+    return () => window.removeEventListener('afterprint', reset);
+  }, []);
+
+  const toggleInconsistency = (idx: number) => {
+    setExpandedInconsistencies(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const toggleCitation = (idx: number) => {
+    setExpandedCitations(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
   const getCoherenceTier = (score: number) => {
     const tier = getScoreTier(score);
     return { label: tier.label, color: `${tier.bgColor} ${tier.textColor} ${tier.borderColor}` };
   };
 
-  const handleRescanClick = async () => {
-    if (isGoogleDoc) {
-      // Simulate live Google Doc re-fetch (Page 9 & 13)
-      setIsRescanning(true);
-      try {
-        const response = await fetch('/api/scans/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: scan.userId,
-            documentLink: scan.documentLink,
-            chapterType: scan.chapterType,
-            customTopic: scan.title,
-            supportingDoc: '',
-            researchType: scan.researchType,
-            parentScanId: scan.id
-          })
-        });
-        const data = await response.json();
-        if (response.ok && data.success) {
-          setIsRescanning(false);
-          setRescanned(true);
-          if (onScanUpdate) {
-            onScanUpdate({
-              ...data.scan,
-              parentScanId: scan.id
-            });
-          }
-        } else {
-          throw new Error(data.error || 'Failed to rescan.');
-        }
-      } catch (err: any) {
-        console.error("Rescan error:", err);
-        setIsRescanning(false);
-        alert(err.message || 'An error occurred during scanning.');
-      }
-    } else {
-      // Word document takes user back to scan tab to upload updated file (Page 8)
-      if (onRescan) {
-        onRescan(scan);
-      }
-    }
+  const handleDownloadReport = () => downloadReport(scan);
+  const handlePrint = () => {
+    setIsPrinting(true);
+    // Double rAF: give React a full commit+paint cycle to render every
+    // section/accordion open before the browser captures the print layout.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.print());
+    });
   };
 
-  const handleDownloadReport = (reportScan: ScanResult) => {
-    downloadReport(reportScan);
-  };
-
-  const handleExportDocument = () => {
-    const element = document.getElementById(`manuscript-content-${scan.id}`);
-    if (!element) return;
-    
-    // Clone the element to print a clean version
-    const clone = element.cloneNode(true) as HTMLElement;
-    
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>${scan.title}</title>
-            <style>
-              body {
-                font-family: Georgia, serif;
-                line-height: 1.8;
-                color: #1e293b;
-                padding: 40px;
-                max-width: 800px;
-                margin: 0 auto;
-              }
-              .text-center {
-                text-align: center;
-              }
-              .space-y-1\\.5 > * + * {
-                margin-top: 6px;
-              }
-              h1 {
-                font-size: 20px;
-                font-weight: bold;
-                margin-bottom: 20px;
-                text-transform: uppercase;
-                font-family: sans-serif;
-              }
-              h2 {
-                font-size: 12px;
-                color: #4f46e5;
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                font-family: monospace;
-                margin-bottom: 5px;
-              }
-              h3 {
-                font-size: 14px;
-                font-weight: bold;
-                border-bottom: 1px solid #e2e8f0;
-                padding-bottom: 4px;
-                margin-top: 30px;
-                text-transform: uppercase;
-                font-family: sans-serif;
-              }
-              p {
-                text-align: justify;
-                margin-bottom: 16px;
-              }
-              /* Clean text print styling without annotations or buttons */
-              .bg-amber-105, .bg-amber-100, .bg-rose-100, .bg-amber-300, .bg-rose-300, .bg-emerald-100, .bg-emerald-105 {
-                background-color: transparent !important;
-                border-bottom: none !important;
-                color: inherit !important;
-                font-weight: normal !important;
-                text-decoration: none !important;
-              }
-              .line-through {
-                text-decoration: none !important;
-              }
-              span.text-emerald-700 {
-                display: none !important;
-              }
-              .font-bold {
-                font-weight: bold;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="manuscript">
-              ${clone.innerHTML}
-            </div>
-            <script>
-              window.onload = function() {
-                window.print();
-                setTimeout(() => window.close(), 500);
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
-  };
-
-  const displayScore = rescanned ? 89 : scan.coherenceScore;
+  const displayScore = scan.coherenceScore;
   const tier = getCoherenceTier(displayScore);
+  const breakdown = scan.score_breakdown;
+  const revisionPlan = computeRevisionPlan(scan);
+
+  const inconsistenciesList = (scan.inconsistencies && scan.inconsistencies.length > 0) ? scan.inconsistencies : (scan.correlationReport && scan.correlationReport.length > 0 ? scan.correlationReport : []);
+
+  // Every included role-pair, strong and weak alike -- previously filtered
+  // to >= PAR_SCORE only, which kept the praise on screen and quietly
+  // dropped the pairs that actually need attention.
+  const verificationByPair = new Map(
+    (scan.verifications || []).map(v => [`${v.role_a}|${v.role_b}`, v])
+  );
+  const allPairs = (breakdown?.coherence_detail?.pair_scores || [])
+    .filter(p => p.included)
+    .map(p => ({
+      ...p,
+      verification: verificationByPair.get(`${p.role_a}|${p.role_b}`),
+    }))
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const strongPairs = allPairs.filter(p => (p.score ?? 0) >= PAR_SCORE);
+  const weakPairs = allPairs.filter(p => (p.score ?? 0) < PAR_SCORE);
+  const dismissedPairs = breakdown?.coherence_detail?.dismissed_pairs || [];
+
+  const citationsList = (scan.citations && scan.citations.length > 0) ? scan.citations : (scan.references && scan.references.length > 0 ? scan.references : []);
+
+  const stubSections = breakdown?.structural_detail?.stub_sections || [];
+  const unevaluableFraction = breakdown?.coherence_detail?.unevaluable_weight_fraction;
+
+  const aiText = scan.ai_text_indicator;
+  const showOriginalityTab = aiText?.overall_score != null;
+
+  const tabs: Array<{ id: typeof activeTab; label: string }> = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'inconsistencies', label: `Inconsistencies (${inconsistenciesList.length})` },
+    { id: 'strong_coherence', label: `Coherence Pairs (${allPairs.length})` },
+    { id: 'citations', label: `Citations (${citationsList.length})` },
+    ...(showOriginalityTab ? [{ id: 'originality' as const, label: 'Writing Style' }] : []),
+  ];
+
+  const shouldShow = (id: typeof activeTab) => isPrinting || activeTab === id;
 
   return (
     <div className="space-y-6 animate-fade-in text-left relative" id={`scan-report-${scan.id}`}>
-      
-      {/* Rescanning Overlay loader (Page 9 of PDF) */}
-      {isRescanning && (
-        <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white/95 rounded-2xl p-8 border border-slate-200/80 max-w-sm text-center space-y-4 shadow-2xl">
-            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-indigo-100 rounded-full blur-xl animate-pulse"></div>
-              <Loader2 className="w-10 h-10 text-indigo-650 animate-spin relative mx-auto" />
-            </div>
-            <div className="space-y-1.5">
-              <h3 className="font-serif text-sm font-bold text-slate-805">Rescanning in progress</h3>
-              <p className="text-xs text-slate-500 font-sans">Re-reading your Google Doc and updating the scan...</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2-Column Layout matching the mockup layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Middle Column: Scanned Document Preview (lg:col-span-8) */}
-        <div className="lg:col-span-8 flex flex-col space-y-4">
-          
-          {/* Document Section Sub-header */}
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-            <div>
-              <span className="text-xs font-bold text-slate-450 uppercase tracking-widest font-mono block">
-                Scanned Document
-              </span>
-              <h3 className="font-serif text-base font-bold text-slate-805 mt-1">
-                {scan.chapterType || 'Chapter 1: Introduction'}
-              </h3>
-            </div>
-            
-            <div className="flex items-center gap-2.5">
-              {rescanned && (
-                <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200 animate-pulse font-sans">
-                  Rescanned just now
-                </span>
-              )}
-
-              <div className={`px-4 py-2 rounded-full border text-sm font-extrabold ${tier.color}`}>
-                Score: {displayScore}/100
-              </div>
-            </div>
-          </div>
-          
-          {/* Main Document Content Sheet */}
-          <div id={`manuscript-content-${scan.id}`} className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs max-h-[700px] overflow-y-auto space-y-6 relative font-serif text-[13px] text-slate-700 leading-relaxed scroll-smooth">
-            
-            {/* Title / Chapter Header block */}
-            <div className="text-center space-y-1.5 pb-4 border-b border-slate-100">
-              <h2 className="text-xs uppercase font-sans font-extrabold text-indigo-600 tracking-widest font-mono">
-                {scan.chapterType ? scan.chapterType.toUpperCase() : 'FULL MANUSCRIPT DRAFT'}
-              </h2>
-              <h1 className="text-sm font-bold text-slate-900 font-sans tracking-wide uppercase">
-                {scan.title}
-              </h1>
-            </div>
-
-            {/* Document Content - Extended scrollable manuscript */}
-            <div className="space-y-5">
-              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-4">1. Introduction & Background</h3>
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                Research writing shapes the research skills and academic readiness of student researchers throughout their degree programs, while also placing significant evaluative responsibility on advisers and panelists reviewing each manuscript's quality. However, research writing remains highly vulnerable to structural and logical inconsistencies, such as objectives drifting from the stated problem or conclusions left unsupported by survey and validation evidence, often going undetected until late in the drafting process (Xue, 2024).
-              </p>
-
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                For students, the core problem is the lack of an early-detection mechanism for these gaps: they usually discover their objectives no longer{" "}
-                {rescanned ? (
-                  <span className="bg-emerald-105 bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-semibold line-through decoration-emerald-600/40">
-                    match their problem statement
-                  </span>
-                ) : (
-                  <span 
-                    onClick={() => setSelectedInconsistency(0)}
-                    className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-amber-400 select-none ${
-                      selectedInconsistency === 0
-                        ? 'bg-amber-300 text-slate-955 ring-2 ring-amber-500/20 font-bold border-b-2 border-amber-600'
-                        : 'bg-amber-100/60 text-slate-800 hover:bg-amber-50'
-                    }`}
-                    title="Flag 1: Scope Mismatch"
-                  >
-                    match their problem statement
-                  </span>
-                )}
-                {rescanned && <span className="text-emerald-700 text-xs font-sans font-bold ml-1.5">✓ Resolved</span>}
-                , or their conclusions lack data support, only during consultation or final defense, when fixing the manuscript is far more costly. For advisers and panelists, the burden is just as real: manual, section-by-section review is time-consuming and prone to oversight, especially under heavy advising loads and rising submission volumes that have been shown to compromise review quality (Thakkar et al., 2025), leaving them with limited capacity to catch every inconsistency before a manuscript reaches final defense.
-              </p>
-
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                To address these challenges, the research team proposes Resync, an AI-powered system that uses natural language processing to evaluate the coherence, consistency, and coherence of research manuscripts.{" "}
-                <span 
-                  onClick={() => setSelectedInconsistency(1)}
-                  className={`transition-all duration-300 px-1 py-0.5 rounded font-semibold cursor-pointer border-b border-rose-400 select-none ${
-                    selectedInconsistency === 1
-                      ? 'bg-rose-300 text-slate-955 ring-2 ring-rose-500/20 font-bold border-b-2 border-rose-600'
-                      : 'bg-rose-100/60 text-slate-800 hover:bg-rose-50'
-                  }`}
-                  title="Flag 2: Objectives Mismatch"
-                >
-                  The system checks a manuscript against
-                </span>{" "}
-                the document to detect logical inconsistencies, generating a Coherence Score, an Overall Assessment, and Recommendations for correcting detected gaps. Unlike generic writing tools that focus only on grammar or originality, Resync is built specifically to validate the logical and evidentiary consistency of a research manuscript.
-              </p>
-
-              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-6">2. Review of Related Literature</h3>
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                The evaluation of research coherence has historically relied on rubrics and peer evaluations. According to recent reviews in automated essay scoring (AES) systems, standard syntax-based engines fail to detect deep logical drifts across distant sections of documents. While modern Large Language Models (LLMs) display capabilities in summarizing passages, checking structural alignments (e.g. mapping research objectives to validation instruments) remains a specialized and complex task requiring multi-agent orchestration and specialized prompt trees (Xue, 2024).
-              </p>
-              
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                Furthermore, empirical analysis shows that academic advisory boards are under increasing administrative stress. As average student-to-adviser ratios rise, the time spent auditing mechanical bibliography layouts and confirming cross-chapter cohesion declines, leading to higher rejection and revision rates in final defenses (Thakkar et al., 2025). The introduction of a web-based real-time logical auditor presents a significant advancement in educational technology.
-              </p>
-
-              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-6">3. Methodology & Design</h3>
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                This study adopts an iterative software prototyping approach. The system architecture of Resync comprises three sequential layers: the Data Ingestion Layer, the Analysis and Logic Audit Layer (leveraging Gemini API models), and the Visual Reporting Interface. The design checks the consistency of research questions against experimental findings by calculating semantic similarity matrices and checking specific logic anchors across structural tags.
-              </p>
-
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                Participants in the pilot testing phase included twenty undergraduate and graduate students, as well as five veteran research panelists. System usability was gauged using the System Usability Scale (SUS) questionnaire, alongside quantitative review cycles analysis. Preliminary metrics indicate that Resync reduces the time spent on thesis proofreading by approximately 40%, with a corresponding 20% increase in initial defense pass rates.
-              </p>
-
-              <h3 className="text-xs font-bold text-slate-800 uppercase font-sans tracking-wider border-b border-slate-100 pb-1 mt-6">4. Results and Discussion</h3>
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                The results of the logical consistency scan show that the system successfully flags structural mismatches with a high accuracy rate. During performance audits, Resync correctly identified 92% of intentional terminology drifts introduced into test manuscripts. Advisors reported that receiving the pre-defense audit report saved an average of 4.5 hours per paper, allowing them to focus on guiding methodology refinements.
-              </p>
-              
-              <p className="font-serif leading-6 text-slate-705 text-justify">
-                In comparison with baseline grammatical spellcheckers, Resync proved significantly more effective at highlighting conceptual errors, such as objectives proposing quantitative surveys while conclusion chapters discussed qualitative interview themes. Feedback from reviewers indicates that standardizing this verification step builds student confidence and maintains institutional academic writing quality.
-              </p>
-            </div>
-
-          </div>
-          
-        </div>        {/* Right Column: Diagnostics panel (lg:col-span-4) */}
-        <div className="lg:col-span-4 flex flex-col space-y-6">
-          
-          {/* Section 0: Missing Sections Check */}
-          {scan.missingSections && scan.missingSections.length > 0 && (
-            <div className="bg-rose-50/30 border border-rose-250 rounded-2xl p-5 shadow-xs space-y-3 animate-fade-in text-left">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                <span className="text-xs font-extrabold text-rose-800 uppercase tracking-wider font-mono">Missing Sections Detected</span>
-              </div>
-              <p className="text-xs text-slate-650 leading-relaxed">
-                Our scan detected that the following mandatory scientific structural parts are missing or inadequate in your current manuscript draft:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {scan.missingSections.map((sec, idx) => (
-                  <span key={idx} className="bg-rose-105 bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-rose-200">
-                    ⚠️ {sec}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Section 1: Coherence Score Gauge */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col items-center justify-center text-center space-y-4">
-            <div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2.5">
-                Coherence Score
-              </span>
-              <div className="relative inline-block">
-                <ScoreRing score={displayScore} size={120} strokeWidth={8} />
-                {rescanned && (
-                  <div className="absolute -top-1.5 -right-5 bg-emerald-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full border border-white animate-bounce shadow-xs font-sans">
-                    +17 pts
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Flags Detected List */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
-              Flags Detected
-            </h4>
-            
-            <div className="space-y-3">
-              {/* Flag 1 card (Resolved/Struck if rescanned) */}
-              {rescanned ? (
-                <div className="bg-emerald-50/15 border border-emerald-350 rounded-xl p-4 space-y-1.5 opacity-80 line-through decoration-emerald-600/35 transition-all text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded font-sans uppercase">
-                      ✓ Resolved
-                    </span>
-                    <span className="text-xs font-bold text-emerald-800 font-sans">Scope Flag Resolved</span>
-                  </div>
-                  <p className="text-xs text-slate-450 leading-relaxed font-sans">
-                    Scope mentions "single-column format" but Objectives do not reference this constraint.
-                  </p>
-                </div>
-              ) : (
-                <div 
-                  onClick={() => setSelectedInconsistency(0)}
-                  className={`bg-amber-50/15 border rounded-xl p-4 space-y-2 transition-all text-left cursor-pointer ${
-                    selectedInconsistency === 0 
-                      ? 'border-amber-500 bg-amber-50/30 shadow-xs' 
-                      : 'border-amber-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded font-sans uppercase">
-                      Flag 1
-                    </span>
-                    <span className="text-xs font-bold text-amber-805 font-sans">Scope</span>
-                  </div>
-                  <p className="text-xs text-slate-655 leading-relaxed font-sans">
-                    Scope mentions "single-column format" but Objectives do not reference this constraint.
-                  </p>
-                </div>
-              )}
-
-              {/* Flag 2 card */}
-              <div 
-                onClick={() => setSelectedInconsistency(1)}
-                className={`bg-rose-50/15 border rounded-xl p-4 space-y-2 text-left cursor-pointer transition-all ${
-                  selectedInconsistency === 1 
-                    ? 'border-rose-500 bg-rose-50/30 shadow-xs' 
-                    : 'border-rose-300'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded font-sans uppercase">
-                    Flag 2
-                  </span>
-                  <span className="text-xs font-bold text-rose-805 font-sans">Objectives</span>
-                </div>
-                <p className="text-xs text-slate-655 leading-relaxed font-sans">
-                  Objective 3 says "across chapters" but Scope uses "across sections" — terminology inconsistency.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Suggested Actions List */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono text-left">
-              Suggested Actions
-            </h4>
-            
-            <div className="space-y-3.5 text-left">
-              {scan.suggestions && scan.suggestions.length > 0 ? (
-                scan.suggestions.map((s, idx) => (
-                  <div key={idx} className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 space-y-3 relative group text-left">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                        <Compass className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded uppercase font-sans">
-                          {s.category}
-                        </span>
-                        <p className="text-xs font-semibold text-slate-805 mt-1">
-                          {s.issue}
-                        </p>
-                        <p className="text-xs text-slate-650 leading-relaxed mt-1 font-sans">
-                          <strong>Remedy:</strong> {s.remedy}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Explainable AI Block */}
-                    <div className="bg-indigo-50/20 border border-indigo-100/60 rounded-lg p-3 text-xs leading-relaxed text-slate-650 flex items-start gap-2 animate-fade-in">
-                      <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                      <div>
-                        <strong className="text-indigo-950 font-bold block mb-0.5">Why you need to revise this:</strong>
-                        <span>{s.explanation}</span>
-                      </div>
-                    </div>
-
-                    {/* Download Recommendation Button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const text = `==================================================
-RESYNC REVISION RECOMMENDATION DETAILS
-==================================================
-Topic: ${scan.title}
-Category: ${s.category}
-Issue: ${s.issue}
-
-ACTIONABLE REMEDY:
-${s.remedy}
-
-EXPLAINABLE AI RATIONALE:
-${s.explanation}
-==================================================
-`;
-                        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `Resync_Revision_Plan_${s.category}_${s.issue.replace(/\s+/g, '_')}.txt`;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                      }}
-                      className="text-[10px] font-bold text-indigo-650 hover:text-indigo-855 hover:underline inline-flex items-center gap-1 cursor-pointer pt-1"
-                      title="Download revision details"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span>Download Revision Summary</span>
-                    </button>
-                  </div>
-                ))
-              ) : (
-                /* Fallback hardcoded actions for Demo Scan */
-                <>
-                  {/* Action 1 */}
-                  <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                        <Compass className="w-3.5 h-3.5" />
-                      </div>
-                      <p className="text-xs text-slate-705 leading-relaxed font-semibold">
-                        Update Objective 3 to use "sections" instead of "chapters" to align with Scope and Limitations.
-                      </p>
-                    </div>
-                    {/* Explainable AI Block */}
-                    <div className="bg-indigo-50/20 border border-indigo-100/60 rounded-lg p-3 text-xs leading-relaxed text-slate-650 flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                      <div>
-                        <strong className="text-indigo-950 font-bold block mb-0.5">Why you need to revise this:</strong>
-                        <span>Aligning terminology prevents advisors and reviewers from flagging scope drift during defense examinations.</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Action 2 */}
-                  <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                        <Sparkles className="w-3.5 h-3.5" />
-                      </div>
-                      <p className="text-xs text-slate-705 leading-relaxed font-semibold">
-                        Add the single-column format constraint to the Objectives or remove it from Scope if not a system requirement.
-                      </p>
-                    </div>
-                    {/* Explainable AI Block */}
-                    <div className="bg-indigo-50/20 border border-indigo-100/60 rounded-lg p-3 text-xs leading-relaxed text-slate-655 flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                      <div>
-                        <strong className="text-indigo-950 font-bold block mb-0.5">Why you need to revise this:</strong>
-                        <span>Explicitly declaring operational formatting limits in standard objectives ensures methodology boundaries remain clear.</span>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Section 4: Action Footer Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
-              onClick={handleRescanClick}
-              className="flex-1 bg-indigo-50/10 border border-indigo-150 hover:bg-indigo-50/30 text-indigo-650 font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
-            >
-              <RefreshCw className={`w-4 h-4 text-indigo-600 ${isRescanning ? 'animate-spin' : ''}`} />
-              <span>Rescan document</span>
-            </button>
-            
-
-
-            <button
-              onClick={handleExportDocument}
-              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer select-none hover:scale-102 active:scale-98 duration-100"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export Document</span>
-            </button>
-          </div>
-
-        </div>
-
+      {/* Action Footer Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-4 border-b border-slate-200 justify-end print:hidden">
+        <button onClick={handleDownloadReport} className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer">
+          <Download className="w-4 h-4" />
+          <span>Download</span>
+        </button>
+        <button onClick={handlePrint} className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-sm py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer">
+          <Printer className="w-4 h-4" />
+          <span>Print / Save PDF</span>
+        </button>
       </div>
 
+      {/* Custom Tabs Navigation */}
+      <div className="flex border-b border-slate-200 print:hidden">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-6 py-4 text-sm font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${activeTab === tab.id
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="pt-4">
+        {/* TAB 1: OVERVIEW */}
+        {shouldShow('overview') && (
+          <div className="space-y-6">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mb-3">Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col items-center justify-center text-center space-y-4">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono mb-2.5">Coherence Score</span>
+                <ScoreRing score={displayScore} size={150} strokeWidth={12} />
+              </div>
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">Summary</span>
+                <p className="text-sm text-slate-700 leading-relaxed">{scan.overallAssessment}</p>
+                {scan.missingSections && scan.missingSections.length > 0 && (
+                  <div className="mt-4 bg-rose-50/30 border border-rose-250 rounded-xl p-4">
+                    <span className="text-xs font-bold text-rose-800 uppercase block mb-2">Missing Sections:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {scan.missingSections.map((sec, idx) => (
+                        <span key={idx} className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">⚠️ {sec}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {stubSections.length > 0 && (
+                  <div className="mt-4 bg-amber-50/30 border border-amber-200 rounded-xl p-4">
+                    <span className="text-xs font-bold text-amber-800 uppercase block mb-2">Thin Sections (under 40 words):</span>
+                    <div className="flex flex-wrap gap-2">
+                      {stubSections.map((sec, idx) => (
+                        <span key={idx} className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">✎ {formatRoleLabel(sec)}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Functional Metric Criteria Breakdown */}
+            {breakdown && (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-indigo-50 text-indigo-655">
+                      <Gauge className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                      Score Criteria
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                    {breakdown.band}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { label: 'Structural Completeness', value: breakdown.structural_completeness_score },
+                    { label: 'Cross-Chapter Coherence', value: breakdown.cross_chapter_coherence_score },
+                    { label: 'Citation Integrity', value: breakdown.citation_integrity_score },
+                  ].map((c) => (
+                    <div key={c.label} className="bg-slate-50 border border-slate-200/70 rounded-xl p-4 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{c.label}</span>
+                      {c.value == null ? (
+                        <p className="text-sm text-slate-400 italic">Not evaluable</p>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${c.value >= 70 ? 'bg-emerald-500' : c.value >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                              style={{ width: `${Math.max(4, c.value)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-extrabold text-slate-800 font-mono w-10 text-right">{Math.round(c.value)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {unevaluableFraction != null && unevaluableFraction > 0 && (
+                  <p className="text-[11px] text-slate-450 flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <span>{Math.round(unevaluableFraction * 100)}% of section-pairs could not be evaluated (e.g. a missing section), which can cap the Cross-Chapter Coherence score.</span>
+                  </p>
+                )}
+
+                {revisionPlan.items.length > 0 && (
+                  <div className="bg-indigo-50/40 border border-indigo-150 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Revision Plan</span>
+                      <span className="text-xs font-mono font-bold text-indigo-700">
+                        Projected {revisionPlan.currentScore} &rarr; {revisionPlan.projectedScore}
+                      </span>
+                    </div>
+                    <ol className="space-y-2">
+                      {revisionPlan.items.slice(0, 5).map((item, i) => (
+                        <li key={item.id} className="flex items-start gap-3 bg-white/70 border border-indigo-100 rounded-lg p-3">
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-800">{item.label}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.detail}</p>
+                          </div>
+                          <span className="shrink-0 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg font-mono">+{item.pointGain}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Detected Sections Panel */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-indigo-50 text-indigo-655">
+                    <ListTree className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                    Detected Sections {scan.sections_analyzed ? `(${scan.sections_analyzed.length})` : ''}
+                  </span>
+                </div>
+                {scan.auto_detected != null && scan.detection_confidence != null && (
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2.5 py-1 rounded-lg self-start sm:self-auto">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Auto-detected &middot; {Math.round(scan.detection_confidence * 100)}% confidence
+                  </span>
+                )}
+              </div>
+
+              {scan.sections_analyzed && scan.sections_analyzed.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {scan.sections_analyzed.map((sec, idx) => (
+                    <span key={idx} className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg">
+                      {sec}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-450">No section breakdown was returned for this scan.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: INCONSISTENCIES (Accordions & XAI) */}
+        {shouldShow('inconsistencies') && (
+          <div className="space-y-4">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Inconsistencies</h2>
+            {inconsistenciesList.map((inc, idx) => {
+              const isExpanded = isPrinting || expandedInconsistencies[idx];
+              const secA = inc.section_a || inc.sectionA || `Section A`;
+              const secB = inc.section_b || inc.sectionB || `Section B`;
+              const whatText = inc.explanation_what || inc.description || "Inconsistency found.";
+              const whyText = inc.explanation_why || "Logical disconnect.";
+              const fixText = inc.suggested_fix || inc.howToFix || "Harmonize text.";
+
+              return (
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
+                  <button onClick={() => toggleInconsistency(idx)} className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Flag {idx + 1}</span>
+                      <span className="text-sm font-bold text-slate-800">{secA} ↔ {secB}</span>
+                    </div>
+                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="p-5 border-t border-slate-200 space-y-4 text-sm leading-relaxed text-slate-700">
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-150">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">🔍 What Was Found:</span>
+                        <p>{whatText}</p>
+                      </div>
+                      <div className="bg-amber-50/40 rounded-lg p-3 border border-amber-200/60 text-amber-900">
+                        <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">💡 Why It Matters:</span>
+                        <p>{whyText}</p>
+                      </div>
+                      <div className="border-l-4 border-indigo-500 pl-4 py-2 text-indigo-950">
+                        <span className="text-[10px] font-bold text-indigo-700 uppercase block mb-1">🛠️ Suggested Fix:</span>
+                        <p className="font-medium text-base">{fixText}</p>
+                      </div>
+                      {/* Evidence Citation Block */}
+                      {(inc.evidence_a || inc.evidence_b) && (
+                        <div className="bg-indigo-50/30 rounded-lg p-3 border border-indigo-100 mt-1">
+                          <span className="text-[10px] font-bold text-indigo-600 uppercase block mb-2 flex items-center gap-2">
+                            📎 Grounding Evidence:
+                            {inc.evidence_verified === false && (
+                              <span className="text-[9px] font-bold normal-case bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded" title="This quote could not be re-verified against the source section text.">
+                                unverified
+                              </span>
+                            )}
+                          </span>
+                          {inc.evidence_a && (
+                            <p className="italic text-slate-600 text-xs border-l-2 border-indigo-300 pl-3 mb-2">
+                              <span className="font-bold not-italic text-indigo-500">Section A: </span>&ldquo;{inc.evidence_a}&rdquo;
+                            </p>
+                          )}
+                          {inc.evidence_b && (
+                            <p className="italic text-slate-600 text-xs border-l-2 border-rose-300 pl-3">
+                              <span className="font-bold not-italic text-rose-500">Section B: </span>&ldquo;{inc.evidence_b}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Unaddressed Objectives Block */}
+                      {inc.objectives_unaddressed && inc.objectives_unaddressed.length > 0 && (
+                        <div className="bg-amber-50/40 rounded-lg p-3 border border-amber-200/60">
+                          <span className="text-[10px] font-bold text-amber-700 uppercase block mb-2">⚠️ Unaddressed Objectives:</span>
+                          <ul className="list-disc list-inside space-y-1">
+                            {inc.objectives_unaddressed.map((obj, i) => (
+                              <li key={i} className="text-xs text-amber-900 italic">{obj}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Feedback Buttons */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2 print:hidden">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Was this helpful?</span>
+                        <button
+                          disabled={feedbackMap[idx] != null}
+                          onClick={async () => {
+                            const issueId = inc.inconsistency_id;
+                            const userId = scan.user_id || scan.userId || '';
+                            const apiBase = API_BASE_URL;
+                            setFeedbackMap(prev => ({ ...prev, [idx]: 'up' }));
+                            if (issueId) {
+                              fetch(`${apiBase}/api/issues/${issueId}/feedback`, {
+                                method: 'POST',
+                                headers: await authHeaders({ 'Content-Type': 'application/json', 'X-User-Id': userId }),
+                                body: JSON.stringify({ helpful: true }),
+                              }).catch(() => {});
+                            }
+                          }}
+                          className={`text-lg px-2 py-0.5 rounded transition-all ${
+                            feedbackMap[idx] === 'up'
+                              ? 'bg-indigo-100 text-indigo-600 opacity-60 cursor-not-allowed'
+                              : feedbackMap[idx] === 'down'
+                              ? 'opacity-30 cursor-not-allowed'
+                              : 'hover:bg-indigo-50 cursor-pointer'
+                          }`}
+                          title="Helpful"
+                        >👍</button>
+                        <button
+                          disabled={feedbackMap[idx] != null}
+                          onClick={async () => {
+                            const issueId = inc.inconsistency_id;
+                            const userId = scan.user_id || scan.userId || '';
+                            const apiBase = API_BASE_URL;
+                            setFeedbackMap(prev => ({ ...prev, [idx]: 'down' }));
+                            if (issueId) {
+                              fetch(`${apiBase}/api/issues/${issueId}/feedback`, {
+                                method: 'POST',
+                                headers: await authHeaders({ 'Content-Type': 'application/json', 'X-User-Id': userId }),
+                                body: JSON.stringify({ helpful: false }),
+                              }).catch(() => {});
+                            }
+                          }}
+                          className={`text-lg px-2 py-0.5 rounded transition-all ${
+                            feedbackMap[idx] === 'down'
+                              ? 'bg-rose-100 text-rose-600 opacity-60 cursor-not-allowed'
+                              : feedbackMap[idx] === 'up'
+                              ? 'opacity-30 cursor-not-allowed'
+                              : 'hover:bg-rose-50 cursor-pointer'
+                          }`}
+                          title="Not helpful"
+                        >👎</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {inconsistenciesList.length === 0 && <p className="text-slate-500 text-sm">No inconsistencies detected.</p>}
+          </div>
+        )}
+
+        {/* TAB 3: COHERENCE PAIRS (strong + weak + checked-and-cleared) */}
+        {shouldShow('strong_coherence') && (
+          <div className="space-y-6">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Coherence Pairs</h2>
+
+            {weakPairs.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block">Needs Attention</span>
+                {weakPairs.map((item, idx) => (
+                  <div key={idx} className="border rounded-xl p-5 shadow-xs flex flex-col gap-2 bg-rose-50/30 border-rose-200 break-inside-avoid-page">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <AlertTriangle className="w-5 h-5 text-rose-600" />
+                      <span className="text-sm font-bold text-rose-900">{formatRoleLabel(item.role_a)} ↔ {formatRoleLabel(item.role_b)}</span>
+                      <span className="ml-auto text-xs font-bold px-2 py-1 rounded bg-rose-100 text-rose-800">Score: {item.score ?? 'N/A'}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 ml-7">weight {item.weight.toFixed(2)}{item.raw_similarity != null ? ` · raw similarity ${Math.round(item.raw_similarity * 100)}%` : ''}</p>
+                    {item.verification?.note && (
+                      <p className="text-sm leading-relaxed ml-7 text-rose-700">{item.verification.note}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {strongPairs.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block">Strong</span>
+                {strongPairs.map((item, idx) => {
+                  const isSuperficial = item.verification?.alignment === 'superficial';
+                  return (
+                    <div
+                      key={idx}
+                      className={`border rounded-xl p-5 shadow-xs flex flex-col gap-2 break-inside-avoid-page ${isSuperficial ? 'bg-amber-50/30 border-amber-200' : 'bg-emerald-50/30 border-emerald-200'
+                        }`}
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CheckCircle className={`w-5 h-5 ${isSuperficial ? 'text-amber-600' : 'text-emerald-600'}`} />
+                        <span className={`text-sm font-bold ${isSuperficial ? 'text-amber-900' : 'text-emerald-900'}`}>{formatRoleLabel(item.role_a)} ↔ {formatRoleLabel(item.role_b)}</span>
+                        {item.verification && (
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                            {item.verification.alignment}
+                          </span>
+                        )}
+                        <span className={`ml-auto text-xs font-bold px-2 py-1 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                          }`}>Score: {item.score}</span>
+                      </div>
+                      {item.verification?.note && (
+                        <p className={`text-sm leading-relaxed ml-7 ${isSuperficial ? 'text-amber-700' : 'text-emerald-700'}`}>
+                          {item.verification.note}
+                        </p>
+                      )}
+                      {!item.verification && (
+                        <p className="text-sm text-slate-500 leading-relaxed ml-7">Verification pending or unavailable for this pair.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {allPairs.length === 0 && <p className="text-slate-500 text-sm">No coherence pairs reported.</p>}
+
+            {dismissedPairs.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block">Checked and Cleared</span>
+                <p className="text-xs text-slate-450">These pairs scored low but the model reviewed them individually and found no material inconsistency.</p>
+                {dismissedPairs.map((d, idx) => (
+                  <div key={idx} className="border rounded-xl p-4 shadow-xs bg-slate-50 border-slate-200 break-inside-avoid-page">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <ShieldCheck className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm font-bold text-slate-700">{formatRoleLabel(d.role_a)} ↔ {formatRoleLabel(d.role_b)}</span>
+                      <span className="ml-auto text-xs font-bold px-2 py-1 rounded bg-slate-200 text-slate-700">Score: {d.score}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1.5 ml-6">{d.reason}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: CITATIONS (Accordions) */}
+        {shouldShow('citations') && (
+          <div className="space-y-4">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Citations</h2>
+            {citationsList.map((cit, idx) => {
+              const isExpanded = isPrinting || expandedCitations[idx];
+              const rawText = cit.citation_raw_reference_text || cit.citation || "Reference entry";
+              const badge = getCitationStatusBadge(cit);
+
+              return (
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
+                  <button onClick={() => toggleCitation(idx)} className="w-full px-5 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
+                    <div className="flex items-start gap-3 w-4/5">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase mt-0.5 shrink-0 ${badge.className}`}>
+                        {badge.label}
+                      </span>
+                      <span className="text-sm font-bold text-slate-800 truncate">{rawText}</span>
+                    </div>
+                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="p-5 border-t border-slate-200 text-sm leading-relaxed text-slate-700 space-y-3">
+                      <div>
+                        <p className="font-sans mb-2 text-slate-500 text-xs uppercase font-bold tracking-wider">Citation Details</p>
+                        <p className="font-serif whitespace-pre-wrap break-words">{rawText}</p>
+                      </div>
+                      <p className="text-xs text-slate-500 font-sans">{badge.detail}</p>
+                      {cit.citation_primary_link && (
+                        <a
+                          href={cit.citation_primary_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+                        >
+                          <Link2 className="w-3.5 h-3.5" />
+                          <span className="truncate max-w-xs">{cit.citation_primary_link}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {cit.citation_crossref_title && cit.citation_status === 'metadata_mismatch' && (
+                        <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-3">
+                          <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">Crossref found a different work at this DOI:</span>
+                          <p className="text-xs text-amber-900 italic">&ldquo;{cit.citation_crossref_title}&rdquo;</p>
+                        </div>
+                      )}
+                      {cit.citation_is_cited_in_text === false && (
+                        <p className="text-xs text-slate-500 font-sans">⚠️ This reference was not found cited anywhere in the manuscript body.</p>
+                      )}
+                      {cit.explanation && <p className="mt-1 text-sm font-sans text-slate-500 bg-slate-50 p-3 rounded">{cit.explanation}</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {citationsList.length === 0 && <p className="text-slate-500 text-sm">No citations detected.</p>}
+          </div>
+        )}
+
+        {/* TAB 5: WRITING STYLE (advisory only, excluded from the score) */}
+        {showOriginalityTab && shouldShow('originality') && aiText && (
+          <div className="space-y-4">
+            <h2 className="hidden print:block font-serif font-bold text-lg text-slate-900 mt-8 mb-3 border-t border-slate-300 pt-6">Writing Style Advisory</h2>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-2.5 text-xs text-slate-600 leading-relaxed">
+              <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+              <p>{aiText.disclaimer || DEFAULT_AI_TEXT_DISCLAIMER}</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">Writing Style Reading</span>
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                  <div className="h-full bg-indigo-400" style={{ width: `${Math.max(4, aiText.overall_score ?? 0)}%` }} />
+                </div>
+                <span className="text-sm font-extrabold text-slate-800 font-mono w-10 text-right">{Math.round(aiText.overall_score ?? 0)}</span>
+              </div>
+              <p className="text-xs text-slate-450">Well-written human academic prose commonly scores 40-60 on this scale — this is a style observation, not a verdict, and plays no part in the coherence score above.</p>
+            </div>
+
+            {aiText.section_scores && Object.keys(aiText.section_scores).length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-3">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">By Section</span>
+                {Object.entries(aiText.section_scores).map(([sec, val]) => (
+                  <div key={sec} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600 font-medium">{formatRoleLabel(sec)}</span>
+                    <span className="font-mono font-bold text-slate-800">{val == null ? 'N/A' : Math.round(val)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {aiText.flagged_sections && aiText.flagged_sections.length > 0 && (
+              <div className="bg-amber-50/40 border border-amber-200/60 rounded-xl p-4">
+                <span className="text-xs font-bold text-amber-700 uppercase block mb-2">Sections with unusually uniform phrasing</span>
+                <div className="flex flex-wrap gap-2">
+                  {aiText.flagged_sections.map((sec, i) => (
+                    <span key={i} className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-lg">{formatRoleLabel(sec)}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
