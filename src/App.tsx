@@ -27,12 +27,7 @@ import {
   PlusCircle,
   BookOpen,
   Upload,
-<<<<<<< HEAD
-  Bell,
-  ShieldCheck,
-  FileText,
-  Check
-=======
+  Check,
   LayoutGrid,
   User as UserIcon,
   Lock,
@@ -42,7 +37,6 @@ import {
   ListChecks,
   ShieldCheck,
   Quote
->>>>>>> 8291f61b0f35bcd2744605b7a43b22f2d48490e8
 } from 'lucide-react';
 import ScanForm from './components/ScanForm.js';
 import { supabase } from './lib/supabase.js';
