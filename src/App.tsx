@@ -1146,7 +1146,7 @@ export default function App() {
   };
 
   const greetingTime = getGreetingTime();
-  const firstName = currentUser?.name?.trim().split(/\s+/)[0] || 'Researcher';
+  const displayFirstName = currentUser?.name?.trim().split(/\s+/)[0] || 'Researcher';
 
   return (
     <div className="min-h-screen bg-slate-50/60 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col w-full">
@@ -1373,7 +1373,7 @@ export default function App() {
 
                   {/* Main Title */}
                   <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-                    Welcome back, {firstName}.
+                    Welcome back, {displayFirstName}.
                   </h1>
 
                   {/* Subtitle */}
@@ -1675,81 +1675,6 @@ export default function App() {
             </div>
           )}
 
-          {/* 2. SCAN / UPLOAD TAB */}
-          {activeTab === 'scan' && (
-            <main className="flex-grow p-6 sm:p-8 max-w-[1400px] w-full mx-auto space-y-8 animate-fade-in">
-              <div className="max-w-4xl mx-auto space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                  <div>
-                    <h2 className="font-serif text-2xl font-bold text-slate-900">Manuscript Scan</h2>
-                    <p className="text-xs text-slate-400 mt-1">Audit your Google Doc or Word manuscript for cross-section coherence</p>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('overview')}
-                    className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 cursor-pointer"
-                  >
-                    ← Back to Dashboard
-                  </button>
-                </div>
-
-                <ScanForm
-                  currentUser={currentUser}
-                  onScanComplete={(result) => {
-                    setSelectedScan(result);
-                    setLatestUploadedScan(result);
-                    setScanCredits(prev => Math.max(0, prev - 1));
-                  }}
-                  onScanningStateChange={setIsScanning}
-                  onRequireTopUp={() => setShowTopUpModal(true)}
-                  initialScan={latestUploadedScan}
-                />
-              </div>
-            </main>
-          )}
-
-          {/* 3. PROFILE TAB */}
-          {activeTab === 'profile' && (
-            <main className="flex-grow p-6 sm:p-8 max-w-[1400px] w-full mx-auto space-y-8 animate-fade-in">
-              <ProfileView currentUser={currentUser} onUserUpdate={setCurrentUser} />
-            </main>
-          )}
-
-
-              {/* Expanded report — full width below the grid, since the citation
-                  and coherence tables inside it need the room. */}
-              {activeScan && showFullReport && (
-                <div className="pt-2 border-t border-slate-200/60 animate-fade-in space-y-4">
-                  <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-between border border-slate-200/60">
-                    <div className="text-left">
-                      <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
-                      <h4 className="text-xs font-bold text-slate-800">{activeScan.title}</h4>
-
-                      {activeScan.styleGuideLink && (
-                        <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
-                          <span>📘 STYLE GUIDE:</span>
-                          {activeScan.styleGuideLink.startsWith('file://') ? (
-                            <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
-                              {activeScan.styleGuideLink.replace('file://', '')}
-                            </span>
-                          ) : (
-                            <a href={activeScan.styleGuideLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
-                              Go to Link &rarr;
-                            </a>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-655 hover:text-indigo-655 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1">
-                      <Link className="w-3.5 h-3.5" />
-                      <span>Google Doc</span>
-                    </a>
-                  </div>
-                  <ResultDetails scan={activeScan} />
-                </div>
-              )}
-            </div>
-          )}
-
           {/* 2. SCAN FORM TAB */}
           {activeTab === 'scan' && (
             latestUploadedScan ? (
@@ -1912,8 +1837,6 @@ export default function App() {
               {currentUser.id && <CreditHistoryPanel userId={currentUser.id} />}
             </>
           )}
-
-        </main>
 
         {/* Logged in Footer */}
         <footer className="bg-white border-t border-slate-200 py-6 px-8 mt-auto text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
