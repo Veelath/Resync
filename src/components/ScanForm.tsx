@@ -21,7 +21,8 @@ import {
   Check,
   PenLine,
   LayoutGrid,
-  Info
+  Info,
+  ArrowRight
 } from 'lucide-react';
 import { downloadReport } from '../utils.js';
 import logoPng from '../assets/logo.png';
@@ -40,12 +41,11 @@ interface ScanFormProps {
 }
 
 const ANALYSIS_STEPS = [
-  "Downloading document…",
-  "Analyzing sections…",
-  "Generating report…"
+  "Parsing manuscript structure & chapters…",
+  "Auditing cross-chapter logic & coherence…",
+  "Verifying citation integrity & live links…",
+  "Generating coherence diagnostic report…"
 ];
-
-const ANALYSIS_STEP_INTERVAL_MS = 9000;
 
 export default function ScanForm({
   email,
@@ -63,6 +63,7 @@ export default function ScanForm({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customTopic, setCustomTopic] = useState('');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const [stepIndex, setStepIndex] = useState(0);
   const [dragActive, setDragActive] = useState(false);
@@ -76,43 +77,57 @@ export default function ScanForm({
   const [success, setSuccess] = useState(false);
   const [latestScanResult, setLatestScanResult] = useState<ScanResult | null>(null);
 
+  // Audio Context Ref for guaranteed playback
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const initAudio = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx && !audioCtxRef.current) {
+        audioCtxRef.current = new AudioCtx();
+      }
+      if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+    } catch (e) {
+      console.warn("AudioContext init notice:", e);
+    }
+  };
+
   const playSuccessChime = () => {
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = audioCtxRef.current || new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
 
-      // Note 1: E5
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
-      gain1.gain.setValueAtTime(0, ctx.currentTime);
-      gain1.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
-      gain1.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(ctx.currentTime);
-      osc1.stop(ctx.currentTime + 0.5);
+      // Celebratory ascending chime: E5 (659Hz) -> G#5 (830Hz) -> B5 (987Hz) -> E6 (1318Hz)
+      const notes = [
+        { freq: 659.25, time: 0, dur: 0.35, gain: 0.18 },
+        { freq: 830.61, time: 0.1, dur: 0.35, gain: 0.2 },
+        { freq: 987.77, time: 0.2, dur: 0.4, gain: 0.22 },
+        { freq: 1318.51, time: 0.32, dur: 0.7, gain: 0.25 }
+      ];
 
-      // Note 2: A5 (played slightly later)
-      setTimeout(() => {
-        try {
-          const osc2 = ctx.createOscillator();
-          const gain2 = ctx.createGain();
-          osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(880.00, ctx.currentTime); // A5
-          gain2.gain.setValueAtTime(0, ctx.currentTime);
-          gain2.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
-          gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-          osc2.connect(gain2);
-          gain2.connect(ctx.destination);
-          osc2.start(ctx.currentTime);
-          osc2.stop(ctx.currentTime + 0.6);
-        } catch (innerErr) {
-          console.warn("Chime note 2 failed:", innerErr);
-        }
-      }, 120);
+      notes.forEach(({ freq, time, dur, gain: targetGain }) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+        
+        gainNode.gain.setValueAtTime(0, ctx.currentTime + time);
+        gainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + time + 0.03);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + time + dur);
+        
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.start(ctx.currentTime + time);
+        osc.stop(ctx.currentTime + time + dur);
+      });
     } catch (e) {
       console.warn("AudioContext chime failed:", e);
     }
@@ -122,16 +137,38 @@ export default function ScanForm({
     downloadReport(scan);
   };
 
-  // Rotate loading messages while analyzing
+  // Smooth realistic progress animation during scan
   useEffect(() => {
-    let interval: any;
+    let progressTimer: any;
+    let stepTimer: any;
+
     if (loading) {
+      setProgress(5);
       setStepIndex(0);
-      interval = setInterval(() => {
+
+      // Increment progress smoothly up to 92%
+      progressTimer = setInterval(() => {
+        setProgress((prev) => {
+          if (prev < 30) return prev + Math.floor(Math.random() * 4 + 3);
+          if (prev < 65) return prev + Math.floor(Math.random() * 3 + 2);
+          if (prev < 88) return prev + Math.floor(Math.random() * 2 + 1);
+          if (prev < 94) return prev + 1;
+          return prev;
+        });
+      }, 750);
+
+      // Rotate steps
+      stepTimer = setInterval(() => {
         setStepIndex((prev) => (prev + 1) % ANALYSIS_STEPS.length);
-      }, ANALYSIS_STEP_INTERVAL_MS);
+      }, 7000);
+    } else {
+      setProgress(0);
     }
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(progressTimer);
+      clearInterval(stepTimer);
+    };
   }, [loading]);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -161,6 +198,8 @@ export default function ScanForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    initAudio();
 
     if (scanCredits < 1) {
       setShowTopUpModal(true);
@@ -221,6 +260,8 @@ export default function ScanForm({
         styleGuideLink: styleGuideVal || undefined
       });
 
+      // Complete progress & play success chime
+      setProgress(100);
       playSuccessChime();
 
       if (typeof rawResponse.credits_remaining === 'number') {
@@ -250,6 +291,7 @@ export default function ScanForm({
   };
 
   const handleLoadDemo = () => {
+    initAudio();
     setUploadSource('link');
     setDocumentLink('https://docs.google.com/document/d/1XHPdreNeC2ivez4Zaqlr78-f9L3aa4bgX48QBiss-No/edit?usp=sharing');
     setCustomTopic('PAPAIA: An AI-Powered System for Papaya Disease Identification');
@@ -299,22 +341,49 @@ export default function ScanForm({
         </p>
       </div>
 
-      {/* Full-screen blocking loading overlay */}
+      {/* Full-screen blocking loading overlay with interactive Progress Bar */}
       {loading && (
-        <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in p-4">
-          <div className="bg-white/95 rounded-2xl p-10 border border-slate-200/80 max-w-sm w-full text-center space-y-6 shadow-2xl">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/90 max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden">
+            {/* Ambient top glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+
             <div className="relative mx-auto w-fit">
-              <div className="absolute inset-0 bg-indigo-100/50 rounded-full blur-2xl animate-pulse"></div>
-              <Loader2 className="w-12 h-12 text-[#131bb4] animate-spin relative" />
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#131bb4] shadow-sm">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
             </div>
 
-            <div className="space-y-2.5">
-              <h3 className="font-serif text-lg font-bold text-slate-900 animate-pulse">Scanning your manuscript…</h3>
-              <p className="text-sm sm:text-base text-[#131bb4] font-bold font-mono min-h-[35px] px-2 transition-all">
-                {ANALYSIS_STEPS[stepIndex]}
+            <div className="space-y-2">
+              <h3 className="font-serif text-xl font-bold text-slate-900">Scanning your manuscript</h3>
+              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">
+                Auditing cross-chapter consistency, logical transitions, and live citation links.
               </p>
-              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-                Our AI is auditing logical consistency and citation maps. Larger manuscripts can take a couple of minutes — this won't get stuck.
+            </div>
+
+            {/* Progress Bar Container */}
+            <div className="space-y-2 pt-2 text-left">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-700 truncate pr-2">
+                  {ANALYSIS_STEPS[stepIndex]}
+                </span>
+                <span className="font-mono font-bold text-[#131bb4] shrink-0">
+                  {progress}%
+                </span>
+              </div>
+
+              {/* Progress Bar Track */}
+              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-[#131bb4] rounded-full transition-all duration-500 ease-out shadow-xs"
+                  style={{ width: `${Math.min(100, Math.max(5, progress))}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-[11px] text-slate-400 font-mono">
+                Gemini 2.5 Pro · Deep Analytical Sandbox
               </p>
             </div>
           </div>
@@ -589,7 +658,17 @@ export default function ScanForm({
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
             }`}
           >
-            <span>{hasValidInput ? 'Run Coherence Scan →' : 'Add a manuscript source above'}</span>
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>Scanning manuscript…</span>
+              </div>
+            ) : (
+              <>
+                <span>{hasValidInput ? 'Start Scan' : 'Add a manuscript source above'}</span>
+                {hasValidInput && <ArrowRight className="w-4 h-4" />}
+              </>
+            )}
           </button>
         </form>
 
@@ -605,7 +684,7 @@ export default function ScanForm({
             </p>
           </div>
 
-          {/* Step 1: Prep your document (from Picture 3) */}
+          {/* Step 1: Prep your document */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 text-left flex items-start gap-4 shadow-xs">
             <div className="flex flex-col items-center shrink-0">
               <div className="w-6 h-6 rounded-full bg-[#131bb4] text-white font-bold text-xs flex items-center justify-center">
@@ -621,7 +700,7 @@ export default function ScanForm({
             </div>
           </div>
 
-          {/* Step 2: Check file limits (from Picture 3) */}
+          {/* Step 2: Check file limits */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 text-left flex items-start gap-4 shadow-xs">
             <div className="flex flex-col items-center shrink-0">
               <div className="w-6 h-6 rounded-full bg-[#131bb4] text-white font-bold text-xs flex items-center justify-center">
@@ -637,7 +716,7 @@ export default function ScanForm({
             </div>
           </div>
 
-          {/* Step 3: Attach a template (from Picture 3) */}
+          {/* Step 3: Attach a template */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 text-left flex items-start gap-4 shadow-xs">
             <div className="flex flex-col items-center shrink-0">
               <div className="w-6 h-6 rounded-full bg-[#131bb4] text-white font-bold text-xs flex items-center justify-center">
