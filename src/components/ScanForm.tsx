@@ -56,10 +56,10 @@ export default function ScanForm({
   onBack
 }: ScanFormProps) {
 
+  // Fields
   const [documentLink, setDocumentLink] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customTopic, setCustomTopic] = useState('');
-  const [customTemplate, setCustomTemplate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stepIndex, setStepIndex] = useState(0);
@@ -205,16 +205,11 @@ export default function ScanForm({
         return;
       }
 
-<<<<<<< HEAD
-      // No manuscript_id sent: the backend creates a fresh manuscript row
-=======
->>>>>>> main
       const rawResponse = await executeManuscriptScan({
         user_id: activeUserId,
         manuscript_title: resolvedTopic,
         doc_url: linkToSend,
-        style_reference_url: styleGuideVal || undefined,
-        template_toc: customTemplate.trim() ? customTemplate.split('\n').map(s => s.trim()).filter(Boolean) : undefined
+        style_reference_url: styleGuideVal || undefined
       });
 
       const mappedScan = mapScanResponseToScanResult(rawResponse, {
@@ -302,27 +297,21 @@ export default function ScanForm({
       {/* Full-screen blocking loading overlay */}
       {loading && (
         <div className="fixed inset-0 bg-indigo-950/20 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in p-4">
-          <div className="bg-white/95 rounded-2xl p-8 border border-slate-200/80 max-w-md w-full text-left space-y-6 shadow-2xl">
-            <h3 className="font-serif text-xl font-bold text-slate-850">Scanning Manuscript...</h3>
-            <div className="space-y-4">
-              {ANALYSIS_STEPS.map((step, idx) => (
-                <div key={idx} className={`flex items-center gap-3 ${idx > stepIndex ? 'opacity-40' : 'opacity-100'}`}>
-                  {idx < stepIndex ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  ) : idx === stepIndex ? (
-                    <Loader2 className="w-5 h-5 text-indigo-600 animate-spin shrink-0" />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-slate-200 shrink-0" />
-                  )}
-                  <span className={`text-sm font-medium ${idx === stepIndex ? 'text-indigo-900 font-bold' : 'text-slate-600'}`}>
-                    {step}
-                  </span>
-                </div>
-              ))}
+          <div className="bg-white/95 rounded-2xl p-10 border border-slate-200/80 max-w-sm w-full text-center space-y-6 shadow-2xl">
+            <div className="relative mx-auto w-fit">
+              <div className="absolute inset-0 bg-indigo-100/50 rounded-full blur-2xl animate-pulse"></div>
+              <Loader2 className="w-12 h-12 text-indigo-600 animate-spin relative" />
             </div>
-            <p className="text-xs text-slate-450 leading-relaxed border-t border-slate-100 pt-4">
-              Our AI is auditing logical consistency and citation maps. Larger manuscripts can take a couple of minutes — this won't get stuck.
-            </p>
+
+            <div className="space-y-2.5">
+              <h3 className="font-serif text-lg font-bold text-slate-850 animate-pulse">Scanning your manuscript…</h3>
+              <p className="text-sm sm:text-base text-indigo-600 font-bold font-mono min-h-[35px] px-2 transition-all">
+                {ANALYSIS_STEPS[stepIndex]}
+              </p>
+              <p className="text-xs sm:text-sm text-slate-450 leading-relaxed">
+                Our AI is auditing logical consistency and citation maps. Larger manuscripts can take a couple of minutes — this won't get stuck.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -340,309 +329,6 @@ export default function ScanForm({
             </div>
           </div>
 
-<<<<<<< HEAD
-          {error && (
-            <div className="flex items-start gap-3 bg-rose-50 text-rose-800 text-sm p-4 rounded-xl border border-rose-100 animate-fade-in text-left">
-              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-semibold block font-serif">Scan Notice</span>
-                <p className="text-xs leading-relaxed">{error}</p>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-            {/* Read-Only Pre-Scan Standards (B2) */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-left mb-6">
-              <h3 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-indigo-600" />
-                Evaluation Standards
-              </h3>
-              <p className="text-xs text-slate-500 mb-3">
-                Resync will automatically evaluate your manuscript against these fixed criteria:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] font-medium text-slate-700">
-                <div className="bg-white p-3 border border-slate-100 rounded-lg shadow-sm">
-                  <span className="block text-indigo-700 font-bold mb-1">Structural (25%)</span>
-                  Checks presence of required academic sections.
-                </div>
-                <div className="bg-white p-3 border border-slate-100 rounded-lg shadow-sm">
-                  <span className="block text-indigo-700 font-bold mb-1">Coherence (50%)</span>
-                  Analyzes logical alignment across 7 canonical section pairs.
-                </div>
-                <div className="bg-white p-3 border border-slate-100 rounded-lg shadow-sm">
-                  <span className="block text-indigo-700 font-bold mb-1">Citations (25%)</span>
-                  Verifies reference accessibility and in-text matching.
-                </div>
-              </div>
-            </div>
-
-            <div className="text-left font-serif font-bold text-slate-800 mb-2 flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">1</span>
-              Choose Source
-            </div>
-            {/* Tabs selector */}
-            <div className="flex border-b border-slate-200">
-              <button
-                type="button"
-                onClick={() => setUploadSource('link')}
-                className={`flex items-center gap-2 px-6 py-4 text-base font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${uploadSource === 'link'
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-slate-400 hover:text-slate-650'
-                  }`}
-              >
-                <Link className="w-5 h-5" />
-                <span>Google Docs link</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setUploadSource('file')}
-                className={`flex items-center gap-2 px-6 py-4 text-base font-bold border-b-2 -mb-[2px] transition-all cursor-pointer ${uploadSource === 'file'
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-slate-400 hover:text-slate-655'
-                  }`}
-              >
-                <FileText className="w-5 h-5" />
-                <span>Word document</span>
-              </button>
-            </div>
-
-            {/* Inputs section */}
-            {uploadSource === 'link' ? (
-              <div className="space-y-3 text-left animate-fade-in">
-                <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                  Google Docs URL
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Link className="w-5 h-5" />
-                  </div>
-                  <input
-                    type="url"
-                    required={uploadSource === 'link'}
-                    value={documentLink}
-                    onChange={(e) => setDocumentLink(e.target.value)}
-                    placeholder="https://docs.google.com/document/d/.../edit?usp=sharing"
-                    className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-                  />
-                </div>
-                <p className="text-sm text-slate-450 leading-relaxed">
-                  Note: Make sure your document is set to <strong className="text-slate-500 font-semibold font-serif">"Anyone with the link can view"</strong> so our engine can fetch its text.
-                </p>
-              </div>
-            ) : (
-              /* Word Document Upload Input */
-              <div className="space-y-3 text-left animate-fade-in">
-                <div className="flex justify-between items-center">
-                  <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                    Upload Word Document (.docx)
-                  </label>
-                </div>
-
-                {uploadedFile ? (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center justify-between animate-fade-in">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-650 flex items-center justify-center shrink-0">
-                        <FileText className="w-6 h-6" />
-                      </div>
-                      <div className="min-w-0 text-left">
-                        <p className="text-base font-bold text-slate-800 truncate font-serif">{uploadedFile.name}</p>
-                        <p className="text-sm text-slate-405">{(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setUploadedFile(null)}
-                      className="p-2 rounded-lg text-slate-400 hover:text-slate-655 hover:bg-slate-100 transition-all cursor-pointer"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onDragEnter={handleDrag}
-                    onDragOver={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-4 ${dragActive
-                        ? 'border-indigo-500 bg-indigo-50/10'
-                        : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/30'
-                      }`}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".docx"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-450">
-                      <Upload className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-slate-705 font-serif">Drag your .docx here or click to browse</p>
-                      <p className="text-sm text-slate-450 mt-1.5 font-mono">Word documents only, up to 25 MB</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Advanced options — collapsed by default. */}
-            <div className="text-left font-serif font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
-              Configure (Optional)
-            </div>
-            <div className="rounded-2xl border border-slate-200 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowAdvanced((v) => !v)}
-                className="w-full flex items-center justify-between gap-3 px-5 py-4 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer text-left"
-              >
-                <div className="flex items-center gap-2.5">
-                  <SlidersHorizontal className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">Advanced options</span>
-                  <span className="hidden sm:inline text-xs font-normal normal-case text-slate-400">
-                    Title, style guide
-                  </span>
-                </div>
-                {showAdvanced ? <ChevronUp className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />}
-              </button>
-
-              {showAdvanced && (
-                <div className="p-5 sm:p-6 space-y-8 border-t border-slate-200 animate-fade-in">
-                  {/* Custom Topic field */}
-                  <div className="space-y-3 text-left">
-                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                      Research Project Title or Topic
-                    </label>
-                    <input
-                      type="text"
-                      value={customTopic}
-                      onChange={(e) => setCustomTopic(e.target.value)}
-                      placeholder="e.g. Edge Heart Wearable anomaly detection (Optional)"
-                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-                    />
-                  </div>
-
-                  {/* Department Style Guide Reference */}
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 text-left">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-lg bg-indigo-50 text-indigo-655">
-                          <BookOpen className="w-5 h-5" />
-                        </div>
-                        <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                          Department Style Guide
-                        </h4>
-                      </div>
-
-                      {/* Selector tabs for style guide source */}
-                      <div className="flex bg-slate-100 rounded-xl p-0.5 self-start sm:self-auto border border-slate-200/40">
-                        <button
-                          type="button"
-                          onClick={() => setStyleGuideSource('link')}
-                          className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'link'
-                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                              : 'text-slate-400 hover:text-slate-655'
-                            }`}
-                        >
-                          Docs Link
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setStyleGuideSource('file')}
-                          className={`px-4.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${styleGuideSource === 'file'
-                              ? 'bg-white text-indigo-650 shadow-xs border border-slate-200/30'
-                              : 'text-slate-400 hover:text-slate-655'
-                            }`}
-                        >
-                          Upload File
-                        </button>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Optional. {styleGuideSource === 'link' ? "Paste a public Google Docs or GDrive link containing your department's specific formatting or structural guidelines." : "Upload a PDF, Word document, or text file containing your department's formatting guidelines."}
-                    </p>
-
-                    {styleGuideSource === 'link' ? (
-                      <div className="relative animate-fade-in">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                          <Upload className="w-5 h-5" />
-                        </div>
-                        <input
-                          type="url"
-                          value={styleGuideLink}
-                          onChange={(e) => setStyleGuideLink(e.target.value)}
-                          placeholder="https://docs.google.com/document/d/..."
-                          className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-11 pr-3 py-4 text-base text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner"
-                        />
-                      </div>
-                    ) : (
-                      <div className="animate-fade-in">
-                        {styleGuideFile ? (
-                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 flex items-center justify-between border-dashed">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-655 flex items-center justify-center shrink-0">
-                                <FileText className="w-5 h-5" />
-                              </div>
-                              <div className="min-w-0 text-left">
-                                <p className="text-base font-bold text-slate-800 truncate font-serif">{styleGuideFile.name}</p>
-                                <p className="text-xs text-slate-405">{(styleGuideFile.size / 1024).toFixed(1)} KB</p>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setStyleGuideFile(null)}
-                              className="p-2 rounded-lg text-slate-450 hover:text-rose-600 hover:bg-slate-100 transition-all cursor-pointer"
-                            >
-                              <X className="w-5 h-5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            onClick={() => styleGuideFileInputRef.current?.click()}
-                            className="border border-dashed border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/5 rounded-xl py-5 px-8 text-center cursor-pointer transition-all flex items-center justify-center gap-2.5"
-                          >
-                            <input
-                              ref={styleGuideFileInputRef}
-                              type="file"
-                              accept=".docx,.pdf,.txt"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  setStyleGuideFile(e.target.files[0]);
-                                }
-                              }}
-                              className="hidden"
-                            />
-                            <Upload className="w-5 h-5 text-slate-450" />
-                            <span className="text-sm font-bold text-slate-655">Select style guide file (PDF, DOCX, TXT...)</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Custom Section Template (B3) */}
-                  <div className="space-y-3 text-left border-t border-slate-100 pt-6">
-                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">
-                      Section Template (Optional)
-                    </label>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Leave blank to auto-detect your manuscript's structure. If your department requires specific headings, paste them here (one per line).
-                    </p>
-                    <textarea
-                      value={customTemplate}
-                      onChange={(e) => setCustomTemplate(e.target.value)}
-                      placeholder="e.g.&#10;Introduction&#10;Objectives of the Study&#10;Methodology"
-                      rows={4}
-                      className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm text-slate-855 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all shadow-inner resize-none font-mono"
-                    />
-                  </div>
-=======
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               type="button"
@@ -711,7 +397,6 @@ export default function ScanForm({
               {uploadSource === 'file' && (
                 <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center">
                   <Check className="w-3 h-3 stroke-[3]" />
->>>>>>> main
                 </div>
               )}
             </button>
@@ -817,25 +502,6 @@ export default function ScanForm({
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-sm text-slate-800 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all"
               />
             </div>
-<<<<<<< HEAD
-
-            <div className="text-left font-serif font-bold text-slate-800 mt-8 mb-2 flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">3</span>
-              Analyze
-            </div>
-            {/* Big, obvious primary CTA */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-lg sm:text-xl px-9 py-5 rounded-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer group focus:outline-none shadow-lg shadow-indigo-600/20 hover:shadow-xl hover:scale-101 active:scale-99 duration-150"
-            >
-              <Zap className="w-5 h-5" />
-              <span>Scan Now</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
-      </div>
-=======
             <p className="text-xs text-slate-400 leading-relaxed">
               Ensure permissions are set to <strong className="text-slate-600">"Anyone with the link can view"</strong>.
             </p>
@@ -911,7 +577,6 @@ export default function ScanForm({
           {hasValidInput && <ArrowRight className="w-4 h-4" />}
         </button>
       </form>
->>>>>>> main
     </div>
   );
 }
