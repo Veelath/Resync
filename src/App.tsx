@@ -1331,7 +1331,7 @@ export default function App() {
               {/* Main content + persistent account rail. The rail is what keeps
                   this page composed in the empty state, which -- because scans
                   are never persisted -- is what most visits actually land on. */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 space-y-6">
               {!activeScan ? (
                 /* NO SCAN YET — the product's real front door */
