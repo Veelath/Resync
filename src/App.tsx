@@ -1335,7 +1335,7 @@ export default function App() {
                 <div className="lg:col-span-2 space-y-6">
               {!activeScan ? (
                 /* NO SCAN YET — the product's real front door */
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6 h-full">
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6">
                     <div className="shrink-0 flex justify-center sm:justify-start">
                       <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center relative">
                         <div className="absolute inset-1 rounded-full border border-slate-200/50"></div>
@@ -1785,6 +1785,7 @@ export default function App() {
                 setScanCredits={setScanCredits}
                 setShowTopUpModal={setShowTopUpModal}
                 onScanningChange={setIsScanning}
+                onBack={() => setActiveTab('dashboard')}
                 onScanSuccess={(newScan) => {
                   setSelectedScan(newScan);
                   setLatestUploadedScan(newScan);
