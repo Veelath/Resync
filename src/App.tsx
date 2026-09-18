@@ -1745,7 +1745,7 @@ export default function App() {
                 setScanCredits={setScanCredits}
                 setShowTopUpModal={setShowTopUpModal}
                 onScanningChange={setIsScanning}
-                onBack={() => setActiveTab('dashboard')}
+                onBack={() => setActiveTab('overview')}
                 onScanSuccess={(newScan) => {
                   setSelectedScan(newScan);
                   setLatestUploadedScan(newScan);
