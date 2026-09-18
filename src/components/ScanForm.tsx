@@ -306,8 +306,14 @@ export default function ScanForm({
       <div className="flex items-center justify-between pb-6">
         <button
           type="button"
-          onClick={() => onBack ? onBack() : window.history.back()}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+          onClick={() => {
+            if (onBack) {
+              onBack();
+            } else {
+              window.history.back();
+            }
+          }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors cursor-pointer py-1 px-2 -ml-2 rounded-lg hover:bg-slate-100"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Back</span>
