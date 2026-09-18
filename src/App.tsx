@@ -1107,47 +1107,6 @@ export default function App() {
     scoreLabel = tier.label;
   }
 
-  if (activeTab === 'scan' && !latestUploadedScan) {
-    return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12">
-        <div className="w-full max-w-2xl">
-          <ScanForm
-            email={currentUser.email}
-            userId={currentUser?.id}
-            scanCredits={scanCredits}
-            setScanCredits={setScanCredits}
-            setShowTopUpModal={setShowTopUpModal}
-            onScanningChange={setIsScanning}
-            onBack={() => setActiveTab('dashboard')}
-            onScanSuccess={(newScan) => {
-              setSelectedScan(newScan);
-              setLatestUploadedScan(newScan);
-              setShowFullReport(true);
-              setNotifications((prev) => [
-                {
-                  id: 'notif_' + Date.now().toString(36),
-                  title: 'Scan Completed Successfully',
-                  message: `"${newScan.title}" (${newScan.chapterType}) has been audited. Coherence Score: ${newScan.coherenceScore}/100.`,
-                  timestamp: new Date().toISOString(),
-                  read: false,
-                  scanId: newScan.id
-                },
-                ...prev
-              ]);
-            }}
-          />
-        </div>
-        {showTopUpModal && (
-          <TopUpModal
-            userId={currentUser.id}
-            onClose={() => setShowTopUpModal(false)}
-            onSuccess={(newBalance) => setScanCredits(newBalance)}
-          />
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 flex flex-col w-full">
       {/* Main Workspace Frame */}
