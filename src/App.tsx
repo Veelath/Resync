@@ -36,7 +36,10 @@ import {
   Zap,
   ListChecks,
   ShieldCheck,
-  Quote
+  Quote,
+  Moon,
+  Sun,
+  Clock
 } from 'lucide-react';
 import ScanForm from './components/ScanForm.js';
 import { supabase } from './lib/supabase.js';
@@ -1082,6 +1085,12 @@ export default function App() {
   const revisionPlan = activeScan ? computeRevisionPlan(activeScan) : null;
   const topFix = revisionPlan?.items[0] ?? null;
   const greetingName = currentUser?.name?.trim().split(/\s+/)[0] || '';
+  const greetingData = (() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return { text: 'GOOD MORNING', icon: Sun };
+    if (hour < 18) return { text: 'GOOD AFTERNOON', icon: Sun };
+    return { text: 'GOOD EVENING', icon: Moon };
+  })();
 
   let scanDateString = '';
   if (activeScan) {
@@ -1304,71 +1313,172 @@ export default function App() {
           {/* 1. OVERVIEW / DASHBOARD TAB */}
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Header Title Bar */}
-              <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-200/60">
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block font-mono">
-                    Resync Academic Workspace
-                  </span>
-                  <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5 text-balance">
-                    {greetingName ? `Welcome back, ${greetingName}` : 'Dashboard'}
+              
+              {/* Hero Banner with Rich Blue Gradient & Time Greeting */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-600 p-8 sm:p-10 text-white shadow-xl shadow-indigo-950/10">
+                <div className="relative z-10 space-y-3 text-left">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-300 font-mono">
+                    <greetingData.icon className="w-4 h-4 text-amber-300" />
+                    <span>{greetingData.text}</span>
+                  </div>
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-serif text-white">
+                    Welcome back, {greetingName || 'Researcher'}.
                   </h1>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {currentUser?.institution
-                      ? `${currentUser.role || 'Researcher'} · ${currentUser.institution}`
-                      : 'Coherence, citation integrity, and structural completeness in a single pass.'}
+                  <p className="text-sm sm:text-base text-blue-100/90 max-w-2xl font-normal leading-relaxed">
+                    Coherence, citation integrity, and structural completeness — all in a single 2-minute scan.
                   </p>
                 </div>
-                <button
-                  onClick={() => setActiveTab('scan')}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer animate-fade-in print:hidden shrink-0"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>New scan</span>
-                </button>
+                {/* Ambient glow effects */}
+                <div className="absolute -right-12 -top-12 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute right-1/3 -bottom-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
               </div>
 
-              {/* Main content + persistent account rail. The rail is what keeps
-                  this page composed in the empty state, which -- because scans
-                  are never persisted -- is what most visits actually land on. */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
               {!activeScan ? (
-                /* NO SCAN YET — the product's real front door */
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6">
-                    <div className="shrink-0 flex justify-center sm:justify-start">
-                      <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center relative">
-                        <div className="absolute inset-1 rounded-full border border-slate-200/50"></div>
-                        <Sparkles className="w-7 h-7 text-indigo-500" />
+                /* NEW DASHBOARD CARDS GRID */
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  
+                  {/* Left Column: Your manuscript, checked end-to-end */}
+                  <div className="lg:col-span-6 space-y-6">
+                    <div className="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-10 shadow-sm hover:shadow-md transition-shadow space-y-6 text-left">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200/60 text-xs font-semibold text-slate-700 font-mono">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>AI-powered · ~2 minutes</span>
                       </div>
-                    </div>
 
-                    <div className="flex-grow space-y-4 text-center sm:text-left">
-                      <div className="space-y-2">
-                        <h2 className="font-serif text-xl font-bold text-slate-800">Scan your first chapter</h2>
-                        <p className="text-sm text-slate-500 max-w-xl leading-relaxed">
-                          Paste a Google Doc link and get an integrity score, flagged inconsistencies,
-                          and a verified reference list in under a minute.
+                      <div className="space-y-3">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                          Your manuscript,<br />
+                          <span className="text-indigo-600">checked end-to-end.</span>
+                        </h2>
+                        <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-lg">
+                          Resync flags logic gaps, contradictions, redundancies, and dead citations across every chapter of your thesis — in a single pass.
                         </p>
                       </div>
 
-                      <div className="flex justify-center sm:justify-start">
+                      <div className="pt-2">
                         <button
                           onClick={() => setActiveTab('scan')}
-                          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer"
+                          className="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-sm px-7 py-3.5 rounded-2xl flex items-center gap-2.5 shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/35 transition-all cursor-pointer"
                         >
                           <Upload className="w-4 h-4" />
-                          <span>Upload a chapter to begin</span>
+                          <span>Start a scan</span>
                         </button>
+                      </div>
+
+                      {/* Format indicators & Credits */}
+                      <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="font-semibold text-slate-700">Accepted:</span>
+                          <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200">.docx</span>
+                          <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200">Google Docs</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-mono text-slate-600">
+                          <Coins className="w-3.5 h-3.5 text-indigo-600" />
+                          <span><strong className="text-slate-900 font-bold">{scanCredits}</strong> credits</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Right Column: What a scan checks & What you get back */}
+                  <div className="lg:col-span-6 space-y-6">
+                    
+                    {/* Card 1: What a scan checks */}
+                    <div className="bg-white rounded-3xl border border-slate-200/80 p-7 sm:p-8 shadow-sm space-y-5 text-left">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                          <Clock className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900">What a scan checks</h3>
+                          <p className="text-xs text-slate-400">Three weighted criteria produce a single integrity score.</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 pt-1">
+                        {/* 1. Cross-chapter coherence */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                            <span>Cross-chapter coherence</span>
+                            <span className="text-indigo-600 font-mono">50%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-600 rounded-full w-[50%]"></div>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-normal">
+                            Every section pair is scored for whether it logically follows from the others.
+                          </p>
+                        </div>
+
+                        {/* 2. Terminology consistency */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                            <span>Terminology consistency</span>
+                            <span className="text-indigo-600 font-mono">30%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-600 rounded-full w-[30%]"></div>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-normal">
+                            Key terms must be defined once and used uniformly across all chapters.
+                          </p>
+                        </div>
+
+                        {/* 3. Citation accessibility */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                            <span>Citation accessibility</span>
+                            <span className="text-indigo-600 font-mono">20%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-600 rounded-full w-[20%]"></div>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-normal">
+                            Every cited URL and DOI is pinged to confirm it is publicly reachable.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card 2: What you get back */}
+                    <div className="bg-white rounded-3xl border border-slate-200/80 p-7 sm:p-8 shadow-sm space-y-4 text-left">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900">What you get back</h3>
+                          <p className="text-xs text-slate-400">Every scan returns the same four artefacts, whatever it finds.</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5">
+                          <span className="text-xs font-bold text-slate-800 block">Integrity score out of 100</span>
+                          <p className="text-[11px] text-slate-400">With the three sub-scores that produced it.</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5">
+                          <span className="text-xs font-bold text-slate-800 block">Inconsistencies with quotes</span>
+                          <p className="text-[11px] text-slate-400">Quotes the exact sentences flagged.</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5">
+                          <span className="text-xs font-bold text-slate-800 block">Verified reference list</span>
+                          <p className="text-[11px] text-slate-400">Verified, unresolved, or broken per citation.</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5">
+                          <span className="text-xs font-bold text-slate-800 block">Ranked revision plan</span>
+                          <p className="text-[11px] text-slate-400">Ordered by how many points each fix recovers.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               ) : (
-                /* OLD USER DASHBOARD WITH DATA */
+                /* ACTIVE SCAN RESULTS (when user has an active audit in memory) */
                 <div className="space-y-6">
-                  
                   {/* Result Analytics Section Card */}
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-6">
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
                         Result Analytics
@@ -1376,7 +1486,7 @@ export default function App() {
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-6 justify-between items-center md:items-start">
-                      {/* Left: circular gauge & meta */}
+                      {/* Circular gauge & meta */}
                       <div className="flex items-center gap-4">
                         <ScoreRing 
                           score={activeScan.coherenceScore} 
@@ -1398,7 +1508,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Right: stat boxes */}
+                      {/* Stat boxes */}
                       <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
                         <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 flex flex-col items-center justify-center text-center min-w-[90px] flex-1">
                           <span className="text-xl font-extrabold text-slate-800 font-mono">{issuesFlagged}</span>
@@ -1417,11 +1527,8 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* The one question a scan-and-go tool has to answer: what do
-                        I fix first? Only the top item -- the full ranked plan
-                        already lives in the report's Overview tab. */}
                     {topFix ? (
-                      <div className="rounded-xl border border-indigo-200/70 bg-indigo-50/40 p-4 space-y-3">
+                      <div className="rounded-2xl border border-indigo-200/70 bg-indigo-50/40 p-4 space-y-3 text-left">
                         <div className="flex items-start gap-3">
                           <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
                             <Zap className="w-5 h-5" />
@@ -1452,7 +1559,7 @@ export default function App() {
                         )}
                       </div>
                     ) : (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 flex items-start gap-3">
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 flex items-start gap-3 text-left">
                         <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                         <p className="text-sm text-emerald-800 font-semibold leading-relaxed">
                           No actionable fixes left — this manuscript scores clean on every criterion we can quantify.
@@ -1460,10 +1567,7 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Nothing is persisted server-side (see the scan-and-go note
-                        on selectedScan), so navigating away loses the audit.
-                        Say so plainly and offer the existing text export. */}
-                    <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
                       <div className="flex items-start gap-2.5 min-w-0">
                         <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <p className="text-xs text-amber-900 leading-relaxed">
@@ -1480,7 +1584,6 @@ export default function App() {
                       </button>
                     </div>
 
-                    {/* Collapsible Trigger Link */}
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                       <button
                         onClick={() => setShowFullReport(!showFullReport)}
@@ -1492,166 +1595,23 @@ export default function App() {
                     </div>
                   </div>
 
-                </div>
-              )}
-                </div>
-
-                {/* Account rail. For a pay-per-scan tool the wallet is a
-                    first-class object, not just a header pill -- and it gives
-                    the empty state a second column so the page reads composed. */}
-                <aside className="space-y-6">
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                          Scan Credits
-                        </span>
-                        <p className="text-3xl font-extrabold font-mono text-slate-900 mt-2 leading-none">
-                          {scanCredits}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-2">1 credit = 1 full manuscript scan</p>
-                      </div>
-                      <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                        <Coins className="w-5 h-5" />
-                      </div>
-                    </div>
-
-                    {scanCredits === 0 && (
-                      <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5 leading-relaxed">
-                        You're out of credits — top up to run another scan.
-                      </p>
-                    )}
-
-                    <button
-                      onClick={() => setShowTopUpModal(true)}
-                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      <span>Top up credits</span>
-                    </button>
-                  </div>
-
-                  {activeScan?.ai_text_indicator?.overall_score != null && (
-                    <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                        Writing Style
-                      </span>
-                      <p className="text-3xl font-extrabold font-mono text-slate-900 mt-2 leading-none">
-                        {Math.round(activeScan.ai_text_indicator.overall_score)}
-                        <span className="text-base text-slate-400 font-bold">/100</span>
-                      </p>
-                      <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                        Advisory only — a stylometric reading, not an authorship or integrity
-                        verdict, and no part of the score above.
-                      </p>
-                    </div>
-                  )}
-
-                  {currentUser && (
-                    <CreditHistoryPanel userId={currentUser.id} limit={4} compact />
-                  )}
-                </aside>
-              </div>
-
-              {/* Empty-state explainers run the full page width rather than
-                  inside the narrow column -- the rail is only two short cards
-                  here, so keeping these beside it just moved the dead space
-                  to the right-hand side. */}
-              {!activeScan && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  {/* The rubric, stated plainly. An integrity tool that hides how
-                      it scores doesn't earn the credit it charges. */}
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 h-full">
-                    <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                        What a scan checks
-                      </span>
-                      <p className="text-xs text-slate-400 mt-1.5">
-                        Three weighted criteria produce the single integrity score.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      {SCAN_CRITERIA.map((c) => {
-                        const Icon = c.icon;
-                        const weight = Math.round(REVISION_WEIGHTS[c.key] * 100);
-                        return (
-                          <div key={c.key} className="flex items-start gap-3 bg-slate-50 border border-slate-200/70 rounded-xl p-3.5">
-                            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <div className="min-w-0 flex-grow">
-                              <p className="text-sm font-bold text-slate-800 leading-tight">{c.label}</p>
-                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{c.detail}</p>
-                            </div>
-                            <span className="text-xs font-extrabold font-mono text-slate-600 bg-white border border-slate-200 rounded-md px-2 py-1 shrink-0">
-                              {weight}%
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 h-full">
-                    <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                        What you get back
-                      </span>
-                      <p className="text-xs text-slate-400 mt-1.5">
-                        Every scan returns the same four artefacts, whatever it finds.
-                      </p>
-                    </div>
-                    <div className="space-y-2.5">
-                      {SCAN_DELIVERABLES.map((d) => {
-                        const Icon = d.icon;
-                        return (
-                          <div key={d.label} className="flex items-start gap-3 bg-slate-50 border border-slate-200/70 rounded-xl p-3.5">
-                            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-slate-800 leading-tight">{d.label}</p>
-                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{d.detail}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Expanded report — full width below the grid, since the citation
-                  and coherence tables inside it need the room. */}
-              {activeScan && showFullReport && (
-                <div className="pt-2 border-t border-slate-200/60 animate-fade-in space-y-4">
-                  <div className="bg-slate-100 rounded-xl p-4 flex items-center justify-between border border-slate-200/60">
-                    <div className="text-left">
-                      <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
-                      <h4 className="text-xs font-bold text-slate-800">{activeScan.title}</h4>
-
-                      {activeScan.styleGuideLink && (
-                        <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-indigo-600 font-semibold font-mono">
-                          <span>📘 STYLE GUIDE:</span>
-                          {activeScan.styleGuideLink.startsWith('file://') ? (
-                            <span className="bg-white border border-slate-250/70 text-slate-750 px-1.5 py-0.5 rounded">
-                              {activeScan.styleGuideLink.replace('file://', '')}
-                            </span>
-                          ) : (
-                            <a href={activeScan.styleGuideLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded hover:bg-indigo-50/50 transition-colors">
-                              Go to Link &rarr;
-                            </a>
-                          )}
+                  {showFullReport && (
+                    <div className="pt-2 border-t border-slate-200/60 animate-fade-in space-y-4">
+                      <div className="bg-slate-100 rounded-2xl p-4 flex items-center justify-between border border-slate-200/60">
+                        <div className="text-left">
+                          <span className="text-[10px] font-mono text-slate-400 uppercase">Active Report Source</span>
+                          <h4 className="text-xs font-bold text-slate-800">{activeScan.title}</h4>
                         </div>
-                      )}
+                        {activeScan.documentLink && (
+                          <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-655 hover:text-indigo-655 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1">
+                            <Link className="w-3.5 h-3.5" />
+                            <span>Google Doc</span>
+                          </a>
+                        )}
+                      </div>
+                      <ResultDetails scan={activeScan} />
                     </div>
-                    <a href={activeScan.documentLink} target="_blank" rel="noopener noreferrer" className="bg-white border border-slate-200 text-slate-655 hover:text-indigo-655 font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1">
-                      <Link className="w-3.5 h-3.5" />
-                      <span>Google Doc</span>
-                    </a>
-                  </div>
-                  <ResultDetails scan={activeScan} />
+                  )}
                 </div>
               )}
             </div>
