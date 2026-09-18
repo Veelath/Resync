@@ -1374,6 +1374,7 @@ export default function App() {
                 </div>
               </div>
 
+<<<<<<< HEAD
               {/* MAIN CONTENT BODY (Spacious 2-column layout + feature grid) */}
               <main className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-10 pb-16 space-y-6 relative z-10 flex-grow">
                 
@@ -1528,6 +1529,20 @@ export default function App() {
                           </div>
                           <p className="text-[11px] text-slate-500 leading-tight">Every cited URL and DOI is pinged to confirm it is publicly reachable.</p>
                         </div>
+=======
+              {/* Main content + persistent account rail. The rail is what keeps
+                  this page composed in the empty state, which -- because scans
+                  are never persisted -- is what most visits actually land on. */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+              {!activeScan ? (
+                /* NO SCAN YET — the product's real front door */
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6">
+                    <div className="shrink-0 flex justify-center sm:justify-start">
+                      <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center relative">
+                        <div className="absolute inset-1 rounded-full border border-slate-200/50"></div>
+                        <Sparkles className="w-7 h-7 text-indigo-500" />
+>>>>>>> main
                       </div>
                     </div>
 
@@ -1794,6 +1809,7 @@ export default function App() {
                 setScanCredits={setScanCredits}
                 setShowTopUpModal={setShowTopUpModal}
                 onScanningChange={setIsScanning}
+                onBack={() => setActiveTab('dashboard')}
                 onScanSuccess={(newScan) => {
                   setSelectedScan(newScan);
                   setLatestUploadedScan(newScan);
