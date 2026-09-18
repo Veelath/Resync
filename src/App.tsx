@@ -391,6 +391,8 @@ export default function App() {
 
     if (showAuthModal && authTab === 'login') {
       return <LoginScreen 
+        error={authError}
+        isLoading={authLoading}
         onNavigate={(s) => {
           if (s === 'signup') { setAuthTab('register'); }
           else if (s === 'home' || s === 'dashboard') { setShowAuthModal(false); }
@@ -407,6 +409,8 @@ export default function App() {
     
     if (showAuthModal && authTab === 'register') {
       return <SignupScreen 
+        error={authError}
+        isLoading={authLoading}
         onNavigate={(s) => {
           if (s === 'login') { setAuthTab('login'); }
           else if (s === 'home' || s === 'dashboard') { setShowAuthModal(false); }

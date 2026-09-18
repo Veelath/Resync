@@ -204,17 +204,18 @@ function FieldInput({ label, type="text", value, onChange, placeholder, right }:
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
-export function LoginScreen({ onNavigate, onLogin }: { onNavigate: (s: string) => void, onLogin?: (e: string, p: string) => void }) {
+export function LoginScreen({ onNavigate, onLogin, error, isLoading }: { onNavigate: (s: string) => void, onLogin?: (e: string, p: string) => void, error?: string, isLoading?: boolean }) {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const canSubmit = !!email && !!pw && !loading;
+  const isLoad = isLoading !== undefined ? isLoading : loading;
+  const canSubmit = !!email && !!pw && !isLoad;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if(!canSubmit) return;
-    setLoading(true);
+    if (isLoading === undefined) setLoading(true);
       if(onLogin){ onLogin(email, pw); } else { setTimeout(()=>{ setLoading(false); onNavigate("dashboard"); }, 1200); }
   }
 
@@ -242,6 +243,8 @@ export function LoginScreen({ onNavigate, onLogin }: { onNavigate: (s: string) =
           <div className="flex-1 h-px bg-gray-100"/><span className="text-xs text-gray-300 font-bold tracking-wider">OR</span><div className="flex-1 h-px bg-gray-100"/>
         </div>
 
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
         <form onSubmit={submit} className="space-y-4">
           <FieldInput label="Email" type="email" value={email} onChange={setEmail} placeholder="you@university.edu"/>
 
@@ -281,7 +284,7 @@ export function LoginScreen({ onNavigate, onLogin }: { onNavigate: (s: string) =
 
 // ─── Signup ───────────────────────────────────────────────────────────────────
 
-export function SignupScreen({ onNavigate, onSignup }: { onNavigate: (s: string) => void, onSignup?: (n: string, e: string, p: string, i: string, r: string) => void }) {
+export function SignupScreen({ onNavigate, onSignup, error, isLoading }: { onNavigate: (s: string) => void, onSignup?: (n: string, e: string, p: string, i: string, r: string) => void, error?: string, isLoading?: boolean }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -296,12 +299,13 @@ export function SignupScreen({ onNavigate, onSignup }: { onNavigate: (s: string)
     { label:"Good",color:"#d97706",bar:"#fbbf24" },
     { label:"Strong",color:"#16a34a",bar:"#4ade80" },
   ][str];
-  const canSubmit = !!name && !!email && pw.length>=8 && agreed && !loading;
+  const isLoad = isLoading !== undefined ? isLoading : loading;
+  const canSubmit = !!name && !!email && pw.length>=8 && agreed && !isLoad;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if(!canSubmit) return;
-    setLoading(true);
+    if (isLoading === undefined) setLoading(true);
     setTimeout(()=>{ setLoading(false); onNavigate("dashboard"); }, 1400);
   }
 
@@ -329,6 +333,8 @@ export function SignupScreen({ onNavigate, onSignup }: { onNavigate: (s: string)
           <div className="flex-1 h-px bg-gray-100"/><span className="text-xs text-gray-300 font-bold tracking-wider">OR</span><div className="flex-1 h-px bg-gray-100"/>
         </div>
 
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
         <form onSubmit={submit} className="space-y-4">
           <FieldInput label="Full name" value={name} onChange={setName} placeholder="Maria Santos"/>
           <FieldInput label="Email" type="email" value={email} onChange={setEmail} placeholder="you@university.edu"/>
