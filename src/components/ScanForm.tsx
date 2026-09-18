@@ -258,30 +258,22 @@ export default function ScanForm({
 
   return (
     <div className="w-full max-w-2xl mx-auto py-2 animate-fade-in text-left">
-      {/* Top Bar: Back & Logo */}
-      <div className="flex items-center justify-between pb-6">
+      {/* Top Bar: Back button only */}
+      <div className="flex items-center pb-6">
         <button
           type="button"
-          onClick={() => onBack ? onBack() : window.history.back()}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+          onClick={() => {
+            if (onBack) {
+              onBack();
+            } else {
+              window.history.back();
+            }
+          }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors cursor-pointer py-1 px-2 -ml-2 rounded-lg hover:bg-slate-100"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Back</span>
         </button>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleLoadDemo}
-            disabled={loading}
-            className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
-            title="Auto-fill sample data for instant test scan"
-          >
-            <Sparkles className="w-3 h-3 text-emerald-600" />
-            <span>Try Demo</span>
-          </button>
-          <img src={logoPng} alt="Resync Logo" className="h-5 w-auto object-contain select-none" />
-        </div>
       </div>
 
       {/* Main Title & Subtitle */}
