@@ -1376,31 +1376,53 @@ export default function App() {
                 <div className="lg:col-span-2 space-y-6">
               {!activeScan ? (
                 /* NO SCAN YET — the product's real front door */
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center gap-6">
-                    <div className="shrink-0 flex justify-center sm:justify-start">
-                      <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center relative">
-                        <div className="absolute inset-1 rounded-full border border-slate-200/50"></div>
-                        <Sparkles className="w-7 h-7 text-indigo-500" />
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                      <div className="shrink-0 flex justify-center sm:justify-start">
+                        <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center relative">
+                          <div className="absolute inset-1 rounded-full border border-slate-200/50"></div>
+                          <Sparkles className="w-7 h-7 text-indigo-500" />
+                        </div>
+                      </div>
+
+                      <div className="flex-grow space-y-4 text-center sm:text-left">
+                        <div className="space-y-2">
+                          <h2 className="font-serif text-xl font-bold text-slate-800">Scan your first chapter</h2>
+                          <p className="text-sm text-slate-500 max-w-xl leading-relaxed">
+                            Paste a Google Doc link and get an integrity score, flagged inconsistencies,
+                            and a verified reference list in under a minute.
+                          </p>
+                        </div>
+
+                        <div className="flex justify-center sm:justify-start">
+                          <button
+                            onClick={() => setActiveTab('scan')}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer"
+                          >
+                            <Upload className="w-4 h-4" />
+                            <span>Upload a chapter to begin</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex-grow space-y-4 text-center sm:text-left">
-                      <div className="space-y-2">
-                        <h2 className="font-serif text-xl font-bold text-slate-800">Scan your first chapter</h2>
-                        <p className="text-sm text-slate-500 max-w-xl leading-relaxed">
-                          Paste a Google Doc link and get an integrity score, flagged inconsistencies,
-                          and a verified reference list in under a minute.
-                        </p>
-                      </div>
-
-                      <div className="flex justify-center sm:justify-start">
-                        <button
-                          onClick={() => setActiveTab('scan')}
-                          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer"
-                        >
-                          <Upload className="w-4 h-4" />
-                          <span>Upload a chapter to begin</span>
-                        </button>
+                    <div className="pt-4 border-t border-slate-100 space-y-2.5 text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                        Accepted Formats
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium">
+                          <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                          <span><strong className="font-bold">.docx</strong> Word document</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium">
+                          <Link className="w-3.5 h-3.5 text-emerald-500" />
+                          <span><strong className="font-bold">Google Docs</strong> Share link</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-amber-50/60 border border-amber-200/80 text-amber-800 px-3 py-1.5 rounded-lg text-xs font-medium">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                          <span><strong className="font-bold">+ Template</strong> Optional</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1599,65 +1621,50 @@ export default function App() {
                   here, so keeping these beside it just moved the dead space
                   to the right-hand side. */}
               {!activeScan && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  {/* The rubric, stated plainly. An integrity tool that hides how
-                      it scores doesn't earn the credit it charges. */}
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 h-full">
-                    <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                        What a scan checks
-                      </span>
-                      <p className="text-xs text-slate-400 mt-1.5">
-                        Three weighted criteria produce the single integrity score.
-                      </p>
+                <div className="space-y-4 text-left">
+                  {/* 3 Feature Highlight Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white rounded-2xl border border-slate-200/80 p-4.5 shadow-sm flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <Layers className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-slate-800">Logic Gap Detection</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Objectives vs. Methodology</p>
+                      </div>
                     </div>
 
-                    <div className="space-y-2.5">
-                      {SCAN_CRITERIA.map((c) => {
-                        const Icon = c.icon;
-                        const weight = Math.round(REVISION_WEIGHTS[c.key] * 100);
-                        return (
-                          <div key={c.key} className="flex items-start gap-3 bg-slate-50 border border-slate-200/70 rounded-xl p-3.5">
-                            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <div className="min-w-0 flex-grow">
-                              <p className="text-sm font-bold text-slate-800 leading-tight">{c.label}</p>
-                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{c.detail}</p>
-                            </div>
-                            <span className="text-xs font-extrabold font-mono text-slate-600 bg-white border border-slate-200 rounded-md px-2 py-1 shrink-0">
-                              {weight}%
-                            </span>
-                          </div>
-                        );
-                      })}
+                    <div className="bg-white rounded-2xl border border-slate-200/80 p-4.5 shadow-sm flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                        <Zap className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-slate-800">Contradiction Finder</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Cross-chapter fact checks</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-200/80 p-4.5 shadow-sm flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        <Link className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-slate-800">Citation Scanner</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Live URL & DOI validation</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 h-full">
-                    <div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                        What you get back
-                      </span>
-                      <p className="text-xs text-slate-400 mt-1.5">
-                        Every scan returns the same four artefacts, whatever it finds.
-                      </p>
+                  {/* Pro Tip banner */}
+                  <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4.5 flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <Sparkles className="w-4.5 h-4.5" />
                     </div>
-                    <div className="space-y-2.5">
-                      {SCAN_DELIVERABLES.map((d) => {
-                        const Icon = d.icon;
-                        return (
-                          <div key={d.label} className="flex items-start gap-3 bg-slate-50 border border-slate-200/70 rounded-xl p-3.5">
-                            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-slate-800 leading-tight">{d.label}</p>
-                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{d.detail}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="space-y-0.5">
+                      <h4 className="text-xs font-bold text-amber-900">Pro tip: Attach your school template</h4>
+                      <p className="text-xs text-amber-800/90 leading-relaxed">
+                        Upload your institution's chapter template to help Resync map headings accurately — significantly improves logic-gap detection.
+                      </p>
                     </div>
                   </div>
                 </div>
