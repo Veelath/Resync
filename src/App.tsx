@@ -316,75 +316,86 @@ export default function App() {
   const sampleReportData: ScanResult = {
     id: 'sample_resync_report',
     userId: 'demo_user',
-    title: 'Optimizing Deep Neural Networks for Low-Power Edge Wearables',
+    title: 'Predictors of Academic Burnout Among STEM Undergraduates in Philippine Universities',
     documentLink: 'https://docs.google.com/document/d/1demo-sample-coherence/edit',
-    chapterType: 'Chapter 1 to Chapter 4 (Full Manuscript)',
+    chapterType: 'A descriptive-correlational study · Academic Year 2023–2024',
     coherenceScore: 74,
     overallAssessment: 'Moderate Coherence. The manuscript demonstrates strong domain depth, but exhibits critical logical contradictions between introductory specifications and methodology implementations, alongside 2 dead references.',
     correlationReport: [
       {
-        sectionA: 'Chapter 1: Objectives & Statement of Problem',
-        sectionB: 'Chapter 3: Methodology & Experimental Setup',
+        sectionA: 'Chapter 1 — Statement of the Problem',
+        sectionB: 'Chapter 3 — Methodology',
         inconsistencyType: 'logic_gap',
         description: 'Biometric collection is promised in Objectives but absent from Methodology.',
-        severity: 'High',
-        howToFix: 'Incorporate the biometric telemetry protocol into Chapter 3 or adjust the stated scope in Chapter 1.'
+        explanation_what: 'Biometric data collection was mentioned in Statement of the Problem ("measure student engagement using biometric data"), but Chapter 3 Methodology describes survey-based data collection using MBI-SS and AWS without any biometric protocol.',
+        explanation_why: 'Stating a biometric collection method in the problem statement creates an unfulfilled methodological expectation if omitted in the methodology section.',
+        howToFix: 'Incorporate the biometric telemetry protocol into Chapter 3 or adjust the stated scope in Chapter 1.',
+        severity: 'High'
       },
       {
-        sectionA: 'Chapter 1: Hardware Specifications',
-        sectionB: 'Chapter 4: Results & Power Metrics',
+        sectionA: 'Chapter 1 — Introduction',
+        sectionB: 'Chapter 3 — Methodology',
         inconsistencyType: 'contradiction',
-        description: 'Wearable power constraints are specified as < 50mW in Chapter 1, but Section 4.2 benchmarks show a 1.2W draw on NVIDIA Jetson hardware.',
-        severity: 'High',
-        howToFix: 'Clarify that Jetson Nano represents an upper baseline, or re-evaluate the low-power battery feasibility assertions.'
+        description: 'Scope contradiction regarding target geographic location.',
+        explanation_what: 'Chapter 1 states the scope covers "both rural and urban settings" across Philippine universities, but Chapter 3 specifies sampling from "urban barangays in Metro Manila only".',
+        explanation_why: 'Generalizing the title and introduction to all Philippine universities while restricting actual sampling to urban Metro Manila creates a geographic mismatch.',
+        howToFix: 'Harmonize the target scope in Chapter 1 with the actual sampling frame in Chapter 3.',
+        severity: 'High'
       },
       {
-        sectionA: 'Chapter 2: Related Literature',
-        sectionB: 'Chapter 4: Comparative Discussion',
+        sectionA: 'Chapter 2 — Review of Related Literature',
+        sectionB: 'Chapter 2 — Conceptual Framework',
         inconsistencyType: 'redundancy',
-        description: 'Section 4.3 repeats the algorithmic history of WearableNet almost verbatim from Chapter 2 paragraph 4.',
-        severity: 'Low',
-        howToFix: 'Condense the comparative discussion and cross-reference Chapter 2 instead of repeating background details.'
+        description: 'Repeated definition of Technology Acceptance framework.',
+        explanation_what: 'The verbatim definition of Technology Acceptance ("the degree to which an individual believes that using a particular system would enhance their performance") is repeated twice in Chapter 2.',
+        explanation_why: 'Redundant definitions inflate section length without adding conceptual clarity.',
+        howToFix: 'Reference the initial definition in Chapter 2 instead of repeating the verbatim phrase in Conceptual Framework.',
+        severity: 'Low'
+      },
+      {
+        sectionA: 'Chapter 3 — Methodology',
+        sectionB: 'Chapter 5 — Conclusions',
+        inconsistencyType: 'logic_gap',
+        description: 'Unaddressed research instrument in conclusions.',
+        explanation_what: 'Chapter 3 lists MBI-SS and AWS as data collection instruments, but Chapter 5 conclusions omit metrics derived from AWS.',
+        explanation_why: 'Conclusions must address all primary research instruments introduced in the methodology.',
+        howToFix: 'Ensure AWS survey outcomes are addressed in the Chapter 5 conclusions synthesis.',
+        severity: 'Medium'
+      },
+      {
+        sectionA: 'Chapter 1 — Introduction',
+        sectionB: 'Chapter 3 — Methodology',
+        inconsistencyType: 'contradiction',
+        description: 'Sample size discrepancy.',
+        explanation_what: 'Chapter 1 Introduction implies a large-scale nationwide sample, but Chapter 3 limits the sample to exactly 120 respondents across four universities.',
+        explanation_why: 'Conflicting sample size indicators create uncertainty around statistical power and generalizability.',
+        howToFix: 'Align sample size description in Chapter 1 with the exact sample size in Chapter 3.',
+        severity: 'High'
       }
     ],
     suggestions: [
       {
         category: 'Methodology',
-        issue: 'PPG Sampling Rate Mismatch',
-        explanation: 'Sampling frequency is stated as 100Hz in Introduction but 250Hz in Methodology.',
-        remedy: 'Harmonize sampling rates across all chapters or explicitly explain the multi-rate downsampling step.'
+        issue: 'Geographic Scope Alignment',
+        explanation: 'Scope is defined as nationwide in Chapter 1 but Metro Manila only in Chapter 3.',
+        remedy: 'Harmonize sampling boundaries across introductory and methodological chapters.'
       },
       {
         category: 'Citation',
         issue: 'Broken Academic References',
-        explanation: 'IEEE Transactions URL for PulseML is unresolvable (404 Not Found).',
-        remedy: 'Update URL with permanent DOI identifier for academic citation compliance.'
+        explanation: '2 reference URLs could not be reached (HTTP 404/Unreachable).',
+        remedy: 'Update URLs with permanent DOI identifiers before submission.'
       }
     ],
     references: [
-      {
-        citation: 'Smith, J. (2021). "Wearable Neural Networks for Cardiology." Journal of Mobile Health, vol 12. doi:10.1016/j.jmh.2021.04.12',
-        status: 'Accessible',
-        explanation: 'DOI link verified active.'
-      },
-      {
-        citation: 'Johnson, A., & Patel, S. (2023). "PulseML: Real-time Signal Processing." IEEE Transactions on Wearables.',
-        status: 'Broken Link',
-        explanation: 'URL endpoint unreachable or dead (HTTP 404).'
-      },
-      {
-        citation: 'Davis, L. (2024). "FPGA vs MCU in Wearable Computing." Self-published tech blog.',
-        status: 'Missing Context',
-        explanation: 'Non-peer-reviewed citation. Consider replacing with an IEEE or ACM conference publication.'
-      },
-      {
-        citation: 'Chen, X., et al. (2022). "Low-Power Quantization for Microcontrollers." ACM Transactions on Embedded Systems.',
-        status: 'Accessible',
-        explanation: 'Verified active repository and PDF link.'
-      }
+      { citation: 'Bandura, A. (1997). Self-efficacy: The exercise of control.', citation_primary_link: 'https://doi.org/10.1007/rrq.121', citation_status: 'accessible', status: 'Accessible' },
+      { citation: 'Cruz, M. et al. (2023). Digital transformation in Philippine HEIs.', citation_primary_link: 'https://journals.pup.edu.ph/index.php/ijra/article/view/1824', citation_status: 'broken', status: 'Broken Link' },
+      { citation: 'Davis, F.D. (1989). Perceived Usefulness, Perceived Ease of Use.', citation_primary_link: 'https://doi.org/10.2307/249008', citation_status: 'accessible', status: 'Accessible' },
+      { citation: 'Garcia, L. (2022). Capstone completion barriers in ASEAN universities.', citation_primary_link: 'https://researchgate.net/publication/390421089', citation_status: 'broken', status: 'Broken Link' },
+      { citation: 'Reyes, J.A. (2024). Coherence in multi-author research manuscripts.', citation_primary_link: 'https://doi.org/10.1016/j.compedu.2024.104801', citation_status: 'accessible', status: 'Accessible' },
+      { citation: 'Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.', citation_primary_link: 'https://philjol.info/index.php/JPAIR/article/view/7821', citation_status: 'accessible', status: 'Accessible' }
     ],
     timestamp: new Date().toISOString(),
-    
   };
 
   if (!currentUser) {
