@@ -8,8 +8,6 @@ import { ScanResult } from '../types.js';
 import { executeManuscriptScan, mapScanResponseToScanResult, InsufficientCreditsError } from '../services/api.js';
 import {
   CheckCircle2,
-  Loader2,
-  Sparkles,
   AlertCircle,
   Upload,
   FileText,
@@ -40,11 +38,31 @@ interface ScanFormProps {
   onBack?: () => void;
 }
 
-const ANALYSIS_STEPS = [
-  "Parsing manuscript structure & chapters…",
-  "Auditing cross-chapter logic & coherence…",
-  "Verifying citation integrity & live links…",
-  "Generating coherence diagnostic report…"
+const PIPELINE_CHECKS = [
+  {
+    id: 1,
+    title: "Parsing manuscript structure",
+    tech: "spaCy",
+    threshold: 25
+  },
+  {
+    id: 2,
+    title: "Computing semantic embeddings",
+    tech: "all-mpnet-base-v2",
+    threshold: 55
+  },
+  {
+    id: 3,
+    title: "Deep reasoning & alignment checks",
+    tech: "Google Gemini 2.5 Pro",
+    threshold: 85
+  },
+  {
+    id: 4,
+    title: "Citation accessibility scan",
+    tech: "Async HTTP checker",
+    threshold: 100
+  }
 ];
 
 export default function ScanForm({
@@ -65,7 +83,6 @@ export default function ScanForm({
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
-  const [stepIndex, setStepIndex] = useState(0);
   const [dragActive, setDragActive] = useState(false);
 
   const [styleGuideFile, setStyleGuideFile] = useState<File | null>(null);
@@ -140,34 +157,26 @@ export default function ScanForm({
   // Smooth realistic progress animation during scan
   useEffect(() => {
     let progressTimer: any;
-    let stepTimer: any;
 
     if (loading) {
-      setProgress(5);
-      setStepIndex(0);
+      setProgress(8);
 
-      // Increment progress smoothly up to 92%
+      // Increment progress smoothly through the 4 stages
       progressTimer = setInterval(() => {
         setProgress((prev) => {
-          if (prev < 30) return prev + Math.floor(Math.random() * 4 + 3);
-          if (prev < 65) return prev + Math.floor(Math.random() * 3 + 2);
-          if (prev < 88) return prev + Math.floor(Math.random() * 2 + 1);
-          if (prev < 94) return prev + 1;
+          if (prev < 24) return prev + Math.floor(Math.random() * 3 + 2);
+          if (prev < 54) return prev + Math.floor(Math.random() * 3 + 2);
+          if (prev < 84) return prev + Math.floor(Math.random() * 2 + 1);
+          if (prev < 95) return prev + 1;
           return prev;
         });
-      }, 750);
-
-      // Rotate steps
-      stepTimer = setInterval(() => {
-        setStepIndex((prev) => (prev + 1) % ANALYSIS_STEPS.length);
-      }, 7000);
+      }, 700);
     } else {
       setProgress(0);
     }
 
     return () => {
       clearInterval(progressTimer);
-      clearInterval(stepTimer);
     };
   }, [loading]);
 
@@ -300,6 +309,18 @@ export default function ScanForm({
 
   const hasValidInput = uploadSource === 'file' ? !!uploadedFile : !!documentLink.trim();
 
+  // Helper to determine status for each of the 4 checks
+  const getCheckStatus = (index: number) => {
+    if (progress >= PIPELINE_CHECKS[index].threshold) {
+      return 'done';
+    }
+    const prevThreshold = index === 0 ? 0 : PIPELINE_CHECKS[index - 1].threshold;
+    if (progress >= prevThreshold) {
+      return 'running';
+    }
+    return 'pending';
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto py-2 animate-fade-in text-left">
       {/* Top Header Bar: Back & Logo / Demo */}
@@ -347,51 +368,119 @@ export default function ScanForm({
         </p>
       </div>
 
-      {/* Full-screen blocking loading overlay with interactive Progress Bar */}
+      {/* FULL SCREEN MAXIMIZED SCANNING INTERFACE */}
       {loading && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in p-4">
-          <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/90 max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden">
-            {/* Ambient top glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-
-            <div className="relative mx-auto w-fit">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#131bb4] shadow-sm">
-                <Loader2 className="w-8 h-8 animate-spin" />
+        <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-6 overflow-y-auto min-h-screen animate-fade-in">
+          <div className="max-w-xl w-full mx-auto flex flex-col items-center text-center space-y-6">
+            
+            {/* Top Logo Badge with soft glow */}
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-indigo-50/70 border border-indigo-100/90 flex items-center justify-center p-3 shadow-xs">
+                <img src={logoPng} alt="Resync Logo" className="w-10 h-auto object-contain select-none" />
               </div>
             </div>
 
+            {/* Header Heading */}
             <div className="space-y-2">
-              <h3 className="font-serif text-xl font-bold text-slate-900">Scanning your manuscript</h3>
-              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">
-                Auditing cross-chapter consistency, logical transitions, and live citation links.
+              <h2 className="font-serif text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                Analyzing your manuscript
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 font-normal">
+                Running 4 coherence checks across all chapters
               </p>
             </div>
 
-            {/* Progress Bar Container */}
-            <div className="space-y-2 pt-2 text-left">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700 truncate pr-2">
-                  {ANALYSIS_STEPS[stepIndex]}
-                </span>
-                <span className="font-mono font-bold text-[#131bb4] shrink-0">
-                  {progress}%
-                </span>
+            {/* Progress Bar & Percentage */}
+            <div className="w-full space-y-2 pt-4 text-left">
+              <div className="flex items-center justify-between text-xs font-mono font-semibold">
+                <span className="text-slate-400">Progress</span>
+                <span className="text-[#131bb4] font-bold">{progress}%</span>
               </div>
 
-              {/* Progress Bar Track */}
-              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
+              {/* Smooth Progress Track */}
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-[#131bb4] rounded-full transition-all duration-500 ease-out shadow-xs"
+                  className="h-full bg-[#131bb4] rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${Math.min(100, Math.max(5, progress))}%` }}
                 />
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-100">
-              <p className="text-[11px] text-slate-400 font-mono">
-                Gemini 2.5 Pro · Deep Analytical Sandbox
-              </p>
+            {/* 4 Diagnostic Pipeline Checks Cards */}
+            <div className="w-full space-y-3 pt-2 text-left">
+              {PIPELINE_CHECKS.map((check, idx) => {
+                const status = getCheckStatus(idx);
+
+                if (status === 'done') {
+                  return (
+                    <div
+                      key={check.id}
+                      className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-2xl p-4 flex items-center justify-between transition-all"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-7 h-7 rounded-full bg-[#22c55e] text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Check className="w-4 h-4 stroke-[3]" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-[#14532d]">{check.title}</h4>
+                          <p className="text-xs font-mono text-[#15803d]/80 mt-0.5">{check.tech}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-[#16a34a] font-sans">
+                        Done
+                      </span>
+                    </div>
+                  );
+                }
+
+                if (status === 'running') {
+                  return (
+                    <div
+                      key={check.id}
+                      className="bg-[#eff6ff] border-2 border-[#131bb4] rounded-2xl p-4 flex items-center justify-between transition-all shadow-xs"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-7 h-7 rounded-full bg-[#131bb4] text-white flex items-center justify-center shrink-0 shadow-xs relative">
+                          <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping absolute" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-white relative" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900">{check.title}</h4>
+                          <p className="text-xs font-mono text-[#131bb4] mt-0.5">{check.tech}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-[#131bb4] font-mono animate-pulse">
+                        Running…
+                      </span>
+                    </div>
+                  );
+                }
+
+                // Pending state
+                return (
+                  <div
+                    key={check.id}
+                    className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between opacity-40 transition-all"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 font-bold text-xs flex items-center justify-center shrink-0">
+                        {check.id}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-500">{check.title}</h4>
+                        <p className="text-xs font-mono text-slate-400 mt-0.5">{check.tech}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+
+            {/* Bottom Note */}
+            <p className="text-xs text-slate-400 pt-3">
+              Typically 2–3 minutes · do not close this tab
+            </p>
+
           </div>
         </div>
       )}
@@ -664,17 +753,8 @@ export default function ScanForm({
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
             }`}
           >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Scanning manuscript…</span>
-              </div>
-            ) : (
-              <>
-                <span>{hasValidInput ? 'Start Scan' : 'Add a manuscript source above'}</span>
-                {hasValidInput && <ArrowRight className="w-4 h-4" />}
-              </>
-            )}
+            <span>{hasValidInput ? 'Start Scan' : 'Add a manuscript source above'}</span>
+            {hasValidInput && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
 
