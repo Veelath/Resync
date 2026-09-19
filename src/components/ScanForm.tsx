@@ -237,15 +237,9 @@ export default function ScanForm({
     setError('');
     setSuccess(false);
 
-    let linkToSend = documentLink;
-    if (uploadSource === 'file') {
-      if (uploadedFile) {
-        linkToSend = 'file://' + uploadedFile.name;
-      }
-    }
-
+    const isFile = uploadSource === 'file' && !!uploadedFile;
     const formattedCategory = 'Full Manuscript';
-    const resolvedTopic = customTopic.trim() || (uploadSource === 'file' ? uploadedFile?.name : undefined);
+    const resolvedTopic = customTopic.trim() || (isFile ? uploadedFile?.name : undefined);
     const styleGuideVal = styleGuideFile ? 'file://' + styleGuideFile.name : '';
 
     try {
@@ -259,7 +253,8 @@ export default function ScanForm({
       const rawResponse = await executeManuscriptScan({
         user_id: activeUserId,
         manuscript_title: resolvedTopic,
-        doc_url: linkToSend,
+        doc_url: isFile ? undefined : documentLink.trim(),
+        file: isFile ? uploadedFile! : undefined,
         style_reference_url: styleGuideVal || undefined
       });
 

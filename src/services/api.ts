@@ -27,15 +27,11 @@ export async function authHeaders(extra?: Record<string, string>): Promise<Heade
 
 export interface ScanRequest {
   user_id: string;
-  // Omit both — the backend creates a new manuscript row per scan
-  // (scan-and-go: every submission is its own manuscript, not a shared
-  // hardcoded row).
   manuscript_id?: string;
   manuscript_title?: string;
-  doc_url: string;
-  // No template_toc: scan-and-go is auto-detect only -- see
-  // ManuscriptParserService.parse_manuscript_sections, which routes a
-  // genuinely omitted template_toc to its auto-detection path.
+  doc_url?: string;
+  file?: File;
+  template_toc?: string[];
   style_reference_url?: string;
 }
 
@@ -221,19 +217,53 @@ export async function executeManuscriptScan(
   // ---- 1. Start the job (short request, safe through any proxy) ----------
   let startResponse: Response;
   try {
-    startResponse = await fetch(`${API_BASE_URL}/api/scans/start`, {
-      method: 'POST',
-      headers: await authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(payload),
-      signal,
-    });
+    if (payload.file) {
+      const formData = new FormData();
+      formData.append('file', payload.file);
+      formData.append('user_id', payload.user_id);
+      if (payload.manuscript_title) {
+        formData.append('manuscript_title', payload.manuscript_title);
+      }
+      if (payload.manuscript_id) {
+        formData.append('manuscript_id', payload.manuscript_id);
+      }
+      if (payload.template_toc && payload.template_toc.length > 0) {
+        formData.append('template_toc', JSON.stringify(payload.template_toc));
+      }
+      if (payload.style_reference_url) {
+        formData.append('style_reference_url', payload.style_reference_url);
+      }
+
+      startResponse = await fetch(`${API_BASE_URL}/api/scans/upload`, {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: formData,
+        signal,
+      });
+    } else {
+      const jsonPayload = {
+        user_id: payload.user_id,
+        manuscript_id: payload.manuscript_id,
+        manuscript_title: payload.manuscript_title,
+        doc_url: payload.doc_url,
+        template_toc: payload.template_toc,
+        style_reference_url: payload.style_reference_url,
+      };
+
+      startResponse = await fetch(`${API_BASE_URL}/api/scans/start`, {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(jsonPayload),
+        signal,
+      });
+    }
   } catch (netErr: any) {
     if (netErr?.name === 'AbortError' || signal?.aborted) {
       throw new Error('Scan was cancelled.');
     }
     const errorMsg = netErr?.message || 'Network error';
     throw new Error(
-      `Could not connect to FastAPI backend at ${API_BASE_URL}. Please ensure the backend server is running on port 8000. (${errorMsg})`
+      `Could not connect to FastAPI backend at ${API_BASE_URL}. (${errorMsg})`
     );
   }
 
