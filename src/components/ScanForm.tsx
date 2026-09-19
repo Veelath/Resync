@@ -20,7 +20,8 @@ import {
   PenLine,
   LayoutGrid,
   Info,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import { downloadReport } from '../utils.js';
 import logoPng from '../assets/logo.png';

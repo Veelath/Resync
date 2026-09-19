@@ -38,7 +38,7 @@ import {
   ShieldCheck,
   Quote
 } from 'lucide-react';
-import ScanForm from './components/ScanForm.js';
+import ScanForm from './components/ScanForm.tsx';
 import { HomeScreen, LoginScreen, SignupScreen } from './components/AuthAndLanding.tsx';
 import { supabase } from './lib/supabase.js';
 import ResultDetails from './components/ResultDetails.tsx';
