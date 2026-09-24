@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { ScanResult, CitedReference } from '../types.js';
-import { API_BASE_URL, authHeaders } from '../services/api.js';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { ScanResult, CitedReference, Verification, ManuscriptPreviewResponse } from '../types.js';
+import { API_BASE_URL, authHeaders, fetchManuscriptPreview } from '../services/api.js';
+import { generateHighlightedText, HighlightTarget } from '../highlight.js';
+import { Virtuoso } from 'react-virtuoso';
 import {
   Download, Printer, ChevronDown, ChevronUp, CheckCircle, ListTree, ShieldCheck, Gauge, Link2, ExternalLink, AlertTriangle, Info
 } from 'lucide-react';
@@ -42,6 +44,79 @@ const DEFAULT_AI_TEXT_DISCLAIMER =
 
 export default function ResultDetails({ scan }: ResultDetailsProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'inconsistencies' | 'strong_coherence' | 'citations' | 'originality'>('overview');
+
+  // Two-pane state
+  const [manuscript, setManuscript] = useState<ManuscriptPreviewResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const rightPaneRef = useRef<HTMLDivElement>(null);
+  const leftPaneVirtuosoRef = useRef<any>(null);
+
+  useEffect(() => {
+    async function loadManuscript() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const nocache = urlParams.get('nocache') === '1';
+        const result = await fetchManuscriptPreview(scan.analysis_run_id || scan.id, nocache);
+        setManuscript(result);
+      } catch (err) {
+        setManuscript({ available: false, reason: 'unreachable' });
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadManuscript();
+  }, [scan.analysis_run_id, scan.id]);
+
+  const strengths = useMemo(() => {
+    return (scan.verifications || []).filter(v => v.alignment === 'substantive');
+  }, [scan.verifications]);
+
+  const highlightTargets = useMemo(() => {
+    const targets: HighlightTarget[] = [];
+    const inconsistenciesList = (scan.inconsistencies && scan.inconsistencies.length > 0) ? scan.inconsistencies : (scan.correlationReport && scan.correlationReport.length > 0 ? scan.correlationReport : []);
+    inconsistenciesList.forEach(issue => {
+      const severity = issue.severity?.toLowerCase() || 'medium';
+      if (issue.evidence_a) targets.push({ id: issue.inconsistency_id || issue.section_a || '', quote: issue.evidence_a, severity: severity as any });
+      if (issue.evidence_b) targets.push({ id: issue.inconsistency_id || issue.section_b || '', quote: issue.evidence_b, severity: severity as any });
+    });
+    return targets;
+  }, [scan.inconsistencies, scan.correlationReport]);
+
+  const highlightedNodes = useMemo(() => {
+    if (manuscript && 'available' in manuscript && manuscript.available) {
+      return generateHighlightedText(manuscript.text, highlightTargets);
+    }
+    return [];
+  }, [manuscript, highlightTargets]);
+
+  const scrollToCard = (id: string) => {
+    if (rightPaneRef.current) {
+      const card = rightPaneRef.current.querySelector(`[data-issue-id="${id}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('ring-2', 'ring-indigo-500', 'transition-all');
+        setTimeout(() => card.classList.remove('ring-2', 'ring-indigo-500'), 1500);
+      }
+    }
+  };
+
+  const scrollToHighlight = (id: string) => {
+    if (leftPaneVirtuosoRef.current) {
+      const index = highlightedNodes.findIndex(n => n.type === 'highlight' && n.targetId === id);
+      if (index !== -1) {
+        leftPaneVirtuosoRef.current.scrollToIndex({ index, align: 'center', behavior: 'smooth' });
+      }
+    }
+  };
+
+  const getSeverityColors = (severity: string) => {
+    switch (severity) {
+      case 'high': return 'bg-red-200 text-red-900 cursor-pointer hover:bg-red-300';
+      case 'medium': return 'bg-amber-200 text-amber-900 cursor-pointer hover:bg-amber-300';
+      case 'low': return 'bg-green-200 text-green-900 cursor-pointer hover:bg-green-300';
+      default: return 'bg-yellow-200 text-yellow-900 cursor-pointer hover:bg-yellow-300';
+    }
+  };
 
   // Accordion state maps
   const [expandedInconsistencies, setExpandedInconsistencies] = useState<Record<number, boolean>>({});
@@ -127,7 +202,89 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
   const shouldShow = (id: typeof activeTab) => isPrinting || activeTab === id;
 
   return (
-    <div className="space-y-6 animate-fade-in text-left relative" id={`scan-report-${scan.id}`}>
+    <div className="flex h-screen bg-slate-50 overflow-hidden" id={`scan-report-${scan.id}`}>
+      {/* LEFT PANE: Manuscript Preview */}
+      <div className="w-1/2 h-full overflow-y-auto font-serif text-sm border-r border-slate-200 bg-white flex flex-col print:hidden">
+        <div className="p-4 border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm flex justify-between items-center">
+          <h2 className="font-bold text-slate-800">Manuscript Preview</h2>
+          <div className="text-xs text-slate-500">
+            {loading ? 'Loading...' : (manuscript && 'fetched_at' in manuscript ? 'Loaded from Google Docs' : '')}
+          </div>
+        </div>
+        
+        <div className="flex-1 p-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-full text-slate-400">Loading manuscript...</div>
+          ) : manuscript && 'error' in manuscript && manuscript.error === 'not_gdocs' ? (
+            <div className="p-8 text-slate-500 text-center mt-20">
+              Manuscript preview is only available for Google Docs sources.
+            </div>
+          ) : manuscript && 'available' in manuscript && !manuscript.available ? (
+            <div className="p-8 text-slate-500 text-center mt-20">
+              Manuscript preview unavailable. The findings below are still valid.
+            </div>
+          ) : (
+            <div className="bg-white p-8 shadow-sm border border-slate-200 min-h-full whitespace-pre-wrap leading-relaxed text-slate-800">
+              {highlightedNodes.length > 0 && highlightedNodes.length > 500 ? (
+                 <Virtuoso
+                   ref={leftPaneVirtuosoRef}
+                   useWindowScroll={false}
+                   data={highlightedNodes}
+                   style={{ height: 'calc(100vh - 150px)' }}
+                   itemContent={(index, node) => {
+                     if (node.type === 'text') {
+                       return <span>{node.content}</span>;
+                     } else {
+                       return (
+                         <mark 
+                           key={`h-${index}`} 
+                           className={`px-1 rounded ${getSeverityColors(node.severity!)}`}
+                           onClick={() => scrollToCard(node.targetId!)}
+                           title="Click to view issue details"
+                         >
+                           {node.content}
+                         </mark>
+                       );
+                     }
+                   }}
+                 />
+              ) : (
+                 highlightedNodes.map((node, index) => {
+                    if (node.type === 'text') {
+                      return <span key={index}>{node.content}</span>;
+                    } else {
+                      return (
+                        <mark 
+                          key={index} 
+                          className={`px-1 rounded ${getSeverityColors(node.severity!)}`}
+                          onClick={() => scrollToCard(node.targetId!)}
+                          title="Click to view issue details"
+                        >
+                          {node.content}
+                        </mark>
+                      );
+                    }
+                 })
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT PANE: Original layout */}
+      <div className="w-1/2 h-full overflow-y-auto p-6 space-y-6 relative animate-fade-in text-left" ref={rightPaneRef}>
+        
+        {/* Key Strengths */}
+        {strengths.length > 0 && (
+          <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100">
+            <h3 className="font-bold text-emerald-900 flex items-center gap-2 mb-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" /> Key Strengths
+            </h3>
+            <ul className="list-disc pl-5 space-y-2 text-emerald-800 text-sm">
+               {strengths.map(s => <li key={`${s.role_a}-${s.role_b}`}>{s.note}</li>)}
+            </ul>
+          </div>
+        )}
       {/* Action Footer Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-4 border-b border-slate-200 justify-end print:hidden">
         <button onClick={handleDownloadReport} className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer">
@@ -255,8 +412,12 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                       const fixText = inc.suggested_fix || inc.howToFix || "Harmonize text.";
 
                       return (
-                        <div key={idx} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
-                          <button onClick={() => toggleInconsistency(idx)} className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
+                        <div key={idx} data-issue-id={inc.inconsistency_id || inc.section_a || String(idx)} className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden break-inside-avoid-page">
+                          <div className="flex w-full">
+                            <button onClick={() => scrollToHighlight(inc.inconsistency_id || inc.section_a || String(idx))} className="bg-slate-100 hover:bg-indigo-100 px-3 py-3 border-r border-slate-200 text-indigo-600 cursor-pointer print:hidden" title="View in manuscript">
+                              <AlertTriangle className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => toggleInconsistency(idx)} className="flex-1 px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left cursor-pointer">
                             <div className="flex items-center gap-3">
                               <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0">Flag {idx + 1}</span>
                               <span className="text-sm font-bold text-slate-800 line-clamp-1">Conflicts with {secB}</span>
@@ -266,6 +427,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                             </div>
                             {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400 print:hidden shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 print:hidden shrink-0" />}
                           </button>
+                          </div>
 
                           {isExpanded && (
                             <div className="p-4 border-t border-slate-200 space-y-3 text-sm leading-relaxed text-slate-700">
@@ -570,6 +732,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
         )}
 
       </div>
+    </div>
     </div>
   );
 }

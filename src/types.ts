@@ -194,3 +194,4 @@ export interface ScanResult {
 }
 
 
+export type ManuscriptPreviewResponse = { available: true; text: string; fetched_at: string } | { available: false; reason: 'private' | 'unreachable' } | { error: 'not_gdocs' };

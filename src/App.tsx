@@ -48,6 +48,7 @@ import TopUpModal from './components/TopUpModal.tsx';
 import { getScoreTier, computeRevisionPlan, downloadReport, REVISION_WEIGHTS } from './utils.js';
 import { getCreditBalance } from './services/api.js';
 import logoPng from './assets/logo.png';
+import { MOCK_SCAN_RESULT } from './mockData.js';
 
 // Dashboard empty-state content. The weights are read from REVISION_WEIGHTS
 // (utils.ts), which mirrors services/scoring.py -- so this shows the real
@@ -110,6 +111,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'scan' | 'profile'>('overview');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSampleReportModal, setShowSampleReportModal] = useState(false);
+  const [showDemoPreview, setShowDemoPreview] = useState(false);
   const [showFullReport, setShowFullReport] = useState(false);
 
   // Current scan (scan-and-go: no history is fetched or persisted client-side --
@@ -388,6 +390,45 @@ export default function App() {
   };
 
   if (!currentUser) {
+    if (showDemoPreview) {
+      return (
+        <div className="h-screen w-screen flex flex-col bg-slate-50 overflow-hidden">
+          <div className="bg-[#0b104a] text-white px-4 sm:px-6 py-2.5 flex items-center justify-between border-b border-indigo-900/60 z-50 shrink-0">
+            <div className="flex items-center gap-3">
+              <img src={logoPng} alt="Resync" className="h-6 w-auto" />
+              <div className="h-4 w-px bg-indigo-700/60 hidden sm:block" />
+              <span className="bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded text-[11px] font-mono font-bold uppercase tracking-wider">
+                Interactive Manuscript Demo
+              </span>
+              <span className="text-xs text-indigo-200 hidden md:inline">
+                Two-Pane Preview & Issue Highlighting
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setShowDemoPreview(false);
+                  setAuthTab('login');
+                  setShowAuthModal(true);
+                }}
+                className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => setShowDemoPreview(false)}
+                className="bg-[#1a1fcc] hover:bg-[#2d35e8] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+              >
+                <span>&larr; Exit Demo</span>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ResultDetails scan={MOCK_SCAN_RESULT} />
+          </div>
+        </div>
+      );
+    }
 
     if (showAuthModal && authTab === 'login') {
       return <LoginScreen 
@@ -432,6 +473,7 @@ export default function App() {
       if (s === 'login') { setAuthTab('login'); setShowAuthModal(true); }
       else if (s === 'signup') { setAuthTab('register'); setShowAuthModal(true); }
       else if (s === 'dashboard') { setAuthTab('login'); setShowAuthModal(true); }
+      else if (s === 'demo' || s === 'results') { setShowDemoPreview(true); }
     }} />;
   }
 
@@ -912,7 +954,11 @@ export default function App() {
 
                       <div className="pt-2">
                         <button
-                          onClick={() => setShowSampleReportModal(true)}
+                          onClick={() => {
+                            setSelectedScan(MOCK_SCAN_RESULT);
+                            setLatestUploadedScan(MOCK_SCAN_RESULT);
+                            setActiveTab('scan');
+                          }}
                           className="w-full bg-[#131bb4] hover:bg-[#0e148e] text-white font-semibold text-xs sm:text-sm py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                         >
                           <Sparkles className="w-4 h-4" />

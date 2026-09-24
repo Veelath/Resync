@@ -416,9 +416,16 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
             ))}
           </div>
           <div className="flex items-center gap-2">
-            
-            <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-all">Log in</button>
-            <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all" style={{ background:B }}>Sign up free</button>
+            <button 
+              onClick={() => onNavigate("demo")} 
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#1a1fcc] bg-[#eef0ff] hover:bg-[#dbe0ff] border border-[#1a1fcc]/20 rounded-lg transition-all cursor-pointer shadow-xs"
+              title="Preview the interactive two-pane manuscript viewer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Live Demo</span>
+            </button>
+            <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-all cursor-pointer">Log in</button>
+            <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all cursor-pointer" style={{ background:B }}>Sign up free</button>
           </div>
         </div>
       </nav>
@@ -447,14 +454,15 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
               </p>
               <div className="flex flex-wrap gap-3 mb-8">
                 <button onClick={() => onNavigate("signup")}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all shadow-lg"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all shadow-lg cursor-pointer"
                   style={{ background:`linear-gradient(135deg, ${B}, ${BH})`, boxShadow:`0 8px 24px ${B}30` }}>
                   Get started free
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
-                <button onClick={() => onNavigate("results")}
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all">
-                  View sample report
+                <button onClick={() => onNavigate("demo")}
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold border-2 border-[#1a1fcc] text-[#1a1fcc] bg-indigo-50/60 hover:bg-indigo-100/80 transition-all cursor-pointer shadow-sm">
+                  <Sparkles className="w-4 h-4 text-[#1a1fcc]" />
+                  <span>Preview Demo Report</span>
                 </button>
               </div>
               <div className="flex flex-wrap gap-5 text-xs text-gray-400 font-medium">

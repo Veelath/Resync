@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ScanResult, Inconsistency, CitedReference, Suggestion, Verification } from '../types.js';
+import { ScanResult, Inconsistency, CitedReference, Suggestion, Verification, ManuscriptPreviewResponse } from '../types.js';
 import { supabase } from '../lib/supabase.js';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
@@ -561,3 +561,30 @@ export async function getCreditHistory(userId: string, limit = 50): Promise<Cred
   if (!resp.ok) throw new Error(await extractErrorDetail(resp));
   return resp.json();
 }
+
+import { MOCK_MANUSCRIPT_TEXT } from '../mockData.js';
+
+export async function fetchManuscriptPreview(scanId: string, nocache: boolean = false): Promise<ManuscriptPreviewResponse> {
+  if (scanId === 'mock-demo-scan' || scanId === 'sample_resync_report') {
+    return {
+      available: true,
+      text: MOCK_MANUSCRIPT_TEXT,
+      fetched_at: new Date().toISOString()
+    };
+  }
+  const url = new URL(`${API_BASE_URL}/api/scans/${scanId}/manuscript`);
+  if (nocache) {
+    url.searchParams.set('nocache', '1');
+  }
+  const resp = await fetch(url.toString(), {
+    headers: await authHeaders(),
+  });
+  if (resp.status === 400) {
+    return { error: 'not_gdocs' };
+  }
+  if (!resp.ok && resp.status !== 404) {
+    return { available: false, reason: 'unreachable' };
+  }
+  return resp.json();
+}
+
