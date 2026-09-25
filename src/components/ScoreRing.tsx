@@ -8,6 +8,7 @@ import { getScoreTier } from '../utils.js';
 
 interface ScoreRingProps {
   score: number;
+  band?: string;
   size?: number;
   strokeWidth?: number;
   showDetails?: boolean;
@@ -15,10 +16,11 @@ interface ScoreRingProps {
   className?: string;
 }
 
-export default function ScoreRing({ 
-  score, 
-  size = 120, 
-  strokeWidth = 10, 
+export default function ScoreRing({
+  score,
+  band,
+  size = 120,
+  strokeWidth = 10,
   showDetails = true,
   showSubtext = showDetails,
   className = "p-2"
@@ -27,7 +29,7 @@ export default function ScoreRing({
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
 
-  const { strokeColor, bgColor, textColor, label } = getScoreTier(score);
+  const { strokeColor, bgColor, textColor, label } = getScoreTier(band);
 
   return (
     <div className={`flex flex-col items-center justify-center ${className}`}>
