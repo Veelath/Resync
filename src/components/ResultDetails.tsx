@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ScanResult, CitedReference, Verification, ManuscriptPreviewResponse } from '../types.js';
 import { API_BASE_URL, authHeaders, fetchManuscriptPreview } from '../services/api.js';
 import { generateHighlightedText, HighlightTarget } from '../highlight.js';
-import { Virtuoso } from 'react-virtuoso';
+
 import {
   Download, Printer, ChevronDown, ChevronUp, CheckCircle, ListTree, ShieldCheck, Gauge, Link2, ExternalLink, AlertTriangle, Info
 } from 'lucide-react';
@@ -16,25 +16,25 @@ interface ResultDetailsProps {
 function getCitationStatusBadge(cit: CitedReference): { label: string; className: string; detail: string } {
   switch (cit.citation_status) {
     case 'verified_metadata':
-      return { label: '✓ Verified', className: 'bg-emerald-100 text-emerald-800', detail: 'Confirmed against Crossref metadata — the DOI resolves to this exact work.' };
+      return { label: 'âœ“ Verified', className: 'bg-emerald-100 text-emerald-800', detail: 'Confirmed against Crossref metadata â€” the DOI resolves to this exact work.' };
     case 'accessible':
-      return { label: '✓ Accessible', className: 'bg-emerald-100 text-emerald-800', detail: 'The link responded successfully.' };
+      return { label: 'âœ“ Accessible', className: 'bg-emerald-100 text-emerald-800', detail: 'The link responded successfully.' };
     case 'metadata_mismatch':
-      return { label: '⚠ Details Mismatch', className: 'bg-amber-100 text-amber-800', detail: 'The DOI resolves, but its title/year does not match this reference — check for a wrong or mistyped DOI.' };
+      return { label: 'âš  Details Mismatch', className: 'bg-amber-100 text-amber-800', detail: 'The DOI resolves, but its title/year does not match this reference â€” check for a wrong or mistyped DOI.' };
     case 'bot_wall':
-      return { label: '⚠ Restricted', className: 'bg-amber-100 text-amber-800', detail: 'The publisher blocked automated verification (paywall or bot defense) — not necessarily broken, just unverifiable automatically.' };
+      return { label: 'âš  Restricted', className: 'bg-amber-100 text-amber-800', detail: 'The publisher blocked automated verification (paywall or bot defense) â€” not necessarily broken, just unverifiable automatically.' };
     case 'broken':
-      return { label: '✕ Broken', className: 'bg-rose-100 text-rose-800', detail: 'Unreachable or broken reference link.' };
+      return { label: 'âœ• Broken', className: 'bg-rose-100 text-rose-800', detail: 'Unreachable or broken reference link.' };
     case 'no_link':
       return { label: 'No Link', className: 'bg-slate-100 text-slate-600', detail: 'This reference has no URL or DOI to verify (common for print-only sources).' };
     case 'unknown_error':
-      return { label: '? Unverified', className: 'bg-slate-100 text-slate-600', detail: 'Verification failed for a transient reason — try scanning again.' };
+      return { label: '? Unverified', className: 'bg-slate-100 text-slate-600', detail: 'Verification failed for a transient reason â€” try scanning again.' };
     default: {
       // Legacy fallback for history rows saved before the status ladder existed.
       const isAccessible = cit.citation_is_accessible !== undefined ? cit.citation_is_accessible : (cit.status === 'Accessible');
       return isAccessible
-        ? { label: '✓ Accessible', className: 'bg-emerald-100 text-emerald-800', detail: 'Verified accessible reference.' }
-        : { label: '✕ Broken', className: 'bg-rose-100 text-rose-800', detail: 'Unreachable or broken reference link.' };
+        ? { label: 'âœ“ Accessible', className: 'bg-emerald-100 text-emerald-800', detail: 'Verified accessible reference.' }
+        : { label: 'âœ• Broken', className: 'bg-rose-100 text-rose-800', detail: 'Unreachable or broken reference link.' };
     }
   }
 }
@@ -225,46 +225,27 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
             </div>
           ) : (
             <div className="bg-white p-8 shadow-sm border border-slate-200 min-h-full whitespace-pre-wrap leading-relaxed text-slate-800">
-              {highlightedNodes.length > 0 && highlightedNodes.length > 500 ? (
-                 <Virtuoso
-                   ref={leftPaneVirtuosoRef}
-                   useWindowScroll={false}
-                   data={highlightedNodes}
-                   style={{ height: 'calc(100vh - 150px)' }}
-                   itemContent={(index, node) => {
-                     if (node.type === 'text') {
-                       return <span>{node.content}</span>;
-                     } else {
-                       return (
-                         <mark 
-                           key={`h-${index}`} 
-                           className={`px-1 rounded ${getSeverityColors(node.severity!)}`}
-                           onClick={() => scrollToCard(node.targetId!)}
-                           title="Click to view issue details"
-                         >
-                           {node.content}
-                         </mark>
-                       );
-                     }
-                   }}
-                 />
+              {highlightedNodes.length > 0 ? (
+                highlightedNodes.map((node, index) => {
+                   if (node.type === 'text') {
+                     return <span key={index}>{node.content}</span>;
+                   } else {
+                     return (
+                       <mark
+                         key={index}
+                         className={`px-1 rounded ${getSeverityColors(node.severity!)}`}
+                         onClick={() => scrollToCard(node.targetId!)}
+                         title="Click to view issue details"
+                       >
+                         {node.content}
+                       </mark>
+                     );
+                   }
+                })
               ) : (
-                 highlightedNodes.map((node, index) => {
-                    if (node.type === 'text') {
-                      return <span key={index}>{node.content}</span>;
-                    } else {
-                      return (
-                        <mark 
-                          key={index} 
-                          className={`px-1 rounded ${getSeverityColors(node.severity!)}`}
-                          onClick={() => scrollToCard(node.targetId!)}
-                          title="Click to view issue details"
-                        >
-                          {node.content}
-                        </mark>
-                      );
-                    }
-                 })
+                <span className="text-slate-400 italic text-sm">
+                  Manuscript text loaded. No flagged passages to highlight.
+                </span>
               )}
             </div>
           )}
@@ -331,7 +312,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                     <span className="text-xs font-bold text-rose-800 uppercase block mb-2">Missing Sections:</span>
                     <div className="flex flex-wrap gap-2">
                       {scan.missingSections.map((sec, idx) => (
-                        <span key={idx} className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">⚠️ {sec}</span>
+                        <span key={idx} className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">âš ï¸ {sec}</span>
                       ))}
                     </div>
                   </div>
@@ -341,7 +322,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                     <span className="text-xs font-bold text-amber-800 uppercase block mb-2">Thin Sections (under 40 words):</span>
                     <div className="flex flex-wrap gap-2">
                       {stubSections.map((sec, idx) => (
-                        <span key={idx} className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">✎ {formatRoleLabel(sec)}</span>
+                        <span key={idx} className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">âœŽ {formatRoleLabel(sec)}</span>
                       ))}
                     </div>
                   </div>
@@ -422,7 +403,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                               <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0">Flag {idx + 1}</span>
                               <span className="text-sm font-bold text-slate-800 line-clamp-1">Conflicts with {secB}</span>
                               <span className="hidden sm:inline-flex items-center gap-1 bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase shrink-0">
-                                ✦ AI analysis
+                                âœ¦ AI analysis
                               </span>
                             </div>
                             {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400 print:hidden shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 print:hidden shrink-0" />}
@@ -432,22 +413,22 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                           {isExpanded && (
                             <div className="p-4 border-t border-slate-200 space-y-3 text-sm leading-relaxed text-slate-700">
                               <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-150">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">🔍 What Was Found:</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">ðŸ” What Was Found:</span>
                                 <p className="text-[13px]">{whatText}</p>
                               </div>
                               <div className="bg-amber-50/40 rounded-lg p-2.5 border border-amber-200/60 text-amber-900">
-                                <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">💡 Why It Matters:</span>
+                                <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">ðŸ’¡ Why It Matters:</span>
                                 <p className="text-[13px]">{whyText}</p>
                               </div>
                               <div className="border-l-4 border-indigo-500 pl-3 py-1.5 text-indigo-950">
-                                <span className="text-[10px] font-bold text-indigo-700 uppercase block mb-1">🛠️ Suggested Fix:</span>
+                                <span className="text-[10px] font-bold text-indigo-700 uppercase block mb-1">ðŸ› ï¸ Suggested Fix:</span>
                                 <p className="font-medium text-sm">{fixText}</p>
                               </div>
                               {/* Evidence Citation Block */}
                               {(inc.evidence_a || inc.evidence_b) && (
                                 <div className="bg-indigo-50/30 rounded-lg p-2.5 border border-indigo-100 mt-1">
                                   <span className="text-[10px] font-bold text-indigo-600 uppercase block mb-2 flex items-center gap-2">
-                                    📎 Grounding Evidence:
+                                    ðŸ“Ž Grounding Evidence:
                                     {inc.evidence_verified === false && (
                                       <span className="text-[9px] font-bold normal-case bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded" title="This quote could not be re-verified against the source section text.">
                                         unverified
@@ -470,7 +451,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                               {/* Unaddressed Objectives Block */}
                               {inc.objectives_unaddressed && inc.objectives_unaddressed.length > 0 && (
                                 <div className="bg-amber-50/40 rounded-lg p-2.5 border border-amber-200/60">
-                                  <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">⚠️ Unaddressed Objectives:</span>
+                                  <span className="text-[10px] font-bold text-amber-700 uppercase block mb-1">âš ï¸ Unaddressed Objectives:</span>
                                   <ul className="list-disc list-inside space-y-0.5">
                                     {inc.objectives_unaddressed.map((obj: string, i: number) => (
                                       <li key={i} className="text-xs text-amber-900 italic">{obj}</li>
@@ -505,7 +486,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                                       : 'hover:bg-indigo-50 cursor-pointer'
                                   }`}
                                   title="Helpful"
-                                >👍</button>
+                                >ðŸ‘</button>
                                 <button
                                   disabled={feedbackMap[idx] != null}
                                   onClick={async () => {
@@ -529,7 +510,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                                       : 'hover:bg-rose-50 cursor-pointer'
                                   }`}
                                   title="Not helpful"
-                                >👎</button>
+                                >ðŸ‘Ž</button>
                               </div>
                             </div>
                           )}
@@ -556,10 +537,10 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                   <div key={idx} className="border rounded-xl p-5 shadow-xs flex flex-col gap-2 bg-rose-50/30 border-rose-200 break-inside-avoid-page">
                     <div className="flex items-center gap-2 flex-wrap">
                       <AlertTriangle className="w-5 h-5 text-rose-600" />
-                      <span className="text-sm font-bold text-rose-900">{formatRoleLabel(item.role_a)} ↔ {formatRoleLabel(item.role_b)}</span>
+                      <span className="text-sm font-bold text-rose-900">{formatRoleLabel(item.role_a)} â†” {formatRoleLabel(item.role_b)}</span>
                       <span className="ml-auto text-xs font-bold px-2 py-1 rounded bg-rose-100 text-rose-800">Score: {item.score ?? 'N/A'}</span>
                     </div>
-                    <p className="text-xs text-slate-500 ml-7">weight {item.weight.toFixed(2)}{item.raw_similarity != null ? ` · raw similarity ${Math.round(item.raw_similarity * 100)}%` : ''}</p>
+                    <p className="text-xs text-slate-500 ml-7">weight {item.weight.toFixed(2)}{item.raw_similarity != null ? ` Â· raw similarity ${Math.round(item.raw_similarity * 100)}%` : ''}</p>
                     {item.verification?.note && (
                       <p className="text-sm leading-relaxed ml-7 text-rose-700">{item.verification.note}</p>
                     )}
@@ -581,7 +562,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                     >
                       <div className="flex items-center gap-2 flex-wrap">
                         <CheckCircle className={`w-5 h-5 ${isSuperficial ? 'text-amber-600' : 'text-emerald-600'}`} />
-                        <span className={`text-sm font-bold ${isSuperficial ? 'text-amber-900' : 'text-emerald-900'}`}>{formatRoleLabel(item.role_a)} ↔ {formatRoleLabel(item.role_b)}</span>
+                        <span className={`text-sm font-bold ${isSuperficial ? 'text-amber-900' : 'text-emerald-900'}`}>{formatRoleLabel(item.role_a)} â†” {formatRoleLabel(item.role_b)}</span>
                         {item.verification && (
                           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${isSuperficial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
                             }`}>
@@ -615,7 +596,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                   <div key={idx} className="border rounded-xl p-4 shadow-xs bg-slate-50 border-slate-200 break-inside-avoid-page">
                     <div className="flex items-center gap-2 flex-wrap">
                       <ShieldCheck className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm font-bold text-slate-700">{formatRoleLabel(d.role_a)} ↔ {formatRoleLabel(d.role_b)}</span>
+                      <span className="text-sm font-bold text-slate-700">{formatRoleLabel(d.role_a)} â†” {formatRoleLabel(d.role_b)}</span>
                       <span className="ml-auto text-xs font-bold px-2 py-1 rounded bg-slate-200 text-slate-700">Score: {d.score}</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1.5 ml-6">{d.reason}</p>
@@ -673,7 +654,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                         </div>
                       )}
                       {cit.citation_is_cited_in_text === false && (
-                        <p className="text-xs text-slate-500 font-sans">⚠️ This reference was not found cited anywhere in the manuscript body.</p>
+                        <p className="text-xs text-slate-500 font-sans">âš ï¸ This reference was not found cited anywhere in the manuscript body.</p>
                       )}
                       {cit.explanation && <p className="mt-1 text-sm font-sans text-slate-500 bg-slate-50 p-3 rounded">{cit.explanation}</p>}
                     </div>
@@ -703,7 +684,7 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
                 </div>
                 <span className="text-sm font-extrabold text-slate-800 font-mono w-10 text-right">{Math.round(aiText.overall_score ?? 0)}</span>
               </div>
-              <p className="text-xs text-slate-450">Well-written human academic prose commonly scores 40-60 on this scale — this is a style observation, not a verdict, and plays no part in the coherence score above.</p>
+              <p className="text-xs text-slate-450">Well-written human academic prose commonly scores 40-60 on this scale â€” this is a style observation, not a verdict, and plays no part in the coherence score above.</p>
             </div>
 
             {aiText.section_scores && Object.keys(aiText.section_scores).length > 0 && (
@@ -736,3 +717,4 @@ export default function ResultDetails({ scan }: ResultDetailsProps) {
     </div>
   );
 }
+

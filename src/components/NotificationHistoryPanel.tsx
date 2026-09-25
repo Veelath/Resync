@@ -1,6 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { AppNotification } from '../types.js';
-import { markNotificationRead } from '../services/api.js';
+import React from 'react';
+import { Bell } from 'lucide-react';
+
+interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  scanId?: string;
+}
 
 interface NotificationHistoryPanelProps {
   notifications: AppNotification[];
@@ -14,37 +22,26 @@ export default function NotificationHistoryPanel({
   onOpenScan
 }: NotificationHistoryPanelProps) {
 
-  const handleMarkAsRead = async (notif: AppNotification) => {
-    if (!notif.notification_isread) {
-      try {
-        await markNotificationRead(notif.id);
-        setNotifications(notifications.map(n => n.id === notif.id ? { ...n, notification_isread: true } : n));
-      } catch (e) {
-        console.error('Failed to mark read', e);
-      }
-    }
-    if (notif.analysis_run_id) {
-      onOpenScan(notif.analysis_run_id);
+  const handleClick = (notif: AppNotification) => {
+    setNotifications(notifications.map(n =>
+      n.id === notif.id ? { ...n, read: true } : n
+    ));
+    if (notif.scanId) {
+      onOpenScan(notif.scanId);
     }
   };
 
-  const handleMarkAllRead = async () => {
-    const unread = notifications.filter(n => !n.notification_isread);
-    for (const notif of unread) {
-      try {
-        await markNotificationRead(notif.id);
-      } catch (e) {
-        console.error('Failed to mark read', e);
-      }
-    }
-    setNotifications(notifications.map(n => ({ ...n, notification_isread: true })));
+  const handleMarkAllRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
   };
 
   return (
     <div className="max-w-4xl mx-auto py-8">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-extrabold text-slate-800">Notification History</h2>
-        {notifications.some(n => !n.notification_isread) && (
+        <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+          <Bell className="w-6 h-6 text-indigo-600" /> Notification History
+        </h2>
+        {notifications.some(n => !n.read) && (
           <button
             onClick={handleMarkAllRead}
             className="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
@@ -63,34 +60,34 @@ export default function NotificationHistoryPanel({
           notifications.map(notif => (
             <div
               key={notif.id}
-              onClick={() => handleMarkAsRead(notif)}
+              onClick={() => handleClick(notif)}
               className={`p-6 rounded-2xl border text-left cursor-pointer transition-all ${
-                notif.notification_isread 
-                  ? 'bg-white border-slate-200 hover:bg-slate-50' 
+                notif.read
+                  ? 'bg-white border-slate-200 hover:bg-slate-50'
                   : 'bg-indigo-50/20 border-indigo-200 hover:bg-indigo-50/40'
               }`}
             >
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className={`text-lg font-bold mb-1 ${notif.notification_isread ? 'text-slate-800' : 'text-indigo-950'}`}>
-                    {notif.notification_payload.title}
+                <div className="flex-1 min-w-0">
+                  <h3 className={`text-base font-bold mb-1 truncate ${notif.read ? 'text-slate-700' : 'text-indigo-950'}`}>
+                    {notif.title}
                   </h3>
                   <p className="text-sm text-slate-600">
-                    {notif.notification_payload.message}
+                    {notif.message}
                   </p>
-                  {notif.notification_payload.manuscript_title && (
-                    <div className="mt-3 text-xs text-slate-500 font-mono bg-slate-100 inline-block px-2 py-1 rounded">
-                      Document: {notif.notification_payload.manuscript_title}
-                    </div>
-                  )}
-                  {notif.notification_payload.coherence_score !== undefined && (
-                    <div className="mt-2 text-xs font-bold text-indigo-700">
-                      Coherence Score: {notif.notification_payload.coherence_score}
+                  {notif.scanId && (
+                    <div className="mt-3 text-xs text-indigo-600 font-semibold">
+                      Click to open scan →
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-slate-400 whitespace-nowrap">
-                  {new Date(notif.created_at).toLocaleString()}
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <span className="text-xs text-slate-400 whitespace-nowrap">
+                    {new Date(notif.timestamp).toLocaleString()}
+                  </span>
+                  {!notif.read && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
+                  )}
                 </div>
               </div>
             </div>
