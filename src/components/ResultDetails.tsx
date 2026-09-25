@@ -273,39 +273,125 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
               <h3 className="font-bold text-sm text-slate-800">{tier.label}</h3>
               <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-bold mt-0.5">COHERENCE SCORE</span>
               
-              {/* Breakdown counts */}
+              {/* Breakdown counts with clickable filter toggles */}
               <div className="w-full space-y-1.5 mt-4 pt-3 border-t border-slate-100 text-xs">
-                <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter(activeFilter === 'contradiction' ? 'all' : 'contradiction')}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl transition-all cursor-pointer ${
+                    activeFilter === 'contradiction'
+                      ? 'bg-rose-50 ring-1 ring-rose-300 font-bold'
+                      : 'hover:bg-slate-50'
+                  }`}
+                  title="Filter Contradictions"
+                >
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
-                    <span className="text-slate-600">Contradiction</span>
+                    <span className={activeFilter === 'contradiction' ? 'text-rose-900 font-bold' : 'text-slate-600'}>Contradiction</span>
                   </div>
                   <span className="font-bold font-mono text-rose-600">{contradictionCount}</span>
-                </div>
-                <div className="flex items-center justify-between">
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter(activeFilter === 'logic_gap' ? 'all' : 'logic_gap')}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl transition-all cursor-pointer ${
+                    activeFilter === 'logic_gap'
+                      ? 'bg-purple-50 ring-1 ring-purple-300 font-bold'
+                      : 'hover:bg-slate-50'
+                  }`}
+                  title="Filter Logic Gaps"
+                >
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
-                    <span className="text-slate-600">Logic Gap</span>
+                    <span className={activeFilter === 'logic_gap' ? 'text-purple-900 font-bold' : 'text-slate-600'}>Logic Gap</span>
                   </div>
                   <span className="font-bold font-mono text-purple-600">{logicGapCount}</span>
-                </div>
-                <div className="flex items-center justify-between">
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter(activeFilter === 'redundancy' ? 'all' : 'redundancy')}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl transition-all cursor-pointer ${
+                    activeFilter === 'redundancy'
+                      ? 'bg-amber-50 ring-1 ring-amber-300 font-bold'
+                      : 'hover:bg-slate-50'
+                  }`}
+                  title="Filter Redundancies"
+                >
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                    <span className="text-slate-600">Redundancy</span>
+                    <span className={activeFilter === 'redundancy' ? 'text-amber-900 font-bold' : 'text-slate-600'}>Redundancy</span>
                   </div>
                   <span className="font-bold font-mono text-amber-600">{redundancyCount}</span>
-                </div>
+                </button>
               </div>
             </div>
 
-            {/* ISSUES FOUND List */}
-            <div className="space-y-3">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-bold block">
-                ISSUES FOUND
-              </span>
-              <div className="space-y-2">
-                {inconsistenciesList.map((inc, idx) => {
+            {/* ISSUES FOUND List (Grouped & Filterable) */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-bold block">
+                  {activeFilter === 'logic_gap' ? `LOGIC GAPS (${filteredInconsistencies.length})` : activeFilter === 'contradiction' ? `CONTRADICTIONS (${filteredInconsistencies.length})` : activeFilter === 'redundancy' ? `REDUNDANCIES (${filteredInconsistencies.length})` : `ISSUES FOUND (${inconsistenciesList.length})`}
+                </span>
+                {activeFilter !== 'all' && (
+                  <button
+                    onClick={() => setActiveFilter('all')}
+                    className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                  >
+                    Show all
+                  </button>
+                )}
+              </div>
+
+              {/* Category Filter Chips in Sidebar */}
+              <div className="grid grid-cols-2 gap-1 pb-1">
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer text-center ${
+                    activeFilter === 'all'
+                      ? 'bg-slate-800 text-white shadow-2xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  All ({inconsistenciesList.length})
+                </button>
+                <button
+                  onClick={() => setActiveFilter(activeFilter === 'logic_gap' ? 'all' : 'logic_gap')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer text-center ${
+                    activeFilter === 'logic_gap'
+                      ? 'bg-purple-600 text-white shadow-2xs'
+                      : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                  }`}
+                >
+                  Logic ({logicGapCount})
+                </button>
+                <button
+                  onClick={() => setActiveFilter(activeFilter === 'contradiction' ? 'all' : 'contradiction')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer text-center ${
+                    activeFilter === 'contradiction'
+                      ? 'bg-rose-600 text-white shadow-2xs'
+                      : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                  }`}
+                >
+                  Contradict ({contradictionCount})
+                </button>
+                <button
+                  onClick={() => setActiveFilter(activeFilter === 'redundancy' ? 'all' : 'redundancy')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer text-center ${
+                    activeFilter === 'redundancy'
+                      ? 'bg-amber-600 text-white shadow-2xs'
+                      : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                  }`}
+                >
+                  Redundant ({redundancyCount})
+                </button>
+              </div>
+
+              {/* Filtered / Grouped Issues List */}
+              <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1">
+                {filteredInconsistencies.map((inc) => {
+                  const originalIdx = inconsistenciesList.indexOf(inc);
                   const type = (inc.inconsistencyType || '').toLowerCase();
                   let dotColor = 'bg-rose-500';
                   let textColor = 'text-rose-600';
@@ -321,16 +407,20 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     labelText = 'REDUNDANCY';
                   }
 
-                  const isSelected = selectedIssueIndex === idx;
+                  const isSelected = selectedIssueIndex === originalIdx;
 
                   return (
                     <button
-                      key={idx}
-                      onClick={() => setSelectedIssueIndex(isSelected ? null : idx)}
+                      key={originalIdx}
+                      onClick={() => {
+                        setSelectedIssueIndex(isSelected ? null : originalIdx);
+                        const targetId = originalIdx === 0 ? 'chapter-1' : (originalIdx === 1 ? 'chapter-1' : (originalIdx === 2 ? 'chapter-2' : (originalIdx === 3 ? 'chapter-5' : 'chapter-3')));
+                        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
                       className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-0.5 ${
                         isSelected
-                          ? 'bg-indigo-50/70 border-indigo-300 shadow-2xs'
-                          : 'bg-white border-transparent hover:bg-slate-50'
+                          ? 'bg-indigo-50/90 border-indigo-400 shadow-2xs ring-1 ring-indigo-300'
+                          : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center justify-between text-[11px] font-bold">
@@ -338,10 +428,13 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                           <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
                           <span className={`${textColor} uppercase font-mono tracking-wider text-[10px]`}>{labelText}</span>
                         </div>
-                        <span className="text-slate-400 font-mono text-[10px]">#{idx + 1}</span>
+                        <span className="text-slate-400 font-mono text-[10px]">#{originalIdx + 1}</span>
                       </div>
                       <span className="text-xs font-semibold text-slate-700 truncate pl-3">
                         {inc.sectionA || inc.section_a || 'Section A'}
+                      </span>
+                      <span className="text-[11px] text-slate-400 truncate pl-3">
+                        {inc.description}
                       </span>
                     </button>
                   );
@@ -396,7 +489,7 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
             </div>
 
             {/* HIGHLIGHTS Filter Bar */}
-            <div className="flex items-center gap-2 pt-1 pb-1">
+            <div className="flex items-center gap-2 pt-1 pb-1 flex-wrap">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
                 HIGHLIGHTS:
               </span>
@@ -435,13 +528,96 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                 <span>Redundancy ({redundancyCount})</span>
               </button>
+
+              {activeFilter !== 'all' && (
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                >
+                  Clear filter &times;
+                </button>
+              )}
             </div>
+
+            {/* GROUPED FINDINGS PANEL (Triggered when user clicks Logic Gap or another category) */}
+            {activeFilter !== 'all' && (
+              <div className={`p-4 sm:p-5 rounded-2xl border transition-all animate-fade-in text-left ${
+                activeFilter === 'logic_gap'
+                  ? 'bg-[#f5f3ff] border-purple-200 shadow-2xs'
+                  : activeFilter === 'contradiction'
+                  ? 'bg-[#fff1f2] border-rose-200 shadow-2xs'
+                  : 'bg-[#fffbeb] border-amber-200 shadow-2xs'
+              }`}>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${
+                      activeFilter === 'logic_gap' ? 'bg-purple-600' : activeFilter === 'contradiction' ? 'bg-rose-600' : 'bg-amber-600'
+                    } animate-pulse`} />
+                    <h3 className="font-bold text-sm text-slate-900">
+                      Showing all {filteredInconsistencies.length} {activeFilter === 'logic_gap' ? 'Logic Gaps' : activeFilter === 'contradiction' ? 'Contradictions' : 'Redundancies'} found in this manuscript
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setActiveFilter('all')}
+                    className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer shrink-0"
+                  >
+                    Show all issues ({inconsistenciesList.length})
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {filteredInconsistencies.map((inc, i) => {
+                    const originalIdx = inconsistenciesList.indexOf(inc);
+                    const isSelected = selectedIssueIndex === originalIdx;
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setSelectedIssueIndex(originalIdx);
+                          const targetId = originalIdx === 0 ? 'chapter-1' : (originalIdx === 1 ? 'chapter-1' : (originalIdx === 2 ? 'chapter-2' : (originalIdx === 3 ? 'chapter-5' : 'chapter-3')));
+                          document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer text-left space-y-1.5 ${
+                          isSelected
+                            ? 'bg-white border-indigo-400 shadow-md ring-2 ring-indigo-300'
+                            : 'bg-white/80 border-slate-200 hover:bg-white hover:border-slate-300 hover:shadow-2xs'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[11px] font-bold">
+                          <span className={`font-mono uppercase tracking-wider ${
+                            activeFilter === 'logic_gap' ? 'text-purple-700' : activeFilter === 'contradiction' ? 'text-rose-700' : 'text-amber-700'
+                          }`}>
+                            OCCURRENCE #{i + 1}
+                          </span>
+                          <span className="text-slate-400 font-mono text-[10px]">#{originalIdx + 1}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900 line-clamp-1">
+                          {inc.sectionA || inc.section_a} ↔ {inc.sectionB || inc.section_b}
+                        </h4>
+                        <p className="text-[11px] text-slate-600 leading-snug line-clamp-2">
+                          {inc.description}
+                        </p>
+                        <div className="pt-1 flex items-center justify-between text-[10px] text-indigo-600 font-bold">
+                          <span>Severity: {inc.severity || 'High'}</span>
+                          <span className="flex items-center gap-1 hover:underline">
+                            <span>Jump to passage</span>
+                            <span>→</span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* MANUSCRIPT CONTENT CARD */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-10 shadow-2xs space-y-8 font-sans leading-relaxed text-slate-800">
               
               {/* CHAPTER 1 */}
-              <section className="space-y-4 border-b border-slate-100 pb-8">
+              <section id="chapter-1" className={`space-y-4 border-b border-slate-100 pb-8 transition-opacity duration-300 ${
+                activeFilter !== 'all' && activeFilter !== 'logic_gap' && activeFilter !== 'contradiction' ? 'opacity-35' : 'opacity-100'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-[11px] font-mono uppercase tracking-widest text-indigo-600 font-bold block">
@@ -451,17 +627,38 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                       Introduction
                     </h2>
                   </div>
-                  <span className="bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                    Contradiction
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                      activeFilter === 'contradiction'
+                        ? 'bg-rose-500 text-white shadow-2xs animate-pulse'
+                        : activeFilter === 'logic_gap'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
+                        : 'bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3]'
+                    }`}>
+                      Contradiction
+                    </span>
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                      activeFilter === 'logic_gap'
+                        ? 'bg-purple-600 text-white shadow-2xs animate-pulse'
+                        : activeFilter === 'contradiction'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
+                        : 'bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe]'
+                    }`}>
+                      Logic Gap
+                    </span>
+                  </div>
                 </div>
 
                 <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
                   Academic burnout has emerged as a significant psychological concern among university students worldwide, with particular severity observed in science, technology, engineering, and mathematics (STEM) programs. This study investigates the predictors of academic burnout among{' '}
                   <mark
                     onClick={() => setSelectedIssueIndex(1)}
-                    className={`bg-[#fff1f2] text-[#e11d48] border-b-2 border-[#fecdd3] font-semibold px-1 rounded cursor-pointer transition-colors ${
-                      selectedIssueIndex === 1 ? 'ring-2 ring-rose-400 bg-rose-200' : 'hover:bg-rose-100'
+                    className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                      activeFilter === 'logic_gap'
+                        ? 'bg-slate-100 text-slate-400 opacity-50'
+                        : activeFilter === 'contradiction' || selectedIssueIndex === 1
+                        ? 'bg-rose-200 text-[#e11d48] ring-2 ring-rose-400 font-bold'
+                        : 'bg-[#fff1f2] text-[#e11d48] border-b-2 border-[#fecdd3] hover:bg-rose-100'
                     }`}
                   >
                     STEM undergraduates across Philippine universities, covering both rural and urban settings.
@@ -475,7 +672,13 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     <h3 className="font-serif font-bold text-base text-slate-900">
                       Objectives of the Study
                     </h3>
-                    <span className="bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                      activeFilter === 'contradiction'
+                        ? 'bg-rose-500 text-white shadow-2xs animate-pulse'
+                        : activeFilter === 'logic_gap'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
+                        : 'bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3]'
+                    }`}>
                       Contradiction
                     </span>
                   </div>
@@ -483,8 +686,12 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     This study specifically aims to: (1) identify the prevalence of academic burnout among STEM students; (2) determine burnout predictors among students in{' '}
                     <mark
                       onClick={() => setSelectedIssueIndex(1)}
-                      className={`bg-[#fff1f2] text-[#e11d48] border-b-2 border-[#fecdd3] font-semibold px-1 rounded cursor-pointer transition-colors ${
-                        selectedIssueIndex === 1 ? 'ring-2 ring-rose-400 bg-rose-200' : 'hover:bg-rose-100'
+                      className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                        activeFilter === 'logic_gap'
+                          ? 'bg-slate-100 text-slate-400 opacity-50'
+                          : activeFilter === 'contradiction' || selectedIssueIndex === 1
+                          ? 'bg-rose-200 text-[#e11d48] ring-2 ring-rose-400 font-bold'
+                          : 'bg-[#fff1f2] text-[#e11d48] border-b-2 border-[#fecdd3] hover:bg-rose-100'
                       }`}
                     >
                       urban barangays in Metro Manila only;
@@ -499,7 +706,13 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     <h3 className="font-serif font-bold text-base text-slate-900">
                       Statement of the Problem
                     </h3>
-                    <span className="bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                      activeFilter === 'logic_gap'
+                        ? 'bg-purple-600 text-white shadow-2xs animate-pulse'
+                        : activeFilter === 'contradiction'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
+                        : 'bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe]'
+                    }`}>
                       Logic Gap
                     </span>
                   </div>
@@ -507,8 +720,12 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     Despite growing awareness of mental health issues in tertiary education, few empirical studies have examined the specific predictors of burnout within Philippine STEM contexts. The study will{' '}
                     <mark
                       onClick={() => setSelectedIssueIndex(0)}
-                      className={`bg-[#f5f3ff] text-[#7c3aed] border-b-2 border-[#ddd6fe] font-semibold px-1 rounded cursor-pointer transition-colors ${
-                        selectedIssueIndex === 0 ? 'ring-2 ring-purple-400 bg-purple-200' : 'hover:bg-purple-100'
+                      className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                        activeFilter === 'contradiction' || activeFilter === 'redundancy'
+                          ? 'bg-slate-100 text-slate-400 opacity-50'
+                          : activeFilter === 'logic_gap' || selectedIssueIndex === 0
+                          ? 'bg-purple-200 text-[#7c3aed] ring-2 ring-purple-500 font-bold shadow-xs'
+                          : 'bg-[#f5f3ff] text-[#7c3aed] border-b-2 border-[#ddd6fe] hover:bg-purple-100'
                       }`}
                     >
                       measure student engagement using biometric data
@@ -519,7 +736,9 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
               </section>
 
               {/* CHAPTER 2 */}
-              <section className="space-y-4 border-b border-slate-100 pb-8">
+              <section id="chapter-2" className={`space-y-4 border-b border-slate-100 pb-8 transition-opacity duration-300 ${
+                activeFilter !== 'all' && activeFilter !== 'redundancy' ? 'opacity-35' : 'opacity-100'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-[11px] font-mono uppercase tracking-widest text-indigo-600 font-bold block">
@@ -529,7 +748,13 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                       Review of Related Literature
                     </h2>
                   </div>
-                  <span className="bg-[#fffbeb] text-[#d97706] border border-[#fde68a] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                    activeFilter === 'redundancy'
+                      ? 'bg-amber-500 text-white shadow-2xs animate-pulse'
+                      : activeFilter !== 'all'
+                      ? 'bg-slate-100 text-slate-400 opacity-60'
+                      : 'bg-[#fffbeb] text-[#d97706] border border-[#fde68a]'
+                  }`}>
                     Redundancy
                   </span>
                 </div>
@@ -537,8 +762,12 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                 <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
                   <mark
                     onClick={() => setSelectedIssueIndex(2)}
-                    className={`bg-[#fffbeb] text-[#d97706] border-b-2 border-[#fde68a] font-semibold px-1 rounded cursor-pointer transition-colors ${
-                      selectedIssueIndex === 2 ? 'ring-2 ring-amber-400 bg-amber-200' : 'hover:bg-amber-100'
+                    className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                      activeFilter === 'logic_gap' || activeFilter === 'contradiction'
+                        ? 'bg-slate-100 text-slate-400 opacity-50'
+                        : activeFilter === 'redundancy' || selectedIssueIndex === 2
+                        ? 'bg-amber-200 text-[#d97706] ring-2 ring-amber-400 font-bold'
+                        : 'bg-[#fffbeb] text-[#d97706] border-b-2 border-[#fde68a] hover:bg-amber-100'
                     }`}
                   >
                     Technology acceptance, defined as the degree to which an individual believes that using a particular system would enhance their performance,
@@ -552,15 +781,25 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     <h3 className="font-serif font-bold text-base text-slate-900">
                       Conceptual Framework
                     </h3>
-                    <span className="bg-[#fffbeb] text-[#d97706] border border-[#fde68a] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                      activeFilter === 'redundancy'
+                        ? 'bg-amber-500 text-white shadow-2xs animate-pulse'
+                        : activeFilter !== 'all'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
+                        : 'bg-[#fffbeb] text-[#d97706] border border-[#fde68a]'
+                    }`}>
                       Redundancy
                     </span>
                   </div>
                   <p className="text-sm text-slate-700 leading-relaxed">
                     <mark
                       onClick={() => setSelectedIssueIndex(2)}
-                      className={`bg-[#fffbeb] text-[#d97706] border-b-2 border-[#fde68a] font-semibold px-1 rounded cursor-pointer transition-colors ${
-                        selectedIssueIndex === 2 ? 'ring-2 ring-amber-400 bg-amber-200' : 'hover:bg-amber-100'
+                      className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                        activeFilter === 'logic_gap' || activeFilter === 'contradiction'
+                          ? 'bg-slate-100 text-slate-400 opacity-50'
+                          : activeFilter === 'redundancy' || selectedIssueIndex === 2
+                          ? 'bg-amber-200 text-[#d97706] ring-2 ring-amber-400 font-bold'
+                          : 'bg-[#fffbeb] text-[#d97706] border-b-2 border-[#fde68a] hover:bg-amber-100'
                       }`}
                     >
                       Technology acceptance, defined as the degree to which an individual believes that using a particular system would enhance their performance,
@@ -571,7 +810,9 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
               </section>
 
               {/* CHAPTER 3 */}
-              <section className="space-y-4 border-b border-slate-100 pb-8">
+              <section id="chapter-3" className={`space-y-4 border-b border-slate-100 pb-8 transition-opacity duration-300 ${
+                activeFilter !== 'all' && activeFilter !== 'logic_gap' && activeFilter !== 'contradiction' ? 'opacity-35' : 'opacity-100'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-[11px] font-mono uppercase tracking-widest text-indigo-600 font-bold block">
@@ -582,10 +823,22 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     </h2>
                   </div>
                   <div className="flex gap-1.5">
-                    <span className="bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                      activeFilter === 'logic_gap'
+                        ? 'bg-purple-600 text-white shadow-2xs animate-pulse'
+                        : activeFilter === 'contradiction'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
+                        : 'bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe]'
+                    }`}>
                       Logic Gap
                     </span>
-                    <span className="bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                      activeFilter === 'contradiction'
+                        ? 'bg-rose-500 text-white shadow-2xs animate-pulse'
+                        : activeFilter === 'logic_gap'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
+                        : 'bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3]'
+                    }`}>
                       Contradiction
                     </span>
                   </div>
@@ -595,8 +848,12 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                   A descriptive-correlational research design was employed to examine the relationship between academic workload, peer support, and burnout among university students. Data were collected using the{' '}
                   <mark
                     onClick={() => setSelectedIssueIndex(0)}
-                    className={`bg-[#f5f3ff] text-[#7c3aed] border-b-2 border-[#ddd6fe] font-semibold px-1 rounded cursor-pointer transition-colors ${
-                      selectedIssueIndex === 0 ? 'ring-2 ring-purple-400 bg-purple-200' : 'hover:bg-purple-100'
+                    className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                      activeFilter === 'contradiction' || activeFilter === 'redundancy'
+                        ? 'bg-slate-100 text-slate-400 opacity-50'
+                        : activeFilter === 'logic_gap' || selectedIssueIndex === 0
+                        ? 'bg-purple-200 text-[#7c3aed] ring-2 ring-purple-500 font-bold shadow-xs'
+                        : 'bg-[#f5f3ff] text-[#7c3aed] border-b-2 border-[#ddd6fe] hover:bg-purple-100'
                     }`}
                   >
                     Maslach Burnout Inventory–Student Survey (MBI-SS) and the Academic Workload Scale (AWS).
@@ -604,8 +861,12 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                   {' '}The research instruments were administered via an online survey platform during the second semester of Academic Year 2023–2024. A total of{' '}
                   <mark
                     onClick={() => setSelectedIssueIndex(4)}
-                    className={`bg-[#fff1f2] text-[#e11d48] border-b-2 border-[#fecdd3] font-semibold px-1 rounded cursor-pointer transition-colors ${
-                      selectedIssueIndex === 4 ? 'ring-2 ring-rose-400 bg-rose-200' : 'hover:bg-rose-100'
+                    className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                      activeFilter === 'logic_gap'
+                        ? 'bg-slate-100 text-slate-400 opacity-50'
+                        : activeFilter === 'contradiction' || selectedIssueIndex === 4
+                        ? 'bg-rose-200 text-[#e11d48] ring-2 ring-rose-400 font-bold'
+                        : 'bg-[#fff1f2] text-[#e11d48] border-b-2 border-[#fecdd3] hover:bg-rose-100'
                     }`}
                   >
                     120 respondents
@@ -615,7 +876,9 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
               </section>
 
               {/* CHAPTER 4 */}
-              <section className="space-y-4 border-b border-slate-100 pb-8">
+              <section id="chapter-4" className={`space-y-4 border-b border-slate-100 pb-8 transition-opacity duration-300 ${
+                activeFilter !== 'all' ? 'opacity-35' : 'opacity-100'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-[11px] font-mono uppercase tracking-widest text-indigo-600 font-bold block">
@@ -626,16 +889,55 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                     </h2>
                   </div>
                   <div className="flex gap-1.5">
-                    <span className="bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                      Contradiction
-                    </span>
-                    <span className="bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe] text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                      Logic Gap
+                    <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                      Statistical Synthesis
                     </span>
                   </div>
                 </div>
                 <p className="text-sm text-slate-600 italic">
                   Survey metrics and regression model findings evaluated against stated hypotheses.
+                </p>
+              </section>
+
+              {/* CHAPTER 5 */}
+              <section id="chapter-5" className={`space-y-4 border-b border-slate-100 pb-8 transition-opacity duration-300 ${
+                activeFilter !== 'all' && activeFilter !== 'logic_gap' ? 'opacity-35' : 'opacity-100'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-indigo-600 font-bold block">
+                      CHAPTER 5
+                    </span>
+                    <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">
+                      Conclusions and Recommendations
+                    </h2>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all ${
+                    activeFilter === 'logic_gap'
+                      ? 'bg-purple-600 text-white shadow-2xs animate-pulse'
+                      : activeFilter !== 'all'
+                      ? 'bg-slate-100 text-slate-400 opacity-60'
+                      : 'bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe]'
+                  }`}>
+                    Logic Gap
+                  </span>
+                </div>
+
+                <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
+                  Based on the statistical findings, academic workload demonstrates a significant correlation with emotional exhaustion and depersonalization among Philippine STEM undergraduates. However,{' '}
+                  <mark
+                    onClick={() => setSelectedIssueIndex(3)}
+                    className={`font-semibold px-1 rounded cursor-pointer transition-all ${
+                      activeFilter === 'contradiction' || activeFilter === 'redundancy'
+                        ? 'bg-slate-100 text-slate-400 opacity-50'
+                        : activeFilter === 'logic_gap' || selectedIssueIndex === 3
+                        ? 'bg-purple-200 text-[#7c3aed] ring-2 ring-purple-500 font-bold shadow-xs'
+                        : 'bg-[#f5f3ff] text-[#7c3aed] border-b-2 border-[#ddd6fe] hover:bg-purple-100'
+                    }`}
+                  >
+                    the chapter conclusions address only the MBI-SS burnout indices without reporting on the Academic Workload Scale (AWS)
+                  </mark>
+                  {' '}data collection protocol defined in Chapter 3 Methodology, leaving a primary research instrument unaddressed in the final thesis conclusions.
                 </p>
               </section>
 

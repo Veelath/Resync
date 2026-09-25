@@ -31,23 +31,36 @@ function Keyword() {
     </span>
   );
 }
-function PreviewCard() {
+function PreviewCard({ onClick }: { onClick?: () => void }) {
   return (
-    <div className="w-full max-w-sm mx-auto" style={{ filter:"drop-shadow(0 24px 48px rgba(26,31,204,0.13))" }}>
+    <div
+      onClick={onClick}
+      className={`w-full max-w-sm mx-auto ${onClick ? 'cursor-pointer hover:scale-[1.02] transition-transform duration-200 group' : ''}`}
+      style={{ filter:"drop-shadow(0 24px 48px rgba(26,31,204,0.13))" }}
+      title={onClick ? "Click to view full mock scan report" : undefined}
+    >
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {/* header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-300"/>
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-300"/>
-            <div className="w-2.5 h-2.5 rounded-full bg-green-300"/>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-400"/>
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400"/>
+            <div className="w-2.5 h-2.5 rounded-full bg-green-400"/>
           </div>
-          <div className="text-xs text-gray-400 font-medium mono">resync_report.pdf</div>
+          <div className="text-xs text-gray-400 font-medium mono group-hover:text-[#1a1fcc] transition-colors flex items-center gap-1.5">
+            <span>sample_manuscript.docx</span>
+            <span className="text-[10px] bg-indigo-50 text-[#1a1fcc] px-1.5 py-0.5 rounded font-bold font-sans">Click to open</span>
+          </div>
           <div style={{ width:48 }}/>
         </div>
         {/* score row */}
         <div className="flex items-center gap-4 px-5 py-4 border-b border-gray-50">
-          <ScoreRing score={74} size={72}/>
+          <div className="flex flex-col items-center">
+            <ScoreRing score={74} size={72}/>
+            <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full mt-1.5 border border-amber-200">
+              Moderate Coherence
+            </span>
+          </div>
           <div className="flex-1 space-y-1.5">
             {[
               { label:"Logic Gaps", n:2, c:"text-violet-600 bg-violet-50 border-violet-200" },
@@ -235,6 +248,33 @@ export function LoginScreen({ onNavigate, onLogin, error, isLoading }: { onNavig
           <p className="text-sm text-gray-400">Log in to your Resync account.</p>
         </div>
 
+        {/* Quick Demo Login Helper */}
+        <div className="mb-5 p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100/90 flex flex-col gap-2.5 text-left">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-[#1a1fcc] uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Demo Account Credentials</span>
+            </span>
+            <span className="text-[10px] bg-indigo-100 text-indigo-700 font-semibold px-1.5 py-0.5 rounded font-mono">1-Click</span>
+          </div>
+          <div className="text-xs text-slate-600 bg-white/80 p-2 rounded-lg border border-indigo-50 space-y-0.5">
+            <div>Email: <strong className="font-mono text-slate-800 select-all">demo@resync.ai</strong></div>
+            <div>Password: <strong className="font-mono text-slate-800 select-all">password123</strong></div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("demo@resync.ai");
+              setPw("password123");
+              if (onLogin) onLogin("demo@resync.ai", "password123");
+            }}
+            className="w-full py-2 px-3 rounded-lg bg-[#1a1fcc] hover:bg-[#2d35e8] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+          >
+            <span>Log in as Dr. Sarah Connor</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         <button className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-5 shadow-sm">
           <GIcon/>Continue with Google
         </button>
@@ -243,7 +283,6 @@ export function LoginScreen({ onNavigate, onLogin, error, isLoading }: { onNavig
           <div className="flex-1 h-px bg-gray-100"/><span className="text-xs text-gray-300 font-bold tracking-wider">OR</span><div className="flex-1 h-px bg-gray-100"/>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
         {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
         <form onSubmit={submit} className="space-y-4">
           <FieldInput label="Email" type="email" value={email} onChange={setEmail} placeholder="you@university.edu"/>
@@ -306,7 +345,11 @@ export function SignupScreen({ onNavigate, onSignup, error, isLoading }: { onNav
     e.preventDefault();
     if(!canSubmit) return;
     if (isLoading === undefined) setLoading(true);
-    setTimeout(()=>{ setLoading(false); onNavigate("dashboard"); }, 1400);
+    if (onSignup) {
+      onSignup(name, email, pw, "Academic Institution", "Researcher");
+    } else {
+      setTimeout(()=>{ setLoading(false); onNavigate("dashboard"); }, 1400);
+    }
   }
 
   return (
@@ -403,7 +446,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
           <div className="hidden md:flex items-center gap-1">
             {[
               { label: "Features", id: "features" },
-              { label: "How it Works", id: "how-it-works" },
+              { label: "Audit Pipeline", id: "how-it-works" },
               { label: "About", id: "about" }
             ].map(l => (
               <button
@@ -416,9 +459,15 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
             ))}
           </div>
           <div className="flex items-center gap-2">
-            
-            <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-all">Log in</button>
-            <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all" style={{ background:B }}>Sign up free</button>
+            <button
+              onClick={() => onNavigate("mock-scan")}
+              className="px-3.5 py-2 text-xs sm:text-sm font-bold text-[#1a1fcc] bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/90 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#1a1fcc]" />
+              <span>Live Mock Report</span>
+            </button>
+            <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-all cursor-pointer">Log in</button>
+            <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all cursor-pointer" style={{ background:B }}>Sign up free</button>
           </div>
         </div>
       </nav>
@@ -434,27 +483,28 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             {/* left */}
             <div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold mb-7" style={{ borderColor:`${B}30`, background:`${B}08`, color:B }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/>
-                Powered by Gemini 3.1 Flash Lite
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold mb-6" style={{ borderColor:`${B}30`, background:`${B}08`, color:B }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1a1fcc] animate-pulse"/>
+                Multi-layered manuscript check
               </div>
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 tracking-tight leading-[1.08] mb-6">
-                Your thesis,<br/>
-                <Keyword/>
+              <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight leading-[1.08] mb-6">
+                Check your<br/>
+                manuscript<br/>
+                <span style={{ color: B }}>for coherence.</span>
               </h1>
-              <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-lg">
-                Resync scans your manuscript for logic gaps, contradictions, redundancies, and broken citations — giving you a full coherence report in about 2 minutes.
+              <p className="text-base sm:text-lg text-gray-500 leading-relaxed mb-8 max-w-lg font-sans">
+                Resync scans your manuscript for logic gaps, contradictions, redundancies, and unverified citations. Get an objective report in about 2 minutes.
               </p>
               <div className="flex flex-wrap gap-3 mb-8">
                 <button onClick={() => onNavigate("signup")}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all shadow-lg"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all shadow-lg hover:shadow-xl cursor-pointer"
                   style={{ background:`linear-gradient(135deg, ${B}, ${BH})`, boxShadow:`0 8px 24px ${B}30` }}>
-                  Get started free
+                  <span>Get started free</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
-                <button onClick={() => onNavigate("results")}
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all">
-                  View sample report
+                <button onClick={() => onNavigate("mock-scan")}
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold border-2 border-slate-200 hover:border-[#1a1fcc] text-slate-700 hover:text-[#1a1fcc] bg-white transition-all shadow-xs hover:shadow-sm cursor-pointer">
+                  <span>View sample report</span>
                 </button>
               </div>
               <div className="flex flex-wrap gap-5 text-xs text-gray-400 font-medium">
@@ -468,7 +518,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
             </div>
             {/* right — product preview */}
             <div className="hidden lg:block" style={{ animation:"float 5s ease-in-out infinite" }}>
-              <PreviewCard/>
+              <PreviewCard onClick={() => onNavigate("mock-scan")}/>
             </div>
           </div>
         </div>
@@ -481,7 +531,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
             ["6","Coherence dimensions"],
             ["~2 min","Per full thesis"],
             [".docx + GDocs","Accepted formats"],
-            ["5 AI tools","Working in pipeline"],
+            ["3 models","In pipeline"],
           ].map(([val, label]) => (
             <div key={label} className="flex items-center gap-3">
               <span className="text-xl font-bold mono" style={{ color:B }}>{val}</span>
@@ -500,17 +550,22 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-5 mono uppercase tracking-widest" style={{ background:`${B}08`, color:B }}>
               How it works
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight">Three steps to a<br/>submission-ready thesis</h2>
+            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight">
+              From manuscript<br/>to focused revisions
+            </h2>
+            <p className="text-base text-gray-500 mt-4 max-w-xl mx-auto font-sans">
+              Three steps to ensure your research paper is logically airtight and defense-ready.
+            </p>
           </div>
 
-          {/* Zigzag steps */}
+          {/* Zigzag pipeline phases */}
           <div className="space-y-28">
 
             {/* ── Step 1: text left, visual right ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background:`${B}08`, color:B }}>Step 01</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
+                <h3 className="font-serif text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   Simply upload your <span className="font-semibold text-gray-700">.docx file</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Our engine automatically detects your chapters — from the Introduction down to the Conclusion — and maps them to your school's template if you attach one.
                 </p>
@@ -540,7 +595,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
                       <span className="text-xs text-gray-300 font-medium">or</span>
                       <div className="flex-1 h-px bg-gray-100"/>
                     </div>
-                    <button className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white" style={{ background:`linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
+                    <button className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white cursor-pointer" style={{ background:`linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
                   </div>
                   {/* Detected sections chip */}
                   <div className="absolute -bottom-4 -right-2 bg-white rounded-2xl border border-gray-100 p-3.5 shadow-lg flex items-start gap-3" style={{ minWidth:220 }}>
@@ -600,22 +655,24 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
 
               <div className="order-1 lg:order-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background:`${B}08`, color:B }}>Step 02</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">AI-Powered Coherence Engine</h3>
-                <p className="text-base text-gray-500 leading-relaxed max-w-sm">
+                <h3 className="font-serif text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">AI-Powered Coherence Engine</h3>
+                <p className="text-base text-gray-500 leading-relaxed max-w-sm mb-6">
                   We don't just check grammar. Resync reads the <span className="font-semibold text-gray-700">actual context</span> of your paper to find logical gaps, contradictions between chapters, and objectives that were never addressed in your findings.
                 </p>
-                <div className="mt-7 space-y-3">
-                  {[
-                    { label:"spaCy", desc:"Parses document structure & chapter boundaries" },
-                    { label:"all-mpnet-base-v2", desc:"Builds semantic embeddings across every paragraph" },
-                    { label:"Gemini 2.5 Pro", desc:"Deep reasoning across the full manuscript context" },
-                  ].map(({ label, desc }) => (
-                    <div key={label} className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background:B }}/>
-                      <p className="text-sm text-gray-500"><span className="font-bold text-gray-800 mono">{label}</span> — {desc}</p>
-                    </div>
-                  ))}
-                </div>
+                <ul className="space-y-2.5 text-xs text-slate-600 text-left">
+                  <li className="flex items-start gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1a1fcc] mt-1.5 shrink-0" />
+                    <span><strong className="text-slate-900 font-mono">spaCy</strong> — Parses document structure & chapter boundaries</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1a1fcc] mt-1.5 shrink-0" />
+                    <span><strong className="text-slate-900 font-mono">all-mpnet-base-v2</strong> — Builds semantic embeddings across every paragraph</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1a1fcc] mt-1.5 shrink-0" />
+                    <span><strong className="text-slate-900 font-mono">Gemini 2.5 Pro</strong> — Deep reasoning across the full manuscript context</span>
+                  </li>
+                </ul>
               </div>
             </div>
 
@@ -623,7 +680,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: string) => void }) 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background:`${B}08`, color:B }}>Step 03</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Fix and Defend</h3>
+                <h3 className="font-serif text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Fix and Defend</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   Get a detailed breakdown of exactly what went wrong and how to fix it. Review the generated <span className="font-semibold text-gray-700">Revision Plan</span> to boost your cross-chapter coherence score before your defense.
                 </p>
