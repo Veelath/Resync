@@ -248,33 +248,6 @@ export function LoginScreen({ onNavigate, onLogin, error, isLoading }: { onNavig
           <p className="text-sm text-gray-400">Log in to your Resync account.</p>
         </div>
 
-        {/* Quick Demo Login Helper */}
-        <div className="mb-5 p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100/90 flex flex-col gap-2.5 text-left">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#1a1fcc] uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Demo Account Credentials</span>
-            </span>
-            <span className="text-[10px] bg-indigo-100 text-indigo-700 font-semibold px-1.5 py-0.5 rounded font-mono">1-Click</span>
-          </div>
-          <div className="text-xs text-slate-600 bg-white/80 p-2 rounded-lg border border-indigo-50 space-y-0.5">
-            <div>Email: <strong className="font-mono text-slate-800 select-all">demo@resync.ai</strong></div>
-            <div>Password: <strong className="font-mono text-slate-800 select-all">password123</strong></div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEmail("demo@resync.ai");
-              setPw("password123");
-              if (onLogin) onLogin("demo@resync.ai", "password123");
-            }}
-            className="w-full py-2 px-3 rounded-lg bg-[#1a1fcc] hover:bg-[#2d35e8] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-          >
-            <span>Log in as Dr. Sarah Connor</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
         <button className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-5 shadow-sm">
           <GIcon/>Continue with Google
         </button>

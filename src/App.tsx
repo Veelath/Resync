@@ -5,7 +5,7 @@ import geminiLogo from "@/assets/technology/gemini.svg";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import { type ScanResponse, mapScanResponseToScanResult } from './services/api';
+import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan } from './services/api';
 
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard";
 type UploadMode = "file" | "link";
@@ -447,7 +447,7 @@ function PreviewCard() {
 }
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
-function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean) => void }) {
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}`}</style>
@@ -457,12 +457,15 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
           <Logo className="h-9 w-auto" />
           <div className="hidden md:flex items-center gap-1">
-            {["Overview", "Capabilities", "About"].map(l => (
-              <button key={l} className="px-3.5 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">{l}</button>
+            {[
+              { label: "Overview", id: "section-overview" },
+              { label: "Capabilities", id: "section-capabilities" },
+              { label: "About", id: "section-about" },
+            ].map(l => (
+              <button key={l.id} onClick={() => document.getElementById(l.id)?.scrollIntoView({ behavior: "smooth" })} className="px-3.5 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">{l.label}</button>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => onNavigate("dashboard")} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-all hidden md:block">Dashboard</button>
             <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-all">Log in</button>
             <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all" style={{ background: B }}>Sign up free</button>
           </div>
@@ -497,7 +500,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                   Get started free
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </button>
-                <button onClick={() => onNavigate("results")}
+                <button onClick={() => onNavigate("results", true)}
                   className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all">
                   View sample report
                 </button>
@@ -537,7 +540,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
       </div>
 
       {/* ── System overview ── */}
-      <section className="bg-white border-t border-gray-100">
+      <section id="section-overview" className="bg-white border-t border-gray-100">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-24">
 
           {/* Section header */}
@@ -750,14 +753,14 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
       </section>
 
       {/* ── 6 checks ── */}
-      <section className="border-t border-gray-100 bg-gray-50/40">
+      <section id="section-capabilities" className="border-t border-gray-100 bg-gray-50/40">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-20">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
             <div>
               <p className="text-xs mono font-bold uppercase tracking-widest text-gray-400 mb-3">Key capabilities</p>
               <h2 className="text-4xl font-bold text-gray-900 tracking-tight leading-tight">What Resync checks</h2>
             </div>
-            <button onClick={() => onNavigate("results")} className="text-sm font-semibold hover:underline self-start md:self-auto" style={{ color: B }}>
+            <button onClick={() => onNavigate("results", true)} className="text-sm font-semibold hover:underline self-start md:self-auto" style={{ color: B }}>
               View sample report →
             </button>
           </div>
@@ -783,7 +786,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
       </section>
 
       {/* ── CTA ── */}
-      <section className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-16">
+      <section id="section-about" className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-16">
         <div className="relative rounded-3xl overflow-hidden p-12 md:p-16 text-center" style={{ background: `linear-gradient(160deg, #0d1147, ${B} 55%, ${BH})` }}>
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1px)`, backgroundSize: "28px 28px" }} />
           <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(129,140,248,.3) 0%, transparent 70%)" }} />
@@ -844,7 +847,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   const [researchType, setResearchType] = useState<ResearchType>("quantitative");
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
-  const [file, setFile] = useState<string | null>("Thesis_Draft_Final_v3.docx");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [link, setLink] = useState("");
   const [customTemplateFile, setCustomTemplateFile] = useState<string | null>(null);
   const [templateChapters, setTemplateChapters] = useState<TemplateChapter[]>(DEFAULT_TEMPLATES.quantitative);
@@ -862,6 +866,24 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     setCustomTemplateFile(null);
   }
 
+  async function handleScan() {
+    if (!session?.user) { onNavigate("login"); return; }
+    onNavigate("processing");
+    try {
+      const templateToc = templateChapters.flatMap(c => c.sections);
+      const result = await executeManuscriptScan({
+        user_id: session.user.id,
+        file: uploadedFile ?? undefined,
+        doc_url: mode === "link" ? link : undefined,
+        template_toc: templateToc,
+      });
+      if (onScanComplete) onScanComplete(result);
+    } catch (e) {
+      console.error(e);
+      onNavigate("home");
+    }
+  }
+
   function handleRemoveSection(cIdx: number, sIdx: number) {
     setTemplateChapters(prev => prev.map((ch, i) => i === cIdx ? { ...ch, sections: ch.sections.filter((_, si) => si !== sIdx) } : ch));
   }
@@ -877,7 +899,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     setTemplateChapters(prev => prev.map((ch, i) => i === cIdx ? { ...ch, sections: ch.sections.map((s, si) => si === sIdx ? val : s) } : ch));
   }
 
-  const canProceedToStep2 = mode === "file" ? !!file : link.trim().length > 0;
+  const canProceedToStep2 = mode === "file" ? !!uploadedFile : link.trim().length > 0;
 
   return (
     <div className="min-h-full bg-white">
@@ -1034,17 +1056,18 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   {/* Input Dropzone */}
                   {mode === "file" ? (
                     <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) setFile(f.name); }}
-                      onClick={() => setFile(file ? null : "Thesis_Draft_Final_v3.docx")}
+                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) setUploadedFile(f); }}
+                      onClick={() => fileInputRef.current?.click()}
                       className="flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50"
-                      style={{ borderColor: drag || file ? B : "#e5e7eb", background: drag || file ? BL : undefined }}>
-                      {file ? (
+                      style={{ borderColor: drag || uploadedFile ? B : "#e5e7eb", background: drag || uploadedFile ? BL : undefined }}>
+                      <input ref={fileInputRef} type="file" accept=".docx" className="hidden" onChange={e => setUploadedFile(e.target.files?.[0] ?? null)} />
+                      {uploadedFile ? (
                         <>
                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ background: BL, border: `1px solid ${B}20` }}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6" style={{ color: B }}><path d="M9 12h6M9 16h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-gray-800">{file}</p>
+                            <p className="text-sm font-bold text-gray-800">{uploadedFile.name}</p>
                             <p className="text-xs text-gray-400 mt-0.5">Click to remove or replace file</p>
                           </div>
                           <span className="flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-100 border border-green-200 px-3 py-1 rounded-full">
@@ -1297,7 +1320,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   </button>
                   <button
                     type="button"
-                    onClick={() => onNavigate("processing")}
+                    onClick={handleScan}
                     className="flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all shadow-md flex items-center justify-center gap-2"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})`, boxShadow: `0 8px 24px ${B}30` }}
                   >
@@ -1317,7 +1340,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   <div className="space-y-2.5 text-xs border-t border-gray-100 pt-3">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">File:</span>
-                      <span className="font-semibold text-gray-800 truncate max-w-[170px]">{file || "Google Docs link"}</span>
+                      <span className="font-semibold text-gray-800 truncate max-w-[170px]">{uploadedFile?.name || "Google Docs link"}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Scope:</span>
@@ -1371,7 +1394,6 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
     steps.forEach((s, i) => { t += s.dur; setTimeout(() => setDone(i + 1), t); });
     setTimeout(() => setFinished(true), t + 300);
   }, []);
-  useEffect(() => { if (finished) { const t = setTimeout(() => onNavigate("results"), 700); return () => clearTimeout(t); } }, [finished]);
   const pct = Math.round((done / steps.length) * 100);
 
   return (
@@ -1467,12 +1489,47 @@ const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: strin
   },
 };
 
-function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null }) {
+function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
-  const score = 74;
-  const dead = CITATIONS.filter(c => c.status === "dead").length;
+  const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : scan?.inconsistencies.map((inc, i) => ({
+    id: inc.inconsistency_id || `inc-${i}`,
+    type: (inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section",
+    title: inc.explanation_what,
+    section: `${inc.section_a} \u2194 ${inc.section_b}`,
+    targetSectionIndex: 0,
+    questionOrSubtitle: inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding",
+    description: inc.explanation_why || inc.explanation_what,
+    significance: "Requires attention",
+    evidence: inc.evidence_a,
+    conflictsWith: inc.section_b,
+    conflictQuote: inc.evidence_b,
+    recommendation: inc.suggested_fix
+  } as AssessmentItem)) || [];
 
+  const localCitations: Citation[] = isSample ? CITATIONS : scan?.citations.map((c, i) => ({
+    id: `cit-${i}`,
+    ref: c.citation_raw_reference_text,
+    url: c.citation_primary_link || "",
+    status: c.citation_is_accessible ? "live" : "dead"
+  })) || [];
+
+  const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : scan?.inconsistencies.flatMap((inc, i) => {
+     const t = ((inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section") as AssessmentType;
+     const p = [];
+     if (inc.section_a) p.push({
+       type: "section", chapter: "", heading: inc.section_a, text: inc.evidence_a || inc.explanation_what,
+       assessments: [{ itemId: `inc-${i}`, type: t, phrase: inc.evidence_a || inc.explanation_what }]
+     });
+     if (inc.section_b) p.push({
+       type: "section", chapter: "", heading: inc.section_b, text: inc.evidence_b || inc.explanation_why,
+       assessments: [{ itemId: `inc-${i}`, type: t, phrase: inc.evidence_b || inc.explanation_why }]
+     });
+     return p;
+  }) || [];
+
+  const score = isSample ? 74 : scan?.overall_coherence_score || 0;
+  const dead = localCitations.filter(c => c.status === "dead").length;
   function scrollToSection(sectionIndex: number, itemId?: string) {
     if (itemId) setActiveId(itemId);
     const el = document.getElementById(`sec-${sectionIndex}`);
@@ -1520,11 +1577,11 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
     },
   };
 
-  const filteredItems = filterType === "all" ? ASSESSMENT_ITEMS : ASSESSMENT_ITEMS.filter(i => i.type === filterType);
-  const activeItem = activeId ? ASSESSMENT_ITEMS.find(i => i.id === activeId) ?? null : null;
-  const itemIdx = activeItem ? ASSESSMENT_ITEMS.findIndex(i => i.id === activeItem.id) : -1;
+  const filteredItems = filterType === "all" ? localItems : localItems.filter(i => i.type === filterType);
+  const activeItem = activeId ? localItems.find(i => i.id === activeId) ?? null : null;
+  const itemIdx = activeItem ? localItems.findIndex(i => i.id === activeItem.id) : -1;
 
-  function renderPara(para: typeof PARAGRAPHS[0]) {
+  function renderPara(para: typeof localParagraphs[0]) {
     if (!para.assessments.length) return <>{para.text}</>;
     let txt = para.text;
     const parts: React.ReactNode[] = [];
@@ -1588,7 +1645,7 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                   className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
                   <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                   <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
-                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>{ASSESSMENT_ITEMS.filter(i => i.type === t).length}</span>
+                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>{localItems.filter(i => i.type === t).length}</span>
                 </button>
               ))}
             </div>
@@ -1603,7 +1660,7 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                   type="button"
                   onClick={() => setFilterType("all")}
                   className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-                  Show all ({ASSESSMENT_ITEMS.length})
+                  Show all ({localItems.length})
                 </button>
               )}
             </div>
@@ -1613,7 +1670,7 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                 onClick={() => setFilterType("all")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
-                All ({ASSESSMENT_ITEMS.length})
+                All ({localItems.length})
               </button>
               <button
                 type="button"
@@ -1686,7 +1743,7 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                 <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Scan complete</span>
                 <span className="text-[11px] text-gray-500 font-medium">Overall Assessment: <strong className="text-amber-700">Moderate Coherence</strong></span>
                 <span className="text-[11px] text-gray-300">·</span>
-                <span className="text-[11px] text-gray-400">{ASSESSMENT_ITEMS.length} findings across {PARAGRAPHS.length} sections</span>
+                <span className="text-[11px] text-gray-400">{localItems.length} findings across {localParagraphs.length} sections</span>
                 <span className="text-[11px] text-gray-300">·</span>
                 <span className="text-[11px] text-gray-400">Click any highlight to see Assessment Details</span>
               </div>
@@ -1851,14 +1908,14 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                   onClick={() => setFilterType(prev => prev === t ? "all" : t)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
                   <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} />
-                  {ST[t].label} ({ASSESSMENT_ITEMS.filter(i => i.type === t).length})
+                  {ST[t].label} ({localItems.filter(i => i.type === t).length})
                 </button>
               ))}
             </div>
 
             {/* Document body — continuous paper */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              {PARAGRAPHS.map((para, i) => {
+              {localParagraphs.map((para, i) => {
                 const hasActive = para.assessments.some(pi => pi.itemId === activeId);
                 const activeType = para.assessments.find(pi => pi.itemId === activeId)?.type;
                 const isChapterHead = para.type === "chapter-heading";
@@ -1915,7 +1972,7 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                 <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-gray-400">References</p>
                 <div className="flex items-center gap-3 mb-5">
                   <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
-                  <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{CITATIONS.length} sources checked</span>
+                  <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{localCitations.length} sources checked</span>
                   {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">{dead} inaccessible</span>}
                 </div>
                 {dead > 0 && (
@@ -1925,7 +1982,7 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                   </div>
                 )}
                 <div className="space-y-2">
-                  {CITATIONS.map((cite, ci) => (
+                  {localCitations.map((cite, ci) => (
                     <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" : "border-red-100 bg-red-50"}`}>
                       <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-4 shrink-0">{ci + 1}</span>
                       <div className="flex-1 min-w-0">
@@ -2019,7 +2076,7 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
                         <p className="text-xs text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
                       </div>
                       <span className="text-xs sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
-                        {ASSESSMENT_ITEMS.filter(i => i.type === t).length}
+                        {localItems.filter(i => i.type === t).length}
                       </span>
                     </div>
                   ))}
@@ -2129,10 +2186,10 @@ function ResultsScreen({ onNavigate, scan }: { onNavigate: (s: Screen) => void; 
 
                 {/* Prev / Next controls */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-500 mono font-semibold">Finding {itemIdx + 1} of {ASSESSMENT_ITEMS.length}</span>
+                  <span className="text-xs text-gray-500 mono font-semibold">Finding {itemIdx + 1} of {localItems.length}</span>
                   <div className="flex gap-2">
                     {([{ dir: -1, label: "← Previous" }, { dir: 1, label: "Next →" }]).map(({ dir, label }) => {
-                      const target = ASSESSMENT_ITEMS[itemIdx + dir];
+                      const target = localItems[itemIdx + dir];
                       return (
                         <button key={label} disabled={!target}
                           onClick={() => {
@@ -3301,17 +3358,42 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
-  function navigate(s: Screen) { setScreen(s); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  const [session, setSession] = useState<Session | null>(null);
+  const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
+  const [isSampleMode, setIsSampleMode] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session && screen === "dashboard") navigate("home"); 
+    });
+    return () => subscription.unsubscribe();
+  }, [screen]);
+
+  function navigate(s: Screen, asSample = false) {
+    if (s === "dashboard" && !session) {
+      setScreen("login");
+    } else {
+      setIsSampleMode(asSample);
+      setScreen(s);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes slide-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}} .animate-slide-in{animation:slide-in .3s ease forwards}`}</style>
       {screen === "home" && <HomeScreen onNavigate={navigate} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} />}
+      {screen === "upload" && <UploadScreen onNavigate={navigate} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
-      {screen === "results" && <ResultsScreen onNavigate={navigate} />}
-      {screen === "login" && <LoginScreen onNavigate={navigate} />}
-      {screen === "signup" && <SignupScreen onNavigate={navigate} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} />}
+      {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}
+      {screen === "login" && <LoginScreen onNavigate={navigate} onLoginSuccess={() => navigate("dashboard")} />}
+      {screen === "signup" && <SignupScreen onNavigate={navigate} onSignupSuccess={() => navigate("dashboard")} />}
+      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} />}
     </div>
   );
 }
+
+
+
