@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScanResult, CitedReference, Inconsistency } from '../types.js';
-import { API_BASE_URL } from '../services/api.js';
+import { API_BASE_URL, fetchManuscript } from '../services/api.js';
 import {
   Download, Printer, ChevronDown, ChevronUp, CheckCircle, ListTree, ShieldCheck, Gauge, Link2, ExternalLink, AlertTriangle, Info, ArrowLeft, Plus, MousePointer, Sparkles, FileText, Check, X, AlertCircle, ThumbsUp, ThumbsDown
 } from 'lucide-react';
@@ -47,6 +47,34 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
   const [activeTab, setActiveTab] = useState<'overview' | 'inconsistencies' | 'strong_coherence' | 'citations' | 'originality'>('overview');
   const [selectedIssueIndex, setSelectedIssueIndex] = useState<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'contradiction' | 'logic_gap' | 'redundancy'>('all');
+
+  const [manuscriptText, setManuscriptText] = useState<string | null>(null);
+  const [manuscriptLoading, setManuscriptLoading] = useState(false);
+  const [manuscriptError, setManuscriptError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (scan.analysis_run_id && manuscriptText === null && !manuscriptError) {
+      setManuscriptLoading(true);
+      setManuscriptError(null);
+      fetchManuscript(scan.analysis_run_id)
+        .then(res => {
+          if (res.available && res.text) {
+            setManuscriptText(res.text);
+          } else if (res.reason === 'private') {
+            setManuscriptError("Document is no longer accessible");
+          } else if (res.reason === 'non_gdocs') {
+            setManuscriptError("Preview is only available for Google Docs");
+          } else {
+            setManuscriptError("Manuscript preview unavailable");
+          }
+        })
+        .catch((e) => {
+          console.error('fetchManuscript failed:', e);
+          setManuscriptError("Manuscript preview unavailable");
+        })
+        .finally(() => setManuscriptLoading(false));
+    }
+  }, [scan.analysis_run_id, manuscriptText, manuscriptError]);
 
   // Accordion state maps for detailed tabs
   const [expandedInconsistencies, setExpandedInconsistencies] = useState<Record<number, boolean>>({});
@@ -597,7 +625,9 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
             {/* MANUSCRIPT CONTENT CARD */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-10 shadow-2xs space-y-8 font-sans leading-relaxed text-slate-800">
 
-              {/* CHAPTER 1 */}
+              {!scan.analysis_run_id ? (
+                <>
+                  {/* CHAPTER 1 */}
               <section id="chapter-1" className={`space-y-4 border-b border-slate-100 pb-8 transition-opacity duration-300 ${activeFilter !== 'all' && activeFilter !== 'logic_gap' && activeFilter !== 'contradiction' ? 'opacity-35' : 'opacity-100'
                 }`}>
                 <div className="flex items-center justify-between">
@@ -901,6 +931,23 @@ export default function ResultDetails({ scan, onBack, onNewScan }: ResultDetails
                   {' '}data collection protocol defined in Chapter 3 Methodology, leaving a primary research instrument unaddressed in the final thesis conclusions.
                 </p>
               </section>
+
+                </>
+              ) : manuscriptLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 space-y-4">
+                  <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                  <p className="text-sm font-bold">Loading manuscript text...</p>
+                </div>
+              ) : manuscriptError ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-3">
+                  <AlertTriangle className="w-10 h-10 text-slate-300" />
+                  <p className="text-base font-bold">{manuscriptError}</p>
+                </div>
+              ) : manuscriptText ? (
+                <div className="whitespace-pre-wrap text-sm sm:text-base text-slate-700">
+                  {manuscriptText}
+                </div>
+              ) : null}
 
               {/* BIBLIOGRAPHY / REFERENCES */}
               <section className="space-y-4 pt-2">

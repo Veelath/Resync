@@ -5,7 +5,7 @@ import geminiLogo from "@/assets/technology/gemini.svg";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan } from './services/api';
+import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory } from './services/api';
 
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard";
 type UploadMode = "file" | "link";
@@ -842,6 +842,37 @@ const DEFAULT_TEMPLATES: Record<ResearchType, TemplateChapter[]> = {
 };
 
 // ─── Upload ───────────────────────────────────────────────────────────────────
+async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
+  const mammoth = await import('mammoth');
+  const arrayBuffer = await file.arrayBuffer();
+  const { value: html } = await mammoth.convertToHtml({ arrayBuffer });
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const elements = Array.from(doc.body.children);
+
+  const chapters: TemplateChapter[] = [];
+  let chapterIndex = 0;
+
+  for (const el of elements) {
+    const tag = el.tagName.toLowerCase();
+    const text = el.textContent?.trim() || '';
+    if (!text) continue;
+
+    const isParagraphHeader = tag === 'p' && 
+      (text.toUpperCase().startsWith('CHAPTER') || /^\d+\.\s/.test(text));
+
+    if (tag === 'h1' || isParagraphHeader) {
+      chapterIndex = chapters.length;
+      chapters.push({ id: `c${chapterIndex + 1}`, title: text, sections: [] });
+    } else if ((tag === 'h2' || tag === 'h3') && chapters.length > 0) {
+      chapters[chapters.length - 1].sections.push(text);
+    }
+  }
+
+  return chapters.length > 0 ? chapters : [];
+}
+
 function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: ScanResponse) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [researchType, setResearchType] = useState<ResearchType>("quantitative");
@@ -850,11 +881,32 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [link, setLink] = useState("");
-  const [customTemplateFile, setCustomTemplateFile] = useState<string | null>(null);
+  
+  const [customTemplateFile, setCustomTemplateFile] = useState<File | null>(null);
+  const [templateParseError, setTemplateParseError] = useState<string | null>(null);
+  const customTemplateInputRef = useRef<HTMLInputElement>(null);
+
   const [templateChapters, setTemplateChapters] = useState<TemplateChapter[]>(DEFAULT_TEMPLATES.quantitative);
   const [editingSection, setEditingSection] = useState<{ cIdx: number; sIdx: number } | null>(null);
   const [newSectionText, setNewSectionText] = useState("");
   const [addingToChapter, setAddingToChapter] = useState<number | null>(null);
+
+  async function handleTemplateFileChange(file: File) {
+    setCustomTemplateFile(file);
+    setTemplateParseError(null);
+    try {
+      const parsed = await parseDocxTemplate(file);
+      if (parsed.length === 0) {
+        setTemplateParseError('No headings found in the template. Using default template.');
+        setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
+      } else {
+        setTemplateChapters(parsed);
+      }
+    } catch {
+      setTemplateParseError('Could not parse the template file. Using default template.');
+      setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
+    }
+  }
 
   function handleSelectResearchType(t: ResearchType) {
     setResearchType(t);
@@ -864,6 +916,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   function handleResetTemplate() {
     setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
     setCustomTemplateFile(null);
+    setTemplateParseError(null);
+    if (customTemplateInputRef.current) customTemplateInputRef.current.value = '';
   }
 
   async function handleScan() {
@@ -1301,12 +1355,26 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   </div>
                   <button
                     type="button"
-                    onClick={() => setCustomTemplateFile(customTemplateFile ? null : "DLSU_Format_Guidelines_2024.docx")}
+                    onClick={() => customTemplateInputRef.current?.click()}
                     className="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors self-start sm:self-auto bg-white"
                     style={{ borderColor: customTemplateFile ? B : "#d1d5db", color: customTemplateFile ? B : "#4b5563" }}
                   >
-                    {customTemplateFile ? `✓ ${customTemplateFile}` : "+ Attach .docx template (Optional)"}
+                    {customTemplateFile ? `?? ${customTemplateFile.name}` : "+ Attach .docx template (Optional)"}
                   </button>
+                  {templateParseError && (
+                    <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
+                  )}
+                  <input
+                    ref={customTemplateInputRef}
+                    type="file"
+                    accept=".docx"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) handleTemplateFileChange(f);
+                      e.target.value = "";
+                    }}
+                  />
                 </div>
 
                 {/* Bottom Navigation Buttons */}
@@ -2538,6 +2606,31 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
   function saveProfile() { setProfile(draft); setEditMode(false); }
   function cancelEdit() { setDraft(profile); setEditMode(false); }
 
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [creditsUsed, setCreditsUsed] = useState<number | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    setCreditsLoading(true);
+    Promise.all([
+      getCreditBalance(session.user.id),
+      getCreditHistory(session.user.id, 100),
+    ]).then(([bal, hist]) => {
+      setCreditBalance(bal.balance);
+      const used = hist.entries
+        .filter(e => e.kind === 'debit')
+        .reduce((a, e) => a + Math.abs(e.delta), 0);
+      setCreditsUsed(used);
+    }).catch((e) => {
+      console.error('credits fetch failed:', e);
+      setCreditBalance(null);
+      setCreditsUsed(null);
+    }).finally(() => {
+      setCreditsLoading(false);
+    });
+  }, [session?.user?.id]);
+
   // Settings: Password change states
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -2708,7 +2801,7 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:bg-gray-50 cursor-default"
               style={{ borderColor: `${B}20`, background: `${B}06`, color: B }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-              Credits: 3
+              Credits: {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
             </div>
             <div className="h-5 w-px bg-gray-100" />
             <button className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
@@ -2916,8 +3009,8 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              { value: "3", label: "Credits available", color: B, bg: BL },
-              { value: "0", label: "Credits used", color: "#059669", bg: "#f0fdf4" },
+              { value: creditsLoading ? "…" : creditBalance !== null ? String(creditBalance) : "—", label: "Credits available", color: B, bg: BL },
+              { value: creditsLoading ? "…" : creditsUsed !== null ? String(creditsUsed) : "—", label: "Credits used", color: "#059669", bg: "#f0fdf4" },
               { value: "1 credit", label: "Cost per scan", color: "#d97706", bg: "#fffbeb" },
             ].map(item => (
               <div key={item.label} className="bg-white rounded-3xl border border-gray-100 p-6" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
@@ -3126,7 +3219,12 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
               <div className="flex-1 min-w-0 max-w-3xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md mb-3">
                   <span className="text-base">{greetingEmoji}</span>
-                  <span className="text-xs sm:text-sm font-semibold text-blue-100">{greeting}, Maria</span>
+                  <span className="text-xs sm:text-sm font-semibold text-blue-100">
+                    {greeting},{' '}
+                    {session?.user?.user_metadata?.full_name?.split(' ')[0]
+                      || session?.user?.email?.split('@')[0]
+                      || 'there'}
+                  </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-2.5">
                   Your manuscript, <span className="text-indigo-200">checked end-to-end.</span>
@@ -3361,24 +3459,56 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
   const [isSampleMode, setIsSampleMode] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  const RESTORABLE_SCREENS: Screen[] = ['dashboard', 'upload'];
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const savedScreen = sessionStorage.getItem('resync_screen') as Screen | null;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session && savedScreen && RESTORABLE_SCREENS.includes(savedScreen)) {
+        setScreen(savedScreen);
+      } else if (session) {
+        setScreen("dashboard");
+      }
+      setSessionLoading(false);
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (!session && screen === "dashboard") navigate("home"); 
+      if (!session) {
+        setScreen(prev => {
+          if (['dashboard', 'upload', 'processing', 'results'].includes(prev)) {
+            sessionStorage.setItem('resync_screen', 'home');
+            return "home";
+          }
+          return prev;
+        });
+      }
     });
     return () => subscription.unsubscribe();
-  }, [screen]);
+  }, []);
 
   function navigate(s: Screen, asSample = false) {
     if (s === "dashboard" && !session) {
       setScreen("login");
+      sessionStorage.setItem('resync_screen', 'login');
     } else {
       setIsSampleMode(asSample);
       setScreen(s);
+      sessionStorage.setItem('resync_screen', s);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-8 h-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   return (

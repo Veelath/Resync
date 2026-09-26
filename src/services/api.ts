@@ -561,3 +561,32 @@ export async function getCreditHistory(userId: string, limit = 50): Promise<Cred
   if (!resp.ok) throw new Error(await extractErrorDetail(resp));
   return resp.json();
 }
+
+export interface ManuscriptResponse {
+  available: boolean;
+  text?: string;
+  reason?: string;
+  fetched_at?: string;
+}
+
+export async function fetchManuscript(analysisRunId: string): Promise<ManuscriptResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/scans/${analysisRunId}/manuscript`, {
+      method: 'GET',
+      headers: await authHeaders(),
+    });
+    
+    if (response.status === 400) {
+      return { available: false, reason: 'non_gdocs' };
+    }
+    
+    if (!response.ok) {
+      return { available: false, reason: 'unreachable' };
+    }
+    
+    return await response.json();
+  } catch (e) {
+    console.error('fetchManuscript failed:', e);
+    return { available: false, reason: 'unreachable' };
+  }
+}
