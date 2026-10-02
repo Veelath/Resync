@@ -87,8 +87,18 @@ export interface CitedReference {
   citation_raw_reference_text?: string;
   citation_is_accessible?: boolean;
 
-  // Verification detail (replaces the old accessible/broken-only boolean)
-  citation_status?: 'verified_metadata' | 'metadata_mismatch' | 'accessible' | 'bot_wall' | 'broken' | 'unknown_error' | 'no_link';
+  citation_status?:
+    | 'verified_doi'
+    | 'verified_url'
+    | 'verified_metadata'
+    | 'metadata_mismatch'
+    | 'accessible'
+    | 'restricted'
+    | 'bot_wall'
+    | 'broken'
+    | 'unverified'
+    | 'unknown_error'
+    | 'no_link';
   citation_primary_link?: string;
   citation_authors_parsed?: string;
   citation_year_parsed?: number;

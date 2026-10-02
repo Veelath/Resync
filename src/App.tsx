@@ -5,6 +5,7 @@ import geminiLogo from "@/assets/technology/gemini.svg";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
+import type { CitedReference } from './types';
 import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory } from './services/api';
 
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard";
@@ -160,7 +161,10 @@ interface Citation {
   id: string;
   ref: string;
   url: string;
-  status: "live" | "dead";
+  status: "live" | "restricted" | "neutral" | "dead";
+  title?: string;
+  authors?: string;
+  year?: number | string;
 }
 
 const CITATIONS: Citation[] = [
@@ -1560,27 +1564,63 @@ const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: strin
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
-  const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : scan?.inconsistencies.map((inc, i) => ({
-    id: inc.inconsistency_id || `inc-${i}`,
-    type: (inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section",
-    title: inc.explanation_what,
-    section: `${inc.section_a} \u2194 ${inc.section_b}`,
-    targetSectionIndex: 0,
-    questionOrSubtitle: inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding",
-    description: inc.explanation_why || inc.explanation_what,
-    significance: "Requires attention",
-    evidence: inc.evidence_a,
-    conflictsWith: inc.section_b,
-    conflictQuote: inc.evidence_b,
-    recommendation: inc.suggested_fix
-  } as AssessmentItem)) || [];
+  const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : [
+    ...(scan?.inconsistencies?.map((inc, i) => ({
+      id: inc.inconsistency_id || `inc-${i}`,
+      type: (inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType,
+      title: (inc.explanation_what ?? "").slice(0, 50) || "Missing section",
+      section: `${inc.section_a} ↔ ${inc.section_b}`,
+      targetSectionIndex: 0,
+      questionOrSubtitle: inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding",
+      description: inc.explanation_why || inc.explanation_what,
+      significance: "Requires attention",
+      evidence: inc.evidence_a,
+      conflictsWith: inc.section_b,
+      conflictQuote: inc.evidence_b,
+      recommendation: inc.suggested_fix
+    })) || []),
+    ...(scan?.verifications?.map((v, i) => ({
+      id: `ver-${i}`,
+      type: "strength" as AssessmentType,
+      title: (v.note ?? "").slice(0, 50) || "Verified alignment",
+      section: `${v.role_a} ↔ ${v.role_b}`,
+      targetSectionIndex: 0,
+      questionOrSubtitle: "Verified finding",
+      description: v.note ?? "This section pair shows substantive alignment.",
+      significance: "Strengthens the manuscript's overall coherence.",
+      evidence: "",
+      conflictsWith: "",
+      conflictQuote: "",
+      recommendation: "Preserve this coherent correspondence during panel presentation."
+    })) || [])
+  ];
 
-  const localCitations: Citation[] = isSample ? CITATIONS : scan?.citations.map((c, i) => ({
-    id: `cit-${i}`,
-    ref: c.citation_raw_reference_text,
-    url: c.citation_primary_link || "",
-    status: c.citation_is_accessible ? "live" : "dead"
-  })) || [];
+  const localCitations: Citation[] = isSample ? CITATIONS : ((scan?.citations as CitedReference[] | undefined) || []).map((c: CitedReference, i) => {
+    let status: Citation["status"] = "neutral";
+    const s = c.citation_status || "";
+    
+    if (["verified_doi", "verified_url", "verified_metadata", "accessible"].includes(s)) {
+      status = "live";
+    } else if (["metadata_mismatch", "restricted", "bot_wall"].includes(s)) {
+      status = "restricted";
+    } else if (["unverified", "unknown_error", "no_link"].includes(s)) {
+      status = "neutral";
+    } else if (s === "broken") {
+      status = "dead";
+    } else if (c.citation_is_accessible) {
+      status = "live";
+    }
+
+    return {
+      id: `cit-${i}`,
+      ref: c.citation_raw_reference_text || "",
+      url: c.citation_primary_link || "",
+      status,
+      title: c.citation_crossref_title,
+      authors: c.citation_authors_parsed,
+      year: c.citation_year_parsed
+    };
+  });
 
   const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : scan?.inconsistencies.flatMap((inc, i) => {
      const t = ((inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section") as AssessmentType;
@@ -1595,6 +1635,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
      });
      return p;
   }) || [];
+
+  const findingsCount = isSample ? localItems.length : (scan?.inconsistencies?.length ?? 0);
+  const sectionsCount = isSample ? localParagraphs.length : (scan?.sections_analyzed?.length ?? 0);
 
   const score = isSample ? 74 : scan?.overall_coherence_score || 0;
   const dead = localCitations.filter(c => c.status === "dead").length;
@@ -1683,7 +1726,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           </button>
           <div className="h-4 w-px bg-gray-200 shrink-0" />
           <Logo className="h-6 w-auto shrink-0" />
-          <span className="text-xs text-gray-400 truncate hidden md:block">/ Predictors of Academic Burnout Among STEM Undergraduates</span>
+          <span className="text-xs text-gray-400 truncate hidden md:block">
+            {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : "/ Document Coherence Scan"}
+          </span>
           <div className="ml-auto flex items-center gap-2 shrink-0">
             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-all">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>Export PDF
@@ -1705,7 +1750,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <ScoreRing score={score} size={88} />
             <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
             <div className="w-full mt-1.5 space-y-1">
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
+              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[])
+                .filter(t => isSample || t !== "overall-status")
+                .map(t => (
                 <button
                   key={t}
                   type="button"
@@ -1713,7 +1760,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
                   <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                   <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
-                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>{localItems.filter(i => i.type === t).length}</span>
+                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>
+                    {isSample ? localItems.filter(i => i.type === t).length : (
+                      t === 'strength' ? (scan?.verifications?.length ?? 0) :
+                      t === 'major-issue' ? (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) :
+                      new Set(scan?.inconsistencies?.map(i => i.section_a)).size
+                    )}
+                  </span>
                 </button>
               ))}
             </div>
@@ -1745,21 +1798,21 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 onClick={() => setFilterType("strength")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   }`}>
-                Strengths (3)
+                Strengths ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
               </button>
               <button
                 type="button"
                 onClick={() => setFilterType("major-issue")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
                   }`}>
-                Major Issues (3)
+                Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
               </button>
               <button
                 type="button"
                 onClick={() => setFilterType("affected-section")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                   }`}>
-                Affected (3)
+                Affected ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
               </button>
             </div>
           </div>
@@ -1804,15 +1857,23 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
             {/* Document header */}
             <div className="bg-white rounded-2xl border border-gray-200 px-10 pt-10 pb-8 mb-6 shadow-sm">
-              <p className="text-[10px] mono font-bold uppercase tracking-widest mb-3" style={{ color: B }}>Sample Manuscript Report</p>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">Predictors of Academic Burnout Among STEM Undergraduates in Philippine Universities</h1>
-              <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study · Academic Year 2023–2024</p>
+              {isSample && (
+                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-3" style={{ color: B }}>
+                  Sample Manuscript Report
+                </p>
+              )}
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
+                {isSample ? "Predictors of Academic Burnout Among STEM Undergraduates in Philippine Universities" : "Document Coherence Scan"}
+              </h1>
+              {isSample && (
+                <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study • Academic Year 2023–2024</p>
+              )}
               <div className="flex items-center gap-3 pt-4 border-t border-gray-100 flex-wrap">
                 <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Scan complete</span>
-                <span className="text-[11px] text-gray-500 font-medium">Overall Assessment: <strong className="text-amber-700">Moderate Coherence</strong></span>
-                <span className="text-[11px] text-gray-300">·</span>
-                <span className="text-[11px] text-gray-400">{localItems.length} findings across {localParagraphs.length} sections</span>
-                <span className="text-[11px] text-gray-300">·</span>
+                <span className="text-[11px] text-gray-500 font-medium">Overall Assessment: <strong className={isSample ? "text-amber-700" : "text-gray-900"}>{isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}</strong></span>
+                <span className="text-[11px] text-gray-300">•</span>
+                <span className="text-[11px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
+                <span className="text-[11px] text-gray-300">•</span>
                 <span className="text-[11px] text-gray-400">Click any highlight to see Assessment Details</span>
               </div>
             </div>
@@ -1841,17 +1902,19 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-200 bg-amber-50">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                     <span className="text-xs font-black text-amber-800 tracking-wide uppercase">
-                      {OVERALL_ASSESSMENT.status}
+                      {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                    <span>Scale:</span>
-                    <span className="text-gray-400">High</span>
-                    <span>•</span>
-                    <span className="font-bold text-amber-700 underline">Moderate</span>
-                    <span>•</span>
-                    <span className="text-gray-400">Low</span>
-                  </div>
+                  {isSample && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                      <span>Scale:</span>
+                      <span className="text-gray-400">High</span>
+                      <span>•</span>
+                      <span className="font-bold text-amber-700 underline">Moderate</span>
+                      <span>•</span>
+                      <span className="text-gray-400">Low</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1865,12 +1928,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     Overall Status Condition
                   </span>
                   <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
-                    {OVERALL_ASSESSMENT.status}
+                    {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
                   </span>
                 </div>
                 <div className="bg-amber-50/40 rounded-xl p-4 sm:p-5 border border-amber-100/80">
                   <p className="text-sm text-gray-700 leading-relaxed font-normal">
-                    {OVERALL_ASSESSMENT.statusDescription}
+                    {isSample 
+                      ? OVERALL_ASSESSMENT.statusDescription 
+                      : (scan?.score_breakdown?.biggest_lever?.reason || "To be developed")}
                   </p>
                 </div>
               </div>
@@ -1888,18 +1953,33 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <h3 className="text-sm font-bold text-emerald-950">Key Strengths</h3>
                       </div>
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
-                        {OVERALL_ASSESSMENT.strengths.length} Verified
+                        {isSample ? OVERALL_ASSESSMENT.strengths.length : (scan?.verifications?.length ?? 0)} Verified
                       </span>
                     </div>
                     <p className="text-[11px] text-emerald-700/80 italic mb-3">What the manuscript does consistently</p>
-                    <ul className="space-y-2.5">
-                      {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
-                          <span>{str}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {isSample ? (
+                      <ul className="space-y-2.5">
+                        {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
+                            <span>{str}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      (scan?.verifications && scan.verifications.length > 0) ? (
+                        <ul className="space-y-2.5">
+                          {scan.verifications.map((v, idx) => (
+                            <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
+                              <span><strong className="text-emerald-900">{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic">No verified strengths detected.</p>
+                      )
+                    )}
                   </div>
                 </div>
 
@@ -1914,18 +1994,33 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <h3 className="text-sm font-bold text-rose-950">Major Issues</h3>
                       </div>
                       <span className="text-[10px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
-                        {OVERALL_ASSESSMENT.majorIssues.length} Detected
+                        {isSample ? OVERALL_ASSESSMENT.majorIssues.length : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)} Detected
                       </span>
                     </div>
                     <p className="text-[11px] text-rose-700/80 italic mb-3">Most important inconsistencies detected</p>
-                    <ul className="space-y-2.5">
-                      {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
-                          <span>{iss}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {isSample ? (
+                      <ul className="space-y-2.5">
+                        {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
+                            <span>{iss}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      (scan?.inconsistencies && scan.inconsistencies.filter(i => i.finding_status === 'material_issue').length > 0) ? (
+                        <ul className="space-y-2.5">
+                          {scan.inconsistencies.filter(i => i.finding_status === 'material_issue').map((iss, idx) => (
+                            <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
+                              <span><strong className="text-rose-900">{iss.section_a} ↔ {iss.section_b}:</strong> {iss.explanation_what}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic">No major issues detected.</p>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
@@ -1942,25 +2037,43 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <span className="text-[11px] text-gray-500 italic">Which chapters/sections are involved</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                  {OVERALL_ASSESSMENT.affectedSections.map((sec, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => scrollToSection(sec.targetSectionIndex, sec.itemId)}
-                      className="group flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:border-blue-400 hover:shadow-xs transition-all text-left cursor-pointer"
-                    >
-                      <div>
-                        <span className="text-xs font-bold text-gray-800 group-hover:text-blue-600 transition-colors block">
-                          {sec.label}
-                        </span>
-                        <span className="text-[10px] text-gray-400 mt-0.5 block">
-                          Click to inspect cross-section conflict
-                        </span>
+                  {isSample ? (
+                    OVERALL_ASSESSMENT.affectedSections.map((sec, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => scrollToSection(sec.targetSectionIndex, sec.itemId)}
+                        className="group flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:border-blue-400 hover:shadow-xs transition-all text-left cursor-pointer"
+                      >
+                        <div>
+                          <span className="text-xs font-bold text-gray-800 group-hover:text-blue-600 transition-colors block">
+                            {sec.label}
+                          </span>
+                          <span className="text-[10px] text-gray-400 mt-0.5 block">
+                            Click to inspect cross-section conflict
+                          </span>
+                        </div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5 shrink-0">
+                          <path d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    ))
+                  ) : (
+                    Array.from(new Set(scan?.inconsistencies?.map(i => i.section_a).filter(Boolean) || [])).map((secName, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 text-left"
+                      >
+                        <div>
+                          <span className="text-xs font-bold text-gray-800 block">
+                            {secName}
+                          </span>
+                          <span className="text-[10px] text-gray-400 mt-0.5 block">
+                            Inconsistencies detected in this section
+                          </span>
+                        </div>
                       </div>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5 shrink-0">
-                        <path d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -2049,24 +2162,58 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
                   </div>
                 )}
-                <div className="space-y-2">
-                  {localCitations.map((cite, ci) => (
-                    <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" : "border-red-100 bg-red-50"}`}>
-                      <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-4 shrink-0">{ci + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] text-gray-800 leading-snug">{cite.ref}</p>
-                        <p className={`text-[11px] mono truncate mt-1 ${cite.status === "live" ? "text-gray-400" : "text-red-500"}`}>{cite.url}</p>
+                {localCitations.length > 0 ? (
+                  <div className="space-y-2">
+                    {localCitations.map((cite, ci) => (
+                      <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                        cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" 
+                        : cite.status === "restricted" ? "border-amber-100 bg-amber-50"
+                        : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
+                        : "border-red-100 bg-red-50"
+                      }`}>
+                        <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-4 shrink-0">{ci + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
+                          <p className="text-[13px] text-gray-800 leading-snug">
+                            {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
+                            {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
+                            {cite.ref}
+                          </p>
+                          {cite.url && (
+                             <p className={`text-[11px] mono truncate mt-1 ${
+                               cite.status === "live" ? "text-gray-400" 
+                               : cite.status === "restricted" ? "text-amber-600" 
+                               : cite.status === "neutral" ? "text-slate-400"
+                               : "text-red-500"
+                             }`}>{cite.url}</p>
+                          )}
+                        </div>
+                        
+                        {/* Status Badge */}
+                        <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          cite.status === "live" ? "bg-emerald-100 text-emerald-700"
+                          : cite.status === "restricted" ? "bg-amber-100 text-amber-700"
+                          : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
+                          : "bg-red-100 text-red-700"
+                        }`}>
+                          {cite.status === "live" ? (
+                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>Live</>
+                          ) : cite.status === "restricted" ? (
+                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
+                          ) : cite.status === "neutral" ? (
+                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
+                          ) : (
+                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
+                          )}
+                        </div>
                       </div>
-                      <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${cite.status === "live" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                        {cite.status === "live"
-                          ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>
-                          : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                        }
-                        {cite.status === "live" ? "Live" : "Dead link"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-500 italic">
+                    No citations were found in the manuscript, or the audit reported {scan?.citations_audited ?? 0} checked.
+                  </div>
+                )}
               </div>
             </div>{/* end document paper */}
 
@@ -2109,14 +2256,23 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <div>
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold uppercase mb-3">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                    Moderate Coherence Overall
+                    {isSample ? "Moderate Coherence Overall" : `${scan?.score_breakdown?.band || "Unknown"} Coherence`}
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Explainable AI Synthesis</h3>
                   <p className="text-[15px] text-gray-600 leading-relaxed font-serif italic mb-4">
-                    “{OVERALL_ASSESSMENT.question}”
+                    “{isSample ? OVERALL_ASSESSMENT.question : "What is the actual condition of this manuscript based on the analysis?"}”
                   </p>
                   <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed text-left bg-gray-50/90 p-4 sm:p-5 rounded-2xl border border-gray-200/80">
-                    {OVERALL_ASSESSMENT.statusDescription}
+                    {isSample 
+                      ? OVERALL_ASSESSMENT.statusDescription 
+                      : (() => {
+                          const band = scan?.score_breakdown?.band || "Unknown";
+                          const reason = scan?.score_breakdown?.biggest_lever?.reason;
+                          if (!reason) return "To be developed";
+                          const truncatedReason = reason.length > 120 ? reason.slice(0, 117) + "..." : reason;
+                          return `Coherence band: ${band}. ${truncatedReason}`;
+                        })()
+                    }
                   </p>
                 </div>
 
