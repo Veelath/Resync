@@ -5,12 +5,14 @@ import geminiLogo from "@/assets/technology/gemini.svg";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import type { CitedReference } from './types';
-import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory } from './services/api';
+import type { CitedReference, RolePairScore, AITextIndicator } from './types';
+import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript } from './services/api';
+import { formatRoleLabel, PAR_SCORE } from './utils.js';
 
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard";
 type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
+type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations' | 'originality';
 
 type AssessmentType = "overall-status" | "strength" | "major-issue" | "affected-section";
 
@@ -175,6 +177,37 @@ const CITATIONS: Citation[] = [
   { id: "c5", ref: "Reyes, J.A. (2024). Coherence in multi-author research manuscripts.", url: "https://doi.org/10.1016/j.compedu.2024.104801", status: "live" },
   { id: "c6", ref: "Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.", url: "https://philjol.info/index.php/JPAIR/article/view/7821", status: "live" },
 ];
+
+const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
+  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-gray-100 bg-gray-50" },
+  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-100 bg-amber-50" },
+  neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
+  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-red-100 bg-red-50" },
+};
+
+const AI_TEXT_DISCLAIMER =
+  'Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features and cannot verify authorship. Well-written human academic prose commonly scores 40-60 on this scale; this indicator must never be used to block a submission or as an integrity charge on its own.';
+
+const SAMPLE_PAIRS: RolePairScore[] = [
+  { role_a: "objectives",   role_b: "methodology", weight: 0.22, included: true, score: 86 },
+  { role_a: "introduction", role_b: "objectives",  weight: 0.12, included: true, score: 82 },
+  { role_a: "methodology",  role_b: "results",     weight: 0.20, included: true, score: 80 },
+  { role_a: "results",      role_b: "discussion",  weight: 0.16, included: true, score: 68 },
+  { role_a: "objectives",   role_b: "conclusion",  weight: 0.16, included: true, score: 52 },
+];
+
+const SAMPLE_AI_TEXT: AITextIndicator = {
+  overall_score: 48,
+  section_scores: {
+    introduction: 54,
+    methodology: 41,
+    results: 44,
+    discussion: 52,
+    conclusion: 49,
+  },
+  flagged_sections: [],
+  disclaimer: AI_TEXT_DISCLAIMER,
+};
 
 interface OverallAssessmentData {
   status: "High Coherence" | "Moderate Coherence" | "Low Coherence";
@@ -899,6 +932,21 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     setCustomTemplateFile(file);
     setTemplateParseError(null);
     try {
+      if (file.name.endsWith('.txt') || file.type === 'text/plain') {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (lines.length === 0) {
+          setTemplateParseError('No headings found in the template. Using default template.');
+          setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
+        } else {
+          setTemplateChapters([{
+            id: "c1",
+            title: "Custom Template Sections",
+            sections: lines,
+          }]);
+        }
+        return;
+      }
       const parsed = await parseDocxTemplate(file);
       if (parsed.length === 0) {
         setTemplateParseError('No headings found in the template. Using default template.');
@@ -928,7 +976,10 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     if (!session?.user) { onNavigate("login"); return; }
     onNavigate("processing");
     try {
-      const templateToc = templateChapters.flatMap(c => c.sections);
+      const rawSections = templateChapters.flatMap(c => c.sections);
+      const templateToc = rawSections.some(s => /^references|bibliography/i.test(s))
+        ? rawSections
+        : [...rawSections, "References"];
       const result = await executeManuscriptScan({
         user_id: session.user.id,
         file: uploadedFile ?? undefined,
@@ -1354,8 +1405,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 {/* Optional institutional file override */}
                 <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
-                    <p className="font-semibold text-gray-800">Have an institutional .docx template file?</p>
-                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document.</p>
+                    <p className="font-semibold text-gray-800">Have an institutional .docx or .txt template file?</p>
+                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.docx or .txt).</p>
                   </div>
                   <button
                     type="button"
@@ -1363,7 +1414,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     className="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors self-start sm:self-auto bg-white"
                     style={{ borderColor: customTemplateFile ? B : "#d1d5db", color: customTemplateFile ? B : "#4b5563" }}
                   >
-                    {customTemplateFile ? `?? ${customTemplateFile.name}` : "+ Attach .docx template (Optional)"}
+                    {customTemplateFile ? `📄 ${customTemplateFile.name}` : "+ Attach template (.docx, .txt) (Optional)"}
                   </button>
                   {templateParseError && (
                     <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
@@ -1371,7 +1422,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   <input
                     ref={customTemplateInputRef}
                     type="file"
-                    accept=".docx"
+                    accept=".docx,.txt"
                     className="hidden"
                     onChange={e => {
                       const f = e.target.files?.[0];
@@ -1564,6 +1615,35 @@ const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: strin
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
+  const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
+  const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
+  const [feedbackPending, setFeedbackPending] = useState<Record<string, boolean>>({});
+  const [feedbackError, setFeedbackError] = useState<Record<string, string>>({});
+  const middlePaneRef = useRef<HTMLDivElement>(null);
+  const [manuscriptText, setManuscriptText] = useState<string | null>(null);
+  const [manuscriptLoading, setManuscriptLoading] = useState(false);
+  const [manuscriptError, setManuscriptError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isSample && scan?.analysis_run_id && manuscriptText === null && !manuscriptError) {
+      setManuscriptLoading(true);
+      setManuscriptError(null);
+      fetchManuscript(scan.analysis_run_id)
+        .then(res => {
+          if (res.available && res.text) setManuscriptText(res.text);
+          else if (res.reason === 'private') setManuscriptError("Document is no longer accessible");
+          else if (res.reason === 'non_gdocs') setManuscriptError("Preview is only available for Google Docs");
+          else setManuscriptError("Manuscript preview unavailable");
+        })
+        .catch(() => setManuscriptError("Manuscript preview unavailable"))
+        .finally(() => setManuscriptLoading(false));
+    }
+  }, [isSample, scan?.analysis_run_id, manuscriptText, manuscriptError]);
+
+  useEffect(() => {
+    middlePaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeTab]);
+
   const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : [
     ...(scan?.inconsistencies?.map((inc, i) => ({
       id: inc.inconsistency_id || `inc-${i}`,
@@ -1595,46 +1675,56 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     })) || [])
   ];
 
-  const localCitations: Citation[] = isSample ? CITATIONS : ((scan?.citations as CitedReference[] | undefined) || []).map((c: CitedReference, i) => {
-    let status: Citation["status"] = "neutral";
-    const s = c.citation_status || "";
-    
-    if (["verified_doi", "verified_url", "verified_metadata", "accessible"].includes(s)) {
-      status = "live";
-    } else if (["metadata_mismatch", "restricted", "bot_wall"].includes(s)) {
-      status = "restricted";
-    } else if (["unverified", "unknown_error", "no_link"].includes(s)) {
-      status = "neutral";
-    } else if (s === "broken") {
-      status = "dead";
-    } else if (c.citation_is_accessible) {
-      status = "live";
-    }
+  const scanWithRefs = scan as (ScanResponse & { references?: CitedReference[] }) | undefined;
+  const rawCitationsList = (scan?.citations && scan.citations.length > 0)
+    ? (scan.citations as CitedReference[])
+    : (scanWithRefs?.references && scanWithRefs.references.length > 0)
+      ? scanWithRefs.references
+      : [];
 
-    return {
-      id: `cit-${i}`,
-      ref: c.citation_raw_reference_text || "",
-      url: c.citation_primary_link || "",
-      status,
-      title: c.citation_crossref_title,
-      authors: c.citation_authors_parsed,
-      year: c.citation_year_parsed
-    };
-  });
+  const localCitations: Citation[] = isSample
+    ? CITATIONS
+    : rawCitationsList.map((c: CitedReference, i) => {
+        let status: Citation["status"] = "neutral";
+        const s = c.citation_status || "";
+        
+        if (["verified_doi", "verified_url", "verified_metadata", "accessible"].includes(s) || c.status === "Accessible") {
+          status = "live";
+        } else if (["metadata_mismatch", "restricted", "bot_wall"].includes(s)) {
+          status = "restricted";
+        } else if (["unverified", "unknown_error", "no_link"].includes(s)) {
+          status = "neutral";
+        } else if (s === "broken" || c.status === "Broken Link") {
+          status = "dead";
+        } else if (c.citation_is_accessible) {
+          status = "live";
+        }
 
-  const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : scan?.inconsistencies.flatMap((inc, i) => {
+        return {
+          id: `cit-${i}`,
+          ref: c.citation_raw_reference_text || c.citation || "",
+          url: c.citation_primary_link || "",
+          status,
+          title: c.citation_crossref_title,
+          authors: c.citation_authors_parsed,
+          year: c.citation_year_parsed
+        };
+      });
+
+  const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : (scan?.inconsistencies ?? []).flatMap((inc, i) => {
+     const itemId = inc.inconsistency_id || `inc-${i}`;
      const t = ((inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section") as AssessmentType;
-     const p = [];
+     const p: typeof PARAGRAPHS = [];
      if (inc.section_a) p.push({
        type: "section", chapter: "", heading: inc.section_a, text: inc.evidence_a || inc.explanation_what,
-       assessments: [{ itemId: `inc-${i}`, type: t, phrase: inc.evidence_a || inc.explanation_what }]
+       assessments: [{ itemId, type: t, phrase: inc.evidence_a || inc.explanation_what }]
      });
      if (inc.section_b) p.push({
        type: "section", chapter: "", heading: inc.section_b, text: inc.evidence_b || inc.explanation_why,
-       assessments: [{ itemId: `inc-${i}`, type: t, phrase: inc.evidence_b || inc.explanation_why }]
+       assessments: [{ itemId, type: t, phrase: inc.evidence_b || inc.explanation_why }]
      });
      return p;
-  }) || [];
+  });
 
   const findingsCount = isSample ? localItems.length : (scan?.inconsistencies?.length ?? 0);
   const sectionsCount = isSample ? localParagraphs.length : (scan?.sections_analyzed?.length ?? 0);
@@ -1715,6 +1805,119 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     return <>{parts}</>;
   }
 
+  // ── Tab data ──
+  const inconsistencyItems = localItems.filter(i => i.type === "major-issue" || i.type === "affected-section");
+  const visibleInconsistencies =
+    filterType === "major-issue" || filterType === "affected-section"
+      ? inconsistencyItems.filter(i => i.type === filterType)
+      : inconsistencyItems;
+  const inconsistenciesCount = inconsistencyItems.length;
+
+  type EnrichedPair = RolePairScore & {
+    verification?: { alignment: string; note: string };
+  };
+
+  const verificationByPair = new Map(
+    (scan?.verifications ?? []).map(v => [`${v.role_a}|${v.role_b}`, v] as const)
+  );
+  const allPairs: EnrichedPair[] = (
+    isSample
+      ? (SAMPLE_PAIRS as EnrichedPair[])
+      : ((scan?.score_breakdown?.coherence_detail?.pair_scores ?? []) as RolePairScore[]).filter(p => p.included)
+  )
+    .map(p => ({ ...p, verification: isSample ? undefined : verificationByPair.get(`${p.role_a}|${p.role_b}`) }))
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const visiblePairs: EnrichedPair[] = filterType === "strength" ? allPairs.filter(p => (p.score ?? 0) >= PAR_SCORE) : allPairs;
+  const pairsCount = allPairs.length;
+
+  const citationsCount = localCitations.length;
+  const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
+
+  const aiText: AITextIndicator | null = isSample ? SAMPLE_AI_TEXT : (scan?.ai_text_indicator ?? null);
+
+  const tabList: Array<{ id: ActiveResultsTab; label: string }> = [
+    { id: 'overview',         label: 'Overview' },
+    { id: 'inconsistencies',  label: `Inconsistencies (${inconsistenciesCount})` },
+    { id: 'strong_coherence', label: `Coherence Pairs (${pairsCount})` },
+    { id: 'citations',        label: `Citations (${citationsCount})` },
+    { id: 'originality',      label: 'Writing Style' },
+  ];
+
+  // Feedback is only valid for inconsistency findings that exist in the DB.
+  // Strengths ("ver-N") and the sample overall-status card are excluded.
+  const canGiveFeedback = (it: AssessmentItem | null): it is AssessmentItem =>
+    !!it &&
+    (it.type === "major-issue" || it.type === "affected-section") &&
+    (isSample || !!scan?.inconsistencies?.some(i => i.inconsistency_id === it.id));
+
+  async function handleFeedback(item: AssessmentItem, helpful: boolean) {
+    if (feedbackMap[item.id] || feedbackPending[item.id]) return;          // one vote per finding
+    if (!canGiveFeedback(item)) return;
+    if (isSample) {                                                         // sample: local only, no network
+      setFeedbackMap(p => ({ ...p, [item.id]: helpful ? 'up' : 'down' }));
+      return;
+    }
+    const userId = scan?.user_id;
+    if (!userId) return;
+
+    setFeedbackPending(p => ({ ...p, [item.id]: true }));
+    setFeedbackError(p => { const n = { ...p }; delete n[item.id]; return n; });
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/issues/${encodeURIComponent(item.id)}/feedback`, {
+        method: 'POST',
+        headers: await authHeaders({ 'Content-Type': 'application/json', 'X-User-Id': userId }),
+        body: JSON.stringify({ helpful }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);                   // fetch does not throw on 4xx/5xx
+      setFeedbackMap(p => ({ ...p, [item.id]: helpful ? 'up' : 'down' }));
+    } catch (err) {
+      console.error('Failed to submit issue feedback:', err);
+      setFeedbackError(p => ({ ...p, [item.id]: 'Could not save feedback. Please try again.' }));
+    } finally {
+      setFeedbackPending(p => ({ ...p, [item.id]: false }));
+    }
+  }
+
+  // Single feedback widget used by BOTH the Inconsistencies cards and the right-pane XAI card.
+  function renderFeedback(item: AssessmentItem) {
+    if (!canGiveFeedback(item)) return null;
+    const vote = feedbackMap[item.id];
+    const locked = !!vote || !!feedbackPending[item.id];
+    const btn = (kind: 'up' | 'down', helpful: boolean, icon: string, label: string, activeCls: string) => (
+      <button
+        type="button"
+        disabled={locked}
+        title={label}
+        onClick={e => { e.stopPropagation(); handleFeedback(item, helpful); }}
+        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition-all ${
+          vote === kind ? activeCls : 'bg-white border-gray-200 text-gray-600'
+        } ${locked ? `cursor-not-allowed ${vote === kind ? '' : 'opacity-40'}` : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'}`}>
+        <span>{icon}</span><span>{label}</span>
+      </button>
+    );
+    return (
+      <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap" onClick={e => e.stopPropagation()}>
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">Was this finding helpful?</span>
+          {vote && <span className="text-[11px] text-emerald-700">Thanks — feedback recorded.</span>}
+          {feedbackError[item.id] && <span className="text-[11px] text-rose-600">{feedbackError[item.id]}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          {btn('up', true, '👍', 'Helpful', 'bg-emerald-50 border-emerald-300 text-emerald-700')}
+          {btn('down', false, '👎', 'Not helpful', 'bg-rose-50 border-rose-300 text-rose-700')}
+        </div>
+      </div>
+    );
+  }
+
+  function applyFilter(next: AssessmentType | "all") {
+    setFilterType(next);
+    if (next === "major-issue" || next === "affected-section") setActiveTab("inconsistencies");
+    else if (next === "strength") setActiveTab("strong_coherence");
+    else if (next === "overall-status") setActiveTab("overview");
+    else if (activeTab === "citations" || activeTab === "originality") setActiveTab("inconsistencies"); // "all"
+  }
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
 
@@ -1730,12 +1933,19 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : "/ Document Coherence Scan"}
           </span>
           <div className="ml-auto flex items-center gap-2 shrink-0">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-all">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>Export PDF
-            </button>
-            <button onClick={() => onNavigate("upload")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all" style={{ background: B }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M12 5v14M5 12h14" /></svg>New Scan
-            </button>
+            {!isSample && (
+              <>
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>Export PDF
+                </button>
+                <button onClick={() => onNavigate("upload")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all cursor-pointer" style={{ background: B }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M12 5v14M5 12h14" /></svg>New Scan
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -1756,7 +1966,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setFilterType(prev => prev === t ? "all" : t)}
+                  onClick={() => applyFilter(filterType === t ? "all" : t)}
                   className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
                   <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                   <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
@@ -1788,28 +1998,28 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
-                onClick={() => setFilterType("all")}
+                onClick={() => applyFilter("all")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
                 All ({localItems.length})
               </button>
               <button
                 type="button"
-                onClick={() => setFilterType("strength")}
+                onClick={() => applyFilter("strength")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   }`}>
                 Strengths ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
               </button>
               <button
                 type="button"
-                onClick={() => setFilterType("major-issue")}
+                onClick={() => applyFilter("major-issue")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
                   }`}>
                 Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
               </button>
               <button
                 type="button"
-                onClick={() => setFilterType("affected-section")}
+                onClick={() => applyFilter("affected-section")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                   }`}>
                 Affected ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
@@ -1823,7 +2033,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <button key={item.id}
                 onClick={() => {
                   setActiveId(prev => prev === item.id ? null : item.id);
-                  scrollToSection(item.targetSectionIndex);
+                  if (activeTab === 'overview') scrollToSection(item.targetSectionIndex);
+                  else if (activeTab === 'citations' || activeTab === 'originality')
+                    setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
                 }}
                 className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
                   }`}>
@@ -1851,9 +2063,23 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           </div>
         </div>
 
-        {/* ══ CENTER: scrollable full manuscript ══ */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
-          <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 lg:px-10 py-8">
+        {/* ══ CENTER: tab bar + tab content ══ */}
+        <div ref={middlePaneRef} className="flex-1 overflow-y-auto bg-gray-100 flex flex-col">
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-10 flex items-center gap-1 overflow-x-auto shadow-2xs shrink-0">
+            {tabList.map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-5 py-3.5 text-xs font-bold border-b-2 -mb-px transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
+                }`}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 lg:px-10 py-8 flex-1">
+            {activeTab === 'overview' && (<>
 
             {/* Document header */}
             <div className="bg-white rounded-2xl border border-gray-200 px-10 pt-10 pb-8 mb-6 shadow-sm">
@@ -1879,7 +2105,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             </div>
 
             {/* ══ OVERALL ASSESSMENT EXECUTIVE CARD ══ */}
-            <div id="overall-assessment" className="bg-white rounded-2xl border border-gray-200 p-8 mb-6 shadow-xs">
+            <div id="overall-assessment" className="scroll-mt-14 bg-white rounded-2xl border border-gray-200 p-8 mb-6 shadow-xs">
 
               {/* Card Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
@@ -2010,12 +2236,39 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     ) : (
                       (scan?.inconsistencies && scan.inconsistencies.filter(i => i.finding_status === 'material_issue').length > 0) ? (
                         <ul className="space-y-2.5">
-                          {scan.inconsistencies.filter(i => i.finding_status === 'material_issue').map((iss, idx) => (
-                            <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
-                              <span><strong className="text-rose-900">{iss.section_a} ↔ {iss.section_b}:</strong> {iss.explanation_what}</span>
-                            </li>
-                          ))}
+                          {(() => {
+                            const allMaterial = scan.inconsistencies.filter(i => i.finding_status === 'material_issue');
+                            const isMissingSection = (i: typeof allMaterial[0]) => !i.section_b || i.coherence_score == null;
+                            const missingSecs = allMaterial.filter(isMissingSection);
+                            const regularIssues = allMaterial.filter(i => !isMissingSection(i));
+                            return (
+                              <>
+                                {missingSecs.length > 0 && (
+                                  <li className="flex items-start gap-2.5 text-xs text-rose-900 leading-snug bg-rose-100/70 p-3 rounded-xl border border-rose-200">
+                                    <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0 mt-1" />
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="font-bold text-rose-950 uppercase text-[10px] tracking-wider">Missing Required Sections ({missingSecs.length})</span>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-800">Completeness Alert</span>
+                                      </div>
+                                      <p className="text-xs text-rose-900 font-semibold">
+                                        {missingSecs.map(i => formatRoleLabel(i.section_a)).join(" · ")}
+                                      </p>
+                                      <p className="text-[11px] text-rose-700 mt-1 leading-relaxed">
+                                        Required academic sections are absent from this draft. Add these sections to satisfy standard thesis submission requirements.
+                                      </p>
+                                    </div>
+                                  </li>
+                                )}
+                                {regularIssues.map((iss, idx) => (
+                                  <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
+                                    <span><strong className="text-rose-900">{iss.section_a} ↔ {iss.section_b}:</strong> {iss.explanation_what}</span>
+                                  </li>
+                                ))}
+                              </>
+                            );
+                          })()}
                         </ul>
                       ) : (
                         <p className="text-xs text-gray-500 italic">No major issues detected.</p>
@@ -2086,7 +2339,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setFilterType(prev => prev === t ? "all" : t)}
+                  onClick={() => applyFilter(filterType === t ? "all" : t)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
                   <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} />
                   {ST[t].label} ({localItems.filter(i => i.type === t).length})
@@ -2103,7 +2356,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 return (
                   <div key={i}
                     id={`sec-${i}`}
-                    className={`transition-colors duration-200 ${hasActive && activeType ? "" : ""}`}
+                    className={`scroll-mt-14 transition-colors duration-200 ${hasActive && activeType ? "" : ""}`}
                     style={{ background: hasActive && activeType ? `${ST[activeType].accentColor}05` : undefined }}>
 
                     {/* Divider between entries */}
@@ -2211,11 +2464,556 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </div>
                 ) : (
                   <div className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-500 italic">
-                    No citations were found in the manuscript, or the audit reported {scan?.citations_audited ?? 0} checked.
+                    No citations were detected in this manuscript ({scan?.citations_audited ?? 0} sources audited).
                   </div>
                 )}
               </div>
             </div>{/* end document paper */}
+
+            {/* ══ R3: INLINE MANUSCRIPT WITH SECTION HIGHLIGHTS (Ported from ResultDetails.tsx:626-950) ══ */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-xs space-y-8 font-sans leading-relaxed text-gray-800 mt-8">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-5 flex-wrap gap-3">
+                <div>
+                  <span className="text-[10px] mono font-bold uppercase tracking-widest text-indigo-600 block">
+                    Inline Manuscript Inspection
+                  </span>
+                  <h2 className="font-serif text-2xl font-bold text-gray-900 mt-1">
+                    Continuous Manuscript with Section Highlights
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Click any highlighted passage to inspect findings and recommendations in the right Explainable AI panel.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
+                    Major Issue
+                  </span>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Key Strength
+                  </span>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                    Affected Section
+                  </span>
+                </div>
+              </div>
+
+              {/* R3 Renderer: Real fetched text vs sample chapters */}
+              {!isSample ? (
+                manuscriptLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-gray-400 space-y-4">
+                    <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                    <p className="text-sm font-bold text-gray-700">Loading manuscript text...</p>
+                  </div>
+                ) : manuscriptText ? (
+                  <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-800 leading-relaxed font-serif">
+                    {(() => {
+                      if (!scan?.inconsistencies?.length) return manuscriptText;
+                      interface PhraseMatch { phrase: string; itemId: string; type: AssessmentType; index: number; }
+                      const matches: PhraseMatch[] = [];
+                      scan.inconsistencies.forEach(inc => {
+                        const itemId = inc.inconsistency_id || "";
+                        const t = (inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType;
+                        if (inc.evidence_a && inc.evidence_a.trim().length > 10) {
+                          const idx = manuscriptText.indexOf(inc.evidence_a);
+                          if (idx !== -1) matches.push({ phrase: inc.evidence_a, itemId, type: t, index: idx });
+                        }
+                        if (inc.evidence_b && inc.evidence_b.trim().length > 10) {
+                          const idx = manuscriptText.indexOf(inc.evidence_b);
+                          if (idx !== -1) matches.push({ phrase: inc.evidence_b, itemId, type: t, index: idx });
+                        }
+                      });
+                      if (matches.length === 0) return manuscriptText;
+                      matches.sort((a, b) => a.index - b.index);
+                      const nonOverlapping: PhraseMatch[] = [];
+                      let lastEnd = 0;
+                      for (const m of matches) {
+                        if (m.index >= lastEnd) {
+                          nonOverlapping.push(m);
+                          lastEnd = m.index + m.phrase.length;
+                        }
+                      }
+                      const nodes: React.ReactNode[] = [];
+                      let cursor = 0;
+                      nonOverlapping.forEach((m, idx) => {
+                        if (m.index > cursor) nodes.push(manuscriptText.slice(cursor, m.index));
+                        const isActive = activeId === m.itemId;
+                        nodes.push(
+                          <mark
+                            key={`${m.itemId}-${idx}`}
+                            onClick={() => setActiveId(prev => prev === m.itemId ? null : m.itemId)}
+                            className={`font-semibold px-1 py-0.5 rounded cursor-pointer transition-all ${
+                              isActive ? ST[m.type].hlActive : ST[m.type].hl
+                            }`}
+                            style={{ textDecoration: "none" }}
+                          >
+                            {m.phrase}
+                          </mark>
+                        );
+                        cursor = m.index + m.phrase.length;
+                      });
+                      if (cursor < manuscriptText.length) nodes.push(manuscriptText.slice(cursor));
+                      return nodes;
+                    })()}
+                  </div>
+                ) : (
+                  /* Fallback to parsed section paragraphs when GDocs preview is unavailable */
+                  <div className="space-y-6">
+                    {manuscriptError && (
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+                        {manuscriptError} — displaying parsed manuscript section excerpts below.
+                      </p>
+                    )}
+                    {localParagraphs.map((para, i) => (
+                      <div key={i} className="border-b border-gray-100 pb-5 space-y-2">
+                        <h3 className="font-serif font-bold text-base text-gray-900">{para.heading}</h3>
+                        <p className="text-sm text-gray-700 leading-relaxed">{renderPara(para)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                /* Sample Manuscript content (adapted from ResultDetails.tsx:630-934) */
+                <div className="space-y-8">
+                  {/* CHAPTER 1 */}
+                  <section id="inline-chapter-1" className="space-y-4 border-b border-gray-100 pb-8">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                          CHAPTER 1
+                        </span>
+                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                          Introduction
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        Major Issue
+                      </span>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                      Academic burnout has emerged as a significant psychological concern among university students worldwide, with particular severity observed in science, technology, engineering, and mathematics (STEM) programs. This study investigates the predictors of academic burnout among{' '}
+                      <mark
+                        onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
+                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                          activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
+                        }`}
+                      >
+                        STEM undergraduates across Philippine universities, covering both rural and urban settings.
+                      </mark>
+                      {' '}The increasing competitive pressure, rigorous coursework, and limited psychosocial support structures in Philippine higher education create conditions that are especially conducive to burnout progression.
+                    </p>
+
+                    <div className="pt-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-serif font-bold text-base text-gray-900">
+                          Objectives of the Study
+                        </h4>
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                          Major Issue
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        This study specifically aims to: (1) identify the prevalence of academic burnout among STEM students; (2) determine burnout predictors among students in{' '}
+                        <mark
+                          onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
+                          className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                            activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
+                          }`}
+                        >
+                          urban barangays in Metro Manila only;
+                        </mark>
+                        {' '}and (3) assess the moderating role of peer support on burnout levels among the identified population.
+                      </p>
+                    </div>
+
+                    <div className="pt-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-serif font-bold text-base text-gray-900">
+                          Statement of the Problem
+                        </h4>
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                          Affected Section
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        Despite growing awareness of mental health issues in tertiary education, few empirical studies have examined the specific predictors of burnout within Philippine STEM contexts. The study will{' '}
+                        <mark
+                          onClick={() => setActiveId(prev => prev === 'a8' ? null : 'a8')}
+                          className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                            activeId === 'a8' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
+                          }`}
+                        >
+                          measure student engagement using biometric data
+                        </mark>
+                        {' '}collected over one semester to answer three research questions: (1) What is the current burnout level among STEM undergraduates? (2) Which academic and environmental factors best predict burnout? (3) Does peer support moderate the relationship between workload and burnout?
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* CHAPTER 2 */}
+                  <section id="inline-chapter-2" className="space-y-4 border-b border-gray-100 pb-8">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                          CHAPTER 2
+                        </span>
+                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                          Review of Related Literature
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        Major Issue
+                      </span>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                      <mark
+                        onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
+                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                          activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
+                        }`}
+                      >
+                        Technology acceptance, defined as the degree to which an individual believes that using a particular system would enhance their performance,
+                      </mark>
+                      {' '}is central to understanding digital tool adoption in education. Several frameworks build on this foundational concept, establishing baseline metrics for technological adaptation.
+                    </p>
+
+                    <div className="pt-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-serif font-bold text-base text-gray-900">
+                          Conceptual Framework
+                        </h4>
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                          Major Issue
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        <mark
+                          onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
+                          className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                            activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
+                          }`}
+                        >
+                          Technology acceptance, defined as the degree to which an individual believes that using a particular system would enhance their performance,
+                        </mark>
+                        {' '}serves as the theoretical anchor for this study's digital-tool adoption model. Building on this definition, the framework positions perceived usefulness and perceived ease of use as mediating variables between environmental stressors and burnout outcomes.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* CHAPTER 3 */}
+                  <section id="inline-chapter-3" className="space-y-4 border-b border-gray-100 pb-8">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                          CHAPTER 3
+                        </span>
+                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                          Methodology
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        Affected Section
+                      </span>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                      A descriptive-correlational research design was employed to examine the relationship between academic workload, peer support, and burnout among university students. Data were collected using the{' '}
+                      <mark
+                        onClick={() => setActiveId(prev => prev === 'a8' ? null : 'a8')}
+                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                          activeId === 'a8' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
+                        }`}
+                      >
+                        Maslach Burnout Inventory–Student Survey (MBI-SS) and the Academic Workload Scale (AWS).
+                      </mark>
+                      {' '}The research instruments were administered via an online survey platform during the second semester of Academic Year 2023–2024. A total of{' '}
+                      <mark
+                        onClick={() => setActiveId(prev => prev === 'a9' ? null : 'a9')}
+                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                          activeId === 'a9' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
+                        }`}
+                      >
+                        120 respondents
+                      </mark>
+                      {' '}were recruited through stratified random sampling across four Metro Manila universities, with quotas set per year level and degree program.
+                    </p>
+                  </section>
+
+                  {/* CHAPTER 4 */}
+                  <section id="inline-chapter-4" className="space-y-4 border-b border-gray-100 pb-8">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                          CHAPTER 4
+                        </span>
+                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                          Results and Discussion
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        Major Issue
+                      </span>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                      A total of{' '}
+                      <mark
+                        onClick={() => setActiveId(prev => prev === 'a9' ? null : 'a9')}
+                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                          activeId === 'a9' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
+                        }`}
+                      >
+                        108 respondents submitted complete responses
+                      </mark>
+                      {' '}after data cleaning and exclusion of incomplete forms. Descriptive statistics revealed that 61% of respondents scored in the high burnout range on the MBI-SS emotional exhaustion subscale. Pearson correlation analysis showed a significant positive relationship between workload and burnout (r=0.61, p&lt;0.001), indicating that heavier perceived workloads are strongly associated with higher burnout levels.{' '}
+                      <mark
+                        onClick={() => setActiveId(prev => prev === 'a6' ? null : 'a6')}
+                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                          activeId === 'a6' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
+                        }`}
+                      >
+                        Peer tutoring had no significant effect on algebra scores (p=0.38)
+                      </mark>
+                      , suggesting that tutoring alone does not improve academic outcomes without structural support.
+                    </p>
+                  </section>
+
+                  {/* CHAPTER 5 */}
+                  <section id="inline-chapter-5" className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                          CHAPTER 5
+                        </span>
+                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                          Conclusions and Recommendations
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        Major Issue
+                      </span>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                      The findings confirm that academic workload is the most consistent predictor of burnout among STEM undergraduates in the sampled institutions. Peer support was found to moderate the workload–burnout relationship only when students had consistent access to structured support programs. It is recommended that universities{' '}
+                      <mark
+                        onClick={() => setActiveId(prev => prev === 'a6' ? null : 'a6')}
+                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                          activeId === 'a6' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
+                        }`}
+                      >
+                        expand the peer tutoring program as a primary intervention strategy
+                      </mark>
+                      . Student affairs offices should deploy workload monitoring systems across all STEM departments to catch early signs of burnout and deploy timely interventions.
+                    </p>
+                  </section>
+                </div>
+              )}
+            </div>
+            </>)}
+
+            {/* ── Inconsistencies tab ── */}
+            {activeTab === 'inconsistencies' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+                  <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
+                    {filterType === 'major-issue' ? 'Major Issues' : filterType === 'affected-section' ? 'Affected Sections' : 'All Inconsistencies'} ({visibleInconsistencies.length})
+                  </p>
+                  {(filterType === 'major-issue' || filterType === 'affected-section') && (
+                    <button type="button" onClick={() => setFilterType('all')}
+                      className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                      Show all ({inconsistenciesCount})
+                    </button>
+                  )}
+                </div>
+
+                {visibleInconsistencies.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
+                    <p className="text-sm font-bold text-gray-800 mb-1">No inconsistencies to show</p>
+                    <p className="text-xs text-gray-500">
+                      {inconsistenciesCount === 0
+                        ? 'No inconsistencies were detected across the analyzed sections.'
+                        : 'No findings match the selected filter.'}
+                    </p>
+                  </div>
+                ) : (
+                  visibleInconsistencies.map((item, idx) => (
+                    <div key={item.id}
+                      onClick={() => setActiveId(prev => prev === item.id ? null : item.id)}
+                      className={`bg-white rounded-2xl border p-5 space-y-3 cursor-pointer transition-all ${
+                        activeId === item.id ? `${ST[item.type].border} ring-2 ring-indigo-300 shadow-sm` : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ST[item.type].pill}`}>{ST[item.type].label}</span>
+                        <span className="text-xs mono font-bold text-gray-400">#{idx + 1}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.title}</h3>
+                        <p className="text-xs font-semibold mt-0.5" style={{ color: ST[item.type].accentColor }}>{item.section}</p>
+                      </div>
+                      {item.description && <p className="text-[13px] text-gray-700 leading-relaxed">{item.description}</p>}
+                      {item.conflictsWith && item.conflictQuote && (
+                        <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
+                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">Conflicts with: {item.conflictsWith}</p>
+                          <p className="text-xs text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
+                        </div>
+                      )}
+                      {item.recommendation && (
+                        <div className="rounded-xl bg-indigo-50/60 border border-indigo-100 p-3">
+                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-indigo-800 mb-1">Suggested fix</p>
+                          <p className="text-xs text-indigo-950 font-medium leading-relaxed">{item.recommendation}</p>
+                        </div>
+                      )}
+                      {renderFeedback(item)}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* ── Coherence Pairs tab ── */}
+            {activeTab === 'strong_coherence' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+                  <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
+                    Calibrated role pairs ({visiblePairs.length}) · par = {PAR_SCORE}
+                  </p>
+                  {filterType === 'strength' && (
+                    <button type="button" onClick={() => setFilterType('all')}
+                      className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                      Show all ({pairsCount})
+                    </button>
+                  )}
+                </div>
+
+                {visiblePairs.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
+                    <p className="text-sm font-bold text-gray-800 mb-1">No role pairs to show</p>
+                    <p className="text-xs text-gray-500">
+                      {pairsCount === 0
+                        ? 'No calibrated role pairs were evaluated for this scan. Required sections may be missing.'
+                        : `No pairs meet the par score of ${PAR_SCORE}.`}
+                    </p>
+                  </div>
+                ) : (
+                  visiblePairs.map((p, idx) => {
+                    const score = p.score ?? 0;
+                    const strong = score >= PAR_SCORE;
+                    return (
+                      <div key={`${p.role_a}|${p.role_b}|${idx}`} className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
+                          <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
+                            {strong ? 'Strong' : 'Below par'} · {Math.round(score)}
+                          </span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                          <div className={`h-full rounded-full ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
+                        </div>
+                        <p className="text-[11px] text-gray-500">Weight {Math.round(p.weight * 100)}% of the coherence score</p>
+                        {p.verification && (
+                          <p className={`text-xs leading-relaxed rounded-xl border px-3 py-2 ${
+                            p.verification.alignment === 'superficial' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                          }`}>
+                            <span className="font-bold capitalize">{p.verification.alignment} alignment.</span> {p.verification.note}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* ── Citations tab ── */}
+            {activeTab === 'citations' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => (
+                    <div key={s} className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+                      <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
+                      <p className="text-xl font-black text-gray-900 mt-0.5">{citeCount(s)}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {localCitations.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
+                    <p className="text-sm font-bold text-gray-800 mb-1">No citations to show</p>
+                    <p className="text-xs text-gray-500">
+                      No citations were detected in this manuscript ({scan?.citations_audited ?? 0} sources audited).
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {localCitations.map((cite, ci) => (
+                      <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
+                        <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
+                          <p className="text-[13px] text-gray-800 leading-snug">
+                            {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
+                            {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
+                            {cite.ref}
+                          </p>
+                          {cite.url && (/^https?:\/\//i.test(cite.url)
+                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
+                            : <p className="text-[11px] mono truncate mt-1 text-gray-400">{cite.url}</p>)}
+                        </div>
+                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
+                          {CITE_BADGE[cite.status].label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Writing Style tab ── */}
+            {activeTab === 'originality' && (
+              <div className="space-y-4">
+                {aiText && aiText.overall_score != null ? (
+                  <>
+                    <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+                      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                        <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Stylometric reading · advisory only</p>
+                        <p className="text-3xl font-black text-gray-900">{Math.round(aiText.overall_score)}<span className="text-sm font-bold text-gray-400"> / 100</span></p>
+                      </div>
+                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.max(0, Math.min(100, aiText.overall_score))}%` }} />
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        {(aiText.flagged_sections?.length ?? 0) > 0
+                          ? `Sections with an elevated reading: ${aiText.flagged_sections!.map(formatRoleLabel).join(', ')}.`
+                          : 'No individual section stands out.'}
+                      </p>
+                    </div>
+
+                    {Object.entries(aiText.section_scores ?? {}).filter(([, v]) => v != null).length > 0 && (
+                      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+                        <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">By section</p>
+                        {Object.entries(aiText.section_scores ?? {}).filter(([, v]) => v != null).map(([sec, v]) => (
+                          <div key={sec} className="flex items-center gap-3">
+                            <span className="text-xs font-semibold text-gray-700 w-40 shrink-0 truncate">{formatRoleLabel(sec)}</span>
+                            <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                              <div className="h-full rounded-full bg-indigo-400" style={{ width: `${Math.max(0, Math.min(100, v as number))}%` }} />
+                            </div>
+                            <span className="text-xs mono font-bold text-gray-600 w-8 text-right">{Math.round(v as number)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
+                    <p className="text-sm font-bold text-gray-800 mb-1">No writing-style reading available</p>
+                    <p className="text-xs text-gray-500">No writing-style score was produced for this scan.</p>
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4">
+                  <p className="text-[10px] mono font-bold uppercase tracking-wider text-amber-800 mb-1">Advisory</p>
+                  <p className="text-xs text-amber-950 leading-relaxed">{aiText?.disclaimer || AI_TEXT_DISCLAIMER}</p>
+                </div>
+              </div>
+            )}
 
             <div className="h-10" />
           </div>{/* end max-w wrapper */}
@@ -2292,7 +3090,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
                   {(["strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
                     <div key={t}
-                      onClick={() => setFilterType(t)}
+                      onClick={() => applyFilter(t)}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
                       <span className={`w-3.5 h-3.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                       <div className="flex-1 min-w-0">
@@ -2407,6 +3205,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     {activeItem.recommendation}
                   </p>
                 </div>
+
+                {/* Feedback — guarded */}
+                {activeItem && renderFeedback(activeItem)}
 
                 {/* Prev / Next controls */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
