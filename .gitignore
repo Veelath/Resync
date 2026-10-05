@@ -8,3 +8,5 @@ graphify-out/
 .env*
 !.env.example
 .claude/worktrees/
+.pytest_cache/
+
