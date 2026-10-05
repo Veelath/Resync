@@ -1008,6 +1008,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         file: uploadedFile ?? undefined,
         doc_url: mode === "link" ? link : undefined,
         template_toc: templateToc,
+        manuscript_title: (mode === 'file' && uploadedFile) ? uploadedFile.name.replace(/\.[^/.]+$/, '') : undefined,
       });
       if (onScanComplete) onScanComplete(result);
     } catch (e: any) {
@@ -1804,6 +1805,20 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     middlePaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeTab]);
 
+  const extractedTitle = manuscriptText
+    ? manuscriptText.split(/\r?\n/).map(s => s.trim()).find(s => s.length > 0)?.slice(0, 200)
+    : null;
+
+  const displayTitle = isSample
+    ? "Predictors of Academic Burnout Among STEM Undergraduates in Philippine Universities"
+    : (
+        (scan as any)?.manuscript_title ||
+        (scan as any)?.title ||
+        extractedTitle ||
+        (scan?.doc_url && !scan.doc_url.startsWith('http') ? scan.doc_url.replace(/\.[^/.]+$/, '') : null) ||
+        "Document Coherence Scan"
+      );
+
   const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : [
     ...(scan?.inconsistencies?.map((inc, i) => ({
       id: inc.inconsistency_id || `inc-${i}`,
@@ -2089,10 +2104,71 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   }
 
   return (
-    <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50">
+    <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50 print:h-auto print:overflow-visible font-sans">
+
+      {/* ── Print-only summary block ── */}
+      <div className="hidden print:block p-8 border-b-2 border-gray-900 bg-white mb-6 break-inside-avoid-page">
+        <div className="flex justify-between items-start border-b border-gray-200 pb-4 mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Resync Manuscript Coherence Report</h1>
+            <h2 className="text-lg text-gray-700 font-medium mt-1">{displayTitle}</h2>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-indigo-700">{score} / 100</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Band: {isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">{new Date().toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 mt-4">
+          <div>
+            <h3 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2">Key Strengths</h3>
+            {isSample ? (
+              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+                {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
+                  <li key={idx}>{str}</li>
+                ))}
+              </ul>
+            ) : (scan?.verifications && scan.verifications.length > 0) ? (
+              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+                {scan.verifications.map((v, idx) => (
+                  <li key={idx}><strong>{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-500 italic">
+                Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-rose-800 uppercase tracking-wider mb-2">Major Issues</h3>
+            {isSample ? (
+              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+                {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
+                  <li key={idx}>{iss}</li>
+                ))}
+              </ul>
+            ) : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) > 0 ? (
+              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+                {scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').map((inc, idx) => (
+                  <li key={idx}>
+                    <strong>{inc.section_a} ↔ {inc.section_b}:</strong> {inc.explanation_what || inc.explanation_why}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-500 italic">No major issues detected.</p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ── Navbar ── */}
-      <nav className="shrink-0 bg-white border-b border-gray-100 z-50">
+      <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 h-12 flex items-center gap-3">
           <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors shrink-0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M15 18l-6-6 6-6" /></svg>Home
@@ -2100,7 +2176,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <div className="h-4 w-px bg-gray-200 shrink-0" />
           <Logo className="h-6 w-auto shrink-0" />
           <span className="text-xs text-gray-400 truncate hidden md:block">
-            {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : "/ Document Coherence Scan"}
+            {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
           <div className="ml-auto flex items-center gap-2 shrink-0">
             {!isSample && (
@@ -2121,10 +2197,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       </nav>
 
       {/* ── 3-column body ── */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block">
 
         {/* ══ LEFT: sidebar — score + assessment findings list ══ */}
-        <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print:flex lg:flex lg:w-72 xl:w-80 shrink-0 border-r border-gray-100 bg-white flex-col overflow-y-auto`}>
+        <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex lg:w-72 xl:w-80 shrink-0 border-r border-gray-100 bg-white flex-col overflow-y-auto`}>
           {/* Score ring */}
           <div className="px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
             <ScoreRing score={score} size={88} />
@@ -2234,8 +2310,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>
 
         {/* ══ CENTER: tab bar + tab content ══ */}
-        <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print:flex lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-10 flex items-center gap-1 overflow-x-auto shadow-2xs shrink-0">
+        <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-10 flex items-center gap-1 overflow-x-auto shadow-2xs shrink-0 print:hidden">
             {tabList.map(tab => (
               <button
                 key={tab.id}
@@ -2259,7 +2335,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </p>
               )}
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
-                {isSample ? "Predictors of Academic Burnout Among STEM Undergraduates in Philippine Universities" : "Document Coherence Scan"}
+                {displayTitle}
               </h1>
               {isSample && (
                 <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study • Academic Year 2023–2024</p>
@@ -2373,7 +2449,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-gray-500 italic">No verified strengths detected.</p>
+                        <p className="text-xs text-gray-500 italic">
+                          Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
+                        </p>
                       )
                     )}
                   </div>
@@ -3190,7 +3268,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>{/* end center column */}
 
         {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
-        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print:flex lg:flex lg:w-[360px] xl:w-[420px] 2xl:w-[460px] shrink-0 border-l border-gray-100 bg-white flex-col overflow-hidden`}>
+        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex lg:w-[360px] xl:w-[420px] 2xl:w-[460px] shrink-0 border-l border-gray-100 bg-white flex-col overflow-hidden`}>
           <div className="shrink-0 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/90">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
