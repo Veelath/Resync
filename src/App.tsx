@@ -1184,7 +1184,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                       onClick={() => fileInputRef.current?.click()}
                       className="flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50"
                       style={{ borderColor: drag || uploadedFile ? B : "#e5e7eb", background: drag || uploadedFile ? BL : undefined }}>
-                      <input ref={fileInputRef} type="file" accept=".docx" className="hidden" onChange={e => setUploadedFile(e.target.files?.[0] ?? null)} />
+                      <input ref={fileInputRef} type="file" accept=".docx,.pdf" className="hidden" onChange={e => setUploadedFile(e.target.files?.[0] ?? null)} />
                       {uploadedFile ? (
                         <>
                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ background: BL, border: `1px solid ${B}20` }}>
@@ -1204,7 +1204,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-gray-700">Drop your .docx file here</p>
+                            <p className="text-sm font-bold text-gray-700">Drop your .docx or .pdf file here</p>
                             <p className="text-xs text-gray-400 mt-1">or click to browse from device · max 25 MB</p>
                           </div>
                         </>
@@ -1531,10 +1531,10 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
 // ─── Processing ───────────────────────────────────────────────────────────────
 function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const steps = [
-    { label: "Parsing manuscript structure", tool: "spaCy", dur: 1500 },
-    { label: "Computing semantic embeddings", tool: "MiniLM-L6-V2", dur: 2500 },
-    { label: "Deep reasoning & alignment checks", tool: "Google Gemini 2.5 Pro", dur: 3000 },
-    { label: "Citation accessibility scan", tool: "Async HTTP checker", dur: 2000 },
+    { label: "Reading your manuscript", dur: 1500 },
+    { label: "Checking section alignment", dur: 2500 },
+    { label: "Analyzing cross-chapter coherence", dur: 3000 },
+    { label: "Verifying citation links", dur: 2000 },
   ];
   const [done, setDone] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -1593,7 +1593,6 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
-                  <p className="text-xs mono text-gray-400 mt-0.5">{step.tool}</p>
                 </div>
                 <span className="text-xs mono font-bold shrink-0"
                   style={{ color: isDone ? "#16a34a" : isActive ? B : "transparent" }}>
@@ -2923,7 +2922,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 px-1">
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
-                    Calibrated role pairs ({visiblePairs.length}) · par = {PAR_SCORE}
+                    Coherence pairs ({visiblePairs.length}) · target = {PAR_SCORE}
                   </p>
                   {filterType === 'strength' && (
                     <button type="button" onClick={() => setFilterType('all')}
@@ -2938,8 +2937,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <p className="text-sm font-bold text-gray-800 mb-1">No role pairs to show</p>
                     <p className="text-xs text-gray-500">
                       {pairsCount === 0
-                        ? 'No calibrated role pairs were evaluated for this scan. Required sections may be missing.'
-                        : `No pairs meet the par score of ${PAR_SCORE}.`}
+                        ? 'No coherence pairs were evaluated for this scan. Required sections may be missing.'
+                        : `No pairs meet the target score of ${PAR_SCORE}.`}
                     </p>
                   </div>
                 ) : (
@@ -2951,7 +2950,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
                           <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
-                            {strong ? 'Strong' : 'Below par'} · {Math.round(score)}
+                            {strong ? 'Strong' : 'Below target'} · {Math.round(score)}
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
@@ -3080,8 +3079,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-900 leading-tight">Explainable AI & Recommendations</h3>
-                <p className="text-[11px] mono font-bold uppercase tracking-wider text-indigo-600">XAI Transparent Inspector</p>
+                <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Findings & Recommendations</h3>
+                <p className="text-[11px] mono font-bold uppercase tracking-wider text-indigo-600">Analysis Inspector</p>
               </div>
             </div>
             {activeItem && (
@@ -3107,7 +3106,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                     {isSample ? "Moderate Coherence Overall" : `${scan?.score_breakdown?.band || "Unknown"} Coherence`}
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Explainable AI Synthesis</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Analysis Synthesis</h3>
                   <p className="text-[15px] text-gray-600 leading-relaxed font-serif italic mb-4">
                     “{isSample ? OVERALL_ASSESSMENT.question : "What is the actual condition of this manuscript based on the analysis?"}”
                   </p>
@@ -3129,7 +3128,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <div className="w-full text-left p-4 rounded-2xl border border-indigo-100 bg-indigo-50/60">
                   <div className="flex items-center gap-2 mb-1.5">
                     <svg className="w-4 h-4 text-indigo-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">Explainable AI Guidance</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">Analysis Guidance</span>
                   </div>
                   <p className="text-xs sm:text-[13px] text-indigo-900/80 leading-relaxed">
                     Click any highlighted passage or sidebar finding to inspect why the AI flagged it, view cross-chapter evidence, and read specific rewrite recommendations.
@@ -3176,7 +3175,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-indigo-600">
                       <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
                     </svg>
-                    <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Explainable AI (XAI) Analysis</span>
+                    <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Detailed Analysis</span>
                   </div>
 
                   {/* Purpose / Question Prompt */}
@@ -3512,6 +3511,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
 
   const str = pw.length === 0 ? 0 : pw.length < 8 ? 1 : pw.length < 12 ? 2 : 3;
   const strMeta = [
@@ -3593,15 +3593,37 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
           </div>
 
           {/* terms */}
-          <button type="button" onClick={() => setAgreed(!agreed)} className="flex items-start gap-3 w-full text-left select-none pt-1">
-            <div className="mt-0.5 w-[18px] h-[18px] min-w-[18px] rounded-md border-2 flex items-center justify-center transition-all shrink-0"
-              style={{ background: agreed ? B : "white", borderColor: agreed ? B : "#d1d5db" }}>
+          <div className="flex items-start gap-3 w-full text-left select-none pt-1">
+            <button
+              type="button"
+              onClick={() => setAgreed(!agreed)}
+              className="mt-0.5 w-[18px] h-[18px] min-w-[18px] rounded-md border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              style={{ background: agreed ? B : "white", borderColor: agreed ? B : "#d1d5db" }}
+              aria-label="Agree to terms"
+            >
               {agreed && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="w-2.5 h-2.5"><path d="M5 12l5 5L20 7" /></svg>}
-            </div>
+            </button>
             <span className="text-xs text-gray-500 leading-relaxed">
-              I agree to the <span className="font-bold hover:underline" style={{ color: B }}>Terms of Service</span> and <span className="font-bold hover:underline" style={{ color: B }}>Privacy Policy</span>
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={() => setLegalModal("terms")}
+                className="font-bold hover:underline cursor-pointer"
+                style={{ color: B }}
+              >
+                Terms of Service
+              </button>{" "}
+              and{" "}
+              <button
+                type="button"
+                onClick={() => setLegalModal("privacy")}
+                className="font-bold hover:underline cursor-pointer"
+                style={{ color: B }}
+              >
+                Privacy Policy
+              </button>
             </span>
-          </button>
+          </div>
 
           <button type="submit" disabled={!canSubmit}
             className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-1"
@@ -3614,6 +3636,79 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
           Already have an account?{" "}
           <button onClick={() => onNavigate("login")} className="font-bold hover:underline" style={{ color: B }}>Log in</button>
         </p>
+
+        {legalModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <div className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">
+                    {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Last updated: October 2026</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLegalModal(null)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto space-y-4 text-xs text-gray-600 leading-relaxed">
+                {legalModal === "terms" ? (
+                  <>
+                    <p>
+                      Welcome to Resync. By uploading or analyzing academic manuscripts, theses, dissertations, or research documents through our platform, you agree to comply with and be bound by these Terms of Service.
+                    </p>
+                    <h4 className="font-bold text-gray-800 text-sm">1. Academic Integrity & Intellectual Property</h4>
+                    <p>
+                      You retain all ownership, copyright, and intellectual property rights in and to your uploaded manuscripts and research materials. Resync does not claim any ownership over your manuscripts. You represent that you have all necessary rights to submit manuscripts for structural and coherence analysis.
+                    </p>
+                    <h4 className="font-bold text-gray-800 text-sm">2. Use of Analysis Tools</h4>
+                    <p>
+                      Resync provides automated section alignment, cross-chapter coherence checks, and citation accessibility scanning. Analysis results and recommendations are advisory tools intended to assist scholarly writing and revision, and should be evaluated in accordance with your institution's academic guidelines.
+                    </p>
+                    <h4 className="font-bold text-gray-800 text-sm">3. Account Security</h4>
+                    <p>
+                      You are responsible for maintaining the confidentiality of your login credentials and for all activities that occur under your Resync account.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Resync is committed to protecting the privacy and confidentiality of researchers, scholars, and academic institutions using our manuscript verification service.
+                    </p>
+                    <h4 className="font-bold text-gray-800 text-sm">1. Information We Collect</h4>
+                    <p>
+                      We collect account information (such as your name and email address) and document content that you submit solely to perform manuscript structural and coherence analysis.
+                    </p>
+                    <h4 className="font-bold text-gray-800 text-sm">2. Manuscript Confidentiality & Data Protection</h4>
+                    <p>
+                      Your manuscripts, research findings, and unpublished drafts are treated with strict confidentiality. Resync does not use your private manuscripts to train public generative models or distribute them to third parties without your explicit authorization.
+                    </p>
+                    <h4 className="font-bold text-gray-800 text-sm">3. Data Retention & Deletion</h4>
+                    <p>
+                      Analysis data and scanned documents are stored securely using industry-standard encryption. You may request the deletion of your account and associated document data at any time through your account settings or by contacting support.
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setLegalModal(null)}
+                  className="px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  style={{ background: B, color: "white" }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AuthLayout>
   );
