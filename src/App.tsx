@@ -9,7 +9,7 @@ import type { CitedReference, RolePairScore, AITextIndicator } from './types';
 import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript } from './services/api';
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
 
-type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard";
+type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard" | "reset-password";
 type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
 type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations' | 'originality';
@@ -3499,6 +3499,29 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
   const [error, setError] = useState("");
   const canSubmit = !!email && !!pw && !loading;
 
+  // Forgot password modal state
+  const [forgotModal, setForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+
+  async function handleForgotSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!forgotEmail || forgotLoading) return;
+    setForgotLoading(true);
+    setForgotError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: window.location.origin + "/reset-password",
+    });
+    setForgotLoading(false);
+    if (error) {
+      setForgotError("Unable to process request. Please try again later.");
+    } else {
+      setForgotSuccess(true);
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -3566,7 +3589,19 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
-              <button type="button" className="text-xs font-semibold hover:underline" style={{ color: B }}>Forgot password?</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotEmail(email);
+                  setForgotSuccess(false);
+                  setForgotError("");
+                  setForgotModal(true);
+                }}
+                className="text-xs font-semibold hover:underline"
+                style={{ color: B }}
+              >
+                Forgot password?
+              </button>
             </div>
             <div className="relative">
               <input
@@ -3617,6 +3652,77 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
           <span>256-bit encryption · Academic manuscript privacy guaranteed</span>
         </div>
+
+        {forgotModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <h3 className="text-base font-bold text-gray-900">Reset Password</h3>
+                <button
+                  type="button"
+                  onClick={() => setForgotModal(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                {forgotSuccess ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-emerald-50 text-emerald-700 text-sm rounded-xl border border-emerald-100">
+                      If an account exists for that email, a reset link has been sent.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setForgotModal(false)}
+                      className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all cursor-pointer"
+                      style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotSubmit} className="space-y-4">
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Enter your email address and we'll send you a link to reset your password.
+                    </p>
+                    {forgotError && (
+                      <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">
+                        {forgotError}
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={e => setForgotEmail(e.target.value)}
+                        placeholder="maria.santos@dlsu.edu.ph"
+                        required
+                        className="w-full h-11 px-4 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
+                        style={{ borderColor: "#e5e7eb" }}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={!forgotEmail || forgotLoading}
+                      className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
+                      style={{
+                        background: (forgotEmail && !forgotLoading) ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
+                        color: (forgotEmail && !forgotLoading) ? "white" : "#9ca3af",
+                        cursor: (forgotEmail && !forgotLoading) ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      {forgotLoading ? <><Spinner /> Sending reset link…</> : "Send reset link"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AuthLayout>
   );
@@ -3829,6 +3935,121 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
             </div>
           </div>
         )}
+      </div>
+    </AuthLayout>
+  );
+}
+
+// ─── Reset Password ────────────────────────────────────────────────────────────
+function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const canSubmit = password.length >= 8 && !loading;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const { error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess(true);
+      setTimeout(() => {
+        onNavigate("login");
+      }, 2500);
+    }
+  }
+
+  return (
+    <AuthLayout onNavigate={onNavigate}>
+      <div>
+        {/* Header */}
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
+            Security
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Set new password</h1>
+          <p className="text-xs text-gray-500 leading-relaxed">Enter your new account password below.</p>
+        </div>
+
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
+        {success && (
+          <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 text-sm rounded-xl border border-emerald-100">
+            Password updated successfully! Redirecting to login…
+          </div>
+        )}
+
+        {!success ? (
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  required
+                  className="w-full h-11 pl-10 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
+                  style={{ borderColor: "#e5e7eb" }}
+                  onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
+                  onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                />
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                >
+                  <Eye open={showPw} />
+                </button>
+              </div>
+              {password.length > 0 && password.length < 8 && (
+                <p className="text-[11px] text-amber-600 mt-1">Must be at least 8 characters</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
+              style={{
+                background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
+                color: canSubmit ? "white" : "#9ca3af",
+                cursor: canSubmit ? "pointer" : "not-allowed",
+                boxShadow: canSubmit ? `0 6px 20px ${B}30` : "none"
+              }}
+            >
+              {loading ? <><Spinner /> Updating password…</> : "Update Password →"}
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onNavigate("login")}
+            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 text-white transition-all mt-2 cursor-pointer"
+            style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+          >
+            Go to login →
+          </button>
+        )}
+
+        <p className="text-center text-xs text-gray-500 mt-6">
+          Remembered your credentials?{" "}
+          <button onClick={() => onNavigate("login")} className="font-bold hover:underline" style={{ color: B }}>Back to login</button>
+        </p>
       </div>
     </AuthLayout>
   );
@@ -4722,10 +4943,13 @@ export default function App() {
 
   useEffect(() => {
     const savedScreen = sessionStorage.getItem('resync_screen') as Screen | null;
+    const isRecovery = window.location.pathname === '/reset-password' || window.location.hash.includes('type=recovery');
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session && savedScreen && RESTORABLE_SCREENS.includes(savedScreen)) {
+      if (isRecovery) {
+        setScreen("reset-password");
+      } else if (session && savedScreen && RESTORABLE_SCREENS.includes(savedScreen)) {
         setScreen(savedScreen);
       } else if (session) {
         setScreen("dashboard");
@@ -4733,9 +4957,19 @@ export default function App() {
       setSessionLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      if (!session) {
+      if (event === 'PASSWORD_RECOVERY') {
+        setScreen("reset-password");
+      } else if (event === 'SIGNED_IN' && session) {
+        setScreen(prev => {
+          if (['login', 'signup', 'home'].includes(prev)) {
+            sessionStorage.setItem('resync_screen', 'dashboard');
+            return "dashboard";
+          }
+          return prev;
+        });
+      } else if (!session) {
         setScreen(prev => {
           if (['dashboard', 'upload', 'processing', 'results'].includes(prev)) {
             sessionStorage.setItem('resync_screen', 'home');
@@ -4791,6 +5025,7 @@ export default function App() {
       {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}
       {screen === "login" && <LoginScreen onNavigate={navigate} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onSignupSuccess={() => navigate("dashboard")} />}
+      {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} />}
       {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} />}
     </div>
   );
