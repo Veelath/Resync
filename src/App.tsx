@@ -903,6 +903,8 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
   return chapters.length > 0 ? chapters : [];
 }
 
+let lastScanError: string | null = null;
+
 function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: ScanResponse) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [researchType, setResearchType] = useState<ResearchType | null>(null);
@@ -911,6 +913,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [link, setLink] = useState("");
+  const [scanError, setScanError] = useState<string | null>(lastScanError);
+  const [isScanning, setIsScanning] = useState(false);
   
   const [customTemplateFile, setCustomTemplateFile] = useState<File | null>(null);
   const [templateParseError, setTemplateParseError] = useState<string | null>(null);
@@ -956,6 +960,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   function handleSelectResearchType(t: ResearchType) {
     setResearchType(t);
     setTemplateChapters(DEFAULT_TEMPLATES[t]);
+    lastScanError = null;
+    setScanError(null);
   }
 
   function handleResetTemplate() {
@@ -968,8 +974,31 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   async function handleScan() {
     if (!session?.user) { onNavigate("login"); return; }
     if (!researchType) return;
-    onNavigate("processing");
+    lastScanError = null;
+    setScanError(null);
+    setIsScanning(true);
+    let navigatedToProcessing = false;
     try {
+      if (mode === "file") {
+        if (!uploadedFile) {
+          throw new Error("Please select a manuscript file to upload.");
+        }
+        if (uploadedFile.size === 0) {
+          throw new Error("The uploaded document appears to be empty or contains no extractable text.");
+        }
+        const lowerName = uploadedFile.name.toLowerCase();
+        if (!lowerName.endsWith(".docx") && !lowerName.endsWith(".pdf")) {
+          throw new Error("This does not look like a research manuscript. Please upload a .docx or .pdf file.");
+        }
+      } else if (mode === "link") {
+        if (!link.trim() || !link.includes("docs.google.com")) {
+          throw new Error("Please provide a valid Google Docs link.");
+        }
+      }
+
+      onNavigate("processing");
+      navigatedToProcessing = true;
+
       const rawSections = templateChapters.flatMap(c => c.sections);
       const templateToc = rawSections.some(s => /^references|bibliography/i.test(s))
         ? rawSections
@@ -981,9 +1010,15 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         template_toc: templateToc,
       });
       if (onScanComplete) onScanComplete(result);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      onNavigate("home");
+      const errMsg = e?.message || "The scan could not be completed.";
+      lastScanError = errMsg;
+      setScanError(errMsg);
+      setIsScanning(false);
+      if (navigatedToProcessing) {
+        onNavigate("upload");
+      }
     }
   }
 
@@ -1003,6 +1038,33 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   }
 
   const canProceedToStep2 = researchType !== null && (mode === "file" ? !!uploadedFile : link.trim().length > 0);
+
+  function handleStep1Continue() {
+    if (!researchType) return;
+    if (mode === "file") {
+      if (!uploadedFile) {
+        setScanError("Please select a manuscript file to upload.");
+        return;
+      }
+      if (uploadedFile.size === 0) {
+        setScanError("The uploaded document appears to be empty or contains no extractable text.");
+        return;
+      }
+      const lowerName = uploadedFile.name.toLowerCase();
+      if (!lowerName.endsWith(".docx") && !lowerName.endsWith(".pdf")) {
+        setScanError("This does not look like a research manuscript. Please upload a .docx or .pdf file.");
+        return;
+      }
+    } else if (mode === "link") {
+      if (!link.trim() || !link.includes("docs.google.com")) {
+        setScanError("Please provide a valid Google Docs link.");
+        return;
+      }
+    }
+    lastScanError = null;
+    setScanError(null);
+    setStep(2);
+  }
 
   return (
     <div className="min-h-full bg-white">
@@ -1160,7 +1222,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         "Shared view link"
                       ]
                     ] as [UploadMode, React.ReactNode, string, string][]).map(([m, icon, label, sub]) => (
-                      <button key={m} onClick={() => setMode(m)}
+                      <button key={m} onClick={() => { setMode(m); lastScanError = null; setScanError(null); }}
                         className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${mode === m ? "bg-blue-50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"}`}
                         style={{ borderColor: mode === m ? B : undefined }}>
                         <span className="shrink-0">{icon}</span>
@@ -1180,11 +1242,11 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   {/* Input Dropzone */}
                   {mode === "file" ? (
                     <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) setUploadedFile(f); }}
+                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) { setUploadedFile(f); lastScanError = null; setScanError(null); } }}
                       onClick={() => fileInputRef.current?.click()}
                       className="flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50"
                       style={{ borderColor: drag || uploadedFile ? B : "#e5e7eb", background: drag || uploadedFile ? BL : undefined }}>
-                      <input ref={fileInputRef} type="file" accept=".docx,.pdf" className="hidden" onChange={e => setUploadedFile(e.target.files?.[0] ?? null)} />
+                      <input ref={fileInputRef} type="file" accept=".docx,.pdf" className="hidden" onChange={e => { setUploadedFile(e.target.files?.[0] ?? null); lastScanError = null; setScanError(null); }} />
                       {uploadedFile ? (
                         <>
                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ background: BL, border: `1px solid ${B}20` }}>
@@ -1216,7 +1278,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
                         </div>
-                        <input type="url" value={link} onChange={e => setLink(e.target.value)} placeholder="https://docs.google.com/document/d/..."
+                        <input type="url" value={link} onChange={e => { setLink(e.target.value); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/..."
                           className="w-full h-12 pl-11 pr-4 rounded-xl border-2 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
                           style={{ borderColor: link ? B : "#e5e7eb" }}
                           onFocus={e => (e.target.style.borderColor = B)} onBlur={e => (e.target.style.borderColor = link ? B : "#e5e7eb")} />
@@ -1227,11 +1289,11 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 </div>
 
                 {/* Continue button */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <button
                     type="button"
                     disabled={!canProceedToStep2}
-                    onClick={() => canProceedToStep2 && setStep(2)}
+                    onClick={handleStep1Continue}
                     className="w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
                     style={{
                       background: canProceedToStep2 ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
@@ -1244,6 +1306,12 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   </button>
                   {!researchType && (
                     <p className="text-center text-xs text-gray-400">Select Quantitative or Qualitative to continue</p>
+                  )}
+                  {scanError && (
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-red-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                      <p className="flex-1 leading-snug font-medium">{scanError}</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1462,21 +1530,41 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <div className="flex items-center gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
+                    onClick={() => { setStep(1); lastScanError = null; setScanError(null); }}
                     className="px-5 h-12 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                   >
                     ← Back to Step 1
                   </button>
                   <button
                     type="button"
+                    disabled={isScanning}
                     onClick={handleScan}
                     className="flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all shadow-md flex items-center justify-center gap-2"
-                    style={{ background: `linear-gradient(135deg, ${B}, ${BH})`, boxShadow: `0 8px 24px ${B}30` }}
+                    style={{
+                      background: isScanning ? "#9ca3af" : `linear-gradient(135deg, ${B}, ${BH})`,
+                      boxShadow: isScanning ? "none" : `0 8px 24px ${B}30`,
+                      cursor: isScanning ? "not-allowed" : "pointer"
+                    }}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
-                    Run Coherence Scan (1 Credit) →
+                    {isScanning ? (
+                      <>
+                        <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        Scanning manuscript…
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+                        Run Coherence Scan (1 Credit) →
+                      </>
+                    )}
                   </button>
                 </div>
+                {scanError && (
+                  <div className="mt-3 flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-red-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                    <p className="flex-1 leading-snug font-medium">{scanError}</p>
+                  </div>
+                )}
               </div>
 
               {/* Right column: Summary Card */}
@@ -1537,13 +1625,19 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
     { label: "Verifying citation links", dur: 2000 },
   ];
   const [done, setDone] = useState(0);
-  const [finished, setFinished] = useState(false);
   useEffect(() => {
     let t = 0;
-    steps.forEach((s, i) => { t += s.dur; setTimeout(() => setDone(i + 1), t); });
-    setTimeout(() => setFinished(true), t + 300);
+    const timers: NodeJS.Timeout[] = [];
+    steps.forEach((s, i) => {
+      t += s.dur;
+      timers.push(setTimeout(() => setDone(i + 1), t));
+    });
+    return () => {
+      timers.forEach(clearTimeout);
+    };
   }, []);
-  const pct = Math.round((done / steps.length) * 100);
+  const isFinalizing = done >= steps.length;
+  const pct = isFinalizing ? 99 : Math.min(99, Math.round((done / steps.length) * 100));
 
   return (
     <div className="min-h-full bg-white flex items-center justify-center px-6 py-20">
@@ -1565,7 +1659,14 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
 
         {/* progress */}
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs mono text-gray-400">Progress</span>
+          {pct === 99 ? (
+            <span className="text-xs mono font-semibold animate-pulse flex items-center gap-1.5" style={{ color: B }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: B }} />
+              Finalizing your report…
+            </span>
+          ) : (
+            <span className="text-xs mono text-gray-400">Progress</span>
+          )}
           <span className="text-xs mono font-bold" style={{ color: B }}>{pct}%</span>
         </div>
         <div className="h-1.5 rounded-full bg-gray-100 mb-8 overflow-hidden">
@@ -1601,6 +1702,25 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
               </div>
             );
           })}
+          {isFinalizing && (
+            <div className="flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 animate-pulse"
+              style={{
+                background: BL,
+                borderColor: `${B}30`,
+              }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: B }}>
+                <div className="w-2 h-2 rounded-full bg-white animate-ping" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900">Finalizing your report…</p>
+                <p className="text-xs text-gray-500">Synthesizing findings across chapters</p>
+              </div>
+              <span className="text-xs mono font-bold shrink-0 animate-pulse" style={{ color: B }}>
+                Finalizing…
+              </span>
+            </div>
+          )}
         </div>
         <p className="text-center text-xs text-gray-400 mt-8">Typically 2–3 minutes · do not close this tab</p>
       </div>
