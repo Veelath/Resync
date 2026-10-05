@@ -600,7 +600,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                   Add a <span className="font-semibold text-gray-700">.docx file</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies the document's chapters and can compare them with an uploaded school template.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-6">
-                  {["Chapter mapping", "Template support", "Auto-detect sections"].map(t => (
+                  {["Chapter mapping", "Template support", "Chapter-aware matching"].map(t => (
                     <span key={t} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500 shrink-0"><path d="M5 12l5 5L20 7" /></svg>
                       {t}
@@ -846,7 +846,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
 }
 
 // ─── Research Types & Standard Templates ──────────────────────────────────────
-type ResearchType = "quantitative" | "qualitative" | "both";
+type ResearchType = "quantitative" | "qualitative";
 
 interface TemplateChapter {
   id: string;
@@ -867,14 +867,7 @@ const DEFAULT_TEMPLATES: Record<ResearchType, TemplateChapter[]> = {
     { id: "c2", title: "Chapter 2 — Review of Related Literature", sections: ["Conceptual & Thematic Foundations", "Critical Synthesis of Existing Studies", "Theoretical Lens"] },
     { id: "c3", title: "Chapter 3 — Methodology", sections: ["Qualitative Paradigm (Phenomenology/Case Study)", "Informant Selection & Purposive Sampling", "Interview Protocol & Data Generation", "Thematic Analysis Procedures", "Trustworthiness, Credibility & Ethical Considerations"] },
     { id: "c4", title: "Chapter 4 — Emergent Themes & Narrative Findings", sections: ["Core Thematic Findings", "Narrative Synthesis & Participant Quotes", "Cross-Theme Discussion"] },
-    { id: "c5", title: "Chapter 5 — Discussion & Implications", sections: ["Synthesis of Emergent Themes", "Theoretical & Practical Implications", "Transferability & Future Research Directions"] },
-  ],
-  both: [
-    { id: "c1", title: "Chapter 1 — Introduction", sections: ["Background & Mixed Research Problem", "Integrated Research Questions & Hypotheses", "Rationale for Mixed Methods Approach", "Conceptual Integration Framework"] },
-    { id: "c2", title: "Chapter 2 — Review of Related Literature", sections: ["Multi-Paradigm Literature Review", "Theoretical Foundations", "Synthesis of Quantitative & Qualitative Precedents"] },
-    { id: "c3", title: "Chapter 3 — Methodology", sections: ["Mixed Methods Research Design (Convergent/Sequential)", "Quantitative Phase: Sampling, Instruments & Statistics", "Qualitative Phase: Informants, Protocols & Themes", "Data Integration & Validation Protocols", "Ethical Considerations"] },
-    { id: "c4", title: "Chapter 4 — Integrated Results & Discussion", sections: ["Quantitative Statistical Results", "Qualitative Emergent Themes", "Side-by-Side Joint Display Analysis", "Cross-Phase Meta-Inferences"] },
-    { id: "c5", title: "Chapter 5 — Conclusions & Recommendations", sections: ["Summary of Integrated Findings", "Meta-Inferences & Conclusions", "Practical Recommendations & Future Directions"] },
+    { id: "c5", title: "Chapter 5 — Discussion, Conclusions & Implications", sections: ["Synthesis of Emergent Themes", "Theoretical & Practical Implications", "Conclusions", "Recommendations & Future Research Directions"] },
   ],
 };
 
@@ -912,7 +905,7 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
 
 function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: ScanResponse) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [researchType, setResearchType] = useState<ResearchType>("quantitative");
+  const [researchType, setResearchType] = useState<ResearchType | null>(null);
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -923,7 +916,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   const [templateParseError, setTemplateParseError] = useState<string | null>(null);
   const customTemplateInputRef = useRef<HTMLInputElement>(null);
 
-  const [templateChapters, setTemplateChapters] = useState<TemplateChapter[]>(DEFAULT_TEMPLATES.quantitative);
+  const [templateChapters, setTemplateChapters] = useState<TemplateChapter[]>([]);
   const [editingSection, setEditingSection] = useState<{ cIdx: number; sIdx: number } | null>(null);
   const [newSectionText, setNewSectionText] = useState("");
   const [addingToChapter, setAddingToChapter] = useState<number | null>(null);
@@ -937,7 +930,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         if (lines.length === 0) {
           setTemplateParseError('No headings found in the template. Using default template.');
-          setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
+          setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
         } else {
           setTemplateChapters([{
             id: "c1",
@@ -950,13 +943,13 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
       const parsed = await parseDocxTemplate(file);
       if (parsed.length === 0) {
         setTemplateParseError('No headings found in the template. Using default template.');
-        setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
+        setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
       } else {
         setTemplateChapters(parsed);
       }
     } catch {
       setTemplateParseError('Could not parse the template file. Using default template.');
-      setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
+      setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
     }
   }
 
@@ -966,7 +959,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   }
 
   function handleResetTemplate() {
-    setTemplateChapters(DEFAULT_TEMPLATES[researchType]);
+    setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
     setCustomTemplateFile(null);
     setTemplateParseError(null);
     if (customTemplateInputRef.current) customTemplateInputRef.current.value = '';
@@ -974,6 +967,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
 
   async function handleScan() {
     if (!session?.user) { onNavigate("login"); return; }
+    if (!researchType) return;
     onNavigate("processing");
     try {
       const rawSections = templateChapters.flatMap(c => c.sections);
@@ -1008,7 +1002,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     setTemplateChapters(prev => prev.map((ch, i) => i === cIdx ? { ...ch, sections: ch.sections.map((s, si) => si === sIdx ? val : s) } : ch));
   }
 
-  const canProceedToStep2 = mode === "file" ? !!uploadedFile : link.trim().length > 0;
+  const canProceedToStep2 = researchType !== null && (mode === "file" ? !!uploadedFile : link.trim().length > 0);
 
   return (
     <div className="min-h-full bg-white">
@@ -1038,7 +1032,9 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setStep(1)}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm"
               style={{ background: step === 1 ? B : "#16a34a" }}>
-              {step > 1 ? "✓" : "1"}
+              {step > 1 ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5"><path d="M5 12l5 5L20 7" /></svg>
+              ) : "1"}
             </div>
             <div>
               <p className="text-xs font-bold text-gray-900">1. Manuscript & Research Scope</p>
@@ -1076,7 +1072,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
             <div className="mb-8">
               <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 1 · Manuscript Intake</p>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Select research scope & upload manuscript</h1>
-              <p className="text-gray-500 text-sm">Choose your methodology type so ReSync applies the appropriate coherence rules and chapter template.</p>
+              <p className="text-gray-500 text-sm">Choose Quantitative or Qualitative so ReSync loads the matching standard chapter template. You can edit it in Step 2.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
@@ -1086,27 +1082,31 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500">Research Type Scope</label>
-                    <span className="text-[11px] text-blue-600 font-semibold">Select 1 option</span>
+                    <span className="text-[11px] font-semibold" style={{ color: researchType ? "#16a34a" : "#dc2626" }}>
+                      {researchType ? "Selected" : "Required: choose one"}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div role="radiogroup" aria-label="Research methodology" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       {
                         type: "quantitative" as const,
-                        icon: "📊",
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-indigo-600">
+                            <path d="M3 3v18h18M7 16v-4M12 16V9M17 16V5" />
+                          </svg>
+                        ),
                         title: "Quantitative",
                         subtitle: "Numerical data, hypotheses, sampling & statistical tests",
                       },
                       {
                         type: "qualitative" as const,
-                        icon: "📝",
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-indigo-600">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                          </svg>
+                        ),
                         title: "Qualitative",
                         subtitle: "Thematic analysis, participant interviews & narrative meaning",
-                      },
-                      {
-                        type: "both" as const,
-                        icon: "🔀",
-                        title: "Both (Mixed)",
-                        subtitle: "Integrated statistical tests and qualitative themes",
                       },
                     ].map(card => {
                       const isSelected = researchType === card.type;
@@ -1114,8 +1114,10 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         <button
                           key={card.type}
                           type="button"
+                          role="radio"
+                          aria-checked={isSelected}
                           onClick={() => handleSelectResearchType(card.type)}
-                          className="p-4 rounded-2xl border-2 text-left transition-all relative flex flex-col justify-between"
+                          className="p-4 rounded-2xl border-2 text-left transition-all relative flex flex-col justify-between cursor-pointer"
                           style={{
                             borderColor: isSelected ? B : "#e5e7eb",
                             background: isSelected ? BL : "white",
@@ -1124,7 +1126,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         >
                           <div>
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-2xl">{card.icon}</span>
+                              <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-50 border border-gray-100">{card.icon}</span>
                               {isSelected && (
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-white" style={{ background: B }}>
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>
@@ -1144,11 +1146,24 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <div>
                   <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500 block mb-3">Manuscript Source</label>
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
-                    {([["file", "📄", "Upload .docx", ".docx · max 25 MB"], ["link", "🔗", "Google Docs", "Shared view link"]] as [UploadMode, string, string, string][]).map(([m, icon, label, sub]) => (
+                    {([
+                      [
+                        "file",
+                        <svg key="file-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
+                        "Upload .docx",
+                        ".docx · max 25 MB"
+                      ],
+                      [
+                        "link",
+                        <svg key="link-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
+                        "Google Docs",
+                        "Shared view link"
+                      ]
+                    ] as [UploadMode, React.ReactNode, string, string][]).map(([m, icon, label, sub]) => (
                       <button key={m} onClick={() => setMode(m)}
                         className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${mode === m ? "bg-blue-50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"}`}
                         style={{ borderColor: mode === m ? B : undefined }}>
-                        <span className="text-xl">{icon}</span>
+                        <span className="shrink-0">{icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-bold" style={{ color: mode === m ? B : "#1f2937" }}>{label}</div>
                           <div className="text-xs text-gray-400">{sub}</div>
@@ -1212,20 +1227,25 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 </div>
 
                 {/* Continue button */}
-                <button
-                  type="button"
-                  disabled={!canProceedToStep2}
-                  onClick={() => canProceedToStep2 && setStep(2)}
-                  className="w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                  style={{
-                    background: canProceedToStep2 ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
-                    color: canProceedToStep2 ? "white" : "#9ca3af",
-                    cursor: canProceedToStep2 ? "pointer" : "not-allowed",
-                    boxShadow: canProceedToStep2 ? `0 8px 24px ${B}30` : "none"
-                  }}
-                >
-                  Continue to Template Setup (Step 2) →
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    disabled={!canProceedToStep2}
+                    onClick={() => canProceedToStep2 && setStep(2)}
+                    className="w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                    style={{
+                      background: canProceedToStep2 ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
+                      color: canProceedToStep2 ? "white" : "#9ca3af",
+                      cursor: canProceedToStep2 ? "pointer" : "not-allowed",
+                      boxShadow: canProceedToStep2 ? `0 8px 24px ${B}30` : "none"
+                    }}
+                  >
+                    Continue to Template Setup (Step 2) →
+                  </button>
+                  {!researchType && (
+                    <p className="text-center text-xs text-gray-400">Select Quantitative or Qualitative to continue</p>
+                  )}
+                </div>
               </div>
 
               {/* Right: Prep guide */}
@@ -1239,7 +1259,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   {
                     n: "1",
                     title: "Choose research scope",
-                    body: "Quantitative, Qualitative, or Both (Mixed Methods) allows ReSync to apply tailored validation rules.",
+                    body: "Quantitative or Qualitative methodology allows ReSync to apply tailored validation rules.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
                   },
                   {
@@ -1283,7 +1303,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 2 · Chapter Template</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800">
-                    {researchType === "both" ? "Mixed Methods" : researchType}
+                    {researchType}
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Review & edit standard template</h1>
@@ -1383,9 +1403,10 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                           <button
                             type="button"
                             onClick={() => setAddingToChapter(null)}
-                            className="h-8 px-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-600"
+                            className="h-8 px-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-600 flex items-center justify-center"
+                            aria-label="Cancel adding section"
                           >
-                            ✕
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
                           </button>
                         </div>
                       ) : (
@@ -1394,7 +1415,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                           onClick={() => { setAddingToChapter(cIdx); setNewSectionText(""); }}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-gray-300 text-xs font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M12 5v14M5 12h14" /></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M12 5v14M5 12h14" /></svg>
                           Add section
                         </button>
                       )}
@@ -1411,10 +1432,15 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   <button
                     type="button"
                     onClick={() => customTemplateInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors self-start sm:self-auto bg-white"
+                    className="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors self-start sm:self-auto bg-white flex items-center gap-1.5"
                     style={{ borderColor: customTemplateFile ? B : "#d1d5db", color: customTemplateFile ? B : "#4b5563" }}
                   >
-                    {customTemplateFile ? `📄 ${customTemplateFile.name}` : "+ Attach template (.docx, .txt) (Optional)"}
+                    {customTemplateFile ? (
+                      <>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
+                        <span>{customTemplateFile.name}</span>
+                      </>
+                    ) : "+ Attach template (.docx, .txt) (Optional)"}
                   </button>
                   {templateParseError && (
                     <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
@@ -1468,7 +1494,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Scope:</span>
                       <span className="font-bold capitalize" style={{ color: B }}>
-                        {researchType === "both" ? "Mixed Methods" : researchType}
+                        {researchType}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -1489,7 +1515,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 </div>
 
                 <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-xs text-amber-800 leading-relaxed">
-                  <p className="font-bold text-amber-900 mb-1">💡 Template Customization Tip</p>
+                  <p className="font-bold text-amber-900 mb-1">Template Customization Tip</p>
                   Click any heading pill to rename it. Resync will align your manuscript’s headings with this structure to flag skipped sections and out-of-order arguments.
                 </div>
               </div>
@@ -1612,8 +1638,11 @@ const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: strin
   },
 };
 
+type MobileResultsPane = "findings" | "report" | "xai";
+
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveIdRaw] = useState<string | null>(null);
+  const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
   const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
   const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
@@ -1623,6 +1652,18 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [manuscriptText, setManuscriptText] = useState<string | null>(null);
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
+
+  const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+
+  const setActiveId: React.Dispatch<React.SetStateAction<string | null>> = (next) => {
+    setActiveIdRaw(prev => {
+      const resolved = typeof next === "function" ? (next as (p: string | null) => string | null)(prev) : next;
+      if (!isDesktop()) {
+        setMobilePane(resolved ? "xai" : "report");
+      }
+      return resolved;
+    });
+  };
 
   useEffect(() => {
     if (!isSample && scan?.analysis_run_id && manuscriptText === null && !manuscriptError) {
@@ -1883,7 +1924,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     if (!canGiveFeedback(item)) return null;
     const vote = feedbackMap[item.id];
     const locked = !!vote || !!feedbackPending[item.id];
-    const btn = (kind: 'up' | 'down', helpful: boolean, icon: string, label: string, activeCls: string) => (
+    const btn = (kind: 'up' | 'down', helpful: boolean, icon: React.ReactNode, label: string, activeCls: string) => (
       <button
         type="button"
         disabled={locked}
@@ -1895,6 +1936,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         <span>{icon}</span><span>{label}</span>
       </button>
     );
+    const thumbUpIcon = (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+        <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
+      </svg>
+    );
+    const thumbDownIcon = (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+        <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h3a2 2 0 012 2v7a2 2 0 01-2 2h-3" />
+      </svg>
+    );
     return (
       <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap" onClick={e => e.stopPropagation()}>
         <div>
@@ -1903,8 +1954,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           {feedbackError[item.id] && <span className="text-[11px] text-rose-600">{feedbackError[item.id]}</span>}
         </div>
         <div className="flex items-center gap-2">
-          {btn('up', true, '👍', 'Helpful', 'bg-emerald-50 border-emerald-300 text-emerald-700')}
-          {btn('down', false, '👎', 'Not helpful', 'bg-rose-50 border-rose-300 text-rose-700')}
+          {btn('up', true, thumbUpIcon, 'Helpful', 'bg-emerald-50 border-emerald-300 text-emerald-700')}
+          {btn('down', false, thumbDownIcon, 'Not helpful', 'bg-rose-50 border-rose-300 text-rose-700')}
         </div>
       </div>
     );
@@ -1919,7 +1970,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+    <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50">
 
       {/* ── Navbar ── */}
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50">
@@ -1954,7 +2005,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       <div className="flex-1 flex overflow-hidden">
 
         {/* ══ LEFT: sidebar — score + assessment findings list ══ */}
-        <div className="w-72 lg:w-80 shrink-0 border-r border-gray-100 bg-white flex flex-col overflow-y-auto">
+        <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print:flex lg:flex lg:w-72 xl:w-80 shrink-0 border-r border-gray-100 bg-white flex-col overflow-y-auto`}>
           {/* Score ring */}
           <div className="px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
             <ScoreRing score={score} size={88} />
@@ -2064,7 +2115,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>
 
         {/* ══ CENTER: tab bar + tab content ══ */}
-        <div ref={middlePaneRef} className="flex-1 overflow-y-auto bg-gray-100 flex flex-col">
+        <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print:flex lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
           <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-10 flex items-center gap-1 overflow-x-auto shadow-2xs shrink-0">
             {tabList.map(tab => (
               <button
@@ -3020,7 +3071,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>{/* end center column */}
 
         {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
-        <div className="w-[360px] lg:w-[420px] xl:w-[460px] shrink-0 border-l border-gray-100 bg-white flex flex-col overflow-hidden">
+        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print:flex lg:flex lg:w-[360px] xl:w-[420px] 2xl:w-[460px] shrink-0 border-l border-gray-100 bg-white flex-col overflow-hidden`}>
           <div className="shrink-0 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/90">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
@@ -3237,6 +3288,29 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>
 
       </div>
+
+      {/* ── Mobile bottom navigation bar ── */}
+      <nav className="lg:hidden shrink-0 grid grid-cols-3 border-t border-gray-200 bg-white print:hidden z-30" aria-label="Mobile report panes">
+        {([
+          { id: "findings" as const, label: "Summary" },
+          { id: "report" as const, label: "Manuscript" },
+          { id: "xai" as const, label: "Inspector" },
+        ]).map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMobilePane(id)}
+            aria-current={mobilePane === id ? "page" : undefined}
+            className={`py-3 text-xs font-bold transition-colors ${
+              mobilePane === id
+                ? "text-indigo-600 border-t-2 border-indigo-600 -mt-px bg-indigo-50/30"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -3546,10 +3620,9 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => void; session?: Session | null }) {
+function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const greetingEmoji = hour < 12 ? "☀️" : hour < 18 ? "👋" : "🌙";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -3562,6 +3635,16 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
   const [draft, setDraft] = useState(profile);
   function saveProfile() { setProfile(draft); setEditMode(false); }
   function cancelEdit() { setDraft(profile); setEditMode(false); }
+
+  useEffect(() => {
+    if (session?.user) {
+      setProfile(prev => ({
+        ...prev,
+        fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || prev.fullName || 'User',
+        email: session.user.email || prev.email || '',
+      }));
+    }
+  }, [session]);
 
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditsUsed, setCreditsUsed] = useState<number | null>(null);
@@ -3682,7 +3765,7 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
     {
       num: 2,
       label: "Set Type & Template",
-      desc: "Choose Quantitative, Qualitative, or Both, and edit our standard template.",
+      desc: "Choose Quantitative or Qualitative methodology, and edit our standard template.",
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M3 9h18M9 21V9" /></svg>,
     },
     {
@@ -3699,36 +3782,36 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
     },
   ];
 
-  const LIMITATIONS = [
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /><circle cx="8" cy="6" r="1" fill="currentColor" /></svg>,
-      title: "Images in Manuscript",
-      desc: "Resync cannot read text inside images. Image-embedded content may be flagged or skipped entirely.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M3 5h2m0 0a2 2 0 012-2h10a2 2 0 012 2v2a2 2 0 01-2 2H7a2 2 0 01-2-2V5zm0 0v14m14-14v14M9 12h6M9 16h4" /></svg>,
-      title: "Handwritten Manuscripts",
-      desc: "Handwritten content is not supported. Only digital, text-based files can be processed.",
-    },
+  const BEST_PRACTICES = [
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
-      title: "Image-Only or Scanned Files",
-      desc: "Files where all content is a scanned image (e.g., photographed pages) cannot be properly processed.",
+      title: "Digital Text Manuscripts",
+      desc: "Best with standard digital text files (.docx or Google Docs) for direct sentence-level alignment checks.",
     },
     {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M3 9h9M3 15h5M14 3h7v7" /></svg>,
-      title: "Multi-Column Layouts",
-      desc: "Documents with multi-column formatting may not be read or interpreted in the correct reading order.",
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>,
+      title: "Standard Academic Structure",
+      desc: "Optimized for Chapter 1 through 5 formats (IMRaD or standard thesis structures) with clear headings.",
     },
     {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>,
-      title: "Private Files",
-      desc: "Resync cannot access or verify sources behind login walls, paywalls, or private institutional systems.",
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 6h16M4 12h16M4 18h16" /></svg>,
+      title: "Single-Column Text Flow",
+      desc: "Best with single-column layouts ensuring unambiguous narrative order between sections.",
     },
     {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /><line x1="1" y1="1" x2="23" y2="23" /></svg>,
-      title: "Citation Validation",
-      desc: "Citation checking only confirms public accessibility — not full accuracy. AI results may vary and are not guaranteed.",
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>,
+      title: "Direct Prose Content",
+      desc: "Evaluates narrative and argumentative prose; visual charts and images should have corresponding text captions.",
+    },
+    {
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
+      title: "Open Reference Accessibility",
+      desc: "Audits public URLs, DOIs, and accessible registries for reference verification.",
+    },
+    {
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      title: "Methodological Focus",
+      desc: "Applies targeted validation rules for explicitly selected Quantitative or Qualitative studies.",
     },
   ];
 
@@ -3806,7 +3889,7 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
                     </button>
                   ))}
                   <div className="h-px bg-gray-100 my-1" />
-                  <button role="menuitem" onClick={() => { setProfileMenuOpen(false); onNavigate("login"); }}
+                  <button role="menuitem" onClick={() => { setProfileMenuOpen(false); onLogout?.(); }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>
                     Logout
@@ -4175,7 +4258,6 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
               {/* Left: greeting + headline */}
               <div className="flex-1 min-w-0 max-w-3xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md mb-3">
-                  <span className="text-base">{greetingEmoji}</span>
                   <span className="text-xs sm:text-sm font-semibold text-blue-100">
                     {greeting},{' '}
                     {session?.user?.user_metadata?.full_name?.split(' ')[0]
@@ -4219,8 +4301,9 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
                 <span className="hidden sm:inline text-white/30">•</span>
                 <span className="hidden sm:inline">Automatic Citation Verifier</span>
               </div>
-              <span className="text-xs sm:text-sm font-semibold text-blue-200">
-                ⚡ ~2 min average scan
+              <span className="text-xs sm:text-sm font-semibold text-blue-200 inline-flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                <span>~2 min average scan</span>
               </span>
             </div>
           </div>
@@ -4362,23 +4445,23 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
           </div>
 
           {/* ═══════════════════════════════════════════
-            ROW 2: Scan Limitations
+            ROW 2: Recommended Scope / Best Results With
         ═══════════════════════════════════════════ */}
           <div className="bg-white rounded-3xl border border-gray-100 p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-gray-400">Transparency</p>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Scan Limitations</h2>
-                <p className="text-xs text-gray-400 mt-1 max-w-lg leading-relaxed">Resync is a powerful tool, but it has boundaries. Here is what it currently cannot fully handle — so you know what to expect.</p>
+                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-indigo-600">Guidance</p>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Best Results With</h2>
+                <p className="text-xs text-gray-500 mt-1 max-w-lg leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
               </div>
-              <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#fef9c3" }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-600"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+              <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600 border border-indigo-100">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {LIMITATIONS.map(({ icon, title, desc }) => (
+              {BEST_PRACTICES.map(({ icon, title, desc }) => (
                 <div key={title} className="flex items-start gap-3 px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-gray-100/60 transition-colors">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-gray-400 bg-white border border-gray-200">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-indigo-600 bg-white border border-gray-200">
                     {icon}
                   </div>
                   <div>
@@ -4392,10 +4475,12 @@ function DashboardScreen({ onNavigate, session }: { onNavigate: (s: Screen) => v
 
           {/* ── Template tip ── */}
           <div className="relative rounded-3xl overflow-hidden border border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50 p-5 flex items-center gap-5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0 text-xl">💡</div>
+            <div className="w-11 h-11 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-amber-900">Pro tip: Customize your standard template</p>
-              <p className="text-xs text-amber-700 leading-relaxed mt-0.5">Select your research scope (Quantitative, Qualitative, or Both) and refine headings in our standard template to ensure maximum detection accuracy across chapters.</p>
+              <p className="text-xs text-amber-700 leading-relaxed mt-0.5">Select your research scope (Quantitative or Qualitative) and refine headings in our standard template to ensure maximum detection accuracy across chapters.</p>
             </div>
             <button onClick={() => onNavigate("upload")}
               className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-colors whitespace-nowrap">
@@ -4460,6 +4545,20 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleLoginSuccess() {
+    setIsSampleMode(false);
+    setScreen("dashboard");
+    sessionStorage.setItem('resync_screen', 'dashboard');
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    sessionStorage.setItem('resync_screen', 'home');
+    setScreen('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   if (sessionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -4475,9 +4574,9 @@ export default function App() {
       {screen === "upload" && <UploadScreen onNavigate={navigate} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
       {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}
-      {screen === "login" && <LoginScreen onNavigate={navigate} onLoginSuccess={() => navigate("dashboard")} />}
+      {screen === "login" && <LoginScreen onNavigate={navigate} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onSignupSuccess={() => navigate("dashboard")} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} />}
+      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} />}
     </div>
   );
 }
