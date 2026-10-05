@@ -3623,8 +3623,8 @@ function AuthLayout({ children, onNavigate }: { children: React.ReactNode; onNav
   );
 }
 
-function FieldInput({ label, type = "text", value, onChange, placeholder, right }: {
-  label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; right?: React.ReactNode;
+function FieldInput({ label, type = "text", value, onChange, placeholder, right, required = true }: {
+  label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; right?: React.ReactNode; required?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -3633,7 +3633,7 @@ function FieldInput({ label, type = "text", value, onChange, placeholder, right 
         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
         {right}
       </div>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         className="w-full h-11 px-4 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
         style={{ borderColor: focused ? B : "#e5e7eb", boxShadow: focused ? `0 0 0 3px ${B}12` : "none" }} />
@@ -3881,7 +3881,9 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
 
 // ─── Signup ───────────────────────────────────────────────────────────────────
 function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen) => void; onSignupSuccess?: () => void }) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -3897,17 +3899,29 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
     { label: "Good", color: "#d97706", bar: "#fbbf24" },
     { label: "Strong", color: "#16a34a", bar: "#4ade80" },
   ][str];
-  const canSubmit = !!name && !!email && pw.length >= 8 && agreed && !loading;
+  const canSubmit = !!firstName.trim() && !!lastName.trim() && !!email && pw.length >= 8 && agreed && !loading;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
     setLoading(true);
     setError("");
+    const trimmedFirst = firstName.trim();
+    const trimmedMiddle = middleName.trim();
+    const trimmedLast = lastName.trim();
+    const full_name = [trimmedFirst, trimmedMiddle, trimmedLast].filter(Boolean).join(" ").trim();
+
     const { error } = await supabase.auth.signUp({
       email,
       password: pw,
-      options: { data: { full_name: name } },
+      options: {
+        data: {
+          first_name: trimmedFirst,
+          middle_name: trimmedMiddle,
+          last_name: trimmedLast,
+          full_name,
+        },
+      },
     });
     setLoading(false);
     if (error) {
@@ -3943,7 +3957,11 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
         {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
 
         <form onSubmit={submit} className="space-y-4">
-          <FieldInput label="Full name" value={name} onChange={setName} placeholder="Maria Santos" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FieldInput label="First name" value={firstName} onChange={setFirstName} placeholder="Maria" required={true} />
+            <FieldInput label="Middle name (optional)" value={middleName} onChange={setMiddleName} placeholder="Clara" required={false} />
+          </div>
+          <FieldInput label="Last name" value={lastName} onChange={setLastName} placeholder="Santos" required={true} />
           <FieldInput label="Email address" type="email" value={email} onChange={setEmail} placeholder="maria.santos@dlsu.edu.ph" />
 
           {/* password */}
@@ -4206,6 +4224,23 @@ function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }
   );
 }
 
+function parseUserProfileMetadata(meta?: Record<string, any> | null, email?: string | null) {
+  const rawFullName = meta?.full_name || email?.split('@')[0] || 'User';
+  let firstName = meta?.first_name || '';
+  const middleName = meta?.middle_name || '';
+  let lastName = meta?.last_name || '';
+
+  // Heuristic: If first_name missing but full_name present, split heuristically (first word = first_name, rest = last_name)
+  if (!firstName && rawFullName) {
+    const parts = rawFullName.trim().split(/\s+/).filter(Boolean);
+    firstName = parts[0] || '';
+    lastName = parts.slice(1).join(' ') || '';
+  }
+
+  const fullName = meta?.full_name || [firstName, middleName, lastName].filter(Boolean).join(' ') || rawFullName;
+  return { firstName, middleName, lastName, fullName };
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void }) {
   const hour = new Date().getHours();
@@ -4214,8 +4249,12 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode] = useState(false);
+  const initialResolved = parseUserProfileMetadata(session?.user?.user_metadata, session?.user?.email);
   const [profile, setProfile] = useState({
-    fullName: session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0] || 'User',
+    firstName: initialResolved.firstName,
+    middleName: initialResolved.middleName,
+    lastName: initialResolved.lastName,
+    fullName: initialResolved.fullName,
     email: session?.user?.email || '',
     contactNumber: "",
   });
@@ -4225,9 +4264,13 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
   useEffect(() => {
     if (session?.user) {
+      const resolved = parseUserProfileMetadata(session.user.user_metadata, session.user.email);
       setProfile(prev => ({
         ...prev,
-        fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || prev.fullName || 'User',
+        firstName: resolved.firstName || prev.firstName || '',
+        middleName: resolved.middleName || prev.middleName || '',
+        lastName: resolved.lastName || prev.lastName || '',
+        fullName: resolved.fullName || prev.fullName || 'User',
         email: session.user.email || prev.email || '',
       }));
     }
