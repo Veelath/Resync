@@ -1772,6 +1772,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [manuscriptText, setManuscriptText] = useState<string | null>(null);
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
+  const [showPairingModal, setShowPairingModal] = useState(false);
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
 
@@ -2179,6 +2180,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
           <div className="ml-auto flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowPairingModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all cursor-pointer"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              How Pairing Works
+            </button>
             {!isSample && (
               <>
                 <button
@@ -3122,12 +3131,15 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
                     Coherence pairs ({visiblePairs.length}) · target = {PAR_SCORE}
                   </p>
-                  {filterType === 'strength' && (
-                    <button type="button" onClick={() => setFilterType('all')}
-                      className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-                      Show all ({pairsCount})
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setShowPairingModal(true)} className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">How pairing works</button>
+                    {filterType === 'strength' && (
+                      <button type="button" onClick={() => setFilterType('all')}
+                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                        Show all ({pairsCount})
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {visiblePairs.length === 0 ? (
@@ -3508,6 +3520,67 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           </button>
         ))}
       </nav>
+
+      {/* ── Pairing Modal ── */}
+      {showPairingModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowPairingModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">How Section Pairing Works</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Resync evaluates cross-chapter alignment across 7 weighted academic role pairs calibrated to standard defense criteria.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPairingModal(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0 ml-3"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
+              {[
+                { pair: "Objectives ↔ Methodology", weight: "22%", desc: "checks methodological alignment" },
+                { pair: "Methodology ↔ Results", weight: "20%", desc: "verifies data matches procedures" },
+                { pair: "Results ↔ Discussion", weight: "16%", desc: "ensures claims grounded in findings" },
+                { pair: "Objectives ↔ Conclusion", weight: "16%", desc: "confirms research questions are resolved" },
+                { pair: "Introduction ↔ Objectives", weight: "12%", desc: "validates research gap" },
+                { pair: "Abstract ↔ Conclusion", weight: "8%", desc: "executive summary coverage" },
+                { pair: "Discussion ↔ Conclusion", weight: "6%", desc: "logical progression" },
+              ].map(({ pair, weight, desc }) => (
+                <div key={pair} className="flex items-start justify-between gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/60">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-gray-900">{pair}</p>
+                    <p className="text-[11px] text-gray-600">{desc}</p>
+                  </div>
+                  <span className="shrink-0 px-2.5 py-1 rounded-full text-xs font-black mono bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {weight}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPairingModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-gray-900 text-white hover:bg-gray-800 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4300,32 +4373,32 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
       title: "Digital Text Manuscripts",
-      desc: "Best with standard digital text files (.docx or Google Docs) for direct sentence-level alignment checks.",
+      desc: "Reads .docx, .pdf, and Google Docs — full section detection and sentence-level alignment checks on standard text.",
     },
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>,
       title: "Standard Academic Structure",
-      desc: "Optimized for Chapter 1 through 5 formats (IMRaD or standard thesis structures) with clear headings.",
+      desc: "Supports Chapter 1–5 and IMRaD thesis structures — automatically aligns headings with standard capstone roles.",
     },
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 6h16M4 12h16M4 18h16" /></svg>,
       title: "Single-Column Text Flow",
-      desc: "Best with single-column layouts ensuring unambiguous narrative order between sections.",
+      desc: "Analyzes continuous narrative flow — preserves logical reading order across consecutive sections and subsections.",
     },
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>,
       title: "Direct Prose Content",
-      desc: "Evaluates narrative and argumentative prose; visual charts and images should have corresponding text captions.",
+      desc: "Examines argumentative prose, hypotheses, and conclusions — cross-examines factual claims directly against findings.",
     },
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
       title: "Open Reference Accessibility",
-      desc: "Audits public URLs, DOIs, and accessible registries for reference verification.",
+      desc: "Verifies reference citations against Crossref DOIs and open web registries — confirms accessibility and text mentions.",
     },
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
       title: "Methodological Focus",
-      desc: "Applies targeted validation rules for explicitly selected Quantitative or Qualitative studies.",
+      desc: "Tailors coherence rules to your methodology — evaluates statistical alignment for Quantitative and thematic depth for Qualitative studies.",
     },
   ];
 
@@ -4984,6 +5057,17 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Advisory card */}
+            <div className="mt-4 p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-start gap-3.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-700 mt-0.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-indigo-950">When Inconsistencies May Appear</p>
+                <p className="text-xs text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use the Analysis Inspector to review context before revising.</p>
+              </div>
             </div>
           </div>
 
