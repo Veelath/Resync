@@ -6,7 +6,7 @@ import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import type { CitedReference, RolePairScore, AITextIndicator } from './types';
-import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript } from './services/api';
+import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript, createCreditCheckout, confirmCreditCheckout } from './services/api';
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
 
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard" | "reset-password";
@@ -4241,6 +4241,42 @@ function parseUserProfileMetadata(meta?: Record<string, any> | null, email?: str
   return { firstName, middleName, lastName, fullName };
 }
 
+interface CreditPackage {
+  credits: number;
+  price: number;
+  title: string;
+  subtitle: string;
+  badge?: string | null;
+  perCredit: string;
+}
+
+const CREDIT_PACKAGES: CreditPackage[] = [
+  {
+    credits: 5,
+    price: 5,
+    title: "Starter",
+    subtitle: "Single thesis check",
+    badge: null,
+    perCredit: "$1.00 / credit",
+  },
+  {
+    credits: 20,
+    price: 18,
+    title: "Standard",
+    subtitle: "Full defense prep",
+    badge: "10% OFF / Recommended",
+    perCredit: "$0.90 / credit",
+  },
+  {
+    credits: 50,
+    price: 40,
+    title: "Research Team",
+    subtitle: "Multi-author lab",
+    badge: "20% OFF",
+    perCredit: "$0.80 / credit",
+  },
+];
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void }) {
   const hour = new Date().getHours();
@@ -4300,6 +4336,70 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
       setCreditsLoading(false);
     });
   }, [session?.user?.id]);
+
+  // Credit purchase & mock checkout modal states
+  const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
+  const [creditModalStep, setCreditModalStep] = useState<"package" | "payment" | "processing" | "success">("package");
+  const [selectedPkg, setSelectedPkg] = useState<number>(20); // default to Standard (20 credits)
+  const [cardNumber, setCardNumber] = useState("4242 4242 4242 4242");
+  const [cardExpiry, setCardExpiry] = useState("12/28");
+  const [cardCvc, setCardCvc] = useState("123");
+  const [cardName, setCardName] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [purchasedCredits, setPurchasedCredits] = useState<number>(0);
+
+  useEffect(() => {
+    if (showBuyCreditsModal && !cardName) {
+      setCardName(profile.fullName || "Thesis Author");
+    }
+  }, [showBuyCreditsModal, cardName, profile.fullName]);
+
+  async function handlePaymentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPaymentError("");
+
+    const digits = cardNumber.replace(/\D/g, "");
+    if (digits.length < 16) {
+      setPaymentError("Please enter a valid 16-digit card number.");
+      return;
+    }
+
+    const expiryMatch = cardExpiry.trim().match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/);
+    if (!expiryMatch) {
+      setPaymentError("Please enter a valid expiration date (MM/YY, months 01-12).");
+      return;
+    }
+
+    const cvcDigits = cardCvc.replace(/\D/g, "");
+    if (cvcDigits.length < 3 || cvcDigits.length > 4) {
+      setPaymentError("Please enter a valid 3 or 4 digit CVC security code.");
+      return;
+    }
+
+    if (!cardName.trim()) {
+      setPaymentError("Please enter cardholder name.");
+      return;
+    }
+
+    setCreditModalStep("processing");
+    await new Promise(r => setTimeout(r, 2000));
+
+    try {
+      if (session?.user?.id) {
+        const checkout = await createCreditCheckout(session.user.id, selectedPkg);
+        const confirm = await confirmCreditCheckout(session.user.id, checkout.pymt_txn_id);
+        setCreditBalance(confirm.balance);
+      } else {
+        setCreditBalance(prev => (prev ?? 0) + selectedPkg);
+      }
+    } catch (err) {
+      console.warn("Backend simulated checkout fallback:", err);
+      setCreditBalance(prev => (prev ?? 0) + selectedPkg);
+    }
+
+    setPurchasedCredits(selectedPkg);
+    setCreditModalStep("success");
+  }
 
   // Settings: Password change states
   const [currentPw, setCurrentPw] = useState("");
@@ -4672,23 +4772,55 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
         </main>
       ) : activeNav === "Usage / Credits" ? (
         <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">
-          <div>
-            <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account usage</p>
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Usage / Credits</h2>
-            <p className="text-xs text-gray-400 mt-1">View your available credits and current usage.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account usage</p>
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Usage / Credits</h2>
+              <p className="text-xs text-gray-400 mt-1">View your available credits and current usage.</p>
+            </div>
+            <button
+              onClick={() => {
+                setPaymentError("");
+                setCreditModalStep("package");
+                if (!cardName) setCardName(profile.fullName || "Thesis Author");
+                setShowBuyCreditsModal(true);
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm flex items-center gap-1.5 transition-all hover:opacity-90 cursor-pointer"
+              style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+            >
+              + Buy Credits
+            </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              { value: creditsLoading ? "…" : creditBalance !== null ? String(creditBalance) : "—", label: "Credits available", color: B, bg: BL },
+              { value: creditsLoading ? "…" : creditBalance !== null ? String(creditBalance) : "—", label: "Credits available", color: B, bg: BL, topUp: true },
               { value: creditsLoading ? "…" : creditsUsed !== null ? String(creditsUsed) : "—", label: "Credits used", color: "#059669", bg: "#f0fdf4" },
               { value: "1 credit", label: "Cost per scan", color: "#d97706", bg: "#fffbeb" },
             ].map(item => (
-              <div key={item.label} className="bg-white rounded-3xl border border-gray-100 p-6" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style={{ background: item.bg, color: item.color }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+              <div key={item.label} className="bg-white rounded-3xl border border-gray-100 p-6 flex flex-col justify-between" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: item.bg, color: item.color }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                    </div>
+                    {item.topUp && (
+                      <button
+                        onClick={() => {
+                          setPaymentError("");
+                          setCreditModalStep("package");
+                          if (!cardName) setCardName(profile.fullName || "Thesis Author");
+                          setShowBuyCreditsModal(true);
+                        }}
+                        className="text-xs font-bold px-2.5 py-1 rounded-lg border transition-all hover:bg-gray-50 flex items-center gap-1 cursor-pointer"
+                        style={{ borderColor: `${B}30`, color: B }}
+                      >
+                        + Top up
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-2xl font-bold mono" style={{ color: item.color }}>{item.value}</p>
+                  <p className="text-xs text-gray-400 mt-1">{item.label}</p>
                 </div>
-                <p className="text-2xl font-bold mono" style={{ color: item.color }}>{item.value}</p>
-                <p className="text-xs text-gray-400 mt-1">{item.label}</p>
               </div>
             ))}
           </div>
@@ -4697,7 +4829,21 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               <h3 className="text-sm font-bold text-gray-900">Ready to review a manuscript?</h3>
               <p className="text-xs text-gray-400 mt-1">Each complete coherence scan uses one credit.</p>
             </div>
-            <button onClick={() => onNavigate("upload")} className="px-5 py-2.5 rounded-xl text-xs font-bold text-white" style={{ background: B }}>Start a Scan</button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setPaymentError("");
+                  setCreditModalStep("package");
+                  if (!cardName) setCardName(profile.fullName || "Thesis Author");
+                  setShowBuyCreditsModal(true);
+                }}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors hover:bg-gray-50 cursor-pointer"
+                style={{ borderColor: `${B}30`, color: B }}
+              >
+                Buy Credits
+              </button>
+              <button onClick={() => onNavigate("upload")} className="px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm cursor-pointer" style={{ background: B }}>Start a Scan</button>
+            </div>
           </div>
         </main>
       ) : activeNav === "Academic Profile" ? (
@@ -5132,6 +5278,311 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           <div className="h-4" />
         </main>
       </>)}
+
+      {/* ── Mock Payment Modal ── */}
+      {showBuyCreditsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && creditModalStep !== "processing") {
+              setShowBuyCreditsModal(false);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden transition-all"
+            style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Top Demo Banner */}
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-between text-amber-800 text-xs font-semibold">
+              <span className="flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-600 shrink-0">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                DEMO MODE — no real payment processed
+              </span>
+              <span className="text-[10px] uppercase tracking-wider bg-amber-200/60 px-2 py-0.5 rounded text-amber-900 font-bold">
+                Simulated Sandbox
+              </span>
+            </div>
+
+            {/* Modal Header */}
+            <div className="px-6 pt-5 pb-3 flex items-start justify-between border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Purchase Scan Credits</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Scan credits never expire and apply to any thesis analysis.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBuyCreditsModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label="Close modal"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Step 1: Package Selection */}
+            {creditModalStep === "package" && (
+              <div className="p-6 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  {CREDIT_PACKAGES.map((pkg) => {
+                    const isSelected = selectedPkg === pkg.credits;
+                    return (
+                      <div
+                        key={pkg.credits}
+                        onClick={() => setSelectedPkg(pkg.credits)}
+                        className={`relative rounded-2xl p-4 border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50/40 shadow-sm"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        {pkg.badge && (
+                          <span className="absolute -top-2.5 right-2 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                            {pkg.badge}
+                          </span>
+                        )}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-gray-900">{pkg.title}</span>
+                            <div
+                              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                isSelected ? "border-blue-600 bg-blue-600" : "border-gray-300"
+                              }`}
+                            >
+                              {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                          <p className="text-2xl font-bold text-gray-900 mb-0.5">
+                            {pkg.credits} <span className="text-xs font-medium text-gray-500">Credits</span>
+                          </p>
+                          <p className="text-xs text-gray-500 leading-snug">{pkg.subtitle}</p>
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-baseline justify-between">
+                          <span className="text-lg font-bold text-gray-900">${pkg.price}</span>
+                          <span className="text-[10px] text-gray-400 mono">{pkg.perCredit}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs">
+                  <span className="text-gray-600">
+                    Selected: <strong className="text-gray-900">{selectedPkg} Credits</strong> for{" "}
+                    <strong className="text-gray-900">
+                      ${CREDIT_PACKAGES.find(p => p.credits === selectedPkg)?.price ?? 0} USD
+                    </strong>
+                  </span>
+                  <span className="text-gray-400 text-[11px]">Instant ledger crediting</span>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBuyCreditsModal(false)}
+                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentError("");
+                      setCreditModalStep("payment");
+                    }}
+                    className="px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all hover:opacity-90 cursor-pointer"
+                    style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+                  >
+                    Continue to Payment →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Payment Details */}
+            {creditModalStep === "payment" && (
+              <form onSubmit={handlePaymentSubmit} className="p-6 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentError("");
+                      setCreditModalStep("package");
+                    }}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-900 flex items-center gap-1 cursor-pointer"
+                  >
+                    ← Back to packages
+                  </button>
+                  <div className="text-right">
+                    <span className="text-xs text-gray-400">Order Summary: </span>
+                    <span className="text-xs font-bold text-gray-900">
+                      {selectedPkg} Credits — ${CREDIT_PACKAGES.find(p => p.credits === selectedPkg)?.price ?? 0} USD
+                    </span>
+                  </div>
+                </div>
+
+                {paymentError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0 text-red-600">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span>{paymentError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Cardholder Name</label>
+                    <input
+                      type="text"
+                      value={cardName}
+                      onChange={e => setCardName(e.target.value)}
+                      placeholder="Thesis Author"
+                      className="w-full h-10 px-3.5 rounded-xl border text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                      style={{ borderColor: "#e5e7eb" }}
+                      onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
+                      onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Card Number</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={cardNumber}
+                        onChange={e => setCardNumber(e.target.value)}
+                        placeholder="4242 4242 4242 4242"
+                        className="w-full h-10 px-3.5 pr-10 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                        style={{ borderColor: "#e5e7eb" }}
+                        onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
+                        onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                      />
+                      <div className="absolute inset-y-0 right-3 flex items-center text-gray-400 pointer-events-none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Expiration Date</label>
+                      <input
+                        type="text"
+                        value={cardExpiry}
+                        onChange={e => setCardExpiry(e.target.value)}
+                        placeholder="MM/YY"
+                        maxLength={5}
+                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                        style={{ borderColor: "#e5e7eb" }}
+                        onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
+                        onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">CVC / CVV</label>
+                      <input
+                        type="text"
+                        value={cardCvc}
+                        onChange={e => setCardCvc(e.target.value)}
+                        placeholder="123"
+                        maxLength={4}
+                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                        style={{ borderColor: "#e5e7eb" }}
+                        onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
+                        onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all shadow-sm flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
+                    style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+                  >
+                    Pay ${CREDIT_PACKAGES.find(p => p.credits === selectedPkg)?.price ?? 0} (Simulated)
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-gray-400">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                  <span>Encrypted 256-bit Demo SSL · Test Card 4242</span>
+                </div>
+              </form>
+            )}
+
+            {/* Step 3: Processing */}
+            {creditModalStep === "processing" && (
+              <div className="p-10 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-12 h-12 rounded-full border-4 border-blue-600 border-t-transparent animate-spin mb-2" />
+                <h4 className="text-base font-bold text-gray-900">Processing simulated transaction...</h4>
+                <p className="text-xs text-gray-400 max-w-xs">Contacting credit ledger provider...</p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-semibold mono">
+                  Simulating instant payment confirmation
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Success */}
+            {creditModalStep === "success" && (
+              <div className="p-8 flex flex-col items-center text-center space-y-5">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-7 h-7">
+                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-xl font-bold text-gray-900">Payment Confirmed!</h4>
+                  <p className="text-xs text-gray-500 mt-1">Your scan credits have been added to your account ledger.</p>
+                </div>
+
+                <div className="w-full max-w-sm rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2.5 text-xs text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Package:</span>
+                    <span className="font-bold text-gray-900">{purchasedCredits} Scan Credits</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Status:</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-green-700 bg-green-100/70 px-2 py-0.5 rounded-full text-[10px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      Paid (Simulated)
+                    </span>
+                  </div>
+                  <div className="h-px bg-gray-200/60 my-1" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">New Balance:</span>
+                    <span className="font-bold mono text-blue-700">
+                      {creditBalance !== null ? creditBalance : purchasedCredits} Credits Available
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBuyCreditsModal(false)}
+                  className="w-full max-w-sm py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all shadow-sm hover:opacity-90 cursor-pointer"
+                  style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+                >
+                  Return to Dashboard
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
