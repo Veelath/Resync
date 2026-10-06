@@ -2461,13 +2461,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
         {/* ══ CENTER: tab bar + tab content ══ */}
         <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-8 flex items-center gap-1 shadow-2xs shrink-0 print:hidden">
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-8 flex items-center gap-1 overflow-x-auto xl:overflow-visible shadow-2xs shrink-0 print:hidden">
             {tabList.map(tab => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3.5 text-xs font-bold border-b-2 -mb-px transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
                 }`}>
                 {tab.label}
