@@ -1881,6 +1881,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
+  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
 
@@ -2320,6 +2322,44 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <span className="text-xs text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsLeftCollapsed(p => !p)}
+              aria-label="Toggle findings sidebar"
+              aria-expanded={!isLeftCollapsed}
+              title={isLeftCollapsed ? "Expand findings sidebar" : "Collapse findings sidebar"}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M9 3v18" />
+              </svg>
+              {isLeftCollapsed ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M9 18l6-6-6-6" /></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M15 18l-6-6 6-6" /></svg>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsRightCollapsed(p => !p)}
+              aria-label="Toggle inspector sidebar"
+              aria-expanded={!isRightCollapsed}
+              title={isRightCollapsed ? "Expand inspector sidebar" : "Collapse inspector sidebar"}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
+            >
+              {isRightCollapsed ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M15 18l-6-6 6-6" /></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M9 18l6-6-6-6" /></svg>
+              )}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M15 3v18" />
+              </svg>
+            </button>
+          </div>
           <div className="ml-auto flex items-center gap-2 shrink-0">
             <button
               type="button"
@@ -2350,7 +2390,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       <div className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block">
 
         {/* ══ LEFT: sidebar — score + assessment findings list ══ */}
-        <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex lg:w-72 xl:w-80 shrink-0 border-r border-gray-100 bg-white flex-col overflow-y-auto`}>
+        <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-y-auto transition-all duration-300 ${
+          isLeftCollapsed
+            ? "lg:w-0 lg:border-r-0 lg:overflow-hidden print:lg:w-72"
+            : "lg:w-72 xl:w-80 border-r border-gray-100"
+        }`}>
           {/* Score ring */}
           <div className="px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
             <ScoreRing score={score} size={88} />
@@ -3461,7 +3505,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>{/* end center column */}
 
         {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
-        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex lg:w-[360px] xl:w-[420px] 2xl:w-[460px] shrink-0 border-l border-gray-100 bg-white flex-col overflow-hidden`}>
+        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-hidden transition-all duration-300 ${
+          isRightCollapsed
+            ? "lg:w-0 lg:border-l-0 lg:overflow-hidden print:lg:w-[360px]"
+            : "lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100"
+        }`}>
           <div className="shrink-0 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/90">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
