@@ -1004,6 +1004,13 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     }
   }
 
+  function handleRemoveAllSections() {
+    const ok = window.confirm("Remove all sections from all chapters? This cannot be undone.");
+    if (!ok) return;
+    setTemplateChapters(prev => prev.map(ch => ({ ...ch, sections: [] })));
+    showTemplateToast("All sections removed.");
+  }
+
   async function handleTemplateFileChange(file: File) {
     setCustomTemplateFile(file);
     setTemplateParseError(null);
@@ -1464,7 +1471,20 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   Use Saved Template
                 </button>
 
-                {/* Button 3: Reset to Standard */}
+                {/* Button 3: Remove All Sections */}
+                <button
+                  type="button"
+                  onClick={handleRemoveAllSections}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-red-600 hover:text-red-700 hover:border-red-200 hover:bg-red-50/50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  </svg>
+                  Remove All Sections
+                </button>
+
+                {/* Button 4: Reset to Standard */}
                 <button
                   type="button"
                   onClick={handleResetTemplate}
