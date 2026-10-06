@@ -29,6 +29,7 @@ interface AssessmentItem {
   conflictsWith?: string;
   conflictQuote?: string;
   recommendation: string;
+  isMissingSection?: boolean;
 }
 
 const ASSESSMENT_ITEMS: AssessmentItem[] = [
@@ -1832,20 +1833,28 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       );
 
   const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : [
-    ...(scan?.inconsistencies?.map((inc, i) => ({
-      id: inc.inconsistency_id || `inc-${i}`,
-      type: (inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType,
-      title: (inc.explanation_what ?? "").slice(0, 50) || "Missing section",
-      section: `${inc.section_a} ↔ ${inc.section_b}`,
-      targetSectionIndex: 0,
-      questionOrSubtitle: inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding",
-      description: inc.explanation_why || inc.explanation_what,
-      significance: "Requires attention",
-      evidence: inc.evidence_a,
-      conflictsWith: inc.section_b,
-      conflictQuote: inc.evidence_b,
-      recommendation: inc.suggested_fix
-    })) || []),
+    ...(scan?.inconsistencies?.map((inc, i) => {
+      const isMissingSection = !inc.section_b;
+      return {
+        id: inc.inconsistency_id || `inc-${i}`,
+        type: (inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType,
+        title: isMissingSection
+          ? `Required section "${formatRoleLabel(inc.section_a)}"`
+          : (inc.explanation_what ?? "").trim().replace(/\.$/, "") || "Finding",
+        section: isMissingSection
+          ? "Missing Section"
+          : `${inc.section_a} ↔ ${inc.section_b}`,
+        targetSectionIndex: 0,
+        questionOrSubtitle: isMissingSection ? "Missing section" : (inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding"),
+        description: inc.explanation_why || inc.explanation_what,
+        significance: isMissingSection ? "Structural requirement" : "Requires attention",
+        evidence: inc.evidence_a,
+        conflictsWith: isMissingSection ? undefined : inc.section_b,
+        conflictQuote: isMissingSection ? undefined : inc.evidence_b,
+        recommendation: inc.suggested_fix,
+        isMissingSection
+      };
+    }) || []),
     ...(scan?.verifications?.map((v, i) => ({
       id: `ver-${i}`,
       type: "strength" as AssessmentType,
@@ -3142,7 +3151,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ST[item.type].pill}`}>{ST[item.type].label}</span>
                               <span className="text-xs mono font-bold text-gray-400">#{idx + 1}</span>
-                              <span className="text-xs font-semibold" style={{ color: ST[item.type].accentColor }}>{item.section}</span>
+                              {item.isMissingSection ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-800">
+                                  Missing Section
+                                </span>
+                              ) : (
+                                <span className="text-xs font-semibold" style={{ color: ST[item.type].accentColor }}>{item.section}</span>
+                              )}
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.title}</h3>
                           </div>
