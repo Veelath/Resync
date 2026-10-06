@@ -12,7 +12,7 @@ import { formatRoleLabel, PAR_SCORE } from './utils.js';
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard" | "reset-password";
 type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
-type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence';
+type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
 type AssessmentType = "overall-status" | "strength" | "major-issue" | "affected-section";
 
@@ -179,7 +179,12 @@ const CITATIONS: Citation[] = [
   { id: "c6", ref: "Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.", url: "https://philjol.info/index.php/JPAIR/article/view/7821", status: "live" },
 ];
 
-
+const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
+  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-gray-100 bg-gray-50" },
+  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-100 bg-amber-50" },
+  neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
+  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-red-100 bg-red-50" },
+};
 
 const AI_TEXT_DISCLAIMER =
   'Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features and cannot verify authorship. Well-written human academic prose commonly scores 40-60 on this scale; this indicator must never be used to block a submission or as an integrity charge on its own.';
@@ -1892,6 +1897,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
   const [showPairingModal, setShowPairingModal] = useState(false);
+  const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
@@ -2159,12 +2165,17 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const visiblePairs: EnrichedPair[] = filterType === "strength" ? allPairs.filter(p => (p.score ?? 0) >= PAR_SCORE) : allPairs;
   const pairsCount = allPairs.length;
 
+  const citationsCount = localCitations.length;
+  const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
+  const displayedCitations = citationFilter ? localCitations.filter(c => c.status === citationFilter) : localCitations;
+
   const aiText: AITextIndicator | null = isSample ? SAMPLE_AI_TEXT : (scan?.ai_text_indicator ?? null);
 
   const tabList: Array<{ id: ActiveResultsTab; label: string }> = [
     { id: 'overview',         label: 'Overview' },
     { id: 'inconsistencies',  label: `Inconsistencies (${inconsistenciesCount})` },
     { id: 'strong_coherence', label: `Coherence Pairs (${pairsCount})` },
+    { id: 'citations',        label: `Citations (${citationsCount})` },
   ];
 
   // Feedback is only valid for inconsistency findings that exist in the DB.
@@ -2249,6 +2260,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     if (next === "major-issue" || next === "affected-section") setActiveTab("inconsistencies");
     else if (next === "strength") setActiveTab("strong_coherence");
     else if (next === "overall-status") setActiveTab("overview");
+    else if (activeTab === "citations") setActiveTab("inconsistencies"); // "all"
   }
 
   return (
@@ -2436,6 +2448,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 onClick={() => {
                   setActiveId(prev => prev === item.id ? null : item.id);
                   if (activeTab === 'overview') scrollToSection(item.targetSectionIndex);
+                  else if (activeTab === 'citations')
+                    setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
                 }}
                 className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
                   }`}>
@@ -3364,6 +3378,98 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </div>
                     );
                   })
+                )}
+              </div>
+            )}
+
+            {/* ── Citations tab ── */}
+            {activeTab === 'citations' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => {
+                    const isSelected = citationFilter === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setCitationFilter(prev => prev === s ? null : s)}
+                        className={`rounded-xl border px-4 py-3 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs"
+                            : "bg-white border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
+                          {isSelected && (
+                            <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xl font-black text-gray-900 mt-0.5">{citeCount(s)}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {citationFilter && (
+                  <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
+                    <span className="text-indigo-950 font-medium">
+                      Filtering by: <strong className="font-bold uppercase tracking-wider">{CITE_BADGE[citationFilter].label}</strong> ({displayedCitations.length} of {citationsCount})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCitationFilter(null)}
+                      className="text-xs font-bold text-indigo-700 hover:underline cursor-pointer"
+                    >
+                      Show All
+                    </button>
+                  </div>
+                )}
+
+                {displayedCitations.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
+                    <p className="text-sm font-bold text-gray-800 mb-1">
+                      {citationFilter ? `No ${CITE_BADGE[citationFilter].label.toLowerCase()} citations` : "No citations to show"}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {citationFilter
+                        ? `No citations with status "${CITE_BADGE[citationFilter].label}" were found.`
+                        : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
+                    </p>
+                    {citationFilter && (
+                      <button
+                        type="button"
+                        onClick={() => setCitationFilter(null)}
+                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                      >
+                        Show all citations
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {displayedCitations.map((cite, ci) => (
+                      <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
+                        <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
+                          <p className="text-[13px] text-gray-800 leading-snug">
+                            {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
+                            {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
+                            {cite.ref}
+                          </p>
+                          {cite.url && (/^https?:\/\//i.test(cite.url)
+                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
+                            : <p className="text-[11px] mono truncate mt-1 text-gray-400">{cite.url}</p>)}
+                        </div>
+                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
+                          {CITE_BADGE[cite.status].label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
