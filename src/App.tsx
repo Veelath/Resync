@@ -12,7 +12,7 @@ import { formatRoleLabel, PAR_SCORE } from './utils.js';
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard" | "reset-password";
 type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
-type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations' | 'originality';
+type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
 type AssessmentType = "overall-status" | "strength" | "major-issue" | "affected-section";
 
@@ -894,9 +894,11 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
 
     if (tag === 'h1' || isParagraphHeader) {
       chapterIndex = chapters.length;
-      chapters.push({ id: `c${chapterIndex + 1}`, title: text, sections: [] });
+      const cleanTitle = text.replace(/^["'\s]+|["',\s]+$/g, '').trim();
+      chapters.push({ id: `c${chapterIndex + 1}`, title: cleanTitle || text, sections: [] });
     } else if ((tag === 'h2' || tag === 'h3') && chapters.length > 0) {
-      chapters[chapters.length - 1].sections.push(text);
+      const sanitized = text.replace(/^["'\s]+|["',\s]+$/g, '').trim();
+      if (sanitized) chapters[chapters.length - 1].sections.push(sanitized);
     }
   }
 
@@ -931,7 +933,10 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     try {
       if (file.name.endsWith('.txt') || file.type === 'text/plain') {
         const text = await file.text();
-        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const lines = text.split(/\r?\n/)
+          .map(l => l.trim())
+          .map(l => l.replace(/^["'\s]+|["',\s]+$/g, '').trim())
+          .filter(Boolean);
         if (lines.length === 0) {
           setTemplateParseError('No headings found in the template. Using default template.');
           setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
@@ -1773,6 +1778,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
   const [showPairingModal, setShowPairingModal] = useState(false);
+  const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
+  const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
 
@@ -1806,8 +1813,18 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     middlePaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeTab]);
 
-  const extractedTitle = manuscriptText
-    ? manuscriptText.split(/\r?\n/).map(s => s.trim()).find(s => s.length > 0)?.slice(0, 200)
+  const ROMAN = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx)$/i;
+  const isTrivial = (s: string) => ROMAN.test(s) || /^\d+$/.test(s) || s.trim().length < 3;
+  const cleanedTitle = manuscriptText
+    ?.split(/\r?\n/)
+    .map(s => s.trim())
+    .find(s => s.length > 0 && !isTrivial(s))
+    ?.slice(0, 200);
+
+  const cleanedFilename = scan?.doc_url
+    ? (scan.doc_url.startsWith('http')
+        ? scan.doc_url.split('/').pop()?.replace(/\.(docx|pdf|doc)$/i, '') || null
+        : scan.doc_url.replace(/\.(docx|pdf|doc)$/i, ''))
     : null;
 
   const displayTitle = isSample
@@ -1815,8 +1832,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     : (
         (scan as any)?.manuscript_title ||
         (scan as any)?.title ||
-        extractedTitle ||
-        (scan?.doc_url && !scan.doc_url.startsWith('http') ? scan.doc_url.replace(/\.[^/.]+$/, '') : null) ||
+        cleanedTitle ||
+        cleanedFilename ||
         "Document Coherence Scan"
       );
 
@@ -1989,6 +2006,21 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       : inconsistencyItems;
   const inconsistenciesCount = inconsistencyItems.length;
 
+  const toggleIssueExpanded = (id: string) => {
+    setExpandedIssueIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allExpanded = visibleInconsistencies.length > 0 && visibleInconsistencies.every(item => expandedIssueIds.has(item.id));
+  const toggleAllExpanded = () => {
+    if (allExpanded) setExpandedIssueIds(new Set());
+    else setExpandedIssueIds(new Set(visibleInconsistencies.map(i => i.id)));
+  };
+
   type EnrichedPair = RolePairScore & {
     verification?: { alignment: string; note: string };
   };
@@ -2008,6 +2040,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   const citationsCount = localCitations.length;
   const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
+  const displayedCitations = citationFilter ? localCitations.filter(c => c.status === citationFilter) : localCitations;
 
   const aiText: AITextIndicator | null = isSample ? SAMPLE_AI_TEXT : (scan?.ai_text_indicator ?? null);
 
@@ -2016,7 +2049,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     { id: 'inconsistencies',  label: `Inconsistencies (${inconsistenciesCount})` },
     { id: 'strong_coherence', label: `Coherence Pairs (${pairsCount})` },
     { id: 'citations',        label: `Citations (${citationsCount})` },
-    { id: 'originality',      label: 'Writing Style' },
   ];
 
   // Feedback is only valid for inconsistency findings that exist in the DB.
@@ -2101,7 +2133,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     if (next === "major-issue" || next === "affected-section") setActiveTab("inconsistencies");
     else if (next === "strength") setActiveTab("strong_coherence");
     else if (next === "overall-status") setActiveTab("overview");
-    else if (activeTab === "citations" || activeTab === "originality") setActiveTab("inconsistencies"); // "all"
+    else if (activeTab === "citations") setActiveTab("inconsistencies"); // "all"
   }
 
   return (
@@ -2289,7 +2321,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 onClick={() => {
                   setActiveId(prev => prev === item.id ? null : item.id);
                   if (activeTab === 'overview') scrollToSection(item.targetSectionIndex);
-                  else if (activeTab === 'citations' || activeTab === 'originality')
+                  else if (activeTab === 'citations')
                     setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
                 }}
                 className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
@@ -3072,12 +3104,23 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
                     {filterType === 'major-issue' ? 'Major Issues' : filterType === 'affected-section' ? 'Affected Sections' : 'All Inconsistencies'} ({visibleInconsistencies.length})
                   </p>
-                  {(filterType === 'major-issue' || filterType === 'affected-section') && (
-                    <button type="button" onClick={() => setFilterType('all')}
-                      className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-                      Show all ({inconsistenciesCount})
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {(filterType === 'major-issue' || filterType === 'affected-section') && (
+                      <button type="button" onClick={() => setFilterType('all')}
+                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                        Show all ({inconsistenciesCount})
+                      </button>
+                    )}
+                    {visibleInconsistencies.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={toggleAllExpanded}
+                        className="text-xs font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 px-2.5 py-1 rounded-lg bg-white hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                      >
+                        {allExpanded ? "Collapse All" : "Expand All"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {visibleInconsistencies.length === 0 ? (
@@ -3090,36 +3133,57 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </p>
                   </div>
                 ) : (
-                  visibleInconsistencies.map((item, idx) => (
-                    <div key={item.id}
-                      onClick={() => setActiveId(prev => prev === item.id ? null : item.id)}
-                      className={`bg-white rounded-2xl border p-5 space-y-3 cursor-pointer transition-all ${
-                        activeId === item.id ? `${ST[item.type].border} ring-2 ring-indigo-300 shadow-sm` : 'border-gray-200 hover:border-gray-300'
-                      }`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ST[item.type].pill}`}>{ST[item.type].label}</span>
-                        <span className="text-xs mono font-bold text-gray-400">#{idx + 1}</span>
+                  visibleInconsistencies.map((item, idx) => {
+                    const isExpanded = expandedIssueIds.has(item.id);
+                    return (
+                      <div key={item.id}
+                        className={`bg-white rounded-2xl border transition-all ${
+                          activeId === item.id ? `${ST[item.type].border} ring-2 ring-indigo-300 shadow-sm` : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            toggleIssueExpanded(item.id);
+                            setActiveId(prev => prev === item.id ? null : item.id);
+                          }}
+                          className="w-full p-4 sm:p-5 flex items-start justify-between gap-3 text-left cursor-pointer"
+                        >
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ST[item.type].pill}`}>{ST[item.type].label}</span>
+                              <span className="text-xs mono font-bold text-gray-400">#{idx + 1}</span>
+                              <span className="text-xs font-semibold" style={{ color: ST[item.type].accentColor }}>{item.section}</span>
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.title}</h3>
+                          </div>
+                          <div className="shrink-0 p-1 text-gray-400 hover:text-gray-600">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                              <path d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
+                            {item.description && <p className="text-[13px] text-gray-700 leading-relaxed mt-3">{item.description}</p>}
+                            {item.conflictsWith && item.conflictQuote && (
+                              <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
+                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">Conflicts with: {item.conflictsWith}</p>
+                                <p className="text-xs text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
+                              </div>
+                            )}
+                            {item.recommendation && (
+                              <div className="rounded-xl bg-indigo-50/60 border border-indigo-100 p-3">
+                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-indigo-800 mb-1">Suggested fix</p>
+                                <p className="text-xs text-indigo-950 font-medium leading-relaxed">{item.recommendation}</p>
+                              </div>
+                            )}
+                            {renderFeedback(item)}
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.title}</h3>
-                        <p className="text-xs font-semibold mt-0.5" style={{ color: ST[item.type].accentColor }}>{item.section}</p>
-                      </div>
-                      {item.description && <p className="text-[13px] text-gray-700 leading-relaxed">{item.description}</p>}
-                      {item.conflictsWith && item.conflictQuote && (
-                        <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
-                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">Conflicts with: {item.conflictsWith}</p>
-                          <p className="text-xs text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
-                        </div>
-                      )}
-                      {item.recommendation && (
-                        <div className="rounded-xl bg-indigo-50/60 border border-indigo-100 p-3">
-                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-indigo-800 mb-1">Suggested fix</p>
-                          <p className="text-xs text-indigo-950 font-medium leading-relaxed">{item.recommendation}</p>
-                        </div>
-                      )}
-                      {renderFeedback(item)}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
@@ -3185,24 +3249,71 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {activeTab === 'citations' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => (
-                    <div key={s} className="bg-white rounded-xl border border-gray-200 px-4 py-3">
-                      <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
-                      <p className="text-xl font-black text-gray-900 mt-0.5">{citeCount(s)}</p>
-                    </div>
-                  ))}
+                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => {
+                    const isSelected = citationFilter === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setCitationFilter(prev => prev === s ? null : s)}
+                        className={`rounded-xl border px-4 py-3 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs"
+                            : "bg-white border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
+                          {isSelected && (
+                            <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xl font-black text-gray-900 mt-0.5">{citeCount(s)}</p>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {localCitations.length === 0 ? (
+                {citationFilter && (
+                  <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
+                    <span className="text-indigo-950 font-medium">
+                      Filtering by: <strong className="font-bold uppercase tracking-wider">{CITE_BADGE[citationFilter].label}</strong> ({displayedCitations.length} of {citationsCount})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCitationFilter(null)}
+                      className="text-xs font-bold text-indigo-700 hover:underline cursor-pointer"
+                    >
+                      Show All
+                    </button>
+                  </div>
+                )}
+
+                {displayedCitations.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-gray-800 mb-1">No citations to show</p>
-                    <p className="text-xs text-gray-500">
-                      No citations were detected in this manuscript ({scan?.citations_audited ?? 0} sources audited).
+                    <p className="text-sm font-bold text-gray-800 mb-1">
+                      {citationFilter ? `No ${CITE_BADGE[citationFilter].label.toLowerCase()} citations` : "No citations to show"}
                     </p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {citationFilter
+                        ? `No citations with status "${CITE_BADGE[citationFilter].label}" were found.`
+                        : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
+                    </p>
+                    {citationFilter && (
+                      <button
+                        type="button"
+                        onClick={() => setCitationFilter(null)}
+                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                      >
+                        Show all citations
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {localCitations.map((cite, ci) => (
+                    {displayedCitations.map((cite, ci) => (
                       <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
                         <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
                         <div className="flex-1 min-w-0">
@@ -3223,55 +3334,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     ))}
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* ── Writing Style tab ── */}
-            {activeTab === 'originality' && (
-              <div className="space-y-4">
-                {aiText && aiText.overall_score != null ? (
-                  <>
-                    <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                      <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                        <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Stylometric reading · advisory only</p>
-                        <p className="text-3xl font-black text-gray-900">{Math.round(aiText.overall_score)}<span className="text-sm font-bold text-gray-400"> / 100</span></p>
-                      </div>
-                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.max(0, Math.min(100, aiText.overall_score))}%` }} />
-                      </div>
-                      <p className="text-xs text-gray-600">
-                        {(aiText.flagged_sections?.length ?? 0) > 0
-                          ? `Sections with an elevated reading: ${aiText.flagged_sections!.map(formatRoleLabel).join(', ')}.`
-                          : 'No individual section stands out.'}
-                      </p>
-                    </div>
-
-                    {Object.entries(aiText.section_scores ?? {}).filter(([, v]) => v != null).length > 0 && (
-                      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
-                        <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">By section</p>
-                        {Object.entries(aiText.section_scores ?? {}).filter(([, v]) => v != null).map(([sec, v]) => (
-                          <div key={sec} className="flex items-center gap-3">
-                            <span className="text-xs font-semibold text-gray-700 w-40 shrink-0 truncate">{formatRoleLabel(sec)}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                              <div className="h-full rounded-full bg-indigo-400" style={{ width: `${Math.max(0, Math.min(100, v as number))}%` }} />
-                            </div>
-                            <span className="text-xs mono font-bold text-gray-600 w-8 text-right">{Math.round(v as number)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-gray-800 mb-1">No writing-style reading available</p>
-                    <p className="text-xs text-gray-500">No writing-style score was produced for this scan.</p>
-                  </div>
-                )}
-
-                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4">
-                  <p className="text-[10px] mono font-bold uppercase tracking-wider text-amber-800 mb-1">Advisory</p>
-                  <p className="text-xs text-amber-950 leading-relaxed">{aiText?.disclaimer || AI_TEXT_DISCLAIMER}</p>
-                </div>
               </div>
             )}
 
