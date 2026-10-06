@@ -12,7 +12,7 @@ import { formatRoleLabel, PAR_SCORE } from './utils.js';
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard" | "reset-password";
 type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
-type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
+type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence';
 
 type AssessmentType = "overall-status" | "strength" | "major-issue" | "affected-section";
 
@@ -178,12 +178,7 @@ const CITATIONS: Citation[] = [
   { id: "c6", ref: "Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.", url: "https://philjol.info/index.php/JPAIR/article/view/7821", status: "live" },
 ];
 
-const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
-  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-gray-100 bg-gray-50" },
-  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-100 bg-amber-50" },
-  neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
-  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-red-100 bg-red-50" },
-};
+
 
 const AI_TEXT_DISCLAIMER =
   'Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features and cannot verify authorship. Well-written human academic prose commonly scores 40-60 on this scale; this indicator must never be used to block a submission or as an integrity charge on its own.';
@@ -1778,7 +1773,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
   const [showPairingModal, setShowPairingModal] = useState(false);
-  const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
@@ -2038,17 +2032,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const visiblePairs: EnrichedPair[] = filterType === "strength" ? allPairs.filter(p => (p.score ?? 0) >= PAR_SCORE) : allPairs;
   const pairsCount = allPairs.length;
 
-  const citationsCount = localCitations.length;
-  const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
-  const displayedCitations = citationFilter ? localCitations.filter(c => c.status === citationFilter) : localCitations;
-
   const aiText: AITextIndicator | null = isSample ? SAMPLE_AI_TEXT : (scan?.ai_text_indicator ?? null);
 
   const tabList: Array<{ id: ActiveResultsTab; label: string }> = [
     { id: 'overview',         label: 'Overview' },
     { id: 'inconsistencies',  label: `Inconsistencies (${inconsistenciesCount})` },
     { id: 'strong_coherence', label: `Coherence Pairs (${pairsCount})` },
-    { id: 'citations',        label: `Citations (${citationsCount})` },
   ];
 
   // Feedback is only valid for inconsistency findings that exist in the DB.
@@ -2133,7 +2122,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     if (next === "major-issue" || next === "affected-section") setActiveTab("inconsistencies");
     else if (next === "strength") setActiveTab("strong_coherence");
     else if (next === "overall-status") setActiveTab("overview");
-    else if (activeTab === "citations") setActiveTab("inconsistencies"); // "all"
   }
 
   return (
@@ -2321,8 +2309,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 onClick={() => {
                   setActiveId(prev => prev === item.id ? null : item.id);
                   if (activeTab === 'overview') scrollToSection(item.targetSectionIndex);
-                  else if (activeTab === 'citations')
-                    setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
                 }}
                 className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
                   }`}>
@@ -2352,7 +2338,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
         {/* ══ CENTER: tab bar + tab content ══ */}
         <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-10 flex items-center gap-1 overflow-x-auto shadow-2xs shrink-0 print:hidden">
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-8 flex items-center gap-1 shadow-2xs shrink-0 print:hidden">
             {tabList.map(tab => (
               <button
                 key={tab.id}
@@ -2690,73 +2676,77 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               })}
 
               {/* References — inside the document paper */}
-              <div className="mx-8 lg:mx-12 border-t border-gray-200 mt-0" />
-              <div className="px-8 lg:px-12 pt-8 pb-10" id="refs">
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-gray-400">References</p>
-                <div className="flex items-center gap-3 mb-5">
-                  <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
-                  <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{localCitations.length} sources checked</span>
-                  {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">{dead} inaccessible</span>}
-                </div>
-                {dead > 0 && (
-                  <div className="flex items-start gap-3 px-4 py-3 mb-4 rounded-xl border border-red-200 bg-red-50">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                    <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
-                  </div>
-                )}
-                {localCitations.length > 0 ? (
-                  <div className="space-y-2">
-                    {localCitations.map((cite, ci) => (
-                      <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                        cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" 
-                        : cite.status === "restricted" ? "border-amber-100 bg-amber-50"
-                        : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
-                        : "border-red-100 bg-red-50"
-                      }`}>
-                        <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-4 shrink-0">{ci + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                          <p className="text-[13px] text-gray-800 leading-snug">
-                            {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                            {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                            {cite.ref}
-                          </p>
-                          {cite.url && (
-                             <p className={`text-[11px] mono truncate mt-1 ${
-                               cite.status === "live" ? "text-gray-400" 
-                               : cite.status === "restricted" ? "text-amber-600" 
-                               : cite.status === "neutral" ? "text-slate-400"
-                               : "text-red-500"
-                             }`}>{cite.url}</p>
-                          )}
-                        </div>
-                        
-                        {/* Status Badge */}
-                        <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          cite.status === "live" ? "bg-emerald-100 text-emerald-700"
-                          : cite.status === "restricted" ? "bg-amber-100 text-amber-700"
-                          : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
-                          : "bg-red-100 text-red-700"
-                        }`}>
-                          {cite.status === "live" ? (
-                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>Live</>
-                          ) : cite.status === "restricted" ? (
-                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
-                          ) : cite.status === "neutral" ? (
-                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
-                          ) : (
-                             <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
-                          )}
-                        </div>
+              {localCitations.length > 0 && (
+                <>
+                  <div className="mx-8 lg:mx-12 border-t border-gray-200 mt-0" />
+                  <div className="px-8 lg:px-12 pt-8 pb-10" id="refs">
+                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-gray-400">References</p>
+                    <div className="flex items-center gap-3 mb-5">
+                      <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
+                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{localCitations.length} sources checked</span>
+                      {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">{dead} inaccessible</span>}
+                    </div>
+                    {dead > 0 && (
+                      <div className="flex items-start gap-3 px-4 py-3 mb-4 rounded-xl border border-red-200 bg-red-50">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                        <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
                       </div>
-                    ))}
+                    )}
+                    {localCitations.length > 0 ? (
+                      <div className="space-y-2">
+                        {localCitations.map((cite, ci) => (
+                          <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                            cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" 
+                            : cite.status === "restricted" ? "border-amber-100 bg-amber-50"
+                            : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
+                            : "border-red-100 bg-red-50"
+                          }`}>
+                            <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-4 shrink-0">{ci + 1}</span>
+                            <div className="flex-1 min-w-0">
+                              {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
+                              <p className="text-[13px] text-gray-800 leading-snug">
+                                {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
+                                {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
+                                {cite.ref}
+                              </p>
+                              {cite.url && (
+                                 <p className={`text-[11px] mono truncate mt-1 ${
+                                   cite.status === "live" ? "text-gray-400" 
+                                   : cite.status === "restricted" ? "text-amber-600" 
+                                   : cite.status === "neutral" ? "text-slate-400"
+                                   : "text-red-500"
+                                 }`}>{cite.url}</p>
+                              )}
+                            </div>
+                            
+                            {/* Status Badge */}
+                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                              cite.status === "live" ? "bg-emerald-100 text-emerald-700"
+                              : cite.status === "restricted" ? "bg-amber-100 text-amber-700"
+                              : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
+                              : "bg-red-100 text-red-700"
+                            }`}>
+                              {cite.status === "live" ? (
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>Live</>
+                              ) : cite.status === "restricted" ? (
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
+                              ) : cite.status === "neutral" ? (
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
+                              ) : (
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-500 italic">
+                        No citations were detected in this manuscript ({scan?.citations_audited ?? 0} sources audited).
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-500 italic">
-                    No citations were detected in this manuscript ({scan?.citations_audited ?? 0} sources audited).
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </div>{/* end document paper */}
 
             {/* ══ R3: INLINE MANUSCRIPT WITH SECTION HIGHLIGHTS (Ported from ResultDetails.tsx:626-950) ══ */}
@@ -3241,98 +3231,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </div>
                     );
                   })
-                )}
-              </div>
-            )}
-
-            {/* ── Citations tab ── */}
-            {activeTab === 'citations' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => {
-                    const isSelected = citationFilter === s;
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setCitationFilter(prev => prev === s ? null : s)}
-                        className={`rounded-xl border px-4 py-3 text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs"
-                            : "bg-white border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
-                          {isSelected && (
-                            <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xl font-black text-gray-900 mt-0.5">{citeCount(s)}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {citationFilter && (
-                  <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
-                    <span className="text-indigo-950 font-medium">
-                      Filtering by: <strong className="font-bold uppercase tracking-wider">{CITE_BADGE[citationFilter].label}</strong> ({displayedCitations.length} of {citationsCount})
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setCitationFilter(null)}
-                      className="text-xs font-bold text-indigo-700 hover:underline cursor-pointer"
-                    >
-                      Show All
-                    </button>
-                  </div>
-                )}
-
-                {displayedCitations.length === 0 ? (
-                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-gray-800 mb-1">
-                      {citationFilter ? `No ${CITE_BADGE[citationFilter].label.toLowerCase()} citations` : "No citations to show"}
-                    </p>
-                    <p className="text-xs text-gray-500 mb-3">
-                      {citationFilter
-                        ? `No citations with status "${CITE_BADGE[citationFilter].label}" were found.`
-                        : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
-                    </p>
-                    {citationFilter && (
-                      <button
-                        type="button"
-                        onClick={() => setCitationFilter(null)}
-                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
-                      >
-                        Show all citations
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {displayedCitations.map((cite, ci) => (
-                      <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
-                        <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                          <p className="text-[13px] text-gray-800 leading-snug">
-                            {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                            {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                            {cite.ref}
-                          </p>
-                          {cite.url && (/^https?:\/\//i.test(cite.url)
-                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
-                            : <p className="text-[11px] mono truncate mt-1 text-gray-400">{cite.url}</p>)}
-                        </div>
-                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
-                          {CITE_BADGE[cite.status].label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
                 )}
               </div>
             )}
