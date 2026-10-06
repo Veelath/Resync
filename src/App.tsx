@@ -2325,44 +2325,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <span className="text-xs text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
-          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsLeftCollapsed(p => !p)}
-              aria-label="Toggle findings sidebar"
-              aria-expanded={!isLeftCollapsed}
-              title={isLeftCollapsed ? "Expand findings sidebar" : "Collapse findings sidebar"}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M9 3v18" />
-              </svg>
-              {isLeftCollapsed ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M9 18l6-6-6-6" /></svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M15 18l-6-6 6-6" /></svg>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsRightCollapsed(p => !p)}
-              aria-label="Toggle inspector sidebar"
-              aria-expanded={!isRightCollapsed}
-              title={isRightCollapsed ? "Expand inspector sidebar" : "Collapse inspector sidebar"}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
-            >
-              {isRightCollapsed ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M15 18l-6-6 6-6" /></svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M9 18l6-6-6-6" /></svg>
-              )}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M15 3v18" />
-              </svg>
-            </button>
-          </div>
           <div className="ml-auto flex items-center gap-2 shrink-0">
             <button
               type="button"
@@ -2390,7 +2352,36 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       </nav>
 
       {/* ── 3-column body ── */}
-      <div className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block">
+      <div className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">
+
+        {isLeftCollapsed && (
+          <button
+            type="button"
+            onClick={() => setIsLeftCollapsed(false)}
+            aria-label="Expand findings sidebar"
+            aria-expanded={false}
+            title="Expand findings sidebar"
+            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 items-center justify-center w-5 h-10 bg-white border border-l-0 border-gray-200 rounded-r-lg shadow-sm text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        )}
+        {isRightCollapsed && (
+          <button
+            type="button"
+            onClick={() => setIsRightCollapsed(false)}
+            aria-label="Expand inspector sidebar"
+            aria-expanded={false}
+            title="Expand inspector sidebar"
+            className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 items-center justify-center w-5 h-10 bg-white border border-r-0 border-gray-200 rounded-l-lg shadow-sm text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-all cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+        )}
 
         {/* ══ LEFT: sidebar — score + assessment findings list ══ */}
         <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-y-auto transition-all duration-300 ${
@@ -2399,7 +2390,19 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             : "lg:w-72 xl:w-80 border-r border-gray-100"
         }`}>
           {/* Score ring */}
-          <div className="px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
+          <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsLeftCollapsed(true)}
+              aria-label="Collapse findings sidebar"
+              aria-expanded={!isLeftCollapsed}
+              title="Collapse findings sidebar"
+              className="hidden lg:flex absolute top-3.5 right-3.5 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
             <ScoreRing score={score} size={88} />
             <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
             <div className="w-full mt-1.5 space-y-1">
@@ -3515,6 +3518,18 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         }`}>
           <div className="shrink-0 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/90">
             <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsRightCollapsed(true)}
+                aria-label="Collapse inspector sidebar"
+                aria-expanded={!isRightCollapsed}
+                title="Collapse inspector sidebar"
+                className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer mr-0.5"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
