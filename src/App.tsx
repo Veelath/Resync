@@ -1868,6 +1868,7 @@ type MobileResultsPane = "findings" | "report" | "xai";
 
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
+  const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
   const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
@@ -1889,6 +1890,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const setActiveId: React.Dispatch<React.SetStateAction<string | null>> = (next) => {
     setActiveIdRaw(prev => {
       const resolved = typeof next === "function" ? (next as (p: string | null) => string | null)(prev) : next;
+      if (resolved) {
+        setActivePairKey(null);
+      }
       if (!isDesktop()) {
         setMobilePane(resolved ? "xai" : "report");
       }
@@ -2139,18 +2143,39 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     verification?: { alignment: string; note: string };
   };
 
+  const SAMPLE_VERIFICATIONS: Record<string, { alignment: 'substantive' | 'superficial'; note: string }> = {
+    "introduction|objectives": {
+      alignment: "substantive",
+      note: "Research gap identified in the introduction directly motivates each specific research objective."
+    },
+    "objectives|methodology": {
+      alignment: "substantive",
+      note: "Methodology directly addresses all specific objectives with appropriate instruments and analytical procedures."
+    },
+    "methodology|results": {
+      alignment: "substantive",
+      note: "All statistical tests specified in Chapter 3 are executed and reported in Chapter 4."
+    }
+  };
+
   const verificationByPair = new Map(
     (scan?.verifications ?? []).map(v => [`${v.role_a}|${v.role_b}`, v] as const)
   );
   const allPairs: EnrichedPair[] = (
     isSample
       ? (SAMPLE_PAIRS as EnrichedPair[])
-      : ((scan?.score_breakdown?.coherence_detail?.pair_scores ?? []) as RolePairScore[]).filter(p => p.included)
+      : ((scan?.score_breakdown?.coherence_detail?.pair_scores ?? []) as RolePairScore[])
   )
-    .map(p => ({ ...p, verification: isSample ? undefined : verificationByPair.get(`${p.role_a}|${p.role_b}`) }))
+    .map(p => ({
+      ...p,
+      verification: isSample
+        ? SAMPLE_VERIFICATIONS[`${p.role_a}|${p.role_b}`]
+        : verificationByPair.get(`${p.role_a}|${p.role_b}`)
+    }))
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const visiblePairs: EnrichedPair[] = filterType === "strength" ? allPairs.filter(p => (p.score ?? 0) >= PAR_SCORE) : allPairs;
+  const visiblePairs: EnrichedPair[] = filterType === "strength" ? allPairs.filter(p => p.included && (p.score ?? 0) >= PAR_SCORE) : allPairs;
   const pairsCount = allPairs.length;
+  const activePair = activePairKey ? allPairs.find(p => `${p.role_a}__${p.role_b}` === activePairKey) ?? null : null;
 
   const citationsCount = localCitations.length;
   const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
@@ -3389,10 +3414,22 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </div>
                 ) : (
                   visiblePairs.map((p, idx) => {
+                    const key = `${p.role_a}__${p.role_b}`;
+                    const isSelected = activePairKey === key;
                     const score = p.score ?? 0;
                     const strong = score >= PAR_SCORE;
                     return (
-                      <div key={`${p.role_a}|${p.role_b}|${idx}`} className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+                      <div
+                        key={`${p.role_a}|${p.role_b}|${idx}`}
+                        onClick={() => {
+                          setActivePairKey(prev => prev === key ? null : key);
+                          setActiveId(null);
+                          if (!isDesktop()) setMobilePane("xai");
+                        }}
+                        className={`bg-white rounded-2xl border p-5 space-y-3 cursor-pointer transition-all hover:border-indigo-300 ${
+                          isSelected ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-sm' : 'border-gray-200'
+                        }`}
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
                           <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
@@ -3544,18 +3581,116 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <p className="text-[11px] mono font-bold uppercase tracking-wider text-indigo-600">Analysis Inspector</p>
               </div>
             </div>
-            {activeItem && (
+            {(activeItem || activePair) && (
               <button
                 type="button"
-                onClick={() => setActiveId(null)}
-                className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors">
+                onClick={() => {
+                  setActiveId(null);
+                  setActivePairKey(null);
+                }}
+                className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
                 Reset
               </button>
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {!activeItem ? (
+            {activePair ? (() => {
+              const score = activePair.score ?? 0;
+              const strong = score >= PAR_SCORE;
+              const isIncluded = activePair.included !== false;
+              return (
+                <div className="px-6 py-6 space-y-5">
+                  {/* Pair header */}
+                  <div className="rounded-2xl p-5 border-2 border-indigo-200 bg-indigo-50/40">
+                    <div className="flex items-start justify-between mb-2.5">
+                      <span className="text-[10px] mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                        Role Pair Analysis
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActivePairKey(null)}
+                        aria-label="Close pair details"
+                        className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5 cursor-pointer"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug mb-1">
+                      {formatRoleLabel(activePair.role_a)} ↔ {formatRoleLabel(activePair.role_b)}
+                    </h3>
+                    <p className="text-xs text-indigo-700 font-medium">
+                      Weight: {Math.round(activePair.weight * 100)}% of the coherence score
+                    </p>
+                  </div>
+
+                  {/* Score block */}
+                  <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
+                        Pair Coherence Score
+                      </span>
+                      <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                        strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {strong ? 'Strong' : 'Below target'}
+                      </span>
+                    </div>
+                    <p className="text-2xl font-bold mono text-gray-900">
+                      {Math.round(score)} <span className="text-sm font-normal text-gray-400">/ 100</span>
+                    </p>
+                    <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                        style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Missing section check / Verification Note */}
+                  {!isIncluded ? (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 font-medium leading-relaxed">
+                      This pair could not be evaluated — one or both sections are missing.
+                    </div>
+                  ) : activePair.verification ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+                          activePair.verification.alignment === 'superficial'
+                            ? 'bg-amber-50 border-amber-200 text-amber-900'
+                            : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        }`}>
+                          {activePair.verification.alignment === 'substantive' ? 'Substantive Alignment' : 'Superficial Alignment'}
+                        </span>
+                      </div>
+                      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-2xs">
+                        <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed">
+                          {activePair.verification.note}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
+                        No detailed alignment note available for this pair.
+                      </div>
+                      {activePair.reason && (
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1 shadow-2xs">
+                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">
+                            Assessment Rationale
+                          </p>
+                          <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed">
+                            {activePair.reason}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })() : !activeItem ? (
               <div className="flex flex-col items-center justify-center min-h-full px-6 py-8 text-center gap-5">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs" style={{ background: BL }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8" style={{ color: B }}>
