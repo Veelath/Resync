@@ -1918,11 +1918,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   const ROMAN = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx)$/i;
   const isTrivial = (s: string) => ROMAN.test(s) || /^\d+$/.test(s) || s.trim().length < 3;
-  const cleanedTitle = manuscriptText
+  const titleLines = manuscriptText
     ?.split(/\r?\n/)
     .map(s => s.trim())
-    .find(s => s.length > 0 && !isTrivial(s))
-    ?.slice(0, 200);
+    .filter(s => s.length > 0 && !isTrivial(s))
+    .slice(0, 2);
+  const cleanedTitle = titleLines && titleLines.length > 0
+    ? titleLines.join(" ").slice(0, 200)
+    : null;
 
   const cleanedFilename = scan?.doc_url
     ? (scan.doc_url.startsWith('http')
