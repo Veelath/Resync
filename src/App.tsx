@@ -923,6 +923,82 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   const [newSectionText, setNewSectionText] = useState("");
   const [addingToChapter, setAddingToChapter] = useState<number | null>(null);
 
+  // Saved template state & notification
+  const [hasSavedTemplate, setHasSavedTemplate] = useState<boolean>(false);
+  const [templateNotification, setTemplateNotification] = useState<string | null>(null);
+  const templateToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Check localStorage on mount / when step === 2
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("resync_saved_template");
+      setHasSavedTemplate(Boolean(saved));
+    } catch {
+      setHasSavedTemplate(false);
+    }
+  }, [step]);
+
+  // Clean up notification timer on unmount
+  useEffect(() => {
+    return () => {
+      if (templateToastTimerRef.current) {
+        clearTimeout(templateToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  function showTemplateToast(msg: string) {
+    if (templateToastTimerRef.current) {
+      clearTimeout(templateToastTimerRef.current);
+    }
+    setTemplateNotification(msg);
+    templateToastTimerRef.current = setTimeout(() => {
+      setTemplateNotification(null);
+    }, 2000);
+  }
+
+  function handleSaveTemplate() {
+    if (!researchType) return;
+    try {
+      const existing = localStorage.getItem("resync_saved_template");
+      if (existing) {
+        const confirmed = window.confirm("Overwrite saved template?");
+        if (!confirmed) return;
+      }
+      const dataToSave = {
+        type: researchType,
+        chapters: templateChapters,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem("resync_saved_template", JSON.stringify(dataToSave));
+      setHasSavedTemplate(true);
+      showTemplateToast("Template saved.");
+    } catch (e) {
+      console.error("Failed to save template to localStorage:", e);
+    }
+  }
+
+  function handleUseSavedTemplate() {
+    try {
+      const raw = localStorage.getItem("resync_saved_template");
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || typeof saved !== "object" || !Array.isArray(saved.chapters)) {
+        return;
+      }
+      if (saved.type !== researchType) {
+        const confirmed = window.confirm(
+          "Saved template is for " + saved.type + ". Load it anyway? Your current research type is " + researchType + "."
+        );
+        if (!confirmed) return;
+      }
+      setTemplateChapters(saved.chapters);
+      showTemplateToast("Saved template loaded.");
+    } catch (e) {
+      console.error("Failed to load saved template from localStorage:", e);
+    }
+  }
+
   async function handleTemplateFileChange(file: File) {
     setCustomTemplateFile(file);
     setTemplateParseError(null);
@@ -1380,10 +1456,52 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <p className="text-gray-500 text-sm mt-1">ReSync provides this standard structure based on your scope. You can rename, add, or remove headings to match your school's format.</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {templateNotification && (
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 animate-fade-in">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-emerald-600">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {templateNotification}
+                  </span>
+                )}
+                {/* Button 1: Save Template */}
+                <button
+                  type="button"
+                  onClick={handleSaveTemplate}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  Save Template
+                </button>
+
+                {/* Button 2: Use Saved Template */}
+                <button
+                  type="button"
+                  onClick={hasSavedTemplate ? handleUseSavedTemplate : undefined}
+                  disabled={!hasSavedTemplate}
+                  title={!hasSavedTemplate ? "No saved template yet." : undefined}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors flex items-center gap-1.5 ${
+                    hasSavedTemplate
+                      ? "border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                      : "cursor-not-allowed text-gray-300 border-gray-100 bg-gray-50/50"
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+                  </svg>
+                  Use Saved Template
+                </button>
+
+                {/* Button 3: Reset to Standard */}
                 <button
                   type="button"
                   onClick={handleResetTemplate}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                   Reset to Standard
