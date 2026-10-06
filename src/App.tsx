@@ -388,7 +388,7 @@ function ScoreRing({ score, size = 112 }: { score: number; size?: number }) {
             style={{ filter: `drop-shadow(0 0 8px ${color}55)`, transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold mono leading-none" style={{ color }}>{score}</span>
+          <span className="text-2xl font-bold mono leading-none" style={{ color }}>{Math.round(score)}</span>
           <span className="text-[10px] text-gray-400 mono">/100</span>
         </div>
       </div>
@@ -2261,7 +2261,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <h2 className="text-lg text-gray-700 font-medium mt-1">{displayTitle}</h2>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-indigo-700">{score} / 100</div>
+            <div className="text-2xl font-bold text-indigo-700">{Math.round(score)} / 100</div>
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
               Band: {isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}
             </div>
