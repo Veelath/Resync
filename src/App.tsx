@@ -1231,60 +1231,22 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                       {researchType ? "Selected" : "Required: choose one"}
                     </span>
                   </div>
-                  <div role="radiogroup" aria-label="Research methodology" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      {
-                        type: "quantitative" as const,
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-indigo-600">
-                            <path d="M3 3v18h18M7 16v-4M12 16V9M17 16V5" />
-                          </svg>
-                        ),
-                        title: "Quantitative",
-                        subtitle: "Numerical data, hypotheses, sampling & statistical tests",
-                      },
-                      {
-                        type: "qualitative" as const,
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6 text-indigo-600">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" />
-                          </svg>
-                        ),
-                        title: "Qualitative",
-                        subtitle: "Thematic analysis, participant interviews & narrative meaning",
-                      },
-                    ].map(card => {
-                      const isSelected = researchType === card.type;
-                      return (
-                        <button
-                          key={card.type}
-                          type="button"
-                          role="radio"
-                          aria-checked={isSelected}
-                          onClick={() => handleSelectResearchType(card.type)}
-                          className="p-4 rounded-2xl border-2 text-left transition-all relative flex flex-col justify-between cursor-pointer"
-                          style={{
-                            borderColor: isSelected ? B : "#e5e7eb",
-                            background: isSelected ? BL : "white",
-                            boxShadow: isSelected ? `0 4px 20px ${B}18` : "none",
-                          }}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-50 border border-gray-100">{card.icon}</span>
-                              {isSelected && (
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-white" style={{ background: B }}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-sm font-bold text-gray-900">{card.title}</p>
-                            <p className="text-xs text-gray-500 mt-1 leading-snug">{card.subtitle}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
+                  <div className="relative">
+                    <select
+                      value={researchType || ""}
+                      onChange={e => handleSelectResearchType(e.target.value as ResearchType)}
+                      className="w-full h-12 px-4 pr-10 border-2 rounded-xl bg-white text-sm font-medium text-gray-800 transition-all cursor-pointer appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                      style={{ borderColor: researchType ? B : "#e5e7eb" }}
+                    >
+                      <option value="" disabled>Select research type…</option>
+                      <option value="quantitative">Quantitative</option>
+                      <option value="qualitative">Qualitative</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><polyline points="6 9 12 15 18 9" /></svg>
+                    </div>
                   </div>
+                  <p className="text-xs text-gray-500 mt-2">Quantitative for numerical/hypothesis-driven studies; Qualitative for thematic/narrative studies.</p>
                 </div>
 
                 {/* 2. Manuscript Source */}
