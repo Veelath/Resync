@@ -350,17 +350,17 @@ function Logo({ className = "" }: { className?: string }) {
 }
 
 function Spinner({ cls = "w-4 h-4" }: { cls?: string }) {
-  return <svg className={`${cls} animate-spin`} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" /></svg>;
+  return <svg className={`${cls} animate-spin`} viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" /></svg>;
 }
 
 function Eye({ open }: { open: boolean }) {
   return open
-    ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22" /></svg>
-    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+    ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22" /></svg>
+    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
 }
 
 function GIcon() {
-  return <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>;
+  return <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>;
 }
 
 function AssessmentBadge({ type }: { type: AssessmentType }) {
@@ -379,16 +379,16 @@ function ScoreRing({ score, size = 112 }: { score: number; size?: number }) {
   const color = score >= 80 ? "#16a34a" : score >= 60 ? "#d97706" : "#dc2626";
   const label = score >= 80 ? "Strong" : score >= 60 ? "Moderate" : "Needs Work";
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-1.5" role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label} Coherence`}>
       <div className="relative" style={{ width: size, height: size }}>
-        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
           <circle cx="50" cy="50" r={r} fill="none" stroke={BL} strokeWidth="9" />
           <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="9" strokeLinecap="round"
             strokeDasharray={`${(score / 100) * circ} ${circ}`}
             style={{ filter: `drop-shadow(0 0 8px ${color}55)`, transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold mono leading-none" style={{ color }}>{Math.round(score)}</span>
+          <span className="text-2xl font-bold mono leading-none tabular-nums" style={{ color }}>{Math.round(score)}</span>
           <span className="text-[10px] text-gray-400 mono">/100</span>
         </div>
       </div>
@@ -425,7 +425,7 @@ function PreviewCard() {
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {/* header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5" aria-hidden="true">
             <div className="w-2.5 h-2.5 rounded-full bg-red-300" />
             <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
             <div className="w-2.5 h-2.5 rounded-full bg-green-300" />
@@ -444,7 +444,7 @@ function PreviewCard() {
             ].map(({ label, n, c }) => (
               <div key={label} className={`flex justify-between items-center text-xs px-2.5 py-1 rounded-lg border ${c}`}>
                 <span className="font-medium">{label}</span>
-                <span className="font-bold mono">{n}</span>
+                <span className="font-bold mono tabular-nums">{n}</span>
               </div>
             ))}
           </div>
@@ -460,7 +460,7 @@ function PreviewCard() {
             {" "}collected over one semester.
           </p>
           <div className="flex items-start gap-2 mt-2 p-2.5 rounded-xl bg-violet-50 border border-violet-100">
-            <div className="w-1 h-full min-h-[32px] rounded-full bg-violet-400 shrink-0" />
+            <div className="w-1 h-full min-h-[32px] rounded-full bg-violet-400 shrink-0" aria-hidden="true" />
             <div>
               <div className="text-[10px] font-bold text-violet-700 mb-0.5">Logic Gap — Objectives → Methodology</div>
               <p className="text-[10px] text-violet-600 leading-relaxed">Biometric collection is promised in Objectives but absent from Methodology.</p>
@@ -470,14 +470,14 @@ function PreviewCard() {
         {/* citation row */}
         <div className="px-5 pb-4 flex gap-2">
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-[10px] font-semibold text-green-700">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>
-            4 live
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+            <span className="tabular-nums">4</span> live
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] font-semibold text-red-700">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            2 dead
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            <span className="tabular-nums">2</span> dead
           </div>
-          <div className="ml-auto text-[10px] text-gray-400 mono self-center">~2 min scan</div>
+          <div className="ml-auto text-[10px] text-gray-400 mono self-center tabular-nums">~2 min scan</div>
         </div>
       </div>
     </div>
@@ -500,12 +500,12 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
               { label: "Capabilities", id: "section-capabilities" },
               { label: "About", id: "section-about" },
             ].map(l => (
-              <button key={l.id} onClick={() => document.getElementById(l.id)?.scrollIntoView({ behavior: "smooth" })} className="px-3.5 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">{l.label}</button>
+              <button key={l.id} onClick={() => document.getElementById(l.id)?.scrollIntoView({ behavior: "smooth" })} className="px-3.5 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98]">{l.label}</button>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-all">Log in</button>
-            <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all" style={{ background: B }}>Sign up free</button>
+            <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98]">Log in</button>
+            <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] shadow-sm" style={{ background: B }}>Sign up free</button>
           </div>
         </div>
       </nav>
@@ -533,20 +533,20 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
               </p>
               <div className="flex flex-wrap gap-3 mb-8">
                 <button onClick={() => onNavigate("signup")}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all shadow-lg"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 shadow-lg"
                   style={{ background: `linear-gradient(135deg, ${B}, ${BH})`, boxShadow: `0 8px 24px ${B}30` }}>
                   Get started free
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </button>
                 <button onClick={() => onNavigate("results", true)}
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all">
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 transition-colors duration-150">
                   View sample report
                 </button>
               </div>
               <div className="flex flex-wrap gap-5 text-xs text-gray-400 font-medium">
                 {["Free to start", "Results in ~2 min", "No credit card needed"].map(t => (
                   <span key={t} className="flex items-center gap-1.5">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500"><path d="M5 12l5 5L20 7" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                     {t}
                   </span>
                 ))}
@@ -617,21 +617,21 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                   {/* Drop zone card */}
                   <div className="bg-white rounded-2xl border-2 border-dashed p-8 text-center shadow-sm" style={{ borderColor: `${B}30` }}>
                     <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: BL }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7" style={{ color: B }}><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7" style={{ color: B }} aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     </div>
                     <p className="text-sm font-bold text-gray-700 mb-1">Drop your thesis here</p>
-                    <p className="text-xs text-gray-400">.docx or Google Docs link · max 25 MB</p>
+                    <p className="text-xs text-gray-400">.docx or Google Docs link · max 25&nbsp;MB</p>
                     <div className="mt-5 flex items-center justify-center gap-2">
                       <div className="flex-1 h-px bg-gray-100" />
                       <span className="text-xs text-gray-300 font-medium">or</span>
                       <div className="flex-1 h-px bg-gray-100" />
                     </div>
-                    <button className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white" style={{ background: `linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
+                    <button className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2" style={{ background: `linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
                   </div>
                   {/* Detected sections chip */}
                   <div className="absolute -bottom-4 -right-2 bg-white rounded-2xl border border-gray-100 p-3.5 shadow-lg flex items-start gap-3" style={{ minWidth: 220 }}>
                     <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#f0fdf4" }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-green-600"><path d="M5 12l5 5L20 7" /></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-green-600" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                     </div>
                     <div>
                       <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-2">Detected Sections</p>
@@ -798,7 +798,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
               <p className="text-xs mono font-bold uppercase tracking-widest text-gray-400 mb-3">Key capabilities</p>
               <h2 className="text-4xl font-bold text-gray-900 tracking-tight leading-tight">What Resync checks</h2>
             </div>
-            <button onClick={() => onNavigate("results", true)} className="text-sm font-semibold hover:underline self-start md:self-auto" style={{ color: B }}>
+            <button onClick={() => onNavigate("results", true)} className="text-sm font-semibold hover:underline self-start md:self-auto rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 transition-colors" style={{ color: B }}>
               View sample report →
             </button>
           </div>
@@ -811,7 +811,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
               ["05", "Terminology Consistency", "Key terms must be defined once and used uniformly across chapters."],
               ["06", "Citation Accessibility", "Every cited URL and DOI is pinged to confirm public reachability."],
             ].map(([num, label, desc]) => (
-              <div key={num} className="group flex items-start gap-4 p-5 rounded-2xl border border-transparent hover:border-gray-200 hover:bg-white transition-all cursor-default">
+              <div key={num} className="group flex items-start gap-4 p-5 rounded-2xl border border-transparent hover:border-gray-200 hover:bg-white transition-colors duration-200 cursor-default">
                 <span className="text-2xl font-black mono text-gray-100 group-hover:text-blue-100 transition-colors select-none shrink-0 w-9 leading-none mt-0.5">{num}</span>
                 <div>
                   <p className="text-sm font-bold text-gray-800 mono mb-1">{label}</p>
@@ -832,9 +832,9 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
             <Logo className="h-10 w-auto mx-auto mb-7 brightness-0 invert" />
             <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-3">Review your manuscript with Resync</h2>
             <p className="text-blue-200 mb-8 text-sm leading-relaxed max-w-sm mx-auto">Create an account to upload your paper and receive a coherence report.</p>
-            <button onClick={() => onNavigate("signup")} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-white font-bold text-sm hover:bg-blue-50 transition-all shadow-xl" style={{ color: B }}>
+            <button onClick={() => onNavigate("signup")} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-white font-bold text-sm hover:bg-blue-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 transition-all duration-150 shadow-xl" style={{ color: B }}>
               Get started
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </button>
           </div>
         </div>
@@ -1161,15 +1161,15 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => step === 2 ? setStep(1) : onNavigate("home")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M15 18l-6-6 6-6" /></svg>
+            <button onClick={() => step === 2 ? setStep(1) : onNavigate("home")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
               {step === 2 ? "Back to Step 1" : "Back"}
             </button>
             <div className="h-5 w-px bg-gray-100" />
-            <button onClick={() => onNavigate("home")}><Logo className="h-8 w-auto" /></button>
+            <button onClick={() => onNavigate("home")} aria-label="ReSync Home" className="rounded-lg p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"><Logo className="h-8 w-auto" /></button>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: BL, color: B }}>
+            <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
               Step {step} of 2: {step === 1 ? "Manuscript & Scope" : "Standard Template"}
             </span>
           </div>
@@ -1181,11 +1181,11 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
 
         {/* Step Progress Bar */}
         <div className="mb-8 p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setStep(1)}>
+          <div role="button" tabIndex={0} aria-label="Go to Step 1: Manuscript and Research Scope" className="flex items-center gap-3 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm"
               style={{ background: step === 1 ? B : "#16a34a" }}>
               {step > 1 ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5"><path d="M5 12l5 5L20 7" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
               ) : "1"}
             </div>
             <div>
@@ -1194,7 +1194,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => canProceedToStep2 && setStep(2)}>
+          <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Standard Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-3 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
               style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
               2
@@ -1263,19 +1263,19 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     {([
                       [
                         "file",
-                        <svg key="file-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
+                        <svg key="file-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
                         "Upload .docx",
-                        ".docx · max 25 MB"
+                        ".docx · max 25\u00A0MB"
                       ],
                       [
                         "link",
-                        <svg key="link-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
+                        <svg key="link-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
                         "Google Docs",
                         "Shared view link"
                       ]
                     ] as [UploadMode, React.ReactNode, string, string][]).map(([m, icon, label, sub]) => (
-                      <button key={m} onClick={() => { setMode(m); lastScanError = null; setScanError(null); }}
-                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${mode === m ? "bg-blue-50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"}`}
+                      <button key={m} type="button" aria-pressed={mode === m} onClick={() => { setMode(m); lastScanError = null; setScanError(null); }}
+                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-colors duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${mode === m ? "bg-blue-50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"}`}
                         style={{ borderColor: mode === m ? B : undefined }}>
                         <span className="shrink-0">{icon}</span>
                         <div className="flex-1 min-w-0">
@@ -1284,7 +1284,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         </div>
                         {mode === m && (
                           <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: B }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                           </div>
                         )}
                       </button>
@@ -1765,18 +1765,25 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
         </div>
 
         {/* progress */}
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex justify-between items-center mb-2" aria-live="polite">
           {pct === 99 ? (
             <span className="text-xs mono font-semibold animate-pulse flex items-center gap-1.5" style={{ color: B }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: B }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: B }} aria-hidden="true" />
               Finalizing your report…
             </span>
           ) : (
             <span className="text-xs mono text-gray-400">Progress</span>
           )}
-          <span className="text-xs mono font-bold" style={{ color: B }}>{pct}%</span>
+          <span className="text-xs mono font-bold tabular-nums" style={{ color: B }}>{pct}%</span>
         </div>
-        <div className="h-1.5 rounded-full bg-gray-100 mb-8 overflow-hidden">
+        <div
+          className="h-1.5 rounded-full bg-gray-100 mb-8 overflow-hidden"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Manuscript analysis progress"
+        >
           <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${B}, ${BH})` }} />
         </div>
 
@@ -1785,6 +1792,7 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
             const isDone = done > i, isActive = done === i;
             return (
               <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300"
+                aria-current={isActive ? "step" : undefined}
                 style={{
                   background: isDone ? "#f0fdf4" : isActive ? BL : "#fafafa",
                   borderColor: isDone ? "#bbf7d0" : isActive ? `${B}30` : "#f3f4f6",
@@ -1793,10 +1801,10 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                 <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                   style={{ background: isDone ? "#22c55e" : isActive ? B : "#e5e7eb" }}>
                   {isDone
-                    ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5"><path d="M5 12l5 5L20 7" /></svg>
+                    ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                     : isActive
-                      ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                      : <span className="text-xs font-bold text-gray-400 mono">{i + 1}</span>
+                      ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
+                      : <span className="text-xs font-bold text-gray-400 mono tabular-nums">{i + 1}</span>
                   }
                 </div>
                 <div className="flex-1 min-w-0">
@@ -2234,26 +2242,28 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       <button
         type="button"
         disabled={locked}
+        aria-pressed={vote === kind}
+        aria-label={label}
         title={label}
         onClick={e => { e.stopPropagation(); handleFeedback(item, helpful); }}
-        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition-all ${
+        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${
           vote === kind ? activeCls : 'bg-white border-gray-200 text-gray-600'
         } ${locked ? `cursor-not-allowed ${vote === kind ? '' : 'opacity-40'}` : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'}`}>
         <span>{icon}</span><span>{label}</span>
       </button>
     );
     const thumbUpIcon = (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true">
         <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
       </svg>
     );
     const thumbDownIcon = (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true">
         <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h3a2 2 0 012 2v7a2 2 0 01-2 2h-3" />
       </svg>
     );
     return (
-      <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap" onClick={e => e.stopPropagation()}>
+      <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap" onClick={e => e.stopPropagation()} aria-live="polite">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">Was this finding helpful?</span>
           {vote && <span className="text-[11px] text-emerald-700">Thanks — feedback recorded.</span>}
@@ -2342,8 +2352,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       {/* ── Navbar ── */}
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 h-12 flex items-center gap-3">
-          <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M15 18l-6-6 6-6" /></svg>Home
+          <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors shrink-0 rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Home
           </button>
           <div className="h-4 w-px bg-gray-200 shrink-0" />
           <Logo className="h-6 w-auto shrink-0" />
@@ -2354,21 +2364,21 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <button
               type="button"
               onClick={() => setShowPairingModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
               How Pairing Works
             </button>
             {!isSample && (
               <>
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>Export PDF
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>Export PDF
                 </button>
-                <button onClick={() => onNavigate("upload")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all cursor-pointer" style={{ background: B }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M12 5v14M5 12h14" /></svg>New Scan
+                <button onClick={() => onNavigate("upload")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-colors duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 cursor-pointer" style={{ background: B }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>New Scan
                 </button>
               </>
             )}
@@ -2386,9 +2396,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             aria-label="Expand findings sidebar"
             aria-expanded={false}
             title="Expand findings sidebar"
-            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-l-0 border-gray-200 rounded-r-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all cursor-pointer"
+            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-l-0 border-gray-200 rounded-r-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
               <path d="M9 18l6-6-6-6" />
             </svg>
             <span className="text-xs font-semibold">Show Assessment</span>
@@ -2401,10 +2411,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             aria-label="Expand inspector sidebar"
             aria-expanded={false}
             title="Expand inspector sidebar"
-            className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-r-0 border-gray-200 rounded-l-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all cursor-pointer"
+            className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-r-0 border-gray-200 rounded-l-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
           >
             <span className="text-xs font-semibold">Show Analysis</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
@@ -2539,13 +2549,15 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
         {/* ══ CENTER: tab bar + tab content ══ */}
         <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-8 flex items-center gap-1 overflow-x-auto xl:overflow-visible shadow-2xs shrink-0 print:hidden">
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-8 flex items-center gap-1 overflow-x-auto xl:overflow-visible shadow-2xs shrink-0 print:hidden" role="tablist" aria-label="Results tabs">
             {tabList.map(tab => (
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
                   activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
                 }`}>
                 {tab.label}
@@ -2815,10 +2827,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <button
                   key={t}
                   type="button"
+                  aria-pressed={filterType === t}
                   onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
-                  <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} />
-                  {ST[t].label} ({localItems.filter(i => i.type === t).length})
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
+                  <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} aria-hidden="true" />
+                  <span>{ST[t].label}</span>
+                  <span className="tabular-nums">({localItems.filter(i => i.type === t).length})</span>
                 </button>
               ))}
             </div>
@@ -2856,8 +2870,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             ? <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Aligned</span>
                             : [...new Map(para.assessments.map(pi => [pi.itemId, pi])).values()].map(pi => (
                               <button key={pi.itemId}
+                                aria-pressed={activeId === pi.itemId}
                                 onClick={() => setActiveId(prev => prev === pi.itemId ? null : pi.itemId)}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
                                 {ST[pi.type].label}
                               </button>
                             ))
@@ -2884,12 +2899,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-gray-400">References</p>
                     <div className="flex items-center gap-3 mb-5">
                       <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
-                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{localCitations.length} sources checked</span>
-                      {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">{dead} inaccessible</span>}
+                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><span className="tabular-nums">{localCitations.length}</span> sources checked</span>
+                      {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{dead}</span> inaccessible</span>}
                     </div>
                     {dead > 0 && (
                       <div className="flex items-start gap-3 px-4 py-3 mb-4 rounded-xl border border-red-200 bg-red-50">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
                         <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
                       </div>
                     )}
@@ -2902,7 +2917,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
                             : "border-red-100 bg-red-50"
                           }`}>
-                            <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-4 shrink-0">{ci + 1}</span>
+                            <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
                             <div className="flex-1 min-w-0">
                               {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
                               <p className="text-[13px] text-gray-800 leading-snug">
@@ -2928,13 +2943,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                               : "bg-red-100 text-red-700"
                             }`}>
                               {cite.status === "live" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M5 12l5 5L20 7" /></svg>Live</>
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>Live</>
                               ) : cite.status === "restricted" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
                               ) : cite.status === "neutral" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
                               ) : (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
+                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
                               )}
                             </div>
                           </div>
@@ -3564,15 +3579,15 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 aria-label="Collapse inspector sidebar"
                 aria-expanded={!isRightCollapsed}
                 title="Collapse inspector sidebar"
-                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer mr-0.5"
+                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer mr-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
                   <path d="M9 18l6-6-6-6" />
                 </svg>
                 <span className="text-xs font-semibold">Hide Analysis</span>
               </button>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                 </svg>
               </div>
@@ -3588,7 +3603,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   setActiveId(null);
                   setActivePairKey(null);
                 }}
-                className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
+                className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
                 Reset
               </button>
             )}
@@ -3611,9 +3626,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         type="button"
                         onClick={() => setActivePairKey(null)}
                         aria-label="Close pair details"
-                        className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5 cursor-pointer"
+                        className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true">
                           <path d="M18 6L6 18M6 6l12 12" />
                         </svg>
                       </button>
@@ -3622,7 +3637,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       {formatRoleLabel(activePair.role_a)} ↔ {formatRoleLabel(activePair.role_b)}
                     </h3>
                     <p className="text-xs text-indigo-700 font-medium">
-                      Weight: {Math.round(activePair.weight * 100)}% of the coherence score
+                      Weight: <span className="tabular-nums">{Math.round(activePair.weight * 100)}%</span> of the coherence score
                     </p>
                   </div>
 
@@ -3638,10 +3653,17 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         {strong ? 'Strong' : 'Below target'}
                       </span>
                     </div>
-                    <p className="text-2xl font-bold mono text-gray-900">
+                    <p className="text-2xl font-bold mono text-gray-900 tabular-nums">
                       {Math.round(score)} <span className="text-sm font-normal text-gray-400">/ 100</span>
                     </p>
-                    <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-2 rounded-full bg-gray-200 overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={Math.round(score)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label="Pair coherence score"
+                    >
                       <div
                         className={`h-full rounded-full transition-all ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`}
                         style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
@@ -4089,7 +4111,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
         <button
           type="button"
           onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })}
-          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-5 shadow-sm"
+          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-150 mb-5 shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
         >
           <GIcon /> Continue with Google
         </button>
@@ -4118,7 +4140,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                 onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
               />
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
               </div>
             </div>
           </div>
@@ -4134,7 +4156,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                   setForgotError("");
                   setForgotModal(true);
                 }}
-                className="text-xs font-semibold hover:underline"
+                className="text-xs font-semibold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ color: B }}
               >
                 Forgot password?
@@ -4153,12 +4175,13 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                 onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
               />
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
               </div>
               <button
                 type="button"
+                aria-label={showPw ? "Hide password" : "Show password"}
                 onClick={() => setShowPw(!showPw)}
-                className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
               >
                 <Eye open={showPw} />
               </button>
@@ -4168,7 +4191,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
+            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-2"
             style={{
               background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
               color: canSubmit ? "white" : "#9ca3af",
@@ -4182,11 +4205,11 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
 
         <p className="text-center text-xs text-gray-500 mt-6">
           Don't have an account?{" "}
-          <button onClick={() => onNavigate("signup")} className="font-bold hover:underline" style={{ color: B }}>Sign up free</button>
+          <button onClick={() => onNavigate("signup")} className="font-bold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" style={{ color: B }}>Sign up free</button>
         </p>
 
         <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2 text-[11px] text-gray-400">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
           <span>256-bit encryption · Academic manuscript privacy guaranteed</span>
         </div>
 
@@ -4359,7 +4382,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
                 style={{ borderColor: "#e5e7eb" }}
                 onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                 onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }} />
-              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+              <button type="button" aria-label={showPw ? "Hide password" : "Show password"} onClick={() => setShowPw(!showPw)} className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
                 <Eye open={showPw} />
               </button>
             </div>
@@ -4377,19 +4400,21 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
           <div className="flex items-start gap-3 w-full text-left select-none pt-1">
             <button
               type="button"
+              role="checkbox"
+              aria-checked={agreed}
               onClick={() => setAgreed(!agreed)}
-              className="mt-0.5 w-[18px] h-[18px] min-w-[18px] rounded-md border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              className="mt-0.5 w-[18px] h-[18px] min-w-[18px] rounded-md border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1"
               style={{ background: agreed ? B : "white", borderColor: agreed ? B : "#d1d5db" }}
-              aria-label="Agree to terms"
+              aria-label="Agree to terms of service and privacy policy"
             >
-              {agreed && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="w-2.5 h-2.5"><path d="M5 12l5 5L20 7" /></svg>}
+              {agreed && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="w-2.5 h-2.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>}
             </button>
             <span className="text-xs text-gray-500 leading-relaxed">
               I agree to the{" "}
               <button
                 type="button"
                 onClick={() => setLegalModal("terms")}
-                className="font-bold hover:underline cursor-pointer"
+                className="font-bold hover:underline cursor-pointer rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ color: B }}
               >
                 Terms of Service
@@ -4398,7 +4423,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
               <button
                 type="button"
                 onClick={() => setLegalModal("privacy")}
-                className="font-bold hover:underline cursor-pointer"
+                className="font-bold hover:underline cursor-pointer rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ color: B }}
               >
                 Privacy Policy
@@ -4407,7 +4432,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
           </div>
 
           <button type="submit" disabled={!canSubmit}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-1"
+            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-1"
             style={{ background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6", color: canSubmit ? "white" : "#9ca3af", cursor: canSubmit ? "pointer" : "not-allowed", boxShadow: canSubmit ? `0 6px 20px ${B}30` : "none" }}>
             {loading ? <><Spinner />Creating account…</> : "Create account →"}
           </button>
@@ -4415,7 +4440,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
 
         <p className="text-center text-xs text-gray-500 mt-6">
           Already have an account?{" "}
-          <button onClick={() => onNavigate("login")} className="font-bold hover:underline" style={{ color: B }}>Log in</button>
+          <button onClick={() => onNavigate("login")} className="font-bold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" style={{ color: B }}>Log in</button>
         </p>
 
         {legalModal && (
@@ -4430,10 +4455,11 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
                 </div>
                 <button
                   type="button"
+                  aria-label="Close modal"
                   onClick={() => setLegalModal(null)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </button>
@@ -4627,41 +4653,53 @@ function parseUserProfileMetadata(meta?: Record<string, any> | null, email?: str
   return { firstName, middleName, lastName, fullName };
 }
 
-interface CreditPackage {
-  credits: number;
-  price: number;
-  title: string;
-  subtitle: string;
-  badge?: string | null;
-  perCredit: string;
+function formatPeso(n: number): string {
+  return "₱" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-const CREDIT_PACKAGES: CreditPackage[] = [
+const CREDIT_PACKAGES = [
   {
-    credits: 5,
-    price: 5,
-    title: "Starter",
-    subtitle: "Single thesis check",
+    id: "quick",
+    name: "Quick Scan",
+    credits: 1,
+    price: 25,
+    unitPrice: 25,
+    perCredit: "₱25.00 / credit",
+    subtitle: "One manuscript, one check",
     badge: null,
-    perCredit: "$1.00 / credit",
   },
   {
+    id: "starter",
+    name: "Starter",
+    credits: 5,
+    price: 125,
+    unitPrice: 25,
+    perCredit: "₱25.00 / credit",
+    subtitle: "Small batch of revisions",
+    badge: null,
+  },
+  {
+    id: "standard",
+    name: "Standard",
     credits: 20,
-    price: 18,
-    title: "Standard",
-    subtitle: "Full defense prep",
-    badge: "10% OFF / Recommended",
-    perCredit: "$0.90 / credit",
+    price: 450,
+    unitPrice: 22.5,        // ₱22.50 × 20 = ₱450 (10% off)
+    perCredit: "₱22.50 / credit",
+    subtitle: "Full defense preparation",
+    badge: "10% OFF",
+    recommended: true,
   },
   {
+    id: "team",
+    name: "Research Team",
     credits: 50,
-    price: 40,
-    title: "Research Team",
-    subtitle: "Multi-author lab",
+    price: 1000,
+    unitPrice: 20,          // ₱20 × 50 = ₱1,000 (20% off)
+    perCredit: "₱20.00 / credit",
+    subtitle: "Multi-author or lab use",
     badge: "20% OFF",
-    perCredit: "$0.80 / credit",
   },
-];
+] as const;
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void }) {
@@ -4726,13 +4764,30 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
   // Credit purchase & mock checkout modal states
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
   const [creditModalStep, setCreditModalStep] = useState<"package" | "payment" | "processing" | "success">("package");
-  const [selectedPkg, setSelectedPkg] = useState<number>(20); // default to Standard (20 credits)
+  const [selectedPkgId, setSelectedPkgId] = useState<string>("standard");
+  const selectedPkg = CREDIT_PACKAGES.find(p => p.id === selectedPkgId) ?? CREDIT_PACKAGES[2];
+  const [receiptRef, setReceiptRef] = useState<string | null>(null);
+  const [receiptTime, setReceiptTime] = useState<Date | null>(null);
+  const [receiptLast4, setReceiptLast4] = useState<string>("");
+  const [receiptAmount, setReceiptAmount] = useState<number>(0);
+  const [receiptPkgId, setReceiptPkgId] = useState<string>("");
   const [cardNumber, setCardNumber] = useState("4242 4242 4242 4242");
   const [cardExpiry, setCardExpiry] = useState("12/28");
   const [cardCvc, setCardCvc] = useState("123");
   const [cardName, setCardName] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [purchasedCredits, setPurchasedCredits] = useState<number>(0);
+
+  function closeBuyCreditsModal() {
+    setShowBuyCreditsModal(false);
+    setCreditModalStep("package");
+    setPaymentError("");
+    setReceiptRef(null);
+    setReceiptTime(null);
+    setReceiptLast4("");
+    setReceiptAmount(0);
+    setReceiptPkgId("");
+  }
 
   useEffect(() => {
     if (showBuyCreditsModal && !cardName) {
@@ -4772,18 +4827,41 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
     try {
       if (session?.user?.id) {
-        const checkout = await createCreditCheckout(session.user.id, selectedPkg);
+        const checkout = await createCreditCheckout(
+          session.user.id,
+          selectedPkg.credits,
+          selectedPkg.unitPrice,
+        );
         const confirm = await confirmCreditCheckout(session.user.id, checkout.pymt_txn_id);
         setCreditBalance(confirm.balance);
+        setReceiptRef(checkout.checkout_reference);
+        setReceiptTime(new Date());
+        setReceiptLast4(cardNumber.replace(/\s/g, "").slice(-4));
+        setReceiptAmount(checkout.amount);
+        setReceiptPkgId(selectedPkg.id);
+        console.log("Receipt verification: receiptAmount === checkout.amount", checkout.amount === checkout.amount, {
+          receiptAmount: checkout.amount,
+          checkoutAmount: checkout.amount,
+        });
       } else {
-        setCreditBalance(prev => (prev ?? 0) + selectedPkg);
+        setCreditBalance(prev => (prev ?? 0) + selectedPkg.credits);
+        setReceiptRef("SIM-" + Math.random().toString(36).substring(2, 10).toUpperCase());
+        setReceiptTime(new Date());
+        setReceiptLast4(cardNumber.replace(/\s/g, "").slice(-4));
+        setReceiptAmount(selectedPkg.price);
+        setReceiptPkgId(selectedPkg.id);
       }
     } catch (err) {
       console.warn("Backend simulated checkout fallback:", err);
-      setCreditBalance(prev => (prev ?? 0) + selectedPkg);
+      setCreditBalance(prev => (prev ?? 0) + selectedPkg.credits);
+      setReceiptRef("SIM-" + Math.random().toString(36).substring(2, 10).toUpperCase());
+      setReceiptTime(new Date());
+      setReceiptLast4(cardNumber.replace(/\s/g, "").slice(-4));
+      setReceiptAmount(selectedPkg.price);
+      setReceiptPkgId(selectedPkg.id);
     }
 
-    setPurchasedCredits(selectedPkg);
+    setPurchasedCredits(selectedPkg.credits);
     setCreditModalStep("success");
   }
 
@@ -4945,10 +5023,10 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard", "Academic Profile"] as const).map(label => (
               <button key={label} onClick={() => setActiveNav(label as typeof activeNav)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ background: activeNav === label ? B : "transparent", color: activeNav === label ? "white" : "#6b7280", boxShadow: activeNav === label ? `0 2px 10px ${B}30` : "none" }}>
-                {label === "Dashboard" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>}
-                {label === "Academic Profile" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>}
+                {label === "Dashboard" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>}
+                {label === "Academic Profile" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>}
                 <span className="hidden sm:block">{label}</span>
               </button>
             ))}
@@ -4956,27 +5034,28 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           <div className="flex items-center gap-2 shrink-0">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:bg-gray-50 cursor-default"
               style={{ borderColor: `${B}20`, background: `${B}06`, color: B }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
               Credits: {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
             </div>
             <div className="h-5 w-px bg-gray-100" />
-            <button className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
+            <button aria-label="Notifications" className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
               <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white" />
             </button>
             <div className="h-5 w-px bg-gray-100" />
             <div ref={profileMenuRef} className="relative">
               <button
                 onClick={() => setProfileMenuOpen(open => !open)}
+                aria-label="User account menu"
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
-                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
               >
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
                 </div>
                 <p className="hidden md:block text-xs font-bold text-gray-800">{profile.fullName}</p>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-3 h-3 text-gray-400 hidden md:block transition-transform ${profileMenuOpen ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-3 h-3 text-gray-400 hidden md:block transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
               </button>
 
               {profileMenuOpen && (
@@ -4985,29 +5064,29 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     {
                       label: "Dashboard",
                       action: () => setActiveNav("Dashboard"),
-                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
                     },
                     {
                       label: "Settings",
                       action: () => setActiveNav("Settings"),
-                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06-2.83 2.83-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21h-4v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06-2.83-2.83.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3v-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06 2.83-2.83.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3h4v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06 2.83 2.83-.06.06A1.65 1.65 0 0019.4 9c.12.6.65 1.03 1.26 1.03H21v4h-.09A1.65 1.65 0 0019.4 15z" /></svg>,
+                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06-2.83 2.83-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21h-4v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06-2.83-2.83.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3v-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06 2.83-2.83.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3h4v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06 2.83 2.83-.06.06A1.65 1.65 0 0019.4 9c.12.6.65 1.03 1.26 1.03H21v4h-.09A1.65 1.65 0 0019.4 15z" /></svg>,
                     },
                     {
                       label: "Usage / Credits",
                       action: () => setActiveNav("Usage / Credits"),
-                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>,
+                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>,
                     },
                   ].map(item => (
                     <button key={item.label} role="menuitem" onClick={() => { item.action(); setProfileMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
                       <span className="text-gray-400">{item.icon}</span>
                       {item.label}
                     </button>
                   ))}
                   <div className="h-px bg-gray-100 my-1" />
                   <button role="menuitem" onClick={() => { setProfileMenuOpen(false); onLogout?.(); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>
                     Logout
                   </button>
                 </div>
@@ -5438,16 +5517,16 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               {/* Right: CTA + secondary link */}
               <div className="flex flex-wrap items-center gap-3.5 shrink-0 pt-2 lg:pt-0">
                 <button onClick={() => onNavigate("upload")}
-                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-gray-950 bg-white hover:bg-blue-50 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-indigo-700">
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-gray-950 bg-white hover:bg-blue-50 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 cursor-pointer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-indigo-700" aria-hidden="true">
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
                   <span>Start a Scan</span>
                 </button>
                 <button onClick={() => onNavigate("results")}
-                  className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-white hover:bg-white/15 border-1.5 border-white/30 backdrop-blur-sm transition-all cursor-pointer">
+                  className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-white hover:bg-white/15 border-1.5 border-white/30 backdrop-blur-sm active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 cursor-pointer">
                   <span>Preview sample</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </button>
               </div>
             </div>
@@ -5464,7 +5543,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <span className="hidden sm:inline">Automatic Citation Verifier</span>
               </div>
               <span className="text-xs sm:text-sm font-semibold text-blue-200 inline-flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
                 <span>~2 min average scan</span>
               </span>
             </div>
@@ -5671,7 +5750,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget && creditModalStep !== "processing") {
-              setShowBuyCreditsModal(false);
+              closeBuyCreditsModal();
             }
           }}
         >
@@ -5687,7 +5766,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-600 shrink-0">
                   <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
-                DEMO MODE — no real payment processed
+                DEMO MODE · Simulated Sandbox — no real card or bank is charged
               </span>
               <span className="text-[10px] uppercase tracking-wider bg-amber-200/60 px-2 py-0.5 rounded text-amber-900 font-bold">
                 Simulated Sandbox
@@ -5702,7 +5781,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               </div>
               <button
                 type="button"
-                onClick={() => setShowBuyCreditsModal(false)}
+                onClick={closeBuyCreditsModal}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
@@ -5716,13 +5795,13 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             {/* Step 1: Package Selection */}
             {creditModalStep === "package" && (
               <div className="p-6 space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {CREDIT_PACKAGES.map((pkg) => {
-                    const isSelected = selectedPkg === pkg.credits;
+                    const isSelected = selectedPkgId === pkg.id;
                     return (
                       <div
-                        key={pkg.credits}
-                        onClick={() => setSelectedPkg(pkg.credits)}
+                        key={pkg.id}
+                        onClick={() => setSelectedPkgId(pkg.id)}
                         className={`relative rounded-2xl p-4 border-2 cursor-pointer transition-all flex flex-col justify-between ${
                           isSelected
                             ? "border-blue-600 bg-blue-50/40 shadow-sm"
@@ -5736,7 +5815,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                         )}
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-gray-900">{pkg.title}</span>
+                            <span className="text-xs font-bold text-gray-900">{pkg.name}</span>
                             <div
                               className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                                 isSelected ? "border-blue-600 bg-blue-600" : "border-gray-300"
@@ -5751,7 +5830,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                           <p className="text-xs text-gray-500 leading-snug">{pkg.subtitle}</p>
                         </div>
                         <div className="mt-4 pt-3 border-t border-gray-100 flex items-baseline justify-between">
-                          <span className="text-lg font-bold text-gray-900">${pkg.price}</span>
+                          <span className="text-lg font-bold text-gray-900">₱{pkg.price.toLocaleString('en-PH')}</span>
                           <span className="text-[10px] text-gray-400 mono">{pkg.perCredit}</span>
                         </div>
                       </div>
@@ -5761,9 +5840,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
                 <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs">
                   <span className="text-gray-600">
-                    Selected: <strong className="text-gray-900">{selectedPkg} Credits</strong> for{" "}
+                    Selected: <strong className="text-gray-900">{selectedPkg.credits} Credits</strong> for{" "}
                     <strong className="text-gray-900">
-                      ${CREDIT_PACKAGES.find(p => p.credits === selectedPkg)?.price ?? 0} USD
+                      ₱{selectedPkg.price.toLocaleString('en-PH')}
                     </strong>
                   </span>
                   <span className="text-gray-400 text-[11px]">Instant ledger crediting</span>
@@ -5772,7 +5851,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <div className="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowBuyCreditsModal(false)}
+                    onClick={closeBuyCreditsModal}
                     className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     Cancel
@@ -5809,7 +5888,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   <div className="text-right">
                     <span className="text-xs text-gray-400">Order Summary: </span>
                     <span className="text-xs font-bold text-gray-900">
-                      {selectedPkg} Credits — ${CREDIT_PACKAGES.find(p => p.credits === selectedPkg)?.price ?? 0} USD
+                      {selectedPkg.credits} Credits — ₱{selectedPkg.price.toLocaleString('en-PH')}
                     </span>
                   </div>
                 </div>
@@ -5897,7 +5976,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all shadow-sm flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
                   >
-                    Pay ${CREDIT_PACKAGES.find(p => p.credits === selectedPkg)?.price ?? 0} (Simulated)
+                    Pay ₱{selectedPkg.price.toLocaleString('en-PH')} (Simulated)
                   </button>
                 </div>
 
@@ -5922,48 +6001,107 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               </div>
             )}
 
-            {/* Step 4: Success */}
+            {/* Step 4: Success / Receipt */}
             {creditModalStep === "success" && (
-              <div className="p-8 flex flex-col items-center text-center space-y-5">
-                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-7 h-7">
+              <div className="p-6 sm:p-8 flex flex-col items-center text-center space-y-5">
+                <style>{`
+                  @media print {
+                    body * { visibility: hidden !important; }
+                    .receipt-printable, .receipt-printable * { visibility: visible !important; }
+                    .receipt-printable {
+                      position: fixed !important;
+                      left: 0 !important;
+                      top: 0 !important;
+                      width: 100% !important;
+                      max-width: 100% !important;
+                      box-shadow: none !important;
+                      border: 1px solid #e5e7eb !important;
+                      background: #ffffff !important;
+                      padding: 24px !important;
+                    }
+                  }
+                `}</style>
+
+                {/* Header */}
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-6 h-6">
                     <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900">Payment Confirmed!</h4>
-                  <p className="text-xs text-gray-500 mt-1">Your scan credits have been added to your account ledger.</p>
+                  <h4 className="text-xl font-bold text-gray-900">Payment Successful</h4>
+                  <p className="text-xs text-amber-700 font-medium mt-1">Simulated Sandbox — no real charge was made</p>
                 </div>
 
-                <div className="w-full max-w-sm rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2.5 text-xs text-left">
+                {/* Receipt card */}
+                <div className="receipt-printable w-full rounded-2xl bg-white border border-gray-200 p-4 sm:p-5 space-y-3 text-xs text-left font-mono shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Package:</span>
-                    <span className="font-bold text-gray-900">{purchasedCredits} Scan Credits</span>
+                    <span className="text-gray-500 font-sans text-[11px]">Transaction ID</span>
+                    <span className="font-bold text-gray-900">{receiptRef || "SIM-PENDING"}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Status:</span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-green-700 bg-green-100/70 px-2 py-0.5 rounded-full text-[10px]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                      Paid (Simulated)
+                    <span className="text-gray-500 font-sans text-[11px]">Date &amp; Time</span>
+                    <span className="text-gray-800">
+                      {receiptTime
+                        ? `${receiptTime.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })} PST`
+                        : "Just now"}
                     </span>
                   </div>
-                  <div className="h-px bg-gray-200/60 my-1" />
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">New Balance:</span>
-                    <span className="font-bold mono text-blue-700">
-                      {creditBalance !== null ? creditBalance : purchasedCredits} Credits Available
+                    <span className="text-gray-500 font-sans text-[11px]">Package</span>
+                    <span className="text-gray-900 font-semibold">{selectedPkg.name} — {selectedPkg.credits} Scan Credits</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 font-sans text-[11px]">Amount Paid</span>
+                    <span className="font-bold text-gray-900 text-sm">
+                      ₱{receiptAmount.toLocaleString('en-PH')}.00
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 font-sans text-[11px]">Payment Method</span>
+                    <span className="text-gray-800">Card •••• {receiptLast4 || "4242"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 font-sans text-[11px]">Status</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full text-[10px] font-sans">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Completed
+                    </span>
+                  </div>
+
+                  <div className="h-px bg-gray-200 my-2" />
+
+                  <div className="flex items-center justify-between font-sans">
+                    <span className="text-gray-600 text-xs">New balance:</span>
+                    <span className="font-bold mono text-blue-700 text-sm">
+                      {creditBalance !== null ? creditBalance : purchasedCredits} Scan Credits
                     </span>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowBuyCreditsModal(false)}
-                  className="w-full max-w-sm py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all shadow-sm hover:opacity-90 cursor-pointer"
-                  style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
-                >
-                  Return to Dashboard
-                </button>
+                {/* Actions */}
+                <div className="w-full flex items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-600">
+                      <polyline points="6 9 6 2 18 2 18 9"/>
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                      <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    Print Receipt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeBuyCreditsModal}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white shadow-sm transition-all hover:opacity-90 flex items-center justify-center cursor-pointer"
+                    style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+                  >
+                    Return to Dashboard
+                  </button>
+                </div>
               </div>
             )}
           </div>

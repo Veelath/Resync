@@ -534,11 +534,18 @@ export async function getCreditBalance(userId: string): Promise<CreditBalanceRes
   return resp.json();
 }
 
-export async function createCreditCheckout(userId: string, creditAmount: number): Promise<CheckoutResponse> {
+export async function createCreditCheckout(
+  userId: string,
+  creditAmount: number,
+  unitPrice?: number,
+): Promise<CheckoutResponse> {
   const resp = await fetch(`${API_BASE_URL}/api/credits/checkout`, {
     method: 'POST',
     headers: creditHeaders(userId, await authHeaders()),
-    body: JSON.stringify({ credit_amount: creditAmount }),
+    body: JSON.stringify({
+      credit_amount: creditAmount,
+      ...(unitPrice !== undefined ? { unit_price: unitPrice } : {}),
+    }),
   });
   if (!resp.ok) throw new Error(await extractErrorDetail(resp));
   return resp.json();
