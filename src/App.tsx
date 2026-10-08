@@ -370,7 +370,7 @@ function AssessmentBadge({ type }: { type: AssessmentType }) {
     "major-issue": { label: "Major Issue", c: "bg-rose-50 text-rose-800 border-rose-200" },
     "affected-section": { label: "Affected Section", c: "bg-blue-50 text-blue-800 border-blue-200" },
   };
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border mono ${m[type].c}`}>{m[type].label}</span>;
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-semibold border font-sans ${m[type].c}`}>{m[type].label}</span>;
 }
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
@@ -388,11 +388,11 @@ function ScoreRing({ score, size = 112 }: { score: number; size?: number }) {
             style={{ filter: `drop-shadow(0 0 8px ${color}55)`, transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold mono leading-none tabular-nums" style={{ color }}>{Math.round(score)}</span>
-          <span className="text-[10px] text-gray-400 mono">/100</span>
+          <span className="text-2xl font-bold tabular-nums leading-none tabular-nums" style={{ color }}>{Math.round(score)}</span>
+          <span className="text-[14px] text-gray-400 tabular-nums">/100</span>
         </div>
       </div>
-      <span className="text-xs font-semibold text-gray-500">{label} Coherence</span>
+      <span className="text-sm font-semibold text-gray-500">{label} Coherence</span>
     </div>
   );
 }
@@ -430,7 +430,7 @@ function PreviewCard() {
             <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
             <div className="w-2.5 h-2.5 rounded-full bg-green-300" />
           </div>
-          <div className="text-xs text-gray-400 font-medium mono">resync_report.pdf</div>
+          <div className="text-sm text-gray-400 font-medium mono">resync_report.pdf</div>
           <div style={{ width: 48 }} />
         </div>
         {/* score row */}
@@ -442,17 +442,17 @@ function PreviewCard() {
               { label: "Contradictions", n: 2, c: "text-red-600 bg-red-50 border-red-200" },
               { label: "Redundancies", n: 1, c: "text-amber-600 bg-amber-50 border-amber-200" },
             ].map(({ label, n, c }) => (
-              <div key={label} className={`flex justify-between items-center text-xs px-2.5 py-1 rounded-lg border ${c}`}>
+              <div key={label} className={`flex justify-between items-center text-sm px-2.5 py-1 rounded-lg border ${c}`}>
                 <span className="font-medium">{label}</span>
-                <span className="font-bold mono tabular-nums">{n}</span>
+                <span className="font-bold tabular-nums tabular-nums">{n}</span>
               </div>
             ))}
           </div>
         </div>
         {/* highlighted passage */}
         <div className="px-5 py-4 space-y-2">
-          <div className="text-[10px] mono font-bold text-blue-500 uppercase tracking-widest">Chapter 1 — Statement of the Problem</div>
-          <p className="text-xs text-gray-600 leading-relaxed">
+          <div className="text-[14px] font-sans font-bold text-blue-500 uppercase tracking-widest">Chapter 1 — Statement of the Problem</div>
+          <p className="text-sm text-gray-600 leading-relaxed">
             The study aims to{" "}
             <mark className="bg-violet-100 border border-violet-300 text-violet-800 rounded px-0.5 not-italic" style={{ background: undefined, textDecoration: "none" }}>
               measure student engagement using biometric data
@@ -462,22 +462,22 @@ function PreviewCard() {
           <div className="flex items-start gap-2 mt-2 p-2.5 rounded-xl bg-violet-50 border border-violet-100">
             <div className="w-1 h-full min-h-[32px] rounded-full bg-violet-400 shrink-0" aria-hidden="true" />
             <div>
-              <div className="text-[10px] font-bold text-violet-700 mb-0.5">Logic Gap — Objectives → Methodology</div>
-              <p className="text-[10px] text-violet-600 leading-relaxed">Biometric collection is promised in Objectives but absent from Methodology.</p>
+              <div className="text-[14px] font-bold text-violet-700 mb-0.5">Logic Gap — Objectives → Methodology</div>
+              <p className="text-[14px] text-violet-600 leading-relaxed">Biometric collection is promised in Objectives but absent from Methodology.</p>
             </div>
           </div>
         </div>
         {/* citation row */}
         <div className="px-5 pb-4 flex gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-[10px] font-semibold text-green-700">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-[14px] font-semibold text-green-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
             <span className="tabular-nums">4</span> live
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] font-semibold text-red-700">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[14px] font-semibold text-red-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
             <span className="tabular-nums">2</span> dead
           </div>
-          <div className="ml-auto text-[10px] text-gray-400 mono self-center tabular-nums">~2 min scan</div>
+          <div className="ml-auto text-[14px] text-gray-400 tabular-nums self-center tabular-nums">~2 min scan</div>
         </div>
       </div>
     </div>
@@ -521,7 +521,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             {/* left */}
             <div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold mb-7" style={{ borderColor: `${B}30`, background: `${B}08`, color: B }}>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-sm font-semibold mb-7" style={{ borderColor: `${B}30`, background: `${B}08`, color: B }}>
                 Manuscript coherence checker
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 tracking-tight leading-[1.08] mb-6">
@@ -543,7 +543,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                   View sample report
                 </button>
               </div>
-              <div className="flex flex-wrap gap-5 text-xs text-gray-400 font-medium">
+              <div className="flex flex-wrap gap-5 text-sm text-gray-400 font-medium">
                 {["Free to start", "Results in ~2 min", "No credit card needed"].map(t => (
                   <span key={t} className="flex items-center gap-1.5">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
@@ -570,7 +570,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
             ["3 models", "Support the analysis"],
           ].map(([val, label]) => (
             <div key={label} className="flex items-center gap-3">
-              <span className="text-xl font-bold mono" style={{ color: B }}>{val}</span>
+              <span className="text-xl font-bold tabular-nums" style={{ color: B }}>{val}</span>
               <span className="text-sm text-gray-400">{label}</span>
             </div>
           ))}
@@ -583,7 +583,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
 
           {/* Section header */}
           <div className="text-center mb-20">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-5 mono uppercase tracking-widest" style={{ background: `${B}08`, color: B }}>
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-bold mb-5 font-sans uppercase tracking-widest" style={{ background: `${B}08`, color: B }}>
               System overview
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight">From manuscript<br />to focused revisions</h2>
@@ -595,14 +595,14 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
             {/* ── Upload: text left, visual right ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Upload</div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold font-sans mb-6" style={{ background: `${B}08`, color: B }}>Upload</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   Add a <span className="font-semibold text-gray-700">.docx file</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies the document's chapters and can compare them with an uploaded school template.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-6">
                   {["Chapter mapping", "Template support", "Chapter-aware matching"].map(t => (
-                    <span key={t} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
+                    <span key={t} className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500 shrink-0"><path d="M5 12l5 5L20 7" /></svg>
                       {t}
                     </span>
@@ -620,13 +620,13 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7" style={{ color: B }} aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     </div>
                     <p className="text-sm font-bold text-gray-700 mb-1">Drop your thesis here</p>
-                    <p className="text-xs text-gray-400">.docx or Google Docs link · max 25&nbsp;MB</p>
+                    <p className="text-sm text-gray-400">.docx or Google Docs link · max 25&nbsp;MB</p>
                     <div className="mt-5 flex items-center justify-center gap-2">
                       <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs text-gray-300 font-medium">or</span>
+                      <span className="text-sm text-gray-300 font-medium">or</span>
                       <div className="flex-1 h-px bg-gray-100" />
                     </div>
-                    <button className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2" style={{ background: `linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
+                    <button className="mt-4 px-5 py-2 rounded-xl text-sm font-bold text-white transition-all duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2" style={{ background: `linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
                   </div>
                   {/* Detected sections chip */}
                   <div className="absolute -bottom-4 -right-2 bg-white rounded-2xl border border-gray-100 p-3.5 shadow-lg flex items-start gap-3" style={{ minWidth: 220 }}>
@@ -634,10 +634,10 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-green-600" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                     </div>
                     <div>
-                      <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-2">Detected Sections</p>
+                      <p className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400 mb-2">Detected Sections</p>
                       <div className="flex flex-wrap gap-1.5">
                         {["Introduction", "RRL", "Methodology", "Results", "Conclusion"].map(s => (
-                          <span key={s} className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: BL, color: B }}>{s}</span>
+                          <span key={s} className="text-[14px] font-bold px-2 py-0.5 rounded-full" style={{ background: BL, color: B }}>{s}</span>
                         ))}
                       </div>
                     </div>
@@ -654,8 +654,8 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                 <div className="relative p-8 space-y-3">
                   {/* Para A */}
                   <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 1 — Objectives</p>
-                    <p className="text-xs text-gray-600 leading-relaxed">The study will <mark className="bg-violet-100 border border-violet-200 text-violet-800 rounded px-0.5 not-italic" style={{ textDecoration: "none" }}>measure engagement using biometric data</mark> collected over one semester.</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 1 — Objectives</p>
+                    <p className="text-sm text-gray-600 leading-relaxed">The study will <mark className="bg-violet-100 border border-violet-200 text-violet-800 rounded px-0.5 not-italic" style={{ textDecoration: "none" }}>measure engagement using biometric data</mark> collected over one semester.</p>
                   </div>
                   {/* SVG connector */}
                   <div className="flex justify-center py-1">
@@ -668,8 +668,8 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                   </div>
                   {/* Para B */}
                   <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 3 — Methodology</p>
-                    <p className="text-xs text-gray-600 leading-relaxed">Data were collected using the <span className="font-semibold text-gray-800">Maslach Burnout Inventory</span> and the AWS survey instrument only.</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 3 — Methodology</p>
+                    <p className="text-sm text-gray-600 leading-relaxed">Data were collected using the <span className="font-semibold text-gray-800">Maslach Burnout Inventory</span> and the AWS survey instrument only.</p>
                   </div>
                   {/* Warning badge */}
                   <div className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white rounded-2xl border border-red-200 shadow-lg px-3.5 py-2.5 flex items-center gap-2.5">
@@ -677,15 +677,15 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-red-500"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-red-700">Contradiction Detected</p>
-                      <p className="text-[9px] text-gray-400">Objectives ↔ Methodology</p>
+                      <p className="text-[14px] font-bold text-red-700">Contradiction Detected</p>
+                      <p className="text-[14px] text-gray-400">Objectives ↔ Methodology</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="order-1 lg:order-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Analysis</div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold font-sans mb-6" style={{ background: `${B}08`, color: B }}>Analysis</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review connections across chapters</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   Resync compares claims, objectives, methods, findings, and conclusions to identify gaps or conflicting information across the manuscript.
@@ -708,14 +708,14 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
             {/* ── Results: text left, visual right ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Results</div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold font-sans mb-6" style={{ background: `${B}08`, color: B }}>Results</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review the report</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   See highlighted passages, explanations, and suggested revisions in one report. Use the findings as guidance while you review and update your paper.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-6">
                   {["Inline highlights", "Fix suggestions", "Coherence score", "Citation check"].map(t => (
-                    <span key={t} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
+                    <span key={t} className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500 shrink-0"><path d="M5 12l5 5L20 7" /></svg>
                       {t}
                     </span>
@@ -731,15 +731,15 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                     <div className="flex items-center gap-5 pb-5 mb-5 border-b border-gray-50">
                       <ScoreRing score={84} size={88} />
                       <div className="flex-1">
-                        <p className="text-xs text-gray-400 mb-1">Manuscript</p>
+                        <p className="text-sm text-gray-400 mb-1">Manuscript</p>
                         <p className="text-sm font-bold text-gray-800 leading-snug">Predictors of Academic Burnout Among STEM Undergraduates</p>
                         <div className="flex items-center gap-1.5 mt-2">
-                          <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Score improved</span>
-                          <span className="text-[10px] text-gray-400">↑ from 74</span>
+                          <span className="text-[14px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Score improved</span>
+                          <span className="text-[14px] text-gray-400">↑ from 74</span>
                         </div>
                       </div>
                     </div>
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-3">Revision Plan</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400 mb-3">Revision Plan</p>
                     <div className="space-y-2">
                       {[
                         { done: true, text: "Align biometric data collection with Methodology chapter" },
@@ -751,7 +751,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                           <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${done ? "bg-green-500" : "border-2 border-gray-300"}`}>
                             {done && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-2.5 h-2.5"><path d="M5 12l5 5L20 7" /></svg>}
                           </div>
-                          <p className={`text-xs leading-relaxed ${done ? "text-green-800 line-through decoration-green-400" : "text-gray-600"}`}>{text}</p>
+                          <p className={`text-sm leading-relaxed ${done ? "text-green-800 line-through decoration-green-400" : "text-gray-600"}`}>{text}</p>
                         </div>
                       ))}
                     </div>
@@ -769,7 +769,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.35fr] gap-10 lg:gap-16 items-center">
             <div>
-              <p className="text-xs mono font-bold uppercase tracking-widest mb-3" style={{ color: B }}>AI technologies used</p>
+              <p className="text-sm font-sans font-bold uppercase tracking-widest mb-3" style={{ color: B }}>AI technologies used</p>
               <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-3">Models that support the review</h2>
               <p className="text-sm text-gray-500 leading-relaxed max-w-lg">
                 Resync uses AI models to analyze manuscript structure and meaning, then generate findings and revision recommendations. The output is AI-generated and is not fully human-verified. Review each suggestion with your adviser before making changes.
@@ -795,7 +795,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-20">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
             <div>
-              <p className="text-xs mono font-bold uppercase tracking-widest text-gray-400 mb-3">Key capabilities</p>
+              <p className="text-sm font-sans font-bold uppercase tracking-widest text-gray-400 mb-3">Key capabilities</p>
               <h2 className="text-4xl font-bold text-gray-900 tracking-tight leading-tight">What Resync checks</h2>
             </div>
             <button onClick={() => onNavigate("results", true)} className="text-sm font-semibold hover:underline self-start md:self-auto rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 transition-colors" style={{ color: B }}>
@@ -812,9 +812,9 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
               ["06", "Citation Accessibility", "Every cited URL and DOI is pinged to confirm public reachability."],
             ].map(([num, label, desc]) => (
               <div key={num} className="group flex items-start gap-4 p-5 rounded-2xl border border-transparent hover:border-gray-200 hover:bg-white transition-colors duration-200 cursor-default">
-                <span className="text-2xl font-black mono text-gray-100 group-hover:text-blue-100 transition-colors select-none shrink-0 w-9 leading-none mt-0.5">{num}</span>
+                <span className="text-2xl font-black tabular-nums text-gray-100 group-hover:text-blue-100 transition-colors select-none shrink-0 w-9 leading-none mt-0.5">{num}</span>
                 <div>
-                  <p className="text-sm font-bold text-gray-800 mono mb-1">{label}</p>
+                  <p className="text-sm font-bold text-gray-800 font-sans mb-1">{label}</p>
                   <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
                 </div>
               </div>
@@ -838,7 +838,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
             </button>
           </div>
         </div>
-        <p className="text-center text-xs text-gray-400 mt-8 max-w-md mx-auto leading-relaxed">
+        <p className="text-center text-sm text-gray-400 mt-8 max-w-md mx-auto leading-relaxed">
           Resync is a decision-support tool. Final judgment on your manuscript always rests with your adviser and panel.
         </p>
       </section>
@@ -1169,7 +1169,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
             <button onClick={() => onNavigate("home")} aria-label="ReSync Home" className="rounded-lg p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"><Logo className="h-8 w-auto" /></button>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
+            <span className="text-sm font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
               Step {step} of 2: {step === 1 ? "Manuscript & Scope" : "Standard Template"}
             </span>
           </div>
@@ -1182,36 +1182,36 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         {/* Step Progress Bar */}
         <div className="mb-8 p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex items-center justify-between gap-4">
           <div role="button" tabIndex={0} aria-label="Go to Step 1: Manuscript and Research Scope" className="flex items-center gap-3 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm"
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white transition-all shadow-sm"
               style={{ background: step === 1 ? B : "#16a34a" }}>
               {step > 1 ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
               ) : "1"}
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-900">1. Manuscript & Research Scope</p>
-              <p className="text-[11px] text-gray-400">Select research type & upload .docx</p>
+              <p className="text-sm font-bold text-gray-900">1. Manuscript & Research Scope</p>
+              <p className="text-[14px] text-gray-400">Select research type & upload .docx</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
           <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Standard Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-3 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all shadow-sm"
               style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
               2
             </div>
             <div>
-              <p className="text-xs font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Standard Template (Editable)</p>
-              <p className="text-[11px] text-gray-400">Review & customize chapter headings</p>
+              <p className="text-sm font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Standard Template (Editable)</p>
+              <p className="text-[14px] text-gray-400">Review & customize chapter headings</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px] bg-gray-200" />
           <div className="flex items-center gap-3 opacity-60">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gray-100 text-gray-400">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-gray-100 text-gray-400">
               3
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-600">3. Coherence Scan</p>
-              <p className="text-[11px] text-gray-400">Cross-chapter report</p>
+              <p className="text-sm font-bold text-gray-600">3. Coherence Scan</p>
+              <p className="text-[14px] text-gray-400">Cross-chapter report</p>
             </div>
           </div>
         </div>
@@ -1222,7 +1222,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         {step === 1 ? (
           <div>
             <div className="mb-8">
-              <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 1 · Manuscript Intake</p>
+              <p className="text-sm font-sans font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 1 · Manuscript Intake</p>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Select research scope & upload manuscript</h1>
               <p className="text-gray-500 text-sm">Choose Quantitative or Qualitative so ReSync loads the matching standard chapter template. You can edit it in Step 2.</p>
             </div>
@@ -1233,8 +1233,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 {/* 1. Research Scope Selection */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500">Research Type Scope</label>
-                    <span className="text-[11px] font-semibold" style={{ color: researchType ? "#16a34a" : "#dc2626" }}>
+                    <label className="text-sm font-sans font-bold uppercase tracking-widest text-gray-500">Research Type Scope</label>
+                    <span className="text-[14px] font-semibold" style={{ color: researchType ? "#16a34a" : "#dc2626" }}>
                       {researchType ? "Selected" : "Required: choose one"}
                     </span>
                   </div>
@@ -1253,12 +1253,12 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><polyline points="6 9 12 15 18 9" /></svg>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Quantitative for numerical/hypothesis-driven studies; Qualitative for thematic/narrative studies.</p>
+                  <p className="text-sm text-gray-500 mt-2">Quantitative for numerical/hypothesis-driven studies; Qualitative for thematic/narrative studies.</p>
                 </div>
 
                 {/* 2. Manuscript Source */}
                 <div>
-                  <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500 block mb-3">Manuscript Source</label>
+                  <label className="text-sm font-sans font-bold uppercase tracking-widest text-gray-500 block mb-3">Manuscript Source</label>
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
                     {([
                       [
@@ -1280,7 +1280,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         <span className="shrink-0">{icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-bold" style={{ color: mode === m ? B : "#1f2937" }}>{label}</div>
-                          <div className="text-xs text-gray-400">{sub}</div>
+                          <div className="text-sm text-gray-400">{sub}</div>
                         </div>
                         {mode === m && (
                           <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: B }}>
@@ -1306,9 +1306,9 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-bold text-gray-800">{uploadedFile.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">Click to remove or replace file</p>
+                            <p className="text-sm text-gray-400 mt-0.5">Click to remove or replace file</p>
                           </div>
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-100 border border-green-200 px-3 py-1 rounded-full">
+                          <span className="flex items-center gap-1.5 text-sm font-bold text-green-700 bg-green-100 border border-green-200 px-3 py-1 rounded-full">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M5 12l5 5L20 7" /></svg>Manuscript attached
                           </span>
                         </>
@@ -1319,7 +1319,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-bold text-gray-700">Drop your .docx or .pdf file here</p>
-                            <p className="text-xs text-gray-400 mt-1">or click to browse from device · max 25 MB</p>
+                            <p className="text-sm text-gray-400 mt-1">or click to browse from device · max 25 MB</p>
                           </div>
                         </>
                       )}
@@ -1335,7 +1335,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                           style={{ borderColor: link ? B : "#e5e7eb" }}
                           onFocus={e => (e.target.style.borderColor = B)} onBlur={e => (e.target.style.borderColor = link ? B : "#e5e7eb")} />
                       </div>
-                      <p className="text-xs text-gray-400">Must be set to <span className="font-semibold text-gray-600">"Anyone with the link can view"</span></p>
+                      <p className="text-sm text-gray-400">Must be set to <span className="font-semibold text-gray-600">"Anyone with the link can view"</span></p>
                     </div>
                   )}
                 </div>
@@ -1357,7 +1357,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     Continue to Template Setup (Step 2) →
                   </button>
                   {!researchType && (
-                    <p className="text-center text-xs text-gray-400">Select Quantitative or Qualitative to continue</p>
+                    <p className="text-center text-sm text-gray-400">Select Quantitative or Qualitative to continue</p>
                   )}
                   {scanError && (
                     <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
@@ -1371,7 +1371,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
               {/* Right: Prep guide */}
               <div className="lg:sticky lg:top-24 space-y-3">
                 <div className="rounded-2xl p-5" style={{ background: BL, border: `1px solid ${B}18` }}>
-                  <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: `${B}99` }}>Scan preparation</p>
+                  <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: `${B}99` }}>Scan preparation</p>
                   <p className="text-sm font-bold text-gray-800 leading-snug">Configuring your scope ensures accurate cross-chapter checking.</p>
                 </div>
 
@@ -1397,7 +1397,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 ].map(({ n, title, body, icon }) => (
                   <div key={n} className="bg-white rounded-2xl p-4 flex gap-3.5 border border-gray-100" style={{ boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
                     <div className="flex flex-col items-center gap-1 pt-0.5">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black text-white" style={{ background: `linear-gradient(135deg, ${B}, #4f55f5)` }}>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-sm font-black text-white" style={{ background: `linear-gradient(135deg, ${B}, #4f55f5)` }}>
                         {n}
                       </div>
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: BL, color: B }}>
@@ -1405,8 +1405,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                       </div>
                     </div>
                     <div className="flex-1 pt-0.5">
-                      <p className="text-[13px] font-bold text-gray-800">{title}</p>
-                      <p className="text-[12px] text-gray-400 leading-relaxed mt-0.5">{body}</p>
+                      <p className="text-[14px] font-bold text-gray-800">{title}</p>
+                      <p className="text-[14px] text-gray-400 leading-relaxed mt-0.5">{body}</p>
                     </div>
                   </div>
                 ))}
@@ -1421,8 +1421,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 2 · Chapter Template</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800">
+                  <span className="text-sm font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 2 · Chapter Template</span>
+                  <span className="px-2 py-0.5 rounded-full text-[14px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800">
                     {researchType}
                   </span>
                 </div>
@@ -1431,7 +1431,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {templateNotification && (
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 animate-fade-in">
+                  <span className="px-2.5 py-1 rounded-lg text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 animate-fade-in">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-emerald-600">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -1442,7 +1442,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <button
                   type="button"
                   onClick={handleSaveTemplate}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
                     <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
@@ -1458,7 +1458,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   onClick={hasSavedTemplate ? handleUseSavedTemplate : undefined}
                   disabled={!hasSavedTemplate}
                   title={!hasSavedTemplate ? "No saved template yet." : undefined}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors flex items-center gap-1.5 ${
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold border transition-colors flex items-center gap-1.5 ${
                     hasSavedTemplate
                       ? "border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
                       : "cursor-not-allowed text-gray-300 border-gray-100 bg-gray-50/50"
@@ -1475,7 +1475,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <button
                   type="button"
                   onClick={handleRemoveAllSections}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-red-600 hover:text-red-700 hover:border-red-200 hover:bg-red-50/50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-red-600 hover:text-red-700 hover:border-red-200 hover:bg-red-50/50 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
                     <polyline points="3 6 5 6 21 6" />
@@ -1488,7 +1488,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <button
                   type="button"
                   onClick={handleResetTemplate}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                   Reset to Standard
@@ -1504,12 +1504,12 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     {/* Chapter header */}
                     <div className="flex items-center justify-between mb-3.5">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: B }}>
+                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: B }}>
                           {cIdx + 1}
                         </span>
                         <h3 className="text-sm font-bold text-gray-900">{ch.title}</h3>
                       </div>
-                      <span className="text-[11px] font-medium text-gray-400 mono">
+                      <span className="text-[14px] font-medium text-gray-400 tabular-nums">
                         {ch.sections.length} sections
                       </span>
                     </div>
@@ -1521,7 +1521,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         return (
                           <div
                             key={sIdx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium bg-gray-50/80 border-gray-200 text-gray-800 transition-colors hover:bg-gray-100/80"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium bg-gray-50/80 border-gray-200 text-gray-800 transition-colors hover:bg-gray-100/80"
                           >
                             {isEditing ? (
                               <input
@@ -1530,7 +1530,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                                 onChange={e => handleUpdateSection(cIdx, sIdx, e.target.value)}
                                 onBlur={() => setEditingSection(null)}
                                 onKeyDown={e => { if (e.key === "Enter") setEditingSection(null); }}
-                                className="bg-white border border-blue-400 rounded px-1.5 py-0.5 text-xs outline-none min-w-[120px]"
+                                className="bg-white border border-blue-400 rounded px-1.5 py-0.5 text-sm outline-none min-w-[120px]"
                               />
                             ) : (
                               <span
@@ -1565,12 +1565,12 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                               if (e.key === "Enter") handleAddSectionSubmit(cIdx);
                               if (e.key === "Escape") setAddingToChapter(null);
                             }}
-                            className="h-8 px-2.5 rounded-xl border border-blue-400 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none"
+                            className="h-8 px-2.5 rounded-xl border border-blue-400 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
                           />
                           <button
                             type="button"
                             onClick={() => handleAddSectionSubmit(cIdx)}
-                            className="h-8 px-2.5 rounded-xl text-xs font-bold text-white"
+                            className="h-8 px-2.5 rounded-xl text-sm font-bold text-white"
                             style={{ background: B }}
                           >
                             Add
@@ -1578,7 +1578,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                           <button
                             type="button"
                             onClick={() => setAddingToChapter(null)}
-                            className="h-8 px-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-600 flex items-center justify-center"
+                            className="h-8 px-2 rounded-xl text-sm font-semibold text-gray-400 hover:text-gray-600 flex items-center justify-center"
                             aria-label="Cancel adding section"
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -1588,7 +1588,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                         <button
                           type="button"
                           onClick={() => { setAddingToChapter(cIdx); setNewSectionText(""); }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-gray-300 text-xs font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-dashed border-gray-300 text-sm font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M12 5v14M5 12h14" /></svg>
                           Add section
@@ -1599,15 +1599,15 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 ))}
 
                 {/* Optional institutional file override */}
-                <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
                   <div>
                     <p className="font-semibold text-gray-800">Have an institutional .docx or .txt template file?</p>
-                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.docx or .txt).</p>
+                    <p className="text-gray-400 text-[14px]">You can optionally upload your school's syllabus or format document (.docx or .txt).</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => customTemplateInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors self-start sm:self-auto bg-white flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl border text-sm font-semibold transition-colors self-start sm:self-auto bg-white flex items-center gap-1.5"
                     style={{ borderColor: customTemplateFile ? B : "#d1d5db", color: customTemplateFile ? B : "#4b5563" }}
                   >
                     {customTemplateFile ? (
@@ -1618,7 +1618,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     ) : "+ Attach template (.docx, .txt) (Optional)"}
                   </button>
                   {templateParseError && (
-                    <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
+                    <p className="text-[14px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
                   )}
                   <input
                     ref={customTemplateInputRef}
@@ -1678,10 +1678,10 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
               <div className="lg:sticky lg:top-24 space-y-4">
                 <div className="rounded-2xl p-5 bg-white border border-gray-200 shadow-sm space-y-4">
                   <div>
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-1">Scan Configuration</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400 mb-1">Scan Configuration</p>
                     <h4 className="text-sm font-bold text-gray-900">Manuscript Summary</h4>
                   </div>
-                  <div className="space-y-2.5 text-xs border-t border-gray-100 pt-3">
+                  <div className="space-y-2.5 text-sm border-t border-gray-100 pt-3">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">File:</span>
                       <span className="font-semibold text-gray-800 truncate max-w-[170px]">{uploadedFile?.name || "Google Docs link"}</span>
@@ -1709,7 +1709,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   </div>
                 </div>
 
-                <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-xs text-amber-800 leading-relaxed">
+                <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-sm text-amber-800 leading-relaxed">
                   <p className="font-bold text-amber-900 mb-1">Template Customization Tip</p>
                   Click any heading pill to rename it. Resync will align your manuscript’s headings with this structure to flag skipped sections and out-of-order arguments.
                 </div>
@@ -1767,14 +1767,14 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
         {/* progress */}
         <div className="flex justify-between items-center mb-2" aria-live="polite">
           {pct === 99 ? (
-            <span className="text-xs mono font-semibold animate-pulse flex items-center gap-1.5" style={{ color: B }}>
+            <span className="text-sm tabular-nums font-semibold animate-pulse flex items-center gap-1.5" style={{ color: B }}>
               <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: B }} aria-hidden="true" />
               Finalizing your report…
             </span>
           ) : (
-            <span className="text-xs mono text-gray-400">Progress</span>
+            <span className="text-sm tabular-nums text-gray-400">Progress</span>
           )}
-          <span className="text-xs mono font-bold tabular-nums" style={{ color: B }}>{pct}%</span>
+          <span className="text-sm tabular-nums font-bold tabular-nums" style={{ color: B }}>{pct}%</span>
         </div>
         <div
           className="h-1.5 rounded-full bg-gray-100 mb-8 overflow-hidden"
@@ -1804,13 +1804,13 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                     ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                     : isActive
                       ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
-                      : <span className="text-xs font-bold text-gray-400 mono tabular-nums">{i + 1}</span>
+                      : <span className="text-sm font-bold text-gray-400 tabular-nums tabular-nums">{i + 1}</span>
                   }
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
                 </div>
-                <span className="text-xs mono font-bold shrink-0"
+                <span className="text-sm font-sans font-bold shrink-0"
                   style={{ color: isDone ? "#16a34a" : isActive ? B : "transparent" }}>
                   {isDone ? "Done" : isActive ? "Running…" : "—"}
                 </span>
@@ -1829,15 +1829,15 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900">Finalizing your report…</p>
-                <p className="text-xs text-gray-500">Synthesizing findings across chapters</p>
+                <p className="text-sm text-gray-500">Synthesizing findings across chapters</p>
               </div>
-              <span className="text-xs mono font-bold shrink-0 animate-pulse" style={{ color: B }}>
+              <span className="text-sm font-sans font-bold shrink-0 animate-pulse" style={{ color: B }}>
                 Finalizing…
               </span>
             </div>
           )}
         </div>
-        <p className="text-center text-xs text-gray-400 mt-8">Typically 2–3 minutes · do not close this tab</p>
+        <p className="text-center text-sm text-gray-400 mt-8">Typically 2–3 minutes · do not close this tab</p>
       </div>
     </div>
   );
@@ -2246,7 +2246,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         aria-label={label}
         title={label}
         onClick={e => { e.stopPropagation(); handleFeedback(item, helpful); }}
-        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${
+        className={`px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 border transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${
           vote === kind ? activeCls : 'bg-white border-gray-200 text-gray-600'
         } ${locked ? `cursor-not-allowed ${vote === kind ? '' : 'opacity-40'}` : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'}`}>
         <span>{icon}</span><span>{label}</span>
@@ -2265,9 +2265,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     return (
       <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap" onClick={e => e.stopPropagation()} aria-live="polite">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">Was this finding helpful?</span>
-          {vote && <span className="text-[11px] text-emerald-700">Thanks — feedback recorded.</span>}
-          {feedbackError[item.id] && <span className="text-[11px] text-rose-600">{feedbackError[item.id]}</span>}
+          <span className="text-[14px] font-bold uppercase tracking-wider text-gray-500 block">Was this finding helpful?</span>
+          {vote && <span className="text-[14px] text-emerald-700">Thanks — feedback recorded.</span>}
+          {feedbackError[item.id] && <span className="text-[14px] text-rose-600">{feedbackError[item.id]}</span>}
         </div>
         <div className="flex items-center gap-2">
           {btn('up', true, thumbUpIcon, 'Helpful', 'bg-emerald-50 border-emerald-300 text-emerald-700')}
@@ -2297,10 +2297,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-indigo-700">{Math.round(score)} / 100</div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+            <div className="text-sm font-semibold uppercase tracking-wider text-gray-600">
               Band: {isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}
             </div>
-            <div className="text-xs text-gray-500 mt-1">{new Date().toLocaleString()}</div>
+            <div className="text-sm text-gray-500 mt-1">{new Date().toLocaleString()}</div>
           </div>
         </div>
 
@@ -2308,19 +2308,19 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <div>
             <h3 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2">Key Strengths</h3>
             {isSample ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
                 {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
                   <li key={idx}>{str}</li>
                 ))}
               </ul>
             ) : (scan?.verifications && scan.verifications.length > 0) ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
                 {scan.verifications.map((v, idx) => (
                   <li key={idx}><strong>{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-gray-500 italic">
+              <p className="text-sm text-gray-500 italic">
                 Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
               </p>
             )}
@@ -2329,13 +2329,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <div>
             <h3 className="text-sm font-bold text-rose-800 uppercase tracking-wider mb-2">Major Issues</h3>
             {isSample ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
                 {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
                   <li key={idx}>{iss}</li>
                 ))}
               </ul>
             ) : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) > 0 ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
+              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
                 {scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').map((inc, idx) => (
                   <li key={idx}>
                     <strong>{inc.section_a} ↔ {inc.section_b}:</strong> {inc.explanation_what || inc.explanation_why}
@@ -2343,7 +2343,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-gray-500 italic">No major issues detected.</p>
+              <p className="text-sm text-gray-500 italic">No major issues detected.</p>
             )}
           </div>
         </div>
@@ -2357,14 +2357,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           </button>
           <div className="h-4 w-px bg-gray-200 shrink-0" />
           <Logo className="h-6 w-auto shrink-0" />
-          <span className="text-xs text-gray-400 truncate hidden md:block">
+          <span className="text-sm text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
           <div className="ml-auto flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setShowPairingModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
               How Pairing Works
@@ -2373,11 +2373,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <>
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>Export PDF
                 </button>
-                <button onClick={() => onNavigate("upload")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-colors duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 cursor-pointer" style={{ background: B }}>
+                <button onClick={() => onNavigate("upload")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-white transition-colors duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 cursor-pointer" style={{ background: B }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>New Scan
                 </button>
               </>
@@ -2401,7 +2401,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
               <path d="M9 18l6-6-6-6" />
             </svg>
-            <span className="text-xs font-semibold">Show Assessment</span>
+            <span className="text-sm font-semibold">Show Assessment</span>
           </button>
         )}
         {isRightCollapsed && (
@@ -2413,7 +2413,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             title="Expand inspector sidebar"
             className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-r-0 border-gray-200 rounded-l-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
           >
-            <span className="text-xs font-semibold">Show Analysis</span>
+            <span className="text-sm font-semibold">Show Analysis</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" />
             </svg>
@@ -2439,10 +2439,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
-              <span className="text-xs font-semibold">Hide Assessment</span>
+              <span className="text-sm font-semibold">Hide Assessment</span>
             </button>
             <ScoreRing score={score} size={88} />
-            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
+            <p className="text-sm tabular-nums font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
             <div className="w-full mt-1.5 space-y-1">
               {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[])
                 .filter(t => isSample || t !== "overall-status")
@@ -2453,8 +2453,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   onClick={() => applyFilter(filterType === t ? "all" : t)}
                   className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
                   <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                  <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
-                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>
+                  <span className="text-sm font-medium text-gray-700 flex-1">{ST[t].label}</span>
+                  <span className={`text-sm font-black ${ST[t].pillTxt}`}>
                     {isSample ? localItems.filter(i => i.type === t).length : (
                       t === 'strength' ? (scan?.verifications?.length ?? 0) :
                       t === 'major-issue' ? (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) :
@@ -2469,12 +2469,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           {/* Assessment Filter Bar */}
           <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-100">
             <div className="flex items-center justify-between mb-2 px-0.5">
-              <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Assessment</span>
+              <span className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Assessment</span>
               {filterType !== "all" && (
                 <button
                   type="button"
                   onClick={() => setFilterType("all")}
-                  className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                  className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">
                   Show all ({localItems.length})
                 </button>
               )}
@@ -2483,28 +2483,28 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <button
                 type="button"
                 onClick={() => applyFilter("all")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
                 All ({localItems.length})
               </button>
               <button
                 type="button"
                 onClick={() => applyFilter("strength")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   }`}>
                 Strengths ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
               </button>
               <button
                 type="button"
                 onClick={() => applyFilter("major-issue")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
                   }`}>
                 Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
               </button>
               <button
                 type="button"
                 onClick={() => applyFilter("affected-section")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                   }`}>
                 Affected ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
               </button>
@@ -2525,21 +2525,21 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   }`}>
                 <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${ST[item.type].dot}`} />
                 <div className="flex-1 min-w-0">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider block ${ST[item.type].pillTxt}`}>{ST[item.type].label}</span>
-                  <span className="text-[13px] font-semibold text-gray-800 leading-snug line-clamp-2 mt-0.5">{item.title}</span>
-                  <span className="text-xs text-gray-500 leading-tight truncate block mt-1">{item.section}</span>
+                  <span className={`text-[14px] font-bold uppercase tracking-wider block ${ST[item.type].pillTxt}`}>{ST[item.type].label}</span>
+                  <span className="text-[14px] font-semibold text-gray-800 leading-snug line-clamp-2 mt-0.5">{item.title}</span>
+                  <span className="text-sm text-gray-500 leading-tight truncate block mt-1">{item.section}</span>
                 </div>
-                <span className="text-xs mono font-bold text-gray-400 shrink-0 mt-0.5">#{idx + 1}</span>
+                <span className="text-sm tabular-nums font-bold text-gray-400 shrink-0 mt-0.5">#{idx + 1}</span>
               </button>
             ))}
           </div>
 
           {/* Highlight legend */}
           <div className="px-4 py-3.5 border-t border-gray-100 space-y-2">
-            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500 mb-1">Highlight key</p>
+            <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500 mb-1">Highlight key</p>
             <div className="flex flex-wrap gap-1.5">
               {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
-                <span key={t} className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold ${ST[t].hl.split(" ").filter(c => c.startsWith("bg-")).join(" ")} ${ST[t].pillTxt}`}>
+                <span key={t} className={`inline-block px-2.5 py-1 rounded-md text-sm font-bold ${ST[t].hl.split(" ").filter(c => c.startsWith("bg-")).join(" ")} ${ST[t].pillTxt}`}>
                   {ST[t].label}
                 </span>
               ))}
@@ -2557,7 +2557,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
+                className={`px-3.5 py-3 text-sm font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
                   activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
                 }`}>
                 {tab.label}
@@ -2570,7 +2570,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {/* Document header */}
             <div className="bg-white rounded-2xl border border-gray-200 px-10 pt-10 pb-8 mb-6 shadow-sm">
               {isSample && (
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-3" style={{ color: B }}>
+                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-3" style={{ color: B }}>
                   Sample Manuscript Report
                 </p>
               )}
@@ -2581,12 +2581,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study • Academic Year 2023–2024</p>
               )}
               <div className="flex items-center gap-3 pt-4 border-t border-gray-100 flex-wrap">
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Scan complete</span>
-                <span className="text-[11px] text-gray-500 font-medium">Overall Assessment: <strong className={isSample ? "text-amber-700" : "text-gray-900"}>{isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}</strong></span>
-                <span className="text-[11px] text-gray-300">•</span>
-                <span className="text-[11px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
-                <span className="text-[11px] text-gray-300">•</span>
-                <span className="text-[11px] text-gray-400">Click any highlight to see Assessment Details</span>
+                <span className="text-[14px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Scan complete</span>
+                <span className="text-[14px] text-gray-500 font-medium">Overall Assessment: <strong className={isSample ? "text-amber-700" : "text-gray-900"}>{isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}</strong></span>
+                <span className="text-[14px] text-gray-300">•</span>
+                <span className="text-[14px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
+                <span className="text-[14px] text-gray-300">•</span>
+                <span className="text-[14px] text-gray-400">Click any highlight to see Assessment Details</span>
               </div>
             </div>
 
@@ -2597,28 +2597,28 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-indigo-700 bg-indigo-50 border border-indigo-100">
+                    <span className="text-[14px] font-sans font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-indigo-700 bg-indigo-50 border border-indigo-100">
                       Overall Assessment
                     </span>
-                    <span className="text-xs text-gray-400">· Executive Synthesis</span>
+                    <span className="text-sm text-gray-400">· Executive Synthesis</span>
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Overall Manuscript Assessment</h2>
-                  <p className="text-xs text-gray-500 italic mt-1 font-serif">
+                  <p className="text-sm text-gray-500 italic mt-1 font-sans">
                     “{OVERALL_ASSESSMENT.question}”
                   </p>
                 </div>
 
                 {/* Overall Status Badge */}
                 <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
-                  <span className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Overall Status</span>
+                  <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400">Overall Status</span>
                   <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-200 bg-amber-50">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                    <span className="text-xs font-black text-amber-800 tracking-wide uppercase">
+                    <span className="text-sm font-black text-amber-800 tracking-wide uppercase">
                       {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
                     </span>
                   </div>
                   {isSample && (
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                    <div className="flex items-center gap-1.5 text-[14px] text-gray-400">
                       <span>Scale:</span>
                       <span className="text-gray-400">High</span>
                       <span>•</span>
@@ -2636,10 +2636,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-indigo-600">
                     <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
                   </svg>
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+                  <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">
                     Overall Status Condition
                   </span>
-                  <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
+                  <span className="text-[14px] font-semibold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
                     {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
                   </span>
                 </div>
@@ -2664,15 +2664,15 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         </div>
                         <h3 className="text-sm font-bold text-emerald-950">Key Strengths</h3>
                       </div>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                      <span className="text-[14px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
                         {isSample ? OVERALL_ASSESSMENT.strengths.length : (scan?.verifications?.length ?? 0)} Verified
                       </span>
                     </div>
-                    <p className="text-[11px] text-emerald-700/80 italic mb-3">What the manuscript does consistently</p>
+                    <p className="text-[14px] text-emerald-700/80 italic mb-3">What the manuscript does consistently</p>
                     {isSample ? (
                       <ul className="space-y-2.5">
                         {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                          <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
                             <span>{str}</span>
                           </li>
@@ -2682,14 +2682,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       (scan?.verifications && scan.verifications.length > 0) ? (
                         <ul className="space-y-2.5">
                           {scan.verifications.map((v, idx) => (
-                            <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                            <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
                               <span><strong className="text-emerald-900">{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</span>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-gray-500 italic">
+                        <p className="text-sm text-gray-500 italic">
                           Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
                         </p>
                       )
@@ -2707,15 +2707,15 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         </div>
                         <h3 className="text-sm font-bold text-rose-950">Major Issues</h3>
                       </div>
-                      <span className="text-[10px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
+                      <span className="text-[14px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
                         {isSample ? OVERALL_ASSESSMENT.majorIssues.length : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)} Detected
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-700/80 italic mb-3">Most important inconsistencies detected</p>
+                    <p className="text-[14px] text-rose-700/80 italic mb-3">Most important inconsistencies detected</p>
                     {isSample ? (
                       <ul className="space-y-2.5">
                         {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                          <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
                             <span>{iss}</span>
                           </li>
@@ -2732,24 +2732,24 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             return (
                               <>
                                 {missingSecs.length > 0 && (
-                                  <li className="flex items-start gap-2.5 text-xs text-rose-900 leading-snug bg-rose-100/70 p-3 rounded-xl border border-rose-200">
+                                  <li className="flex items-start gap-2.5 text-sm text-rose-900 leading-snug bg-rose-100/70 p-3 rounded-xl border border-rose-200">
                                     <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0 mt-1" />
                                     <div className="flex-1">
                                       <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-rose-950 uppercase text-[10px] tracking-wider">Missing Required Sections ({missingSecs.length})</span>
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-800">Completeness Alert</span>
+                                        <span className="font-bold text-rose-950 uppercase text-[14px] tracking-wider">Missing Required Sections ({missingSecs.length})</span>
+                                        <span className="text-[14px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-800">Completeness Alert</span>
                                       </div>
-                                      <p className="text-xs text-rose-900 font-semibold">
+                                      <p className="text-sm text-rose-900 font-semibold">
                                         {missingSecs.map(i => formatRoleLabel(i.section_a)).join(" · ")}
                                       </p>
-                                      <p className="text-[11px] text-rose-700 mt-1 leading-relaxed">
+                                      <p className="text-[14px] text-rose-700 mt-1 leading-relaxed">
                                         Required academic sections are absent from this draft. Add these sections to satisfy standard thesis submission requirements.
                                       </p>
                                     </div>
                                   </li>
                                 )}
                                 {regularIssues.map((iss, idx) => (
-                                  <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
+                                  <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
                                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
                                     <span><strong className="text-rose-900">{iss.section_a} ↔ {iss.section_b}:</strong> {iss.explanation_what}</span>
                                   </li>
@@ -2759,7 +2759,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                           })()}
                         </ul>
                       ) : (
-                        <p className="text-xs text-gray-500 italic">No major issues detected.</p>
+                        <p className="text-sm text-gray-500 italic">No major issues detected.</p>
                       )
                     )}
                   </div>
@@ -2775,7 +2775,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </div>
                     <h3 className="text-sm font-bold text-gray-900">Affected Sections</h3>
                   </div>
-                  <span className="text-[11px] text-gray-500 italic">Which chapters/sections are involved</span>
+                  <span className="text-[14px] text-gray-500 italic">Which chapters/sections are involved</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                   {isSample ? (
@@ -2786,10 +2786,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         className="group flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:border-blue-400 hover:shadow-xs transition-all text-left cursor-pointer"
                       >
                         <div>
-                          <span className="text-xs font-bold text-gray-800 group-hover:text-blue-600 transition-colors block">
+                          <span className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors block">
                             {sec.label}
                           </span>
-                          <span className="text-[10px] text-gray-400 mt-0.5 block">
+                          <span className="text-[14px] text-gray-400 mt-0.5 block">
                             Click to inspect cross-section conflict
                           </span>
                         </div>
@@ -2805,10 +2805,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 text-left"
                       >
                         <div>
-                          <span className="text-xs font-bold text-gray-800 block">
+                          <span className="text-sm font-bold text-gray-800 block">
                             {secName}
                           </span>
-                          <span className="text-[10px] text-gray-400 mt-0.5 block">
+                          <span className="text-[14px] text-gray-400 mt-0.5 block">
                             Inconsistencies detected in this section
                           </span>
                         </div>
@@ -2822,14 +2822,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
             {/* Highlight legend — compact inline */}
             <div className="flex items-center gap-2 px-1 mb-5 flex-wrap">
-              <span className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mr-1">Highlights:</span>
+              <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400 mr-1">Highlights:</span>
               {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
                 <button
                   key={t}
                   type="button"
                   aria-pressed={filterType === t}
                   onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[14px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
                   <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} aria-hidden="true" />
                   <span>{ST[t].label}</span>
                   <span className="tabular-nums">({localItems.filter(i => i.type === t).length})</span>
@@ -2856,7 +2856,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                       {/* Chapter label for chapter headings */}
                       {isChapterHead && (
-                        <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>{para.chapter}</p>
+                        <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>{para.chapter}</p>
                       )}
 
                       {/* Section heading row */}
@@ -2867,12 +2867,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         {/* Assessment badges inline with heading */}
                         <div className="flex items-center gap-1.5 shrink-0 mt-0.5 flex-wrap justify-end">
                           {para.assessments.length === 0
-                            ? <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Aligned</span>
+                            ? <span className="text-[14px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Aligned</span>
                             : [...new Map(para.assessments.map(pi => [pi.itemId, pi])).values()].map(pi => (
                               <button key={pi.itemId}
                                 aria-pressed={activeId === pi.itemId}
                                 onClick={() => setActiveId(prev => prev === pi.itemId ? null : pi.itemId)}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
+                                className={`text-[14px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
                                 {ST[pi.type].label}
                               </button>
                             ))
@@ -2896,16 +2896,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <>
                   <div className="mx-8 lg:mx-12 border-t border-gray-200 mt-0" />
                   <div className="px-8 lg:px-12 pt-8 pb-10" id="refs">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-gray-400">References</p>
+                    <p className="text-[14px] tabular-nums font-bold uppercase tracking-widest mb-1 text-gray-400">References</p>
                     <div className="flex items-center gap-3 mb-5">
                       <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
-                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><span className="tabular-nums">{localCitations.length}</span> sources checked</span>
-                      {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{dead}</span> inaccessible</span>}
+                      <span className="text-[14px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><span className="tabular-nums">{localCitations.length}</span> sources checked</span>
+                      {dead > 0 && <span className="text-[14px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{dead}</span> inaccessible</span>}
                     </div>
                     {dead > 0 && (
                       <div className="flex items-start gap-3 px-4 py-3 mb-4 rounded-xl border border-red-200 bg-red-50">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                        <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
+                        <p className="text-sm text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
                       </div>
                     )}
                     {localCitations.length > 0 ? (
@@ -2917,16 +2917,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
                             : "border-red-100 bg-red-50"
                           }`}>
-                            <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
+                            <span className="text-[14px] tabular-nums font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
                             <div className="flex-1 min-w-0">
                               {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                              <p className="text-[13px] text-gray-800 leading-snug">
+                              <p className="text-[14px] text-gray-800 leading-snug">
                                 {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
                                 {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
                                 {cite.ref}
                               </p>
                               {cite.url && (
-                                 <p className={`text-[11px] mono truncate mt-1 ${
+                                 <p className={`text-[12px] meta mono truncate mt-1 ${
                                    cite.status === "live" ? "text-gray-400" 
                                    : cite.status === "restricted" ? "text-amber-600" 
                                    : cite.status === "neutral" ? "text-slate-400"
@@ -2936,7 +2936,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             </div>
                             
                             {/* Status Badge */}
-                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[14px] font-bold ${
                               cite.status === "live" ? "bg-emerald-100 text-emerald-700"
                               : cite.status === "restricted" ? "bg-amber-100 text-amber-700"
                               : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
@@ -2969,24 +2969,24 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-xs space-y-8 font-sans leading-relaxed text-gray-800 mt-8">
               <div className="flex items-center justify-between border-b border-gray-100 pb-5 flex-wrap gap-3">
                 <div>
-                  <span className="text-[10px] mono font-bold uppercase tracking-widest text-indigo-600 block">
+                  <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-indigo-600 block">
                     Inline Manuscript Inspection
                   </span>
-                  <h2 className="font-serif text-2xl font-bold text-gray-900 mt-1">
+                  <h2 className="font-sans text-2xl font-bold text-gray-900 mt-1">
                     Continuous Manuscript with Section Highlights
                   </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-sm text-gray-500 mt-0.5">
                     Click any highlighted passage to inspect findings and recommendations in the right Explainable AI panel.
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
+                  <span className="text-[14px] font-bold px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
                     Major Issue
                   </span>
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="text-[14px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                     Key Strength
                   </span>
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="text-[14px] font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
                     Affected Section
                   </span>
                 </div>
@@ -3000,7 +3000,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <p className="text-sm font-bold text-gray-700">Loading manuscript text...</p>
                   </div>
                 ) : manuscriptText ? (
-                  <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-800 leading-relaxed font-serif">
+                  <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-800 leading-relaxed font-sans">
                     {(() => {
                       if (!scan?.inconsistencies?.length) return manuscriptText;
                       interface PhraseMatch { phrase: string; itemId: string; type: AssessmentType; index: number; }
@@ -3054,13 +3054,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   /* Fallback to parsed section paragraphs when GDocs preview is unavailable */
                   <div className="space-y-6">
                     {manuscriptError && (
-                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+                      <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
                         {manuscriptError} — displaying parsed manuscript section excerpts below.
                       </p>
                     )}
                     {localParagraphs.map((para, i) => (
                       <div key={i} className="border-b border-gray-100 pb-5 space-y-2">
-                        <h3 className="font-serif font-bold text-base text-gray-900">{para.heading}</h3>
+                        <h3 className="font-sans font-bold text-base text-gray-900">{para.heading}</h3>
                         <p className="text-sm text-gray-700 leading-relaxed">{renderPara(para)}</p>
                       </div>
                     ))}
@@ -3073,14 +3073,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <section id="inline-chapter-1" className="space-y-4 border-b border-gray-100 pb-8">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                        <span className="text-[14px] font-sans uppercase tracking-widest text-indigo-600 font-bold block">
                           CHAPTER 1
                         </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                        <h3 className="font-sans text-xl font-bold text-gray-900 mt-0.5">
                           Introduction
                         </h3>
                       </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                         Major Issue
                       </span>
                     </div>
@@ -3099,10 +3099,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                     <div className="pt-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-gray-900">
+                        <h4 className="font-sans font-bold text-base text-gray-900">
                           Objectives of the Study
                         </h4>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                           Major Issue
                         </span>
                       </div>
@@ -3122,10 +3122,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                     <div className="pt-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-gray-900">
+                        <h4 className="font-sans font-bold text-base text-gray-900">
                           Statement of the Problem
                         </h4>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                           Affected Section
                         </span>
                       </div>
@@ -3148,14 +3148,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <section id="inline-chapter-2" className="space-y-4 border-b border-gray-100 pb-8">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                        <span className="text-[14px] font-sans uppercase tracking-widest text-indigo-600 font-bold block">
                           CHAPTER 2
                         </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                        <h3 className="font-sans text-xl font-bold text-gray-900 mt-0.5">
                           Review of Related Literature
                         </h3>
                       </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                         Major Issue
                       </span>
                     </div>
@@ -3173,10 +3173,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                     <div className="pt-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-gray-900">
+                        <h4 className="font-sans font-bold text-base text-gray-900">
                           Conceptual Framework
                         </h4>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                           Major Issue
                         </span>
                       </div>
@@ -3198,14 +3198,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <section id="inline-chapter-3" className="space-y-4 border-b border-gray-100 pb-8">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                        <span className="text-[14px] font-sans uppercase tracking-widest text-indigo-600 font-bold block">
                           CHAPTER 3
                         </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                        <h3 className="font-sans text-xl font-bold text-gray-900 mt-0.5">
                           Methodology
                         </h3>
                       </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                      <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                         Affected Section
                       </span>
                     </div>
@@ -3236,14 +3236,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <section id="inline-chapter-4" className="space-y-4 border-b border-gray-100 pb-8">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                        <span className="text-[14px] font-sans uppercase tracking-widest text-indigo-600 font-bold block">
                           CHAPTER 4
                         </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                        <h3 className="font-sans text-xl font-bold text-gray-900 mt-0.5">
                           Results and Discussion
                         </h3>
                       </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                         Major Issue
                       </span>
                     </div>
@@ -3274,14 +3274,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <section id="inline-chapter-5" className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
+                        <span className="text-[14px] font-sans uppercase tracking-widest text-indigo-600 font-bold block">
                           CHAPTER 5
                         </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
+                        <h3 className="font-sans text-xl font-bold text-gray-900 mt-0.5">
                           Conclusions and Recommendations
                         </h3>
                       </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      <span className="text-[14px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                         Major Issue
                       </span>
                     </div>
@@ -3307,13 +3307,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {activeTab === 'inconsistencies' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-                  <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
+                  <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">
                     {filterType === 'major-issue' ? 'Major Issues' : filterType === 'affected-section' ? 'Affected Sections' : 'All Inconsistencies'} ({visibleInconsistencies.length})
                   </p>
                   <div className="flex items-center gap-3">
                     {(filterType === 'major-issue' || filterType === 'affected-section') && (
                       <button type="button" onClick={() => setFilterType('all')}
-                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                        className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">
                         Show all ({inconsistenciesCount})
                       </button>
                     )}
@@ -3321,7 +3321,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <button
                         type="button"
                         onClick={toggleAllExpanded}
-                        className="text-xs font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 px-2.5 py-1 rounded-lg bg-white hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                        className="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 px-2.5 py-1 rounded-lg bg-white hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
                       >
                         {allExpanded ? "Collapse All" : "Expand All"}
                       </button>
@@ -3332,7 +3332,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 {visibleInconsistencies.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
                     <p className="text-sm font-bold text-gray-800 mb-1">No inconsistencies to show</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-gray-500">
                       {inconsistenciesCount === 0
                         ? 'No inconsistencies were detected across the analyzed sections.'
                         : 'No findings match the selected filter.'}
@@ -3356,14 +3356,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         >
                           <div className="flex-1 min-w-0 space-y-1.5">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ST[item.type].pill}`}>{ST[item.type].label}</span>
-                              <span className="text-xs mono font-bold text-gray-400">#{idx + 1}</span>
+                              <span className={`text-[14px] font-bold px-2 py-0.5 rounded-full border ${ST[item.type].pill}`}>{ST[item.type].label}</span>
+                              <span className="text-sm tabular-nums font-bold text-gray-400">#{idx + 1}</span>
                               {item.isMissingSection ? (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-800">
+                                <span className="text-[14px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-800">
                                   Missing Section
                                 </span>
                               ) : (
-                                <span className="text-xs font-semibold" style={{ color: ST[item.type].accentColor }}>{item.section}</span>
+                                <span className="text-sm font-semibold" style={{ color: ST[item.type].accentColor }}>{item.section}</span>
                               )}
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.title}</h3>
@@ -3377,17 +3377,17 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                         {isExpanded && (
                           <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
-                            {item.description && <p className="text-[13px] text-gray-700 leading-relaxed mt-3">{item.description}</p>}
+                            {item.description && <p className="text-[14px] text-gray-700 leading-relaxed mt-3">{item.description}</p>}
                             {item.conflictsWith && item.conflictQuote && (
                               <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
-                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">Conflicts with: {item.conflictsWith}</p>
-                                <p className="text-xs text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
+                                <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-gray-500 mb-1">Conflicts with: {item.conflictsWith}</p>
+                                <p className="text-sm text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
                               </div>
                             )}
                             {item.recommendation && (
                               <div className="rounded-xl bg-indigo-50/60 border border-indigo-100 p-3">
-                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-indigo-800 mb-1">Suggested fix</p>
-                                <p className="text-xs text-indigo-950 font-medium leading-relaxed">{item.recommendation}</p>
+                                <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-indigo-800 mb-1">Suggested fix</p>
+                                <p className="text-sm text-indigo-950 font-medium leading-relaxed">{item.recommendation}</p>
                               </div>
                             )}
                             {renderFeedback(item)}
@@ -3404,14 +3404,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {activeTab === 'strong_coherence' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-                  <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
+                  <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">
                     Coherence pairs ({visiblePairs.length}) · target = {PAR_SCORE}
                   </p>
                   <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setShowPairingModal(true)} className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">How pairing works</button>
+                    <button type="button" onClick={() => setShowPairingModal(true)} className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">How pairing works</button>
                     {filterType === 'strength' && (
                       <button type="button" onClick={() => setFilterType('all')}
-                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                        className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">
                         Show all ({pairsCount})
                       </button>
                     )}
@@ -3421,7 +3421,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 {visiblePairs.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
                     <p className="text-sm font-bold text-gray-800 mb-1">No role pairs to show</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-gray-500">
                       {pairsCount === 0
                         ? 'No coherence pairs were evaluated for this scan. Required sections may be missing.'
                         : `No pairs meet the target score of ${PAR_SCORE}.`}
@@ -3447,16 +3447,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       >
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
-                          <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
+                          <span className={`text-[14px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
                             {strong ? 'Strong' : 'Below target'} · {Math.round(score)}
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
                           <div className={`h-full rounded-full ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
                         </div>
-                        <p className="text-[11px] text-gray-500">Weight {Math.round(p.weight * 100)}% of the coherence score</p>
+                        <p className="text-[14px] text-gray-500">Weight {Math.round(p.weight * 100)}% of the coherence score</p>
                         {p.verification && (
-                          <p className={`text-xs leading-relaxed rounded-xl border px-3 py-2 ${
+                          <p className={`text-sm leading-relaxed rounded-xl border px-3 py-2 ${
                             p.verification.alignment === 'superficial' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
                           }`}>
                             <span className="font-bold capitalize">{p.verification.alignment} alignment.</span> {p.verification.note}
@@ -3487,9 +3487,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
+                          <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
                           {isSelected && (
-                            <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                            <span className="text-[14px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
                               Active
                             </span>
                           )}
@@ -3501,14 +3501,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </div>
 
                 {citationFilter && (
-                  <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
+                  <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-sm">
                     <span className="text-indigo-950 font-medium">
                       Filtering by: <strong className="font-bold uppercase tracking-wider">{CITE_BADGE[citationFilter].label}</strong> ({displayedCitations.length} of {citationsCount})
                     </span>
                     <button
                       type="button"
                       onClick={() => setCitationFilter(null)}
-                      className="text-xs font-bold text-indigo-700 hover:underline cursor-pointer"
+                      className="text-sm font-bold text-indigo-700 hover:underline cursor-pointer"
                     >
                       Show All
                     </button>
@@ -3520,7 +3520,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <p className="text-sm font-bold text-gray-800 mb-1">
                       {citationFilter ? `No ${CITE_BADGE[citationFilter].label.toLowerCase()} citations` : "No citations to show"}
                     </p>
-                    <p className="text-xs text-gray-500 mb-3">
+                    <p className="text-sm text-gray-500 mb-3">
                       {citationFilter
                         ? `No citations with status "${CITE_BADGE[citationFilter].label}" were found.`
                         : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
@@ -3529,7 +3529,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <button
                         type="button"
                         onClick={() => setCitationFilter(null)}
-                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                        className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer"
                       >
                         Show all citations
                       </button>
@@ -3539,19 +3539,19 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <div className="space-y-2">
                     {displayedCitations.map((cite, ci) => (
                       <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
-                        <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
+                        <span className="text-[14px] tabular-nums font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
                         <div className="flex-1 min-w-0">
                           {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                          <p className="text-[13px] text-gray-800 leading-snug">
+                          <p className="text-[14px] text-gray-800 leading-snug">
                             {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
                             {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
                             {cite.ref}
                           </p>
                           {cite.url && (/^https?:\/\//i.test(cite.url)
-                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
-                            : <p className="text-[11px] mono truncate mt-1 text-gray-400">{cite.url}</p>)}
+                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-sm mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
+                            : <p className="text-[12px] meta mono truncate mt-1 text-gray-400">{cite.url}</p>)}
                         </div>
-                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
+                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[14px] font-bold ${CITE_BADGE[cite.status].badge}`}>
                           {CITE_BADGE[cite.status].label}
                         </span>
                       </div>
@@ -3584,7 +3584,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
                   <path d="M9 18l6-6-6-6" />
                 </svg>
-                <span className="text-xs font-semibold">Hide Analysis</span>
+                <span className="text-sm font-semibold">Hide Analysis</span>
               </button>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
@@ -3593,7 +3593,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </div>
               <div>
                 <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Findings & Recommendations</h3>
-                <p className="text-[11px] mono font-bold uppercase tracking-wider text-indigo-600">Analysis Inspector</p>
+                <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-indigo-600">Analysis Inspector</p>
               </div>
             </div>
             {(activeItem || activePair) && (
@@ -3603,7 +3603,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   setActiveId(null);
                   setActivePairKey(null);
                 }}
-                className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+                className="text-sm text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
                 Reset
               </button>
             )}
@@ -3619,7 +3619,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   {/* Pair header */}
                   <div className="rounded-2xl p-5 border-2 border-indigo-200 bg-indigo-50/40">
                     <div className="flex items-start justify-between mb-2.5">
-                      <span className="text-[10px] mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                      <span className="text-[14px] font-sans font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
                         Role Pair Analysis
                       </span>
                       <button
@@ -3636,7 +3636,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug mb-1">
                       {formatRoleLabel(activePair.role_a)} ↔ {formatRoleLabel(activePair.role_b)}
                     </h3>
-                    <p className="text-xs text-indigo-700 font-medium">
+                    <p className="text-sm text-indigo-700 font-medium">
                       Weight: <span className="tabular-nums">{Math.round(activePair.weight * 100)}%</span> of the coherence score
                     </p>
                   </div>
@@ -3644,16 +3644,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   {/* Score block */}
                   <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
+                      <span className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">
                         Pair Coherence Score
                       </span>
-                      <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                      <span className={`text-sm font-black px-2.5 py-0.5 rounded-full ${
                         strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
                       }`}>
                         {strong ? 'Strong' : 'Below target'}
                       </span>
                     </div>
-                    <p className="text-2xl font-bold mono text-gray-900 tabular-nums">
+                    <p className="text-2xl font-bold tabular-nums text-gray-900 tabular-nums">
                       {Math.round(score)} <span className="text-sm font-normal text-gray-400">/ 100</span>
                     </p>
                     <div
@@ -3673,13 +3673,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                   {/* Missing section check / Verification Note */}
                   {!isIncluded ? (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 font-medium leading-relaxed">
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 font-medium leading-relaxed">
                       This pair could not be evaluated — one or both sections are missing.
                     </div>
                   ) : activePair.verification ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+                        <span className={`text-[14px] font-bold px-2.5 py-1 rounded-full border ${
                           activePair.verification.alignment === 'superficial'
                             ? 'bg-amber-50 border-amber-200 text-amber-900'
                             : 'bg-emerald-50 border-emerald-200 text-emerald-900'
@@ -3688,22 +3688,22 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         </span>
                       </div>
                       <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-2xs">
-                        <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed">
+                        <p className="text-sm sm:text-[14px] text-gray-700 leading-relaxed">
                           {activePair.verification.note}
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
                         No detailed alignment note available for this pair.
                       </div>
                       {activePair.reason && (
                         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1 shadow-2xs">
-                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">
+                          <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-gray-400">
                             Assessment Rationale
                           </p>
-                          <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed">
+                          <p className="text-sm sm:text-[14px] text-gray-700 leading-relaxed">
                             {activePair.reason}
                           </p>
                         </div>
@@ -3720,12 +3720,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </svg>
                 </div>
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold uppercase mb-3">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-sm font-bold uppercase mb-3">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                     {isSample ? "Moderate Coherence Overall" : `${scan?.score_breakdown?.band || "Unknown"} Coherence`}
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Analysis Synthesis</h3>
-                  <p className="text-[15px] text-gray-600 leading-relaxed font-serif italic mb-4">
+                  <p className="text-[15px] text-gray-600 leading-relaxed font-sans italic mb-4">
                     “{isSample ? OVERALL_ASSESSMENT.question : "What is the actual condition of this manuscript based on the analysis?"}”
                   </p>
                   <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed text-left bg-gray-50/90 p-4 sm:p-5 rounded-2xl border border-gray-200/80">
@@ -3746,26 +3746,26 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <div className="w-full text-left p-4 rounded-2xl border border-indigo-100 bg-indigo-50/60">
                   <div className="flex items-center gap-2 mb-1.5">
                     <svg className="w-4 h-4 text-indigo-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">Analysis Guidance</span>
+                    <span className="text-sm font-bold uppercase tracking-wider text-indigo-900">Analysis Guidance</span>
                   </div>
-                  <p className="text-xs sm:text-[13px] text-indigo-900/80 leading-relaxed">
+                  <p className="text-sm sm:text-[14px] text-indigo-900/80 leading-relaxed">
                     Click any highlighted passage or sidebar finding to inspect why the AI flagged it, view cross-chapter evidence, and read specific rewrite recommendations.
                   </p>
                 </div>
 
                 {/* Categories Breakdown */}
                 <div className="w-full mt-1 space-y-2 text-left">
-                  <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
+                  <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
                   {(["strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
                     <div key={t}
                       onClick={() => applyFilter(t)}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
                       <span className={`w-3.5 h-3.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{ST[t].label}</p>
-                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
+                        <p className={`text-sm sm:text-sm font-bold ${ST[t].pillTxt}`}>{ST[t].label}</p>
+                        <p className="text-sm text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
                       </div>
-                      <span className="text-xs sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
+                      <span className="text-sm sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
                         {localItems.filter(i => i.type === t).length}
                       </span>
                     </div>
@@ -3784,7 +3784,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </button>
                   </div>
                   <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug mb-1.5">{activeItem.title}</h3>
-                  <p className="text-xs sm:text-sm font-semibold" style={{ color: ST[activeItem.type].accentColor }}>{activeItem.section}</p>
+                  <p className="text-sm sm:text-sm font-semibold" style={{ color: ST[activeItem.type].accentColor }}>{activeItem.section}</p>
                 </div>
 
                 {/* ── SECTION 1: EXPLAINABLE AI REASONING ── */}
@@ -3793,13 +3793,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-indigo-600">
                       <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
                     </svg>
-                    <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Detailed Analysis</span>
+                    <span className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Detailed Analysis</span>
                   </div>
 
                   {/* Purpose / Question Prompt */}
                   <div className="space-y-1">
-                    <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400">Analysis Dimension</p>
-                    <p className="text-sm sm:text-[15px] text-gray-800 font-serif italic leading-relaxed">“{activeItem.questionOrSubtitle}”</p>
+                    <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-400">Analysis Dimension</p>
+                    <p className="text-sm sm:text-[15px] text-gray-800 font-sans italic leading-relaxed">“{activeItem.questionOrSubtitle}”</p>
                   </div>
 
                   {/* What was detected */}
@@ -3808,7 +3808,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-500 shrink-0">
                         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                       </svg>
-                      <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Why the AI Flagged This</p>
+                      <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Why the AI Flagged This</p>
                     </div>
                     <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed font-normal bg-gray-50 p-4 rounded-2xl border border-gray-200/80">
                       {activeItem.description}
@@ -3821,7 +3821,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0" style={{ color: ST[activeItem.type].accentColor }}>
                         <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
-                      <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Significance for Panel / Defense</p>
+                      <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Significance for Panel / Defense</p>
                     </div>
                     <p className="text-sm sm:text-[15px] text-gray-700 leading-relaxed bg-white p-3.5 rounded-xl border border-gray-100">{activeItem.significance}</p>
                   </div>
@@ -3833,9 +3833,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0" style={{ color: ST[activeItem.type].accentColor }}>
                           <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                         </svg>
-                        <p className="text-xs mono font-bold uppercase tracking-wider" style={{ color: ST[activeItem.type].accentColor }}>Cross-Section Comparison Evidence</p>
+                        <p className="text-sm font-sans font-bold uppercase tracking-wider" style={{ color: ST[activeItem.type].accentColor }}>Cross-Section Comparison Evidence</p>
                       </div>
-                      <p className="text-xs sm:text-sm font-bold text-gray-800 mb-2">{activeItem.conflictsWith}</p>
+                      <p className="text-sm sm:text-sm font-bold text-gray-800 mb-2">{activeItem.conflictsWith}</p>
                       <p className="text-sm text-gray-800 leading-relaxed italic bg-white rounded-xl px-4 py-3 border border-gray-200/80 shadow-2xs">
                         "{activeItem.conflictQuote}"
                       </p>
@@ -3847,7 +3847,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <div className="rounded-2xl p-4 border border-emerald-200 bg-emerald-50/50">
                       <div className="flex items-center gap-2 mb-2">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 text-emerald-700"><path d="M5 12l5 5L20 7" /></svg>
-                        <p className="text-xs mono font-bold uppercase tracking-wider text-emerald-800">Verified Evidence in Manuscript</p>
+                        <p className="text-sm font-sans font-bold uppercase tracking-wider text-emerald-800">Verified Evidence in Manuscript</p>
                       </div>
                       <p className="text-sm text-emerald-950 leading-relaxed italic bg-white rounded-xl px-4 py-3 border border-emerald-200/80 shadow-2xs">
                         "{activeItem.evidence}"
@@ -3865,8 +3865,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </svg>
                     </div>
                     <div>
-                      <p className="text-xs mono font-bold uppercase tracking-wider" style={{ color: B }}>Actionable Recommendation</p>
-                      <p className="text-[11px] text-gray-500 font-medium">Adviser Guidance & Revision Step</p>
+                      <p className="text-sm font-sans font-bold uppercase tracking-wider" style={{ color: B }}>Actionable Recommendation</p>
+                      <p className="text-[14px] text-gray-500 font-medium">Adviser Guidance & Revision Step</p>
                     </div>
                   </div>
                   <p className="text-sm sm:text-base font-semibold text-gray-900 leading-relaxed mt-2.5">
@@ -3879,7 +3879,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                 {/* Prev / Next controls */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-500 mono font-semibold">Finding {itemIdx + 1} of {localItems.length}</span>
+                  <span className="text-sm text-gray-500 tabular-nums font-semibold">Finding {itemIdx + 1} of {localItems.length}</span>
                   <div className="flex gap-2">
                     {([{ dir: -1, label: "← Previous" }, { dir: 1, label: "Next →" }]).map(({ dir, label }) => {
                       const target = localItems[itemIdx + dir];
@@ -3891,7 +3891,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                               scrollToSection(target.targetSectionIndex);
                             }
                           }}
-                          className="px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                          className="px-3.5 py-2 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                           {label}
                         </button>
                       );
@@ -3918,7 +3918,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             type="button"
             onClick={() => setMobilePane(id)}
             aria-current={mobilePane === id ? "page" : undefined}
-            className={`py-3 text-xs font-bold transition-colors ${
+            className={`py-3 text-sm font-bold transition-colors ${
               mobilePane === id
                 ? "text-indigo-600 border-t-2 border-indigo-600 -mt-px bg-indigo-50/30"
                 : "text-gray-500 hover:text-gray-800"
@@ -3942,7 +3942,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div>
                 <h3 className="text-base font-bold text-gray-900">How Section Pairing Works</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-sm text-gray-500 mt-0.5">
                   Resync evaluates cross-chapter alignment across 7 weighted academic role pairs calibrated to standard defense criteria.
                 </p>
               </div>
@@ -3968,10 +3968,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               ].map(({ pair, weight, desc }) => (
                 <div key={pair} className="flex items-start justify-between gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/60">
                   <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-gray-900">{pair}</p>
-                    <p className="text-[11px] text-gray-600">{desc}</p>
+                    <p className="text-sm font-bold text-gray-900">{pair}</p>
+                    <p className="text-[14px] text-gray-600">{desc}</p>
                   </div>
-                  <span className="shrink-0 px-2.5 py-1 rounded-full text-xs font-black mono bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <span className="shrink-0 px-2.5 py-1 rounded-full text-sm font-black font-sans bg-indigo-50 text-indigo-700 border border-indigo-200">
                     {weight}
                   </span>
                 </div>
@@ -3981,7 +3981,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <button
                 type="button"
                 onClick={() => setShowPairingModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-gray-900 text-white hover:bg-gray-800 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl text-sm font-bold bg-gray-900 text-white hover:bg-gray-800 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -4009,7 +4009,7 @@ function AuthLayout({ children, onNavigate }: { children: React.ReactNode; onNav
         </button>
         <button
           onClick={() => onNavigate("home")}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm text-xs font-semibold text-gray-600 hover:bg-white hover:text-gray-900 transition-all shadow-sm"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm text-sm font-semibold text-gray-600 hover:bg-white hover:text-gray-900 transition-all shadow-sm"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
           Back to home
@@ -4024,7 +4024,7 @@ function AuthLayout({ children, onNavigate }: { children: React.ReactNode; onNav
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-6 text-center text-xs text-gray-400">
+      <footer className="relative z-10 py-6 text-center text-sm text-gray-400">
         © {new Date().getFullYear()} ReSync · AI-Powered Academic Coherence Engine · All rights reserved
       </footer>
     </div>
@@ -4038,7 +4038,7 @@ function FieldInput({ label, type = "text", value, onChange, placeholder, right,
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
+        <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
         {right}
       </div>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
@@ -4100,25 +4100,25 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
       <div>
         {/* Header */}
         <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[14px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
             Academic Portal
           </div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Welcome back</h1>
-          <p className="text-xs text-gray-500 leading-relaxed">Sign in to review your research manuscript and coherence reports.</p>
+          <p className="text-sm text-gray-500 leading-relaxed">Sign in to review your research manuscript and coherence reports.</p>
         </div>
 
         {/* Google SSO */}
         <button
           type="button"
           onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })}
-          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-150 mb-5 shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-150 mb-5 shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
         >
           <GIcon /> Continue with Google
         </button>
 
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 h-px bg-gray-100" />
-          <span className="text-[10px] text-gray-400 font-bold tracking-wider">OR SIGN IN WITH EMAIL</span>
+          <span className="text-[14px] text-gray-400 font-bold tracking-wider">OR SIGN IN WITH EMAIL</span>
           <div className="flex-1 h-px bg-gray-100" />
         </div>
 
@@ -4126,7 +4126,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
 
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
+            <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
             <div className="relative">
               <input
                 type="email"
@@ -4147,7 +4147,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
+              <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
               <button
                 type="button"
                 onClick={() => {
@@ -4156,7 +4156,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                   setForgotError("");
                   setForgotModal(true);
                 }}
-                className="text-xs font-semibold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                className="text-sm font-semibold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ color: B }}
               >
                 Forgot password?
@@ -4191,7 +4191,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-2"
+            className="w-full h-11 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-2"
             style={{
               background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
               color: canSubmit ? "white" : "#9ca3af",
@@ -4203,12 +4203,12 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 mt-6">
           Don't have an account?{" "}
           <button onClick={() => onNavigate("signup")} className="font-bold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" style={{ color: B }}>Sign up free</button>
         </p>
 
-        <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2 text-[11px] text-gray-400">
+        <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2 text-[14px] text-gray-400">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
           <span>256-bit encryption · Academic manuscript privacy guaranteed</span>
         </div>
@@ -4237,7 +4237,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                     <button
                       type="button"
                       onClick={() => setForgotModal(false)}
-                      className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all cursor-pointer"
+                      className="w-full h-11 rounded-xl font-bold text-sm uppercase tracking-wider text-white transition-all cursor-pointer"
                       style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
                     >
                       Close
@@ -4245,7 +4245,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                   </div>
                 ) : (
                   <form onSubmit={handleForgotSubmit} className="space-y-4">
-                    <p className="text-xs text-gray-500 leading-relaxed">
+                    <p className="text-sm text-gray-500 leading-relaxed">
                       Enter your email address and we'll send you a link to reset your password.
                     </p>
                     {forgotError && (
@@ -4254,7 +4254,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                       </div>
                     )}
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
+                      <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
                       <input
                         type="email"
                         value={forgotEmail}
@@ -4268,7 +4268,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
                     <button
                       type="submit"
                       disabled={!forgotEmail || forgotLoading}
-                      className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
+                      className="w-full h-11 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
                       style={{
                         background: (forgotEmail && !forgotLoading) ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
                         color: (forgotEmail && !forgotLoading) ? "white" : "#9ca3af",
@@ -4344,23 +4344,23 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
     <AuthLayout onNavigate={onNavigate}>
       <div>
         <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[14px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
             New Account
           </div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Create your account</h1>
-          <p className="text-xs text-gray-500 leading-relaxed">Free to use — no credit card required.</p>
+          <p className="text-sm text-gray-500 leading-relaxed">Free to use — no credit card required.</p>
         </div>
 
         <button
           type="button"
           onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })}
-          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-5 shadow-sm"
+          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-5 shadow-sm"
         >
           <GIcon />Continue with Google
         </button>
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-gray-100" /><span className="text-[10px] text-gray-400 font-bold tracking-wider">OR REGISTER WITH EMAIL</span><div className="flex-1 h-px bg-gray-100" />
+          <div className="flex-1 h-px bg-gray-100" /><span className="text-[14px] text-gray-400 font-bold tracking-wider">OR REGISTER WITH EMAIL</span><div className="flex-1 h-px bg-gray-100" />
         </div>
 
         {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
@@ -4375,7 +4375,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
 
           {/* password */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
+            <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
             <div className="relative">
               <input type={showPw ? "text" : "password"} value={pw} onChange={e => setPw(e.target.value)} placeholder="At least 8 characters" required
                 className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
@@ -4391,7 +4391,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
                 <div className="flex gap-1 flex-1">
                   {[1, 2, 3].map(n => <div key={n} className="h-1 flex-1 rounded-full transition-all duration-300" style={{ background: str >= n ? strMeta.bar : "#e5e7eb" }} />)}
                 </div>
-                <span className="text-xs font-bold" style={{ color: strMeta.color }}>{strMeta.label}</span>
+                <span className="text-sm font-bold" style={{ color: strMeta.color }}>{strMeta.label}</span>
               </div>
             )}
           </div>
@@ -4409,7 +4409,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
             >
               {agreed && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="w-2.5 h-2.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>}
             </button>
-            <span className="text-xs text-gray-500 leading-relaxed">
+            <span className="text-sm text-gray-500 leading-relaxed">
               I agree to the{" "}
               <button
                 type="button"
@@ -4432,13 +4432,13 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
           </div>
 
           <button type="submit" disabled={!canSubmit}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-1"
+            className="w-full h-11 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-1"
             style={{ background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6", color: canSubmit ? "white" : "#9ca3af", cursor: canSubmit ? "pointer" : "not-allowed", boxShadow: canSubmit ? `0 6px 20px ${B}30` : "none" }}>
             {loading ? <><Spinner />Creating account…</> : "Create account →"}
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{" "}
           <button onClick={() => onNavigate("login")} className="font-bold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" style={{ color: B }}>Log in</button>
         </p>
@@ -4451,7 +4451,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
                   <h3 className="text-base font-bold text-gray-900">
                     {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Last updated: October 2026</p>
+                  <p className="text-sm text-gray-400 mt-0.5">Last updated: October 2026</p>
                 </div>
                 <button
                   type="button"
@@ -4464,7 +4464,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
                   </svg>
                 </button>
               </div>
-              <div className="p-6 overflow-y-auto space-y-4 text-xs text-gray-600 leading-relaxed">
+              <div className="p-6 overflow-y-auto space-y-4 text-sm text-gray-600 leading-relaxed">
                 {legalModal === "terms" ? (
                   <>
                     <p>
@@ -4507,7 +4507,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
                 <button
                   type="button"
                   onClick={() => setLegalModal(null)}
-                  className="px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  className="px-4 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer"
                   style={{ background: B, color: "white" }}
                 >
                   Close
@@ -4556,11 +4556,11 @@ function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }
       <div>
         {/* Header */}
         <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[14px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
             Security
           </div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Set new password</h1>
-          <p className="text-xs text-gray-500 leading-relaxed">Enter your new account password below.</p>
+          <p className="text-sm text-gray-500 leading-relaxed">Enter your new account password below.</p>
         </div>
 
         {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
@@ -4573,7 +4573,7 @@ function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }
         {!success ? (
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
+              <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
               <div className="relative">
                 <input
                   type={showPw ? "text" : "password"}
@@ -4598,14 +4598,14 @@ function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }
                 </button>
               </div>
               {password.length > 0 && password.length < 8 && (
-                <p className="text-[11px] text-amber-600 mt-1">Must be at least 8 characters</p>
+                <p className="text-[14px] text-amber-600 mt-1">Must be at least 8 characters</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
+              className="w-full h-11 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
               style={{
                 background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
                 color: canSubmit ? "white" : "#9ca3af",
@@ -4620,14 +4620,14 @@ function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }
           <button
             type="button"
             onClick={() => onNavigate("login")}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 text-white transition-all mt-2 cursor-pointer"
+            className="w-full h-11 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 text-white transition-all mt-2 cursor-pointer"
             style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
           >
             Go to login →
           </button>
         )}
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 mt-6">
           Remembered your credentials?{" "}
           <button onClick={() => onNavigate("login")} className="font-bold hover:underline" style={{ color: B }}>Back to login</button>
         </p>
@@ -5018,7 +5018,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           <div className="flex items-center gap-3 shrink-0 mr-2">
             <Logo className="h-8 w-auto" />
             <div className="h-5 w-px bg-gray-100 hidden md:block" />
-            <span className="text-[11px] mono font-bold uppercase tracking-widest text-gray-400 hidden md:block">Academic Workspace</span>
+            <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400 hidden md:block">Academic Workspace</span>
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard", "Academic Profile"] as const).map(label => (
@@ -5032,7 +5032,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             ))}
           </nav>
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:bg-gray-50 cursor-default"
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-bold transition-colors hover:bg-gray-50 cursor-default"
               style={{ borderColor: `${B}20`, background: `${B}06`, color: B }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
               Credits: {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
@@ -5054,7 +5054,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
                 </div>
-                <p className="hidden md:block text-xs font-bold text-gray-800">{profile.fullName}</p>
+                <p className="hidden md:block text-sm font-bold text-gray-800">{profile.fullName}</p>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-3 h-3 text-gray-400 hidden md:block transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
               </button>
 
@@ -5099,9 +5099,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
       {activeNav === "Settings" ? (
         <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">
           <div>
-            <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account</p>
+            <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account</p>
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Settings</h2>
-            <p className="text-xs text-gray-400 mt-1">Manage your account credentials, security, and preferences.</p>
+            <p className="text-sm text-gray-400 mt-1">Manage your account credentials, security, and preferences.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="bg-white rounded-3xl border border-gray-100 p-6" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
@@ -5109,18 +5109,18 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
               </div>
               <h3 className="text-base font-bold text-gray-900">Profile information</h3>
-              <p className="text-xs text-gray-400 mt-1 mb-5">Update your personal contact details and display name.</p>
-              <button onClick={() => setActiveNav("Academic Profile")} className="text-xs font-bold hover:underline" style={{ color: B }}>Open Profile →</button>
+              <p className="text-sm text-gray-400 mt-1 mb-5">Update your personal contact details and display name.</p>
+              <button onClick={() => setActiveNav("Academic Profile")} className="text-sm font-bold hover:underline" style={{ color: B }}>Open Profile →</button>
             </div>
             <div className="bg-white rounded-3xl border border-gray-100 p-6" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-gray-100 text-gray-500">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
               </div>
               <h3 className="text-base font-bold text-gray-900">Notifications</h3>
-              <p className="text-xs text-gray-400 mt-1 mb-5">Scan completion alerts are currently sent to your account email.</p>
+              <p className="text-sm text-gray-400 mt-1 mb-5">Scan completion alerts are currently sent to your account email.</p>
               <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-                <span className="text-xs font-semibold text-gray-600">Scan completion emails</span>
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">Enabled</span>
+                <span className="text-sm font-semibold text-gray-600">Scan completion emails</span>
+                <span className="text-[14px] font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">Enabled</span>
               </div>
             </div>
           </div>
@@ -5133,19 +5133,19 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               </div>
               <div>
                 <h3 className="text-base font-bold text-gray-900">Change Password</h3>
-                <p className="text-xs text-gray-400">Update your account password to maintain academic workspace security.</p>
+                <p className="text-sm text-gray-400">Update your account password to maintain academic workspace security.</p>
               </div>
             </div>
 
             {pwSuccessMsg && (
-              <div className="mb-5 p-3.5 rounded-2xl bg-green-50 border border-green-200 text-green-800 text-xs flex items-center gap-2.5">
+              <div className="mb-5 p-3.5 rounded-2xl bg-green-50 border border-green-200 text-green-800 text-sm flex items-center gap-2.5">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-4 h-4 text-green-600 shrink-0"><path d="M5 12l5 5L20 7" /></svg>
                 <span className="font-semibold">{pwSuccessMsg}</span>
               </div>
             )}
 
             {pwErrorMsg && (
-              <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
+              <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2.5">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-600 shrink-0"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                 <span>{pwErrorMsg}</span>
               </div>
@@ -5153,7 +5153,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
             <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Current Password</label>
+                <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Current Password</label>
                 <div className="relative">
                   <input
                     type={showCurrentPw ? "text" : "password"}
@@ -5176,7 +5176,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
+                <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
                 <div className="relative">
                   <input
                     type={showNewPw ? "text" : "password"}
@@ -5196,11 +5196,11 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     <Eye open={showNewPw} />
                   </button>
                 </div>
-                <p className="text-[11px] text-gray-400">Must be at least 8 characters long.</p>
+                <p className="text-[14px] text-gray-400">Must be at least 8 characters long.</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Confirm New Password</label>
+                <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Confirm New Password</label>
                 <div className="relative">
                   <input
                     type={showConfirmPw ? "text" : "password"}
@@ -5226,7 +5226,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <button
                   type="submit"
                   disabled={pwLoading}
-                  className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all flex items-center gap-2 shadow-sm"
+                  className="px-6 py-2.5 rounded-xl font-bold text-sm uppercase tracking-wider text-white transition-all flex items-center gap-2 shadow-sm"
                   style={{ background: `linear-gradient(135deg, ${B}, ${BH})`, opacity: pwLoading ? 0.7 : 1 }}
                 >
                   {pwLoading ? <><Spinner /> Updating…</> : "Update Password"}
@@ -5239,9 +5239,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
         <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account usage</p>
+              <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account usage</p>
               <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Usage / Credits</h2>
-              <p className="text-xs text-gray-400 mt-1">View your available credits and current usage.</p>
+              <p className="text-sm text-gray-400 mt-1">View your available credits and current usage.</p>
             </div>
             <button
               onClick={() => {
@@ -5250,7 +5250,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 if (!cardName) setCardName(profile.fullName || "Thesis Author");
                 setShowBuyCreditsModal(true);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm flex items-center gap-1.5 transition-all hover:opacity-90 cursor-pointer"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-white shadow-sm flex items-center gap-1.5 transition-all hover:opacity-90 cursor-pointer"
               style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
             >
               + Buy Credits
@@ -5276,15 +5276,15 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                           if (!cardName) setCardName(profile.fullName || "Thesis Author");
                           setShowBuyCreditsModal(true);
                         }}
-                        className="text-xs font-bold px-2.5 py-1 rounded-lg border transition-all hover:bg-gray-50 flex items-center gap-1 cursor-pointer"
+                        className="text-sm font-bold px-2.5 py-1 rounded-lg border transition-all hover:bg-gray-50 flex items-center gap-1 cursor-pointer"
                         style={{ borderColor: `${B}30`, color: B }}
                       >
                         + Top up
                       </button>
                     )}
                   </div>
-                  <p className="text-2xl font-bold mono" style={{ color: item.color }}>{item.value}</p>
-                  <p className="text-xs text-gray-400 mt-1">{item.label}</p>
+                  <p className="text-2xl font-bold tabular-nums" style={{ color: item.color }}>{item.value}</p>
+                  <p className="text-sm text-gray-400 mt-1">{item.label}</p>
                 </div>
               </div>
             ))}
@@ -5292,7 +5292,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           <div className="bg-white rounded-3xl border border-gray-100 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
             <div>
               <h3 className="text-sm font-bold text-gray-900">Ready to review a manuscript?</h3>
-              <p className="text-xs text-gray-400 mt-1">Each complete coherence scan uses one credit.</p>
+              <p className="text-sm text-gray-400 mt-1">Each complete coherence scan uses one credit.</p>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -5302,12 +5302,12 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   if (!cardName) setCardName(profile.fullName || "Thesis Author");
                   setShowBuyCreditsModal(true);
                 }}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors hover:bg-gray-50 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors hover:bg-gray-50 cursor-pointer"
                 style={{ borderColor: `${B}30`, color: B }}
               >
                 Buy Credits
               </button>
-              <button onClick={() => onNavigate("upload")} className="px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm cursor-pointer" style={{ background: B }}>Start a Scan</button>
+              <button onClick={() => onNavigate("upload")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm cursor-pointer" style={{ background: B }}>Start a Scan</button>
             </div>
           </div>
         </main>
@@ -5320,26 +5320,26 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           {/* Page header */}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account</p>
+              <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account</p>
               <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Academic Profile</h2>
-              <p className="text-xs text-gray-400 mt-1">Manage your personal profile and contact information.</p>
+              <p className="text-sm text-gray-400 mt-1">Manage your personal profile and contact information.</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {editMode ? (
                 <>
                   <button onClick={cancelEdit}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
+                    className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
                     Cancel
                   </button>
                   <button onClick={saveProfile}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 shadow-sm"
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 shadow-sm"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
                     Save Changes
                   </button>
                 </>
               ) : (
                 <button onClick={() => { setDraft(profile); setEditMode(true); }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all hover:bg-gray-50"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border transition-all hover:bg-gray-50"
                   style={{ borderColor: `${B}25`, color: B }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                   Edit Profile
@@ -5375,12 +5375,12 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   ) : (
                     <h3 className="text-xl font-bold text-gray-900">{profile.fullName}</h3>
                   )}
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[14px] font-bold bg-green-100 text-green-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     Active
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                <p className="text-sm text-gray-500 flex items-center gap-1.5">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                   {profile.email}
                 </p>
@@ -5389,7 +5389,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
             {/* Contact Details List */}
             <div className="px-8 py-6">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Personal Details</h4>
+              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Personal Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Full Name */}
                 <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 flex items-start gap-3.5">
@@ -5397,7 +5397,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Full Name</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400">Full Name</p>
                     {editMode ? (
                       <input
                         value={draft.fullName}
@@ -5416,7 +5416,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Email Address</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400">Email Address</p>
                     {editMode ? (
                       <input
                         type="email"
@@ -5436,7 +5436,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Contact Number</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400">Contact Number</p>
                     {editMode ? (
                       <input
                         type="tel"
@@ -5456,8 +5456,8 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Profile Picture</p>
-                    <p className="text-xs text-gray-600 mt-1">JPEG or PNG, max 5MB. Click camera badge on avatar to upload.</p>
+                    <p className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400">Profile Picture</p>
+                    <p className="text-sm text-gray-600 mt-1">JPEG or PNG, max 5MB. Click camera badge on avatar to upload.</p>
                   </div>
                 </div>
               </div>
@@ -5471,13 +5471,13 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-900">Need to change your password?</p>
-                <p className="text-[11px] text-gray-400">Password and security options are managed under Settings.</p>
+                <p className="text-sm font-bold text-gray-900">Need to change your password?</p>
+                <p className="text-[14px] text-gray-400">Password and security options are managed under Settings.</p>
               </div>
             </div>
             <button
               onClick={() => setActiveNav("Settings")}
-              className="px-4 py-2 rounded-xl text-xs font-bold border transition-colors hover:bg-gray-50 self-start sm:self-auto"
+              className="px-4 py-2 rounded-xl text-sm font-bold border transition-colors hover:bg-gray-50 self-start sm:self-auto"
               style={{ borderColor: `${B}30`, color: B }}
             >
               Go to Settings →
@@ -5499,7 +5499,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               {/* Left: greeting + headline */}
               <div className="flex-1 min-w-0 max-w-3xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md mb-3">
-                  <span className="text-xs sm:text-sm font-semibold text-blue-100">
+                  <span className="text-sm sm:text-sm font-semibold text-blue-100">
                     {greeting},{' '}
                     {session?.user?.user_metadata?.full_name?.split(' ')[0]
                       || session?.user?.email?.split('@')[0]
@@ -5532,7 +5532,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-5 border-t border-white/15">
-              <div className="flex items-center gap-4 text-xs sm:text-sm text-blue-100/80 flex-wrap">
+              <div className="flex items-center gap-4 text-sm sm:text-sm text-blue-100/80 flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   AI-Powered Multi-Model Pipeline
@@ -5542,7 +5542,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <span className="hidden sm:inline text-white/30">•</span>
                 <span className="hidden sm:inline">Automatic Citation Verifier</span>
               </div>
-              <span className="text-xs sm:text-sm font-semibold text-blue-200 inline-flex items-center gap-1.5">
+              <span className="text-sm sm:text-sm font-semibold text-blue-200 inline-flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
                 <span>~2 min average scan</span>
               </span>
@@ -5561,9 +5561,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             {/* ── How It Works ── spans 2 cols */}
             <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
               <div className="mb-8">
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Process</p>
+                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Process</p>
                 <h2 className="text-xl font-bold text-gray-900 tracking-tight">How It Works</h2>
-                <p className="text-xs text-gray-400 mt-1">Four simple steps from manuscript to coherence report.</p>
+                <p className="text-sm text-gray-400 mt-1">Four simple steps from manuscript to coherence report.</p>
               </div>
 
               {/* Staggered 4-step flow with bezier connectors */}
@@ -5582,9 +5582,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       {STEPS[0].icon}
                     </div>
                     <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 1</span>
+                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 1</span>
                       <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[0].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[0].desc}</p>
+                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[0].desc}</p>
                     </div>
                   </div>
                 </div>
@@ -5604,9 +5604,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       {STEPS[1].icon}
                     </div>
                     <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 2</span>
+                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 2</span>
                       <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[1].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[1].desc}</p>
+                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[1].desc}</p>
                     </div>
                   </div>
                 </div>
@@ -5626,9 +5626,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       {STEPS[2].icon}
                     </div>
                     <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 3</span>
+                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 3</span>
                       <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[2].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[2].desc}</p>
+                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[2].desc}</p>
                     </div>
                   </div>
                 </div>
@@ -5648,9 +5648,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       {STEPS[3].icon}
                     </div>
                     <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 4</span>
+                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 4</span>
                       <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[3].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[3].desc}</p>
+                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[3].desc}</p>
                     </div>
                   </div>
                 </div>
@@ -5662,9 +5662,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             {/* ── What You Get Back ── */}
             <div className="bg-white rounded-3xl border border-gray-100 p-6 flex flex-col" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
               <div className="mb-6">
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: "#059669" }}>Outputs</p>
+                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: "#059669" }}>Outputs</p>
                 <h2 className="text-xl font-bold text-gray-900 tracking-tight">What You Get Back</h2>
-                <p className="text-xs text-gray-400 mt-1">Four deliverables, every scan, automatically.</p>
+                <p className="text-sm text-gray-400 mt-1">Four deliverables, every scan, automatically.</p>
               </div>
 
               <div className="space-y-4 flex-1">
@@ -5675,8 +5675,8 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       {icon}
                     </div>
                     <div className="pt-0.5">
-                      <p className="text-xs font-bold text-gray-800 leading-tight">{label}</p>
-                      <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">{desc}</p>
+                      <p className="text-sm font-bold text-gray-800 leading-tight">{label}</p>
+                      <p className="text-[14px] text-gray-400 leading-relaxed mt-0.5">{desc}</p>
                     </div>
                   </div>
                 ))}
@@ -5691,9 +5691,9 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
           <div className="bg-white rounded-3xl border border-gray-100 p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-indigo-600">Guidance</p>
+                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1 text-indigo-600">Guidance</p>
                 <h2 className="text-xl font-bold text-gray-900 tracking-tight">Best Results With</h2>
-                <p className="text-xs text-gray-500 mt-1 max-w-lg leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
+                <p className="text-sm text-gray-500 mt-1 max-w-lg leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
               </div>
               <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600 border border-indigo-100">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -5706,8 +5706,8 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     {icon}
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-800 leading-tight">{title}</p>
-                    <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{desc}</p>
+                    <p className="text-sm font-bold text-gray-800 leading-tight">{title}</p>
+                    <p className="text-[14px] text-gray-500 leading-relaxed mt-1">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -5719,8 +5719,8 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
               </div>
               <div>
-                <p className="text-xs font-bold text-indigo-950">When Inconsistencies May Appear</p>
-                <p className="text-xs text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use the Analysis Inspector to review context before revising.</p>
+                <p className="text-sm font-bold text-indigo-950">When Inconsistencies May Appear</p>
+                <p className="text-sm text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use the Analysis Inspector to review context before revising.</p>
               </div>
             </div>
           </div>
@@ -5732,10 +5732,10 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-amber-900">Pro tip: Customize your standard template</p>
-              <p className="text-xs text-amber-700 leading-relaxed mt-0.5">Select your research scope (Quantitative or Qualitative) and refine headings in our standard template to ensure maximum detection accuracy across chapters.</p>
+              <p className="text-sm text-amber-700 leading-relaxed mt-0.5">Select your research scope (Quantitative or Qualitative) and refine headings in our standard template to ensure maximum detection accuracy across chapters.</p>
             </div>
             <button onClick={() => onNavigate("upload")}
-              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-colors whitespace-nowrap">
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-colors whitespace-nowrap">
               Try it →
             </button>
           </div>
@@ -5761,14 +5761,14 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             aria-modal="true"
           >
             {/* Top Demo Banner */}
-            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-between text-amber-800 text-xs font-semibold">
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-between text-amber-800 text-sm font-semibold">
               <span className="flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-600 shrink-0">
                   <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
                 DEMO MODE · Simulated Sandbox — no real card or bank is charged
               </span>
-              <span className="text-[10px] uppercase tracking-wider bg-amber-200/60 px-2 py-0.5 rounded text-amber-900 font-bold">
+              <span className="text-[14px] uppercase tracking-wider bg-amber-200/60 px-2 py-0.5 rounded text-amber-900 font-bold">
                 Simulated Sandbox
               </span>
             </div>
@@ -5777,7 +5777,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             <div className="px-6 pt-5 pb-3 flex items-start justify-between border-b border-gray-100">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Purchase Scan Credits</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Scan credits never expire and apply to any thesis analysis.</p>
+                <p className="text-sm text-gray-500 mt-0.5">Scan credits never expire and apply to any thesis analysis.</p>
               </div>
               <button
                 type="button"
@@ -5809,13 +5809,13 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                         }`}
                       >
                         {pkg.badge && (
-                          <span className="absolute -top-2.5 right-2 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                          <span className="absolute -top-2.5 right-2 bg-blue-600 text-white text-[14px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
                             {pkg.badge}
                           </span>
                         )}
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-gray-900">{pkg.name}</span>
+                            <span className="text-sm font-bold text-gray-900">{pkg.name}</span>
                             <div
                               className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                                 isSelected ? "border-blue-600 bg-blue-600" : "border-gray-300"
@@ -5825,34 +5825,34 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                             </div>
                           </div>
                           <p className="text-2xl font-bold text-gray-900 mb-0.5">
-                            {pkg.credits} <span className="text-xs font-medium text-gray-500">Credits</span>
+                            {pkg.credits} <span className="text-sm font-medium text-gray-500">Credits</span>
                           </p>
-                          <p className="text-xs text-gray-500 leading-snug">{pkg.subtitle}</p>
+                          <p className="text-sm text-gray-500 leading-snug">{pkg.subtitle}</p>
                         </div>
                         <div className="mt-4 pt-3 border-t border-gray-100 flex items-baseline justify-between">
                           <span className="text-lg font-bold text-gray-900">₱{pkg.price.toLocaleString('en-PH')}</span>
-                          <span className="text-[10px] text-gray-400 mono">{pkg.perCredit}</span>
+                          <span className="text-[14px] text-gray-400 tabular-nums">{pkg.perCredit}</span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs">
+                <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between text-sm">
                   <span className="text-gray-600">
                     Selected: <strong className="text-gray-900">{selectedPkg.credits} Credits</strong> for{" "}
                     <strong className="text-gray-900">
                       ₱{selectedPkg.price.toLocaleString('en-PH')}
                     </strong>
                   </span>
-                  <span className="text-gray-400 text-[11px]">Instant ledger crediting</span>
+                  <span className="text-gray-400 text-[14px]">Instant ledger crediting</span>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
                     onClick={closeBuyCreditsModal}
-                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -5862,7 +5862,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       setPaymentError("");
                       setCreditModalStep("payment");
                     }}
-                    className="px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all hover:opacity-90 cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm transition-all hover:opacity-90 cursor-pointer"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
                   >
                     Continue to Payment →
@@ -5881,20 +5881,20 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       setPaymentError("");
                       setCreditModalStep("package");
                     }}
-                    className="text-xs font-semibold text-gray-500 hover:text-gray-900 flex items-center gap-1 cursor-pointer"
+                    className="text-sm font-semibold text-gray-500 hover:text-gray-900 flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to packages
                   </button>
                   <div className="text-right">
-                    <span className="text-xs text-gray-400">Order Summary: </span>
-                    <span className="text-xs font-bold text-gray-900">
+                    <span className="text-sm text-gray-400">Order Summary: </span>
+                    <span className="text-sm font-bold text-gray-900">
                       {selectedPkg.credits} Credits — ₱{selectedPkg.price.toLocaleString('en-PH')}
                     </span>
                   </div>
                 </div>
 
                 {paymentError && (
-                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0 text-red-600">
                       <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
@@ -5904,7 +5904,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
                 <div className="space-y-3.5">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Cardholder Name</label>
+                    <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Cardholder Name</label>
                     <input
                       type="text"
                       value={cardName}
@@ -5918,7 +5918,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Card Number</label>
+                    <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Card Number</label>
                     <div className="relative">
                       <input
                         type="text"
@@ -5940,21 +5940,21 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Expiration Date</label>
+                      <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">Expiration Date</label>
                       <input
                         type="text"
                         value={cardExpiry}
                         onChange={e => setCardExpiry(e.target.value)}
                         placeholder="MM/YY"
                         maxLength={5}
-                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-sans text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
                         style={{ borderColor: "#e5e7eb" }}
                         onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                         onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">CVC / CVV</label>
+                      <label className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">CVC / CVV</label>
                       <input
                         type="text"
                         value={cardCvc}
@@ -5973,14 +5973,14 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all shadow-sm flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
+                    className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider text-white transition-all shadow-sm flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
                   >
                     Pay ₱{selectedPkg.price.toLocaleString('en-PH')} (Simulated)
                   </button>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-gray-400">
+                <div className="flex items-center justify-center gap-2 pt-1 text-[14px] text-gray-400">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                   </svg>
@@ -5994,8 +5994,8 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               <div className="p-10 flex flex-col items-center justify-center text-center space-y-4">
                 <div className="w-12 h-12 rounded-full border-4 border-blue-600 border-t-transparent animate-spin mb-2" />
                 <h4 className="text-base font-bold text-gray-900">Processing simulated transaction...</h4>
-                <p className="text-xs text-gray-400 max-w-xs">Contacting credit ledger provider...</p>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-semibold mono">
+                <p className="text-sm text-gray-400 max-w-xs">Contacting credit ledger provider...</p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[14px] font-semibold font-sans">
                   Simulating instant payment confirmation
                 </div>
               </div>
@@ -6030,17 +6030,17 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 </div>
                 <div>
                   <h4 className="text-xl font-bold text-gray-900">Payment Successful</h4>
-                  <p className="text-xs text-amber-700 font-medium mt-1">Simulated Sandbox — no real charge was made</p>
+                  <p className="text-sm text-amber-700 font-medium mt-1">Simulated Sandbox — no real charge was made</p>
                 </div>
 
                 {/* Receipt card */}
-                <div className="receipt-printable w-full rounded-2xl bg-white border border-gray-200 p-4 sm:p-5 space-y-3 text-xs text-left font-mono shadow-sm">
+                <div className="receipt-printable w-full rounded-2xl bg-white border border-gray-200 p-4 sm:p-5 space-y-3 text-sm text-left font-sans shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-sans text-[11px]">Transaction ID</span>
-                    <span className="font-bold text-gray-900">{receiptRef || "SIM-PENDING"}</span>
+                    <span className="text-gray-500 font-sans text-[14px]">Transaction ID</span>
+                    <span className="font-bold font-mono text-gray-900">{receiptRef || "SIM-PENDING"}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-sans text-[11px]">Date &amp; Time</span>
+                    <span className="text-gray-500 font-sans text-[14px]">Date &amp; Time</span>
                     <span className="text-gray-800">
                       {receiptTime
                         ? `${receiptTime.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })} PST`
@@ -6048,22 +6048,22 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-sans text-[11px]">Package</span>
+                    <span className="text-gray-500 font-sans text-[14px]">Package</span>
                     <span className="text-gray-900 font-semibold">{selectedPkg.name} — {selectedPkg.credits} Scan Credits</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-sans text-[11px]">Amount Paid</span>
+                    <span className="text-gray-500 font-sans text-[14px]">Amount Paid</span>
                     <span className="font-bold text-gray-900 text-sm">
                       ₱{receiptAmount.toLocaleString('en-PH')}.00
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-sans text-[11px]">Payment Method</span>
-                    <span className="text-gray-800">Card •••• {receiptLast4 || "4242"}</span>
+                    <span className="text-gray-500 font-sans text-[14px]">Payment Method</span>
+                    <span className="font-mono text-gray-800">Card •••• {receiptLast4 || "4242"}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 font-sans text-[11px]">Status</span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full text-[10px] font-sans">
+                    <span className="text-gray-500 font-sans text-[14px]">Status</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full text-[14px] font-sans">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       Completed
                     </span>
@@ -6072,8 +6072,8 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   <div className="h-px bg-gray-200 my-2" />
 
                   <div className="flex items-center justify-between font-sans">
-                    <span className="text-gray-600 text-xs">New balance:</span>
-                    <span className="font-bold mono text-blue-700 text-sm">
+                    <span className="text-gray-600 text-sm">New balance:</span>
+                    <span className="font-bold tabular-nums text-blue-700 text-sm">
                       {creditBalance !== null ? creditBalance : purchasedCredits} Scan Credits
                     </span>
                   </div>
@@ -6084,7 +6084,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-600">
                       <polyline points="6 9 6 2 18 2 18 9"/>
@@ -6096,7 +6096,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   <button
                     type="button"
                     onClick={closeBuyCreditsModal}
-                    className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white shadow-sm transition-all hover:opacity-90 flex items-center justify-center cursor-pointer"
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-white shadow-sm transition-all hover:opacity-90 flex items-center justify-center cursor-pointer"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
                   >
                     Return to Dashboard
