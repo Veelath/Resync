@@ -1564,7 +1564,10 @@ type MobileResultsPane = "findings" | "report" | "xai";
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
-  const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
+  const [readManuscript, setReadManuscript] = useState(false);
+  const scrollPositions = useRef<Record<string, number>>({});
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
   const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
   const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
@@ -1575,24 +1578,17 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
   const [showPairingModal, setShowPairingModal] = useState(false);
+  const pairingDialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (showPairingModal) pairingDialogRef.current?.showModal();
+  }, [showPairingModal]);
   const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
-  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
-
-  const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
 
   const setActiveId: React.Dispatch<React.SetStateAction<string | null>> = (next) => {
-    setActiveIdRaw(prev => {
-      const resolved = typeof next === "function" ? (next as (p: string | null) => string | null)(prev) : next;
-      if (resolved) {
-        setActivePairKey(null);
-      }
-      if (!isDesktop()) {
-        setMobilePane(resolved ? "xai" : "report");
-      }
-      return resolved;
-    });
+    rememberPosition();
+    setActivePairKey(null);
+    setActiveIdRaw(next);
   };
 
   useEffect(() => {
@@ -1612,8 +1608,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   }, [isSample, scan?.analysis_run_id, manuscriptText, manuscriptError]);
 
   useEffect(() => {
-    middlePaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTab]);
+    if (!middlePaneRef.current) return;
+    middlePaneRef.current.scrollTop = activeId || activePairKey ? 0 : (scrollPositions.current[viewKey] ?? 0);
+    if (activeId || activePairKey) headingRef.current?.focus({ preventScroll: true });
+    else if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
+  }, [activeTab, readManuscript, activeId, activePairKey]);
 
   const ROMAN = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx)$/i;
   const isTrivial = (s: string) => ROMAN.test(s) || /^\d+$/.test(s) || s.trim().length < 3;
@@ -1798,7 +1797,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       const isActive = activeId === itemId;
       parts.push(txt.slice(0, idx));
       parts.push(
-        <mark key={itemId + phrase}
+        <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} key={itemId + phrase}
           className={isActive ? ST[type].hlActive : ST[type].hl}
           style={{ textDecoration: "none" }}
           onClick={() => setActiveId(prev => prev === itemId ? null : itemId)}>
@@ -1972,714 +1971,103 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     else if (activeTab === "citations") setActiveTab("inconsistencies"); // "all"
   }
 
-  return (
-    <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50 print:h-auto print:overflow-visible font-sans">
+  const viewKey = readManuscript ? 'manuscript' : activeTab;
+  const band = isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || 'Pending');
+  const fullPriority = isSample ? ASSESSMENT_ITEMS[0].recommendation : (scan?.score_breakdown?.biggest_lever?.reason || 'Review the findings before submitting your manuscript.');
+  const priority = fullPriority.match(/^[\s\S]*?[.!?](?:\s|$)/)?.[0].trim() || fullPriority;
+  const author = isSample ? null : ((scan as any)?.manuscript_author || (scan as any)?.author);
+  const outlineButton = 'px-4 py-3 border border-gray-300 rounded-md text-body font-medium text-gray-800 bg-white hover:bg-gray-50';
 
-      {/* ── Print-only summary block ── */}
-      <div className="hidden print:block p-8 border-b-2 border-gray-900 bg-white mb-6 break-inside-avoid-page">
-        <div className="flex justify-between items-start border-b border-gray-200 pb-4 mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Resync Manuscript Coherence Report</h1>
-            <h2 className="text-lg text-gray-700 font-medium mt-1">{displayTitle}</h2>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-indigo-700">{Math.round(score)} / 100</div>
-            <div className="text-sm font-semibold uppercase tracking-wider text-gray-600">
-              Band: {isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}
-            </div>
-            <div className="text-sm text-gray-500 mt-1">{new Date().toLocaleString()}</div>
-          </div>
-        </div>
+  function rememberPosition() {
+    if (activeId || activePairKey) return;
+    scrollPositions.current[viewKey] = middlePaneRef.current?.scrollTop ?? 0;
+    returnFocus.current = document.activeElement as HTMLElement;
+  }
 
-        <div className="grid grid-cols-2 gap-6 mt-4">
-          <div>
-            <h3 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2">Key Strengths</h3>
-            {isSample ? (
-              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
-                {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
-                  <li key={idx}>{str}</li>
-                ))}
-              </ul>
-            ) : (scan?.verifications && scan.verifications.length > 0) ? (
-              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
-                {scan.verifications.map((v, idx) => (
-                  <li key={idx}><strong>{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500 italic">
-                Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
-              </p>
-            )}
-          </div>
+  function navigateReport(tab: ActiveResultsTab, manuscript = false) {
+    rememberPosition();
+    setActiveIdRaw(null);
+    setActivePairKey(null);
+    setReadManuscript(manuscript);
+    setActiveTab(tab);
+  }
 
-          <div>
-            <h3 className="text-sm font-bold text-rose-800 uppercase tracking-wider mb-2">Major Issues</h3>
-            {isSample ? (
-              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
-                {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
-                  <li key={idx}>{iss}</li>
-                ))}
-              </ul>
-            ) : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) > 0 ? (
-              <ul className="text-sm text-gray-700 space-y-1.5 list-disc pl-4">
-                {scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').map((inc, idx) => (
-                  <li key={idx}>
-                    <strong>{inc.section_a} ↔ {inc.section_b}:</strong> {inc.explanation_what || inc.explanation_why}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500 italic">No major issues detected.</p>
-            )}
-          </div>
-        </div>
+  function closeDetail() {
+    setActiveIdRaw(null);
+    setActivePairKey(null);
+  }
+
+  function renderFinding(item: AssessmentItem) {
+    return (
+      <article key={item.id} className="space-y-5 text-body text-gray-800 break-inside-avoid-page">
+        <p className="mono text-body text-gray-600">{item.id}</p>
+        <h2 className="text-h2 font-semibold">{item.title}</h2>
+        <p className="font-medium">{item.section}</p>
+        <p>{item.questionOrSubtitle}</p>
+        <section className="space-y-2">
+          <h3 className="text-h3 font-semibold">Why this matters</h3>
+          <p>{item.description}</p>
+          <p>{item.significance}</p>
+        </section>
+        {item.evidence && (
+          <section className="space-y-2">
+            <h3 className="text-h3 font-semibold">Evidence</h3>
+            <blockquote className="pl-4 border-l-2 border-gray-300 whitespace-pre-wrap">{item.evidence}</blockquote>
+          </section>
+        )}
+        {item.conflictQuote && (
+          <section className="space-y-2">
+            <h3 className="text-h3 font-semibold">Comparison: {item.conflictsWith}</h3>
+            <blockquote className="pl-4 border-l-2 border-gray-300 whitespace-pre-wrap">{item.conflictQuote}</blockquote>
+          </section>
+        )}
+        <section className="space-y-2">
+          <h3 className="text-h3 font-semibold">Recommendation</h3>
+          <p>{item.recommendation}</p>
+        </section>
+      </article>
+    );
+  }
+
+  function renderNotes() {
+    return (
+      <div className="space-y-5 text-body text-gray-800">
+        <p>{fullPriority}</p>
+        {isSample && (
+          <>
+            <p>{OVERALL_ASSESSMENT.statusDescription}</p>
+            <h3 className="text-h3 font-semibold">Strengths</h3>
+            <ul className="list-disc pl-5">{OVERALL_ASSESSMENT.strengths.map(text => <li key={text}>{text}</li>)}</ul>
+            <h3 className="text-h3 font-semibold">Issues</h3>
+            <ul className="list-disc pl-5">{OVERALL_ASSESSMENT.majorIssues.map(text => <li key={text}>{text}</li>)}</ul>
+          </>
+        )}
+        {!!scan?.missing_sections?.length && <p>Missing sections: {scan.missing_sections.map(formatRoleLabel).join(', ')}</p>}
+        {localItems.filter(item => item.type === 'overall-status' || item.type === 'strength').map(item => (
+          <button key={item.id} className="block w-full text-left py-3 border-b border-gray-200" onClick={() => setActiveId(item.id)}>
+            <span className="mono">{item.id}</span> · {item.title}
+          </button>
+        ))}
+        {aiText && (
+          <section className="space-y-2">
+            <h3 className="text-h3 font-semibold">AI text indicator</h3>
+            <p className="tabular-nums">Overall: {aiText.overall_score ?? 'Unavailable'} / 100</p>
+            <dl>{Object.entries(aiText.section_scores ?? {}).map(([section, value]) => (
+              <div key={section} className="flex justify-between gap-4"><dt>{formatRoleLabel(section)}</dt><dd className="tabular-nums">{value ?? 'Unavailable'}</dd></div>
+            ))}</dl>
+            {!!aiText.flagged_sections?.length && <p>Flagged sections: {aiText.flagged_sections.join(', ')}</p>}
+            <p>{aiText.disclaimer || AI_TEXT_DISCLAIMER}</p>
+          </section>
+        )}
       </div>
+    );
+  }
 
-      {/* ── Navbar ── */}
-      <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
-        <div className="px-5 h-12 flex items-center gap-3">
-          <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors shrink-0 rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Home
-          </button>
-          <div className="h-4 w-px bg-gray-200 shrink-0" />
-          <Logo className="h-7 w-auto shrink-0" />
-          <span className="text-sm text-gray-400 truncate hidden md:block">
-            {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
-          </span>
-          <div className="ml-auto flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowPairingModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              How Pairing Works
-            </button>
-            {!isSample && (
-              <>
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>Export PDF
-                </button>
-                <button onClick={() => onNavigate("upload")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-white transition-colors duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 cursor-pointer" style={{ background: B }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>New Scan
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* ── 3-column body ── */}
-      <div className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">
-
-        {isLeftCollapsed && (
-          <button
-            type="button"
-            onClick={() => setIsLeftCollapsed(false)}
-            aria-label="Expand findings sidebar"
-            aria-expanded={false}
-            title="Expand findings sidebar"
-            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-l-0 border-gray-200 rounded-r-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-            <span className="text-sm font-semibold">Show Assessment</span>
-          </button>
-        )}
-        {isRightCollapsed && (
-          <button
-            type="button"
-            onClick={() => setIsRightCollapsed(false)}
-            aria-label="Expand inspector sidebar"
-            aria-expanded={false}
-            title="Expand inspector sidebar"
-            className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-r-0 border-gray-200 rounded-l-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
-          >
-            <span className="text-sm font-semibold">Show Analysis</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-        )}
-
-        {/* ══ LEFT: sidebar — score + assessment findings list ══ */}
-        <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-y-auto transition-all duration-300 ${
-          isLeftCollapsed
-            ? "lg:w-0 lg:border-r-0 lg:overflow-hidden print:lg:w-72"
-            : "lg:w-72 xl:w-80 border-r border-gray-100"
-        }`}>
-          {/* Score ring */}
-          <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsLeftCollapsed(true)}
-              aria-label="Collapse findings sidebar"
-              aria-expanded={!isLeftCollapsed}
-              title="Collapse findings sidebar"
-              className="hidden lg:flex absolute top-3.5 right-3.5 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              <span className="text-sm font-semibold">Hide Assessment</span>
-            </button>
-            <ScoreRing score={score} size={88} />
-            <p className="text-sm tabular-nums font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
-            <div className="w-full mt-1.5 space-y-1">
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[])
-                .filter(t => isSample || t !== "overall-status")
-                .map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
-                  <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                  <span className="text-sm font-medium text-gray-700 flex-1">{ST[t].label}</span>
-                  <span className={`text-sm font-black ${ST[t].pillTxt}`}>
-                    {isSample ? localItems.filter(i => i.type === t).length : (
-                      t === 'strength' ? (scan?.verifications?.length ?? 0) :
-                      t === 'major-issue' ? (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) :
-                      new Set(scan?.inconsistencies?.map(i => i.section_a)).size
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Assessment Filter Bar */}
-          <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-2 px-0.5">
-              <span className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Assessment</span>
-              {filterType !== "all" && (
-                <button
-                  type="button"
-                  onClick={() => setFilterType("all")}
-                  className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">
-                  Show all ({localItems.length})
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={() => applyFilter("all")}
-                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}>
-                All ({localItems.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("strength")}
-                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  }`}>
-                Strengths ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("major-issue")}
-                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
-                  }`}>
-                Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("affected-section")}
-                className={`py-1.5 px-2.5 rounded-lg text-sm font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                  }`}>
-                Affected ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
-              </button>
-            </div>
-          </div>
-
-          {/* Assessment Items list */}
-          <div className="px-3.5 py-3 flex-1 space-y-1.5">
-            {filteredItems.map((item, idx) => (
-              <button key={item.id}
-                onClick={() => {
-                  setActiveId(prev => prev === item.id ? null : item.id);
-                  if (activeTab === 'overview') scrollToSection(item.targetSectionIndex);
-                  else if (activeTab === 'citations')
-                    setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
-                }}
-                className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
-                  }`}>
-                <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${ST[item.type].dot}`} />
-                <div className="flex-1 min-w-0">
-                  <span className={`text-[14px] font-bold uppercase tracking-wider block ${ST[item.type].pillTxt}`}>{ST[item.type].label}</span>
-                  <span className="text-[14px] font-semibold text-gray-800 leading-snug line-clamp-2 mt-0.5">{item.title}</span>
-                  <span className="text-sm text-gray-500 leading-tight truncate block mt-1">{item.section}</span>
-                </div>
-                <span className="text-sm tabular-nums font-bold text-gray-400 shrink-0 mt-0.5">#{idx + 1}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Highlight legend */}
-          <div className="px-4 py-3.5 border-t border-gray-100 space-y-2">
-            <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500 mb-1">Highlight key</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
-                <span key={t} className={`inline-block px-2.5 py-1 rounded-md text-sm font-bold ${ST[t].hl.split(" ").filter(c => c.startsWith("bg-")).join(" ")} ${ST[t].pillTxt}`}>
-                  {ST[t].label}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ══ CENTER: tab bar + tab content ══ */}
-        <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-8 flex items-center gap-1 overflow-x-auto xl:overflow-visible shadow-2xs shrink-0 print:hidden" role="tablist" aria-label="Results tabs">
-            {tabList.map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-3 text-sm font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
-                  activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
-                }`}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 lg:px-10 py-8 flex-1">
-            {activeTab === 'overview' && (<>
-
-            {/* Document header */}
-            <div className="bg-white rounded-2xl border border-gray-200 px-10 pt-10 pb-8 mb-6 shadow-sm">
-              {isSample && (
-                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-3" style={{ color: B }}>
-                  Sample Manuscript Report
-                </p>
-              )}
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
-                {displayTitle}
-              </h1>
-              {isSample && (
-                <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study • Academic Year 2023–2024</p>
-              )}
-              <div className="flex items-center gap-3 pt-4 border-t border-gray-100 flex-wrap">
-                <span className="text-[14px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Scan complete</span>
-                <span className="text-[14px] text-gray-500 font-medium">Overall Assessment: <strong className={isSample ? "text-amber-700" : "text-gray-900"}>{isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}</strong></span>
-                <span className="text-[14px] text-gray-300">•</span>
-                <span className="text-[14px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
-                <span className="text-[14px] text-gray-300">•</span>
-                <span className="text-[14px] text-gray-400">Click any highlight to see Assessment Details</span>
-              </div>
-            </div>
-
-            {/* ══ OVERALL ASSESSMENT EXECUTIVE CARD ══ */}
-            <div id="overall-assessment" className="scroll-mt-14 bg-white rounded-2xl border border-gray-200 p-8 mb-6 shadow-xs">
-
-              {/* Card Header */}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[14px] font-sans font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-indigo-700 bg-indigo-50 border border-indigo-100">
-                      Overall Assessment
-                    </span>
-                    <span className="text-sm text-gray-400">· Executive Synthesis</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Overall Manuscript Assessment</h2>
-                  <p className="text-sm text-gray-500 italic mt-1 font-sans">
-                    “{OVERALL_ASSESSMENT.question}”
-                  </p>
-                </div>
-
-                {/* Overall Status Badge */}
-                <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
-                  <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400">Overall Status</span>
-                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-200 bg-amber-50">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                    <span className="text-sm font-black text-amber-800 tracking-wide uppercase">
-                      {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
-                    </span>
-                  </div>
-                  {isSample && (
-                    <div className="flex items-center gap-1.5 text-[14px] text-gray-400">
-                      <span>Scale:</span>
-                      <span className="text-gray-400">High</span>
-                      <span>•</span>
-                      <span className="font-bold text-amber-700 underline">Moderate</span>
-                      <span>•</span>
-                      <span className="text-gray-400">Low</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Overall Status Condition Summary */}
-              <div className="py-5 border-b border-gray-100">
-                <div className="flex items-center gap-2 mb-2.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-indigo-600">
-                    <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
-                  </svg>
-                  <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-                    Overall Status Condition
-                  </span>
-                  <span className="text-[14px] font-semibold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
-                    {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
-                  </span>
-                </div>
-                <div className="bg-amber-50/40 rounded-xl p-4 sm:p-5 border border-amber-100/80">
-                  <p className="text-sm text-gray-700 leading-relaxed font-normal">
-                    {isSample 
-                      ? OVERALL_ASSESSMENT.statusDescription 
-                      : (scan?.score_breakdown?.biggest_lever?.reason || "To be developed")}
-                  </p>
-                </div>
-              </div>
-
-              {/* 2-Column Grid: Key Strengths & Major Issues */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-5 border-b border-gray-100">
-                {/* Key Strengths */}
-                <div className="bg-emerald-50/40 rounded-xl p-5 border border-emerald-100 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M20 6L9 17l-5-5" /></svg>
-                        </div>
-                        <h3 className="text-sm font-bold text-emerald-950">Key Strengths</h3>
-                      </div>
-                      <span className="text-[14px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
-                        {isSample ? OVERALL_ASSESSMENT.strengths.length : (scan?.verifications?.length ?? 0)} Verified
-                      </span>
-                    </div>
-                    <p className="text-[14px] text-emerald-700/80 italic mb-3">What the manuscript does consistently</p>
-                    {isSample ? (
-                      <ul className="space-y-2.5">
-                        {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
-                            <span>{str}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      (scan?.verifications && scan.verifications.length > 0) ? (
-                        <ul className="space-y-2.5">
-                          {scan.verifications.map((v, idx) => (
-                            <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
-                              <span><strong className="text-emerald-900">{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-gray-500 italic">
-                          Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
-                        </p>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* Major Issues */}
-                <div className="bg-rose-50/40 rounded-xl p-5 border border-rose-100 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        </div>
-                        <h3 className="text-sm font-bold text-rose-950">Major Issues</h3>
-                      </div>
-                      <span className="text-[14px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
-                        {isSample ? OVERALL_ASSESSMENT.majorIssues.length : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)} Detected
-                      </span>
-                    </div>
-                    <p className="text-[14px] text-rose-700/80 italic mb-3">Most important inconsistencies detected</p>
-                    {isSample ? (
-                      <ul className="space-y-2.5">
-                        {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
-                            <span>{iss}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      (scan?.inconsistencies && scan.inconsistencies.filter(i => i.finding_status === 'material_issue').length > 0) ? (
-                        <ul className="space-y-2.5">
-                          {(() => {
-                            const allMaterial = scan.inconsistencies.filter(i => i.finding_status === 'material_issue');
-                            const isMissingSection = (i: typeof allMaterial[0]) => !i.section_b || i.coherence_score == null;
-                            const missingSecs = allMaterial.filter(isMissingSection);
-                            const regularIssues = allMaterial.filter(i => !isMissingSection(i));
-                            return (
-                              <>
-                                {missingSecs.length > 0 && (
-                                  <li className="flex items-start gap-2.5 text-sm text-rose-900 leading-snug bg-rose-100/70 p-3 rounded-xl border border-rose-200">
-                                    <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0 mt-1" />
-                                    <div className="flex-1">
-                                      <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-rose-950 uppercase text-[14px] tracking-wider">Missing Required Sections ({missingSecs.length})</span>
-                                        <span className="text-[14px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-800">Completeness Alert</span>
-                                      </div>
-                                      <p className="text-sm text-rose-900 font-semibold">
-                                        {missingSecs.map(i => formatRoleLabel(i.section_a)).join(" · ")}
-                                      </p>
-                                      <p className="text-[14px] text-rose-700 mt-1 leading-relaxed">
-                                        Required academic sections are absent from this draft. Add these sections to satisfy standard thesis submission requirements.
-                                      </p>
-                                    </div>
-                                  </li>
-                                )}
-                                {regularIssues.map((iss, idx) => (
-                                  <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 leading-snug">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
-                                    <span><strong className="text-rose-900">{iss.section_a} ↔ {iss.section_b}:</strong> {iss.explanation_what}</span>
-                                  </li>
-                                ))}
-                              </>
-                            );
-                          })()}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-gray-500 italic">No major issues detected.</p>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Affected Sections */}
-              <div className="pt-5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M7 16l-4-4m0 0l4-4m-4 4h18M17 8l4 4m0 0l-4 4" /></svg>
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900">Affected Sections</h3>
-                  </div>
-                  <span className="text-[14px] text-gray-500 italic">Which chapters/sections are involved</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                  {isSample ? (
-                    OVERALL_ASSESSMENT.affectedSections.map((sec, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => scrollToSection(sec.targetSectionIndex, sec.itemId)}
-                        className="group flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:border-blue-400 hover:shadow-xs transition-all text-left cursor-pointer"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors block">
-                            {sec.label}
-                          </span>
-                          <span className="text-[14px] text-gray-400 mt-0.5 block">
-                            Click to inspect cross-section conflict
-                          </span>
-                        </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5 shrink-0">
-                          <path d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    ))
-                  ) : (
-                    Array.from(new Set(scan?.inconsistencies?.map(i => i.section_a).filter(Boolean) || [])).map((secName, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 text-left"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-gray-800 block">
-                            {secName}
-                          </span>
-                          <span className="text-[14px] text-gray-400 mt-0.5 block">
-                            Inconsistencies detected in this section
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Highlight legend — compact inline */}
-            <div className="flex items-center gap-2 px-1 mb-5 flex-wrap">
-              <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400 mr-1">Highlights:</span>
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  aria-pressed={filterType === t}
-                  onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[14px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
-                  <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} aria-hidden="true" />
-                  <span>{ST[t].label}</span>
-                  <span className="tabular-nums">({localItems.filter(i => i.type === t).length})</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Document body — continuous paper */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              {localParagraphs.map((para, i) => {
-                const hasActive = para.assessments.some(pi => pi.itemId === activeId);
-                const activeType = para.assessments.find(pi => pi.itemId === activeId)?.type;
-                const isChapterHead = para.type === "chapter-heading";
-                return (
-                  <div key={i}
-                    id={`sec-${i}`}
-                    className={`scroll-mt-14 transition-colors duration-200 ${hasActive && activeType ? "" : ""}`}
-                    style={{ background: hasActive && activeType ? `${ST[activeType].accentColor}05` : undefined }}>
-
-                    {/* Divider between entries */}
-                    {i > 0 && <div className={`mx-8 lg:mx-12 border-t ${isChapterHead ? "border-gray-200 my-0" : "border-gray-100 my-0"}`} />}
-
-                    <div className={`px-8 lg:px-12 ${isChapterHead ? "pt-10 pb-0" : "pt-6 pb-0"}`}>
-
-                      {/* Chapter label for chapter headings */}
-                      {isChapterHead && (
-                        <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>{para.chapter}</p>
-                      )}
-
-                      {/* Section heading row */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <h2 className={`font-bold tracking-tight text-gray-900 leading-snug ${isChapterHead ? "text-xl" : "text-base"}`}>
-                          {para.heading}
-                        </h2>
-                        {/* Assessment badges inline with heading */}
-                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5 flex-wrap justify-end">
-                          {para.assessments.length === 0
-                            ? <span className="text-[14px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Aligned</span>
-                            : [...new Map(para.assessments.map(pi => [pi.itemId, pi])).values()].map(pi => (
-                              <button key={pi.itemId}
-                                aria-pressed={activeId === pi.itemId}
-                                onClick={() => setActiveId(prev => prev === pi.itemId ? null : pi.itemId)}
-                                className={`text-[14px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
-                                {ST[pi.type].label}
-                              </button>
-                            ))
-                          }
-                        </div>
-                      </div>
-
-                      {/* Paragraph text */}
-                      <p className={`text-gray-700 leading-relaxed pb-8 ${isChapterHead ? "text-[16px]" : "text-[15px]"}`}
-                        style={{ lineHeight: "1.85" }}>
-                        {renderPara(para)}
-                      </p>
-
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* References — inside the document paper */}
-              {localCitations.length > 0 && (
-                <>
-                  <div className="mx-8 lg:mx-12 border-t border-gray-200 mt-0" />
-                  <div className="px-8 lg:px-12 pt-8 pb-10" id="refs">
-                    <p className="text-[14px] tabular-nums font-bold uppercase tracking-widest mb-1 text-gray-400">References</p>
-                    <div className="flex items-center gap-3 mb-5">
-                      <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
-                      <span className="text-[14px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><span className="tabular-nums">{localCitations.length}</span> sources checked</span>
-                      {dead > 0 && <span className="text-[14px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{dead}</span> inaccessible</span>}
-                    </div>
-                    {dead > 0 && (
-                      <div className="flex items-start gap-3 px-4 py-3 mb-4 rounded-xl border border-red-200 bg-red-50">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                        <p className="text-sm text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
-                      </div>
-                    )}
-                    {localCitations.length > 0 ? (
-                      <div className="space-y-2">
-                        {localCitations.map((cite, ci) => (
-                          <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                            cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" 
-                            : cite.status === "restricted" ? "border-amber-100 bg-amber-50"
-                            : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
-                            : "border-red-100 bg-red-50"
-                          }`}>
-                            <span className="text-[14px] tabular-nums font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
-                            <div className="flex-1 min-w-0">
-                              {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                              <p className="text-[14px] text-gray-800 leading-snug">
-                                {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                                {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                                {cite.ref}
-                              </p>
-                              {cite.url && (
-                                 <p className={`text-[12px] meta mono truncate mt-1 ${
-                                   cite.status === "live" ? "text-gray-400" 
-                                   : cite.status === "restricted" ? "text-amber-600" 
-                                   : cite.status === "neutral" ? "text-slate-400"
-                                   : "text-red-500"
-                                 }`}>{cite.url}</p>
-                              )}
-                            </div>
-                            
-                            {/* Status Badge */}
-                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[14px] font-bold ${
-                              cite.status === "live" ? "bg-emerald-100 text-emerald-700"
-                              : cite.status === "restricted" ? "bg-amber-100 text-amber-700"
-                              : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
-                              : "bg-red-100 text-red-700"
-                            }`}>
-                              {cite.status === "live" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>Live</>
-                              ) : cite.status === "restricted" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
-                              ) : cite.status === "neutral" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
-                              ) : (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-500 italic">
-                        No citations were detected in this manuscript ({scan?.citations_audited ?? 0} sources audited).
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>{/* end document paper */}
-
-            {/* ══ R3: INLINE MANUSCRIPT WITH SECTION HIGHLIGHTS (Ported from ResultDetails.tsx:626-950) ══ */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-xs space-y-8 font-sans leading-relaxed text-gray-800 mt-8">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-5 flex-wrap gap-3">
-                <div>
-                  <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-indigo-600 block">
-                    Inline Manuscript Inspection
-                  </span>
-                  <h2 className="font-sans text-2xl font-bold text-gray-900 mt-1">
-                    Continuous Manuscript with Section Highlights
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Click any highlighted passage to inspect findings and recommendations in the right Explainable AI panel.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[14px] font-bold px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
-                    Major Issue
-                  </span>
-                  <span className="text-[14px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Key Strength
-                  </span>
-                  <span className="text-[14px] font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
-                    Affected Section
-                  </span>
-                </div>
-              </div>
-
-              {/* R3 Renderer: Real fetched text vs sample chapters */}
+  function renderManuscript() {
+    return (
+      <article className="space-y-6 text-body text-gray-800 leading-relaxed">
+        <h2 className="text-h2 font-semibold">Manuscript</h2>
+        <p className="print:hidden">Select a highlighted passage to read its finding.</p>
               {!isSample ? (
                 manuscriptLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 text-gray-400 space-y-4">
@@ -2720,7 +2108,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         if (m.index > cursor) nodes.push(manuscriptText.slice(cursor, m.index));
                         const isActive = activeId === m.itemId;
                         nodes.push(
-                          <mark
+                          <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                             key={`${m.itemId}-${idx}`}
                             onClick={() => setActiveId(prev => prev === m.itemId ? null : m.itemId)}
                             className={`font-semibold px-1 py-0.5 rounded cursor-pointer transition-all ${
@@ -2773,7 +2161,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </div>
                     <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                       Academic burnout has emerged as a significant psychological concern among university students worldwide, with particular severity observed in science, technology, engineering, and mathematics (STEM) programs. This study investigates the predictors of academic burnout among{' '}
-                      <mark
+                      <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                         onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
                         className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                           activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
@@ -2795,7 +2183,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </div>
                       <p className="text-sm text-gray-700 leading-relaxed">
                         This study specifically aims to: (1) identify the prevalence of academic burnout among STEM students; (2) determine burnout predictors among students in{' '}
-                        <mark
+                        <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                           onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
                           className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                             activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
@@ -2818,7 +2206,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </div>
                       <p className="text-sm text-gray-700 leading-relaxed">
                         Despite growing awareness of mental health issues in tertiary education, few empirical studies have examined the specific predictors of burnout within Philippine STEM contexts. The study will{' '}
-                        <mark
+                        <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                           onClick={() => setActiveId(prev => prev === 'a8' ? null : 'a8')}
                           className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                             activeId === 'a8' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
@@ -2847,7 +2235,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </span>
                     </div>
                     <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                      <mark
+                      <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                         onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
                         className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                           activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
@@ -2868,7 +2256,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 leading-relaxed">
-                        <mark
+                        <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                           onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
                           className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                             activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
@@ -2898,7 +2286,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </div>
                     <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                       A descriptive-correlational research design was employed to examine the relationship between academic workload, peer support, and burnout among university students. Data were collected using the{' '}
-                      <mark
+                      <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                         onClick={() => setActiveId(prev => prev === 'a8' ? null : 'a8')}
                         className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                           activeId === 'a8' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
@@ -2907,7 +2295,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         Maslach Burnout Inventory–Student Survey (MBI-SS) and the Academic Workload Scale (AWS).
                       </mark>
                       {' '}The research instruments were administered via an online survey platform during the second semester of Academic Year 2023–2024. A total of{' '}
-                      <mark
+                      <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                         onClick={() => setActiveId(prev => prev === 'a9' ? null : 'a9')}
                         className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                           activeId === 'a9' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
@@ -2936,7 +2324,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </div>
                     <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                       A total of{' '}
-                      <mark
+                      <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                         onClick={() => setActiveId(prev => prev === 'a9' ? null : 'a9')}
                         className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                           activeId === 'a9' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
@@ -2945,7 +2333,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         108 respondents submitted complete responses
                       </mark>
                       {' '}after data cleaning and exclusion of incomplete forms. Descriptive statistics revealed that 61% of respondents scored in the high burnout range on the MBI-SS emotional exhaustion subscale. Pearson correlation analysis showed a significant positive relationship between workload and burnout (r=0.61, p&lt;0.001), indicating that heavier perceived workloads are strongly associated with higher burnout levels.{' '}
-                      <mark
+                      <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                         onClick={() => setActiveId(prev => prev === 'a6' ? null : 'a6')}
                         className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                           activeId === 'a6' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
@@ -2974,7 +2362,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </div>
                     <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                       The findings confirm that academic workload is the most consistent predictor of burnout among STEM undergraduates in the sampled institutions. Peer support was found to moderate the workload–burnout relationship only when students had consistent access to structured support programs. It is recommended that universities{' '}
-                      <mark
+                      <mark role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
                         onClick={() => setActiveId(prev => prev === 'a6' ? null : 'a6')}
                         className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
                           activeId === 'a6' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
@@ -2987,10 +2375,128 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </section>
                 </div>
               )}
-            </div>
-            </>)}
+      </article>
+    );
+  }
 
-            {/* ── Inconsistencies tab ── */}
+  return (
+    <div className="h-dvh flex flex-col bg-white text-gray-900 font-sans print:h-auto">
+      <section data-print-report className="hidden print:block space-y-8 p-8">
+        <h1 className="text-h1 font-semibold">Resync Manuscript Coherence Report</h1>
+        <h2 className="text-h2 font-semibold">{displayTitle}</h2>
+        {author && <p className="text-body">{author}</p>}
+        <p className="text-h2 tabular-nums">{Math.round(score)} / 100 · {band}</p>
+        {renderNotes()}
+        <h2 className="text-h2 font-semibold">All findings</h2>
+        {localItems.map(renderFinding)}
+        <h2 className="text-h2 font-semibold">Coherence pairs</h2>
+        {allPairs.map((pair, index) => (
+          <article key={index} className="space-y-2 text-body break-inside-avoid-page">
+            <h3 className="text-h3 font-semibold">{formatRoleLabel(pair.role_a)} ↔ {formatRoleLabel(pair.role_b)}</h3>
+            <p className="tabular-nums">{pair.score ?? 'Unavailable'} / 100 · Weight {Math.round(pair.weight * 100)}%</p>
+            {pair.included === false && <p>Not evaluated: one or both sections are missing.</p>}
+            {pair.reason && <p>{pair.reason}</p>}
+            {pair.verification && <p>{pair.verification.alignment} alignment: {pair.verification.note}</p>}
+          </article>
+        ))}
+        <h2 className="text-h2 font-semibold">Citations</h2>
+        {localCitations.map(cite => (
+          <article key={cite.id} className="space-y-2 text-body break-inside-avoid-page">
+            <p>{cite.title} {cite.authors} {cite.year} · {CITE_BADGE[cite.status].label}</p>
+            <p>{cite.ref}</p>
+            {cite.url && <p className="mono break-all">{cite.url}</p>}
+          </article>
+        ))}
+        {renderManuscript()}
+      </section>
+
+      <header className="shrink-0 border-b border-gray-200 print:hidden">
+        <nav className="px-5 sm:px-12 py-5 min-h-[76px] flex items-center gap-4 flex-wrap" aria-label="Report actions">
+          <button onClick={() => onNavigate('home')} className="text-body text-gray-600">← Home</button>
+          <Logo className="h-7 w-auto" />
+          <span className="text-body text-gray-600 hidden sm:block">{isSample ? 'Sample report' : 'Coherence report'}</span>
+          <button onClick={() => window.print()} className="ml-auto text-body font-medium text-gray-800">Export PDF</button>
+          {!isSample && <button onClick={() => onNavigate('upload')} className="text-body font-medium text-gray-800">New scan</button>}
+        </nav>
+      </header>
+
+      <main ref={middlePaneRef} className="flex-1 min-h-0 overflow-y-auto print:hidden" data-report-scroll>
+        <div className="max-w-[920px] mx-auto px-5 sm:px-8 pt-10 sm:pt-16 pb-16">
+          {(activeTab !== 'overview' || readManuscript || activeItem || activePair) && (
+            <div className="flex flex-wrap gap-5 mb-8">
+              {(activeItem || activePair) && <button onClick={closeDetail} className="text-body font-medium text-indigo-700">← Back to {readManuscript ? 'manuscript' : activeTab === 'overview' ? 'overview' : tabList.find(tab => tab.id === activeTab)?.label}</button>}
+              <button onClick={() => navigateReport('overview')} className="text-body font-medium text-gray-600">← Return to overview</button>
+            </div>
+          )}
+
+          {activeItem ? (
+            <section className="space-y-6">
+              <h1 ref={headingRef} tabIndex={-1} className="text-h1 font-semibold">Finding details</h1>
+              {renderFinding(activeItem)}
+              {renderFeedback(activeItem)}
+              <div className="flex justify-between gap-4 pt-5 border-t border-gray-200">
+                {[{dir: -1, label: '← Previous'}, {dir: 1, label: 'Next →'}].map(({dir, label}) => (
+                  <button key={label} disabled={!localItems[itemIdx + dir]} onClick={() => setActiveId(localItems[itemIdx + dir].id)} className="text-body font-medium disabled:opacity-40">{label}</button>
+                ))}
+              </div>
+            </section>
+          ) : activePair ? (
+            <section className="space-y-6">
+              <h1 ref={headingRef} tabIndex={-1} className="text-h1 font-semibold">{formatRoleLabel(activePair.role_a)} ↔ {formatRoleLabel(activePair.role_b)}</h1>
+              <p className="text-h2 tabular-nums">{activePair.score ?? 'Unavailable'} / 100</p>
+              <p className="text-body text-gray-600 tabular-nums">Weight {Math.round(activePair.weight * 100)}% · Target {PAR_SCORE}</p>
+              {activePair.included === false && <p className="text-body">This pair could not be evaluated — one or both sections are missing.</p>}
+              {activePair.reason && <p className="text-body">{activePair.reason}</p>}
+              {activePair.verification ? (
+                <div className="space-y-2 text-body"><h2 className="text-h2 font-semibold capitalize">{activePair.verification.alignment} alignment</h2><p>{activePair.verification.note}</p></div>
+              ) : <p className="text-body text-gray-600">No detailed alignment note available for this pair.</p>}
+            </section>
+          ) : readManuscript ? (
+            <section className="space-y-6">
+              <h1 className="text-h1 font-semibold">{displayTitle}</h1>
+              {renderManuscript()}
+            </section>
+          ) : activeTab === 'overview' ? (
+            <section className="space-y-8">
+              <div className="space-y-3">
+                <p className="text-meta text-gray-600">{isSample ? 'Sample manuscript' : 'Manuscript'}</p>
+                <h1 className="text-h1 sm:text-[34px] sm:leading-[42px] font-semibold max-w-[780px]">{displayTitle}</h1>
+                {author && <p className="text-body text-gray-600">{author}</p>}
+              </div>
+              <div className="flex flex-wrap gap-x-8 gap-y-3 items-center">
+                <p className="text-[76px] leading-none font-semibold tabular-nums tracking-tight">{Math.round(score)}<span className="text-h2 text-gray-600 font-normal ml-2">/ 100</span></p>
+                <p className="text-h2 font-medium">{band}</p>
+              </div>
+              <div className="space-y-2 max-w-[740px]">
+                <h2 className="text-h3 font-semibold">Revision priority</h2>
+                <p className="text-body text-gray-700">{priority}</p>
+              </div>
+              <div className="grid grid-cols-1 min-[560px]:grid-cols-2 gap-3 pt-2">
+                {tabList.filter(tab => tab.id !== 'overview').map(tab => (
+                  <button key={tab.id} onClick={() => navigateReport(tab.id)} className={outlineButton + ' text-left'}>{tab.label} →</button>
+                ))}
+                <button onClick={() => navigateReport('overview', true)} className={outlineButton + ' text-left'}>Read Manuscript →</button>
+              </div>
+              <details className="border-t border-gray-200 pt-5 text-body">
+                <summary className="cursor-pointer text-gray-600">Report notes and strengths</summary>
+                <div className="pt-5">{renderNotes()}</div>
+              </details>
+            </section>
+          ) : (
+            <section className="space-y-8">
+              <h1 className="text-h1 font-semibold">{tabList.find(tab => tab.id === activeTab)?.label}</h1>
+              <div role="tablist" aria-label="Report sections" className="flex flex-wrap gap-3 border-b border-gray-200 pb-4">
+                {tabList.map(tab => (
+                  <button key={tab.id} id={'report-tab-' + tab.id} role="tab" aria-controls="report-panel" tabIndex={activeTab === tab.id ? 0 : -1} aria-selected={activeTab === tab.id} onClick={() => navigateReport(tab.id)} onKeyDown={e => {
+                    const index = tabList.findIndex(t => t.id === tab.id);
+                    const next = e.key === 'ArrowRight' ? (index + 1) % tabList.length : e.key === 'ArrowLeft' ? (index + tabList.length - 1) % tabList.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabList.length - 1 : -1;
+                    if (next < 0) return;
+                    e.preventDefault(); navigateReport(tabList[next].id);
+                    document.getElementById('report-tab-' + tabList[next].id)?.focus();
+                  }} className="text-body font-medium text-gray-700 aria-selected:text-indigo-700">{tab.label}</button>
+                ))}
+              </div>
+              <div id="report-panel" role="tabpanel" aria-labelledby={'report-tab-' + activeTab}>
             {activeTab === 'inconsistencies' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 px-1">
@@ -3121,14 +2627,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     const score = p.score ?? 0;
                     const strong = score >= PAR_SCORE;
                     return (
-                      <div
+                      <button type="button"
                         key={`${p.role_a}|${p.role_b}|${idx}`}
                         onClick={() => {
+                          rememberPosition();
+                          setActiveIdRaw(null);
                           setActivePairKey(prev => prev === key ? null : key);
-                          setActiveId(null);
-                          if (!isDesktop()) setMobilePane("xai");
                         }}
-                        className={`bg-white rounded-2xl border p-5 space-y-3 cursor-pointer transition-all hover:border-indigo-300 ${
+                        className={`w-full text-left bg-white rounded-2xl border p-5 space-y-3 cursor-pointer transition-all hover:border-indigo-300 ${
                           isSelected ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-sm' : 'border-gray-200'
                         }`}
                       >
@@ -3149,7 +2655,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             <span className="font-bold capitalize">{p.verification.alignment} alignment.</span> {p.verification.note}
                           </p>
                         )}
-                      </div>
+                      </button>
                     );
                   })
                 )}
@@ -3248,433 +2754,22 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </div>
             )}
 
-            <div className="h-10" />
-          </div>{/* end max-w wrapper */}
-        </div>{/* end center column */}
-
-        {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
-        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-hidden transition-all duration-300 ${
-          isRightCollapsed
-            ? "lg:w-0 lg:border-l-0 lg:overflow-hidden print:lg:w-[360px]"
-            : "lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100"
-        }`}>
-          <div className="shrink-0 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/90">
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsRightCollapsed(true)}
-                aria-label="Collapse inspector sidebar"
-                aria-expanded={!isRightCollapsed}
-                title="Collapse inspector sidebar"
-                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer mr-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-                <span className="text-sm font-semibold">Hide Analysis</span>
-              </button>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Findings & Recommendations</h3>
-                <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-indigo-600">Analysis Inspector</p>
-              </div>
-            </div>
-            {(activeItem || activePair) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveId(null);
-                  setActivePairKey(null);
-                }}
-                className="text-sm text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-                Reset
-              </button>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {activePair ? (() => {
-              const score = activePair.score ?? 0;
-              const strong = score >= PAR_SCORE;
-              const isIncluded = activePair.included !== false;
-              return (
-                <div className="px-6 py-6 space-y-5">
-                  {/* Pair header */}
-                  <div className="rounded-2xl p-5 border-2 border-indigo-200 bg-indigo-50/40">
-                    <div className="flex items-start justify-between mb-2.5">
-                      <span className="text-[14px] font-sans font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
-                        Role Pair Analysis
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActivePairKey(null)}
-                        aria-label="Close pair details"
-                        className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true">
-                          <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug mb-1">
-                      {formatRoleLabel(activePair.role_a)} ↔ {formatRoleLabel(activePair.role_b)}
-                    </h3>
-                    <p className="text-sm text-indigo-700 font-medium">
-                      Weight: <span className="tabular-nums">{Math.round(activePair.weight * 100)}%</span> of the coherence score
-                    </p>
-                  </div>
-
-                  {/* Score block */}
-                  <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">
-                        Pair Coherence Score
-                      </span>
-                      <span className={`text-sm font-black px-2.5 py-0.5 rounded-full ${
-                        strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {strong ? 'Strong' : 'Below target'}
-                      </span>
-                    </div>
-                    <p className="text-2xl font-bold tabular-nums text-gray-900 tabular-nums">
-                      {Math.round(score)} <span className="text-sm font-normal text-gray-400">/ 100</span>
-                    </p>
-                    <div
-                      className="h-2 rounded-full bg-gray-200 overflow-hidden"
-                      role="progressbar"
-                      aria-valuenow={Math.round(score)}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label="Pair coherence score"
-                    >
-                      <div
-                        className={`h-full rounded-full transition-all ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                        style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Missing section check / Verification Note */}
-                  {!isIncluded ? (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 font-medium leading-relaxed">
-                      This pair could not be evaluated — one or both sections are missing.
-                    </div>
-                  ) : activePair.verification ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[14px] font-bold px-2.5 py-1 rounded-full border ${
-                          activePair.verification.alignment === 'superficial'
-                            ? 'bg-amber-50 border-amber-200 text-amber-900'
-                            : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                        }`}>
-                          {activePair.verification.alignment === 'substantive' ? 'Substantive Alignment' : 'Superficial Alignment'}
-                        </span>
-                      </div>
-                      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-2xs">
-                        <p className="text-sm sm:text-[14px] text-gray-700 leading-relaxed">
-                          {activePair.verification.note}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                        No detailed alignment note available for this pair.
-                      </div>
-                      {activePair.reason && (
-                        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1 shadow-2xs">
-                          <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-gray-400">
-                            Assessment Rationale
-                          </p>
-                          <p className="text-sm sm:text-[14px] text-gray-700 leading-relaxed">
-                            {activePair.reason}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })() : !activeItem ? (
-              <div className="flex flex-col items-center justify-center min-h-full px-6 py-8 text-center gap-5">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs" style={{ background: BL }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8" style={{ color: B }}>
-                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-sm font-bold uppercase mb-3">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                    {isSample ? "Moderate Coherence Overall" : `${scan?.score_breakdown?.band || "Unknown"} Coherence`}
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Analysis Synthesis</h3>
-                  <p className="text-[15px] text-gray-600 leading-relaxed font-sans italic mb-4">
-                    “{isSample ? OVERALL_ASSESSMENT.question : "What is the actual condition of this manuscript based on the analysis?"}”
-                  </p>
-                  <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed text-left bg-gray-50/90 p-4 sm:p-5 rounded-2xl border border-gray-200/80">
-                    {isSample 
-                      ? OVERALL_ASSESSMENT.statusDescription 
-                      : (() => {
-                          const band = scan?.score_breakdown?.band || "Unknown";
-                          const reason = scan?.score_breakdown?.biggest_lever?.reason;
-                          if (!reason) return "To be developed";
-                          const truncatedReason = reason.length > 120 ? reason.slice(0, 117) + "..." : reason;
-                          return `Coherence band: ${band}. ${truncatedReason}`;
-                        })()
-                    }
-                  </p>
-                </div>
-
-                {/* XAI & Recommendations Info Notice */}
-                <div className="w-full text-left p-4 rounded-2xl border border-indigo-100 bg-indigo-50/60">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <svg className="w-4 h-4 text-indigo-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-                    <span className="text-sm font-bold uppercase tracking-wider text-indigo-900">Analysis Guidance</span>
-                  </div>
-                  <p className="text-sm sm:text-[14px] text-indigo-900/80 leading-relaxed">
-                    Click any highlighted passage or sidebar finding to inspect why the AI flagged it, view cross-chapter evidence, and read specific rewrite recommendations.
-                  </p>
-                </div>
-
-                {/* Categories Breakdown */}
-                <div className="w-full mt-1 space-y-2 text-left">
-                  <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
-                  {(["strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
-                    <div key={t}
-                      onClick={() => applyFilter(t)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
-                      <span className={`w-3.5 h-3.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm sm:text-sm font-bold ${ST[t].pillTxt}`}>{ST[t].label}</p>
-                        <p className="text-sm text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
-                      </div>
-                      <span className="text-sm sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
-                        {localItems.filter(i => i.type === t).length}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="px-6 py-6 space-y-5">
-
-                {/* Finding header */}
-                <div className={`rounded-2xl p-5 border-2 ${ST[activeItem.type].border} ${ST[activeItem.type].bg}`}>
-                  <div className="flex items-start justify-between mb-2.5">
-                    <AssessmentBadge type={activeItem.type} />
-                    <button onClick={() => setActiveId(null)} className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                    </button>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug mb-1.5">{activeItem.title}</h3>
-                  <p className="text-sm sm:text-sm font-semibold" style={{ color: ST[activeItem.type].accentColor }}>{activeItem.section}</p>
-                </div>
-
-                {/* ── SECTION 1: EXPLAINABLE AI REASONING ── */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-indigo-600">
-                      <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
-                    </svg>
-                    <span className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Detailed Analysis</span>
-                  </div>
-
-                  {/* Purpose / Question Prompt */}
-                  <div className="space-y-1">
-                    <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-400">Analysis Dimension</p>
-                    <p className="text-sm sm:text-[15px] text-gray-800 font-sans italic leading-relaxed">“{activeItem.questionOrSubtitle}”</p>
-                  </div>
-
-                  {/* What was detected */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-500 shrink-0">
-                        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                      </svg>
-                      <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Why the AI Flagged This</p>
-                    </div>
-                    <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed font-normal bg-gray-50 p-4 rounded-2xl border border-gray-200/80">
-                      {activeItem.description}
-                    </p>
-                  </div>
-
-                  {/* Why this matters for panel */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0" style={{ color: ST[activeItem.type].accentColor }}>
-                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">Significance for Panel / Defense</p>
-                    </div>
-                    <p className="text-sm sm:text-[15px] text-gray-700 leading-relaxed bg-white p-3.5 rounded-xl border border-gray-100">{activeItem.significance}</p>
-                  </div>
-
-                  {/* Cross-chapter conflict quote */}
-                  {activeItem.conflictsWith && activeItem.conflictQuote && (
-                    <div className={`rounded-2xl p-4 border ${ST[activeItem.type].border}`} style={{ background: `${ST[activeItem.type].accentColor}0a` }}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0" style={{ color: ST[activeItem.type].accentColor }}>
-                          <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        <p className="text-sm font-sans font-bold uppercase tracking-wider" style={{ color: ST[activeItem.type].accentColor }}>Cross-Section Comparison Evidence</p>
-                      </div>
-                      <p className="text-sm sm:text-sm font-bold text-gray-800 mb-2">{activeItem.conflictsWith}</p>
-                      <p className="text-sm text-gray-800 leading-relaxed italic bg-white rounded-xl px-4 py-3 border border-gray-200/80 shadow-2xs">
-                        "{activeItem.conflictQuote}"
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Verified Evidence quote */}
-                  {activeItem.evidence && (
-                    <div className="rounded-2xl p-4 border border-emerald-200 bg-emerald-50/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 text-emerald-700"><path d="M5 12l5 5L20 7" /></svg>
-                        <p className="text-sm font-sans font-bold uppercase tracking-wider text-emerald-800">Verified Evidence in Manuscript</p>
-                      </div>
-                      <p className="text-sm text-emerald-950 leading-relaxed italic bg-white rounded-xl px-4 py-3 border border-emerald-200/80 shadow-2xs">
-                        "{activeItem.evidence}"
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── SECTION 2: ACTIONABLE RECOMMENDATIONS ── */}
-                <div className="rounded-2xl p-5 border-2 border-indigo-200/90 shadow-sm" style={{ background: `linear-gradient(135deg, ${BL}, #f5f7ff)` }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0" style={{ background: B }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-sans font-bold uppercase tracking-wider" style={{ color: B }}>Actionable Recommendation</p>
-                      <p className="text-[14px] text-gray-500 font-medium">Adviser Guidance & Revision Step</p>
-                    </div>
-                  </div>
-                  <p className="text-sm sm:text-base font-semibold text-gray-900 leading-relaxed mt-2.5">
-                    {activeItem.recommendation}
-                  </p>
-                </div>
-
-                {/* Feedback — guarded */}
-                {activeItem && renderFeedback(activeItem)}
-
-                {/* Prev / Next controls */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-sm text-gray-500 tabular-nums font-semibold">Finding {itemIdx + 1} of {localItems.length}</span>
-                  <div className="flex gap-2">
-                    {([{ dir: -1, label: "← Previous" }, { dir: 1, label: "Next →" }]).map(({ dir, label }) => {
-                      const target = localItems[itemIdx + dir];
-                      return (
-                        <button key={label} disabled={!target}
-                          onClick={() => {
-                            if (target) {
-                              setActiveId(target.id);
-                              scrollToSection(target.targetSectionIndex);
-                            }
-                          }}
-                          className="px-3.5 py-2 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-              </div>
-            )}
-          </div>
+            </section>
+          )}
         </div>
-
-      </div>
-
-      {/* ── Mobile bottom navigation bar ── */}
-      <nav className="lg:hidden shrink-0 grid grid-cols-3 border-t border-gray-200 bg-white print:hidden z-30" aria-label="Mobile report panes">
-        {([
-          { id: "findings" as const, label: "Summary" },
-          { id: "report" as const, label: "Manuscript" },
-          { id: "xai" as const, label: "Inspector" },
-        ]).map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setMobilePane(id)}
-            aria-current={mobilePane === id ? "page" : undefined}
-            className={`py-3 text-sm font-bold transition-colors ${
-              mobilePane === id
-                ? "text-indigo-600 border-t-2 border-indigo-600 -mt-px bg-indigo-50/30"
-                : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {/* ── Pairing Modal ── */}
+      </main>
       {showPairingModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowPairingModal(false)}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <div>
-                <h3 className="text-base font-bold text-gray-900">How Section Pairing Works</h3>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Resync evaluates cross-chapter alignment across 7 weighted academic role pairs calibrated to standard defense criteria.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPairingModal(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0 ml-3"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
-              {[
-                { pair: "Objectives ↔ Methodology", weight: "22%", desc: "checks methodological alignment" },
-                { pair: "Methodology ↔ Results", weight: "20%", desc: "verifies data matches procedures" },
-                { pair: "Results ↔ Discussion", weight: "16%", desc: "ensures claims grounded in findings" },
-                { pair: "Objectives ↔ Conclusion", weight: "16%", desc: "confirms research questions are resolved" },
-                { pair: "Introduction ↔ Objectives", weight: "12%", desc: "validates research gap" },
-                { pair: "Abstract ↔ Conclusion", weight: "8%", desc: "executive summary coverage" },
-                { pair: "Discussion ↔ Conclusion", weight: "6%", desc: "logical progression" },
-              ].map(({ pair, weight, desc }) => (
-                <div key={pair} className="flex items-start justify-between gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/60">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-bold text-gray-900">{pair}</p>
-                    <p className="text-[14px] text-gray-600">{desc}</p>
-                  </div>
-                  <span className="shrink-0 px-2.5 py-1 rounded-full text-sm font-black font-sans bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    {weight}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowPairingModal(false)}
-                className="px-4 py-2 rounded-xl text-sm font-bold bg-gray-900 text-white hover:bg-gray-800 transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <dialog ref={pairingDialogRef} onCancel={() => setShowPairingModal(false)} aria-label="How section pairing works" className="fixed inset-0 m-auto z-50 max-w-[540px] w-[calc(100%-40px)] max-h-[80dvh] overflow-y-auto rounded-md border border-gray-300 bg-white p-6 shadow-xl backdrop:bg-black/40">
+          <h2 className="text-h2 font-semibold">How section pairing works</h2>
+          <p className="text-body text-gray-700 my-5">Resync evaluates seven weighted academic role pairs. The target score is {PAR_SCORE}.</p>
+          <ul className="space-y-3 text-body text-gray-700">
+            {[['Objectives ↔ Methodology', '22%', 'checks methodological alignment'], ['Methodology ↔ Results', '20%', 'verifies data matches procedures'], ['Results ↔ Discussion', '16%', 'ensures claims grounded in findings'], ['Objectives ↔ Conclusion', '16%', 'confirms research questions are resolved'], ['Introduction ↔ Objectives', '12%', 'validates research gap'], ['Abstract ↔ Conclusion', '8%', 'executive summary coverage'], ['Discussion ↔ Conclusion', '6%', 'logical progression']].map(([pair, weight, description]) => (
+              <li key={pair}><strong>{pair} · <span className="tabular-nums">{weight}</span></strong><p>{description}</p></li>
+            ))}
+          </ul>
+          <button autoFocus onClick={() => setShowPairingModal(false)} className={outlineButton + ' mt-6'}>Close</button>
+        </dialog>
       )}
     </div>
   );
