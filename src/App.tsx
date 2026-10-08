@@ -485,7 +485,7 @@ function PreviewCard() {
 // ─── Home ─────────────────────────────────────────────────────────────────────
 function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean) => void }) {
   return (
-    <div className="min-h-full bg-white">
+    <div className="colour-landing min-h-full bg-white">
       <nav className="border-b border-gray-200" aria-label="Main navigation">
         <div className="px-5 sm:px-12 min-h-[76px] py-4 flex items-center gap-6 flex-wrap">
           <Logo className="h-8 w-auto" />
@@ -502,10 +502,10 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
           <h1 className="text-4xl sm:text-[52px] leading-[1.12] font-semibold tracking-tight text-gray-900">Find the gaps in your manuscript.</h1>
           <p className="text-base text-gray-600 mt-5">Check chapter alignment and citations. Focus your next revision on what matters.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 mt-7 mb-11">
-            <button onClick={() => onNavigate("signup")} className="rounded-md px-5 py-3 text-sm font-medium text-white hover:brightness-110 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4" style={{ background: B }}>Get started free</button>
-            <button onClick={() => onNavigate("results", true)} className="rounded-md px-5 py-3 border border-gray-300 text-sm font-medium text-indigo-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4">View sample report</button>
+            <button onClick={() => onNavigate("signup")} className="brand-action rounded-md px-5 py-3 text-sm font-medium text-white hover:brightness-110 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4">Get started free</button>
+            <button onClick={() => onNavigate("results", true)} className="rounded-md px-5 py-3 border border-indigo-200 bg-indigo-50 text-sm font-medium text-indigo-800 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4">View sample report</button>
           </div>
-          <img src={resultsPreview} alt="Sample coherence report with score, revision priority and finding destinations" width="1280" height="900" className="w-full h-auto border border-gray-200 rounded-md" />
+          <img src={resultsPreview} alt="Sample coherence report with score, revision priority and finding destinations" width="1280" height="900" className="product-frame w-full h-auto border border-indigo-200 rounded-md" />
         </div>
         <div className="max-w-[720px] mx-auto mt-10">
           <section id="section-checks" className="scroll-mt-6">
@@ -3552,7 +3552,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
     <div className="min-h-full bg-white">
 
       {/* ── Top nav ── */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-t-2 border-t-indigo-600 border-b border-b-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
         <div className="w-full px-5 sm:px-12 h-15 flex items-center gap-2 sm:gap-4" style={{ height: 58 }}>
           <div className="flex items-center gap-3 shrink-0 mr-2">
             <Logo className="h-7 w-auto" />
@@ -3569,7 +3569,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
             ))}
           </nav>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-meta text-gray-600 tabular-nums whitespace-nowrap">{creditsLoading ? "…" : creditBalance ?? "—"} credits</span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-indigo-50 text-meta text-indigo-800 tabular-nums whitespace-nowrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M15 8h-4a2 2 0 000 4h2a2 2 0 010 4H9m3-10v12" /></svg>{creditsLoading ? "…" : creditBalance ?? "—"} credits</span>
             <div className="h-5 w-px bg-gray-100" />
             <details className="relative">
               <summary aria-label="Notifications" className="list-none cursor-pointer w-9 h-9 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-indigo-600">
@@ -4026,16 +4026,16 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
         <main className="max-w-[1000px] mx-auto px-5 sm:px-[30px] py-12 sm:py-16">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
             <h1 className="text-h1 font-semibold text-gray-900">{greeting}, {profile.firstName || 'there'}</h1>
-            <button onClick={() => onNavigate("upload")} className="rounded-md px-5 py-3 text-sm font-medium text-white hover:brightness-110 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4" style={{ background: B }}>Start a new scan</button>
+            <button onClick={() => onNavigate("upload")} className="brand-action rounded-md px-5 py-3 text-sm font-medium text-white hover:brightness-110 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4">Start a new scan</button>
           </div>
           <h2 className="text-h2 font-semibold text-gray-900 mb-4">Recent scans</h2>
           {latestScan && latestScan.user_id === session?.user?.id ? (
-            <button onClick={() => onNavigate("results")} className="w-full grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto] gap-4 py-5 border-y border-gray-200 text-left text-sm hover:bg-gray-50 rounded focus-visible:outline-2 focus-visible:outline-indigo-600">
+            <button onClick={() => onNavigate("results")} className={`w-full grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto] gap-4 p-5 border text-left text-sm hover:brightness-[0.98] rounded-md focus-visible:outline-2 focus-visible:outline-indigo-600 ${latestScan.overall_coherence_score == null ? 'bg-surface-info border-blue-100' : latestScan.overall_coherence_score >= 80 ? 'bg-surface-success border-emerald-100' : 'bg-surface-warn border-amber-100'}`}>
               <span className="col-span-2 sm:col-span-1 font-medium text-gray-900 break-words">{(latestScan as any).manuscript_title || (latestScan as any).title || 'Manuscript scan'}</span>
               <span className="text-meta text-gray-600">This session</span>
               <span className="tabular-nums text-indigo-700 font-semibold">{latestScan.overall_coherence_score != null ? `${Math.round(latestScan.overall_coherence_score)} / 100` : 'Score unavailable'}</span>
             </button>
-          ) : <p className="py-5 border-y border-gray-200 text-sm text-gray-600">No scans in this session yet.</p>}
+          ) : <p className="p-5 rounded-md border border-blue-100 bg-surface-info text-sm text-gray-600">No scans in this session yet.</p>}
         </main>
       </>)}
 

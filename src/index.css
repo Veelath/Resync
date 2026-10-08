@@ -88,6 +88,10 @@ h1, h2, h3 {
 .score-band[data-band="strong"] { --band: #047857; --band-surface: var(--surface-success); }
 .score-band[data-band="weak"] { --band: #be123c; --band-surface: var(--surface-error); }
 .score-ring-arc { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--band) 25%, transparent)); }
+.brand-action { background: var(--gradient-primary); box-shadow: 0 5px 16px #1a1fcc1a; }
+.colour-landing { background: linear-gradient(180deg, #eef0ff 76px, #f8f9ff 360px, #fff 850px); }
+.colour-landing > nav { background: #ffffffd9; }
+.product-frame { box-shadow: 0 14px 40px #1a1fcc0d; }
 @media print { .score-ring-arc { filter: none; } }
 
 @keyframes pulse-glow {
