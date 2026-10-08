@@ -526,8 +526,8 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
         </div>
       </footer>
       <div className="max-w-[1000px] mx-auto px-5 sm:px-[30px] text-sm text-gray-600">
-        <details id="terms" className="my-4"><summary className="cursor-pointer">Terms</summary><p className="py-4">Resync is a capstone decision-support tool. AI findings require author and adviser review; they do not replace academic judgment.</p></details>
-        <details id="privacy" className="my-4"><summary className="cursor-pointer">Privacy</summary><p className="py-4">Manuscripts are sent to the Resync service for analysis. Contact the project team for retention and deletion details.</p></details>
+        <details id="terms" className="hidden open:block my-4"><summary className="cursor-pointer">Terms</summary><p className="py-4">Resync is a capstone decision-support tool. AI findings require author and adviser review; they do not replace academic judgment.</p></details>
+        <details id="privacy" className="hidden open:block my-4"><summary className="cursor-pointer">Privacy</summary><p className="py-4">Manuscripts are sent to the Resync service for analysis. Contact the project team for retention and deletion details.</p></details>
       </div>
     </div>
   );
@@ -4389,7 +4389,7 @@ const CREDIT_PACKAGES = [
 ] as const;
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void }) {
+function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void; latestScan?: ScanResponse | null }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
@@ -4605,107 +4605,14 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
     };
   }, [profileMenuOpen]);
 
-  const WHAT_GET = [
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>,
-      label: "Coherence Score",
-      desc: "A 0–100 integrity score with three sub-scores: logic, consistency, and citations.",
-      color: B,
-      bg: BL,
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 12h6M9 16h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>,
-      label: "Annotated Manuscript",
-      desc: "Full text with every flagged passage highlighted inline by issue type.",
-      color: "#7c3aed",
-      bg: "#f5f3ff",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 000 4h6a2 2 0 000-4M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
-      label: "Fix Recommendations",
-      desc: "Concrete, actionable rewrites for each flagged issue — ready to apply.",
-      color: "#059669",
-      bg: "#f0fdf4",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
-      label: "Verified Reference List",
-      desc: "Live / dead status for every cited URL and DOI in your bibliography.",
-      color: "#d97706",
-      bg: "#fffbeb",
-    },
-  ];
-
-  const STEPS = [
-    {
-      num: 1,
-      label: "Upload Manuscript",
-      desc: "Upload your .docx file or paste a Google Docs share link.",
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
-    },
-    {
-      num: 2,
-      label: "Set Type & Template",
-      desc: "Choose Quantitative or Qualitative methodology, and edit our standard template.",
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M3 9h18M9 21V9" /></svg>,
-    },
-    {
-      num: 3,
-      label: "Coherence Scan",
-      desc: "AI cross-checks logic gaps, contradictions, redundancies, and dead citations.",
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
-    },
-    {
-      num: 4,
-      label: "Export Report",
-      desc: "Download your annotated report and fix recommendations as a PDF.",
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>,
-    },
-  ];
-
-  const BEST_PRACTICES = [
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
-      title: "Digital Text Manuscripts",
-      desc: "Reads .docx, .pdf, and Google Docs — full section detection and sentence-level alignment checks on standard text.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>,
-      title: "Standard Academic Structure",
-      desc: "Supports Chapter 1–5 and IMRaD thesis structures — automatically aligns headings with standard capstone roles.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 6h16M4 12h16M4 18h16" /></svg>,
-      title: "Single-Column Text Flow",
-      desc: "Analyzes continuous narrative flow — preserves logical reading order across consecutive sections and subsections.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>,
-      title: "Direct Prose Content",
-      desc: "Examines argumentative prose, hypotheses, and conclusions — cross-examines factual claims directly against findings.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
-      title: "Open Reference Accessibility",
-      desc: "Verifies reference citations against Crossref DOIs and open web registries — confirms accessibility and text mentions.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-      title: "Methodological Focus",
-      desc: "Tailors coherence rules to your methodology — evaluates statistical alignment for Quantitative and thematic depth for Qualitative studies.",
-    },
-  ];
-
   return (
-    <div className="min-h-full" style={{ background: "#f8f9ff" }}>
+    <div className="min-h-full bg-white">
 
       {/* ── Top nav ── */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-4" style={{ height: 58 }}>
+        <div className="w-full px-5 sm:px-12 h-15 flex items-center gap-2 sm:gap-4" style={{ height: 58 }}>
           <div className="flex items-center gap-3 shrink-0 mr-2">
-            <Logo className="h-8 w-auto" />
-            <div className="h-5 w-px bg-gray-100 hidden md:block" />
-            <span className="text-[14px] font-sans font-bold uppercase tracking-widest text-gray-400 hidden md:block">Academic Workspace</span>
+            <Logo className="h-7 w-auto" />
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard", "Academic Profile"] as const).map(label => (
@@ -4719,16 +4626,14 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             ))}
           </nav>
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-bold transition-colors hover:bg-gray-50 cursor-default"
-              style={{ borderColor: `${B}20`, background: `${B}06`, color: B }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-              Credits: {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
-            </div>
+            <span className="text-meta text-gray-600 tabular-nums whitespace-nowrap">{creditsLoading ? "…" : creditBalance ?? "—"} credits</span>
             <div className="h-5 w-px bg-gray-100" />
-            <button aria-label="Notifications" className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white" />
-            </button>
+            <details className="relative">
+              <summary aria-label="Notifications" className="list-none cursor-pointer w-9 h-9 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-indigo-600">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
+              </summary>
+              <p className="absolute right-0 top-12 w-60 bg-white border border-gray-200 rounded-md p-4 text-sm text-gray-600">Notifications unavailable.</p>
+            </details>
             <div className="h-5 w-px bg-gray-100" />
             <div ref={profileMenuRef} className="relative">
               <button
@@ -5175,259 +5080,19 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
         </main>
       ) : (<>
 
-        {/* ══ HERO BANNER ══ */}
-        <div className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, #080c33 0%, ${B} 60%, #3b40e8 100%)` }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, rgba(255,255,255,.09) 1px, transparent 1px)`, backgroundSize: "28px 28px" }} />
-          <div className="absolute -top-24 right-40 w-96 h-96 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(165,180,252,.22) 0%, transparent 65%)" }} />
-
-          <div className="relative z-10 w-full px-6 md:px-10 lg:px-16 xl:px-20 py-10 lg:py-12">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-
-              {/* Left: greeting + headline */}
-              <div className="flex-1 min-w-0 max-w-3xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md mb-3">
-                  <span className="text-sm sm:text-sm font-semibold text-blue-100">
-                    {greeting},{' '}
-                    {session?.user?.user_metadata?.full_name?.split(' ')[0]
-                      || session?.user?.email?.split('@')[0]
-                      || 'there'}
-                  </span>
-                </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-2.5">
-                  Your manuscript, <span className="text-indigo-200">checked end-to-end.</span>
-                </h1>
-                <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed font-normal">
-                  Detect logic gaps, cross-chapter contradictions, terminology drift, and inaccessible citations — all in under 2 minutes.
-                </p>
-              </div>
-
-              {/* Right: CTA + secondary link */}
-              <div className="flex flex-wrap items-center gap-3.5 shrink-0 pt-2 lg:pt-0">
-                <button onClick={() => onNavigate("upload")}
-                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-gray-950 bg-white hover:bg-blue-50 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 cursor-pointer">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-indigo-700" aria-hidden="true">
-                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  <span>Start a Scan</span>
-                </button>
-                <button onClick={() => onNavigate("results")}
-                  className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-white hover:bg-white/15 border-1.5 border-white/30 backdrop-blur-sm active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 cursor-pointer">
-                  <span>Preview sample</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-5 border-t border-white/15">
-              <div className="flex items-center gap-4 text-sm sm:text-sm text-blue-100/80 flex-wrap">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  AI-Powered Multi-Model Pipeline
-                </span>
-                <span className="hidden sm:inline text-white/30">•</span>
-                <span className="hidden sm:inline">Quantitative & Qualitative Support</span>
-                <span className="hidden sm:inline text-white/30">•</span>
-                <span className="hidden sm:inline">Automatic Citation Verifier</span>
-              </div>
-              <span className="text-sm sm:text-sm font-semibold text-blue-200 inline-flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-                <span>~2 min average scan</span>
-              </span>
-            </div>
+        <main className="max-w-[1000px] mx-auto px-5 sm:px-[30px] py-12 sm:py-16">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
+            <h1 className="text-h1 font-semibold text-gray-900">{greeting}, {profile.firstName || 'there'}</h1>
+            <button onClick={() => onNavigate("upload")} className="rounded-md px-5 py-3 text-sm font-medium text-white hover:brightness-110 focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4" style={{ background: B }}>Start a new scan</button>
           </div>
-        </div>
-
-        {/* ── Main body ── */}
-        <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">
-
-          {/* ═══════════════════════════════════════════
-            ROW 1: How It Works (left) + What You Get Back (right)
-        ═══════════════════════════════════════════ */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-            {/* ── How It Works ── spans 2 cols */}
-            <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-              <div className="mb-8">
-                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Process</p>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">How It Works</h2>
-                <p className="text-sm text-gray-400 mt-1">Four simple steps from manuscript to coherence report.</p>
-              </div>
-
-              {/* Staggered 4-step flow with bezier connectors */}
-              {/*
-              Layout (top-aligned flex, cards 2 & 4 pushed down by mt-10 ≈ 40px):
-              Card height ≈ 180px → container height ≈ 220px
-              Card 1 center-y ≈ 90   Card 2 center-y ≈ 130
-              Connectors span the full 220px height with bezier curves between those y-values.
-            */}
-              <div className="flex items-start" style={{ minHeight: 220 }}>
-
-                {/* Step 1 */}
-                <div className="flex-1 min-w-0">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3 h-full" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[0].icon}
-                    </div>
-                    <div>
-                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 1</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[0].label}</p>
-                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[0].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connector 1→2: bezier curving down-right */}
-                <div className="shrink-0 self-stretch relative" style={{ width: 40 }}>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 220" preserveAspectRatio="none">
-                    <path d="M0,90 C20,90 20,130 40,130" stroke="#c7d2fe" strokeWidth="2" strokeDasharray="5 4" fill="none" strokeLinecap="round" />
-                    <polygon points="33,126 40,130 33,134" fill="#c7d2fe" />
-                  </svg>
-                </div>
-
-                {/* Step 2 — shifted down */}
-                <div className="flex-1 min-w-0 mt-10">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[1].icon}
-                    </div>
-                    <div>
-                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 2</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[1].label}</p>
-                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[1].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connector 2→3: bezier curving up-right */}
-                <div className="shrink-0 self-stretch relative" style={{ width: 40 }}>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 220" preserveAspectRatio="none">
-                    <path d="M0,130 C20,130 20,90 40,90" stroke="#c7d2fe" strokeWidth="2" strokeDasharray="5 4" fill="none" strokeLinecap="round" />
-                    <polygon points="33,86 40,90 33,94" fill="#c7d2fe" />
-                  </svg>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex-1 min-w-0">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[2].icon}
-                    </div>
-                    <div>
-                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 3</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[2].label}</p>
-                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[2].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connector 3→4: bezier curving down-right */}
-                <div className="shrink-0 self-stretch relative" style={{ width: 40 }}>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 220" preserveAspectRatio="none">
-                    <path d="M0,90 C20,90 20,130 40,130" stroke="#c7d2fe" strokeWidth="2" strokeDasharray="5 4" fill="none" strokeLinecap="round" />
-                    <polygon points="33,126 40,130 33,134" fill="#c7d2fe" />
-                  </svg>
-                </div>
-
-                {/* Step 4 — shifted down */}
-                <div className="flex-1 min-w-0 mt-10">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[3].icon}
-                    </div>
-                    <div>
-                      <span className="text-[14px] font-sans font-bold uppercase tracking-widest" style={{ color: B }}>Step 4</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[3].label}</p>
-                      <p className="text-[14px] text-gray-400 mt-1 leading-snug">{STEPS[3].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* ── What You Get Back ── */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 flex flex-col" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-              <div className="mb-6">
-                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: "#059669" }}>Outputs</p>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">What You Get Back</h2>
-                <p className="text-sm text-gray-400 mt-1">Four deliverables, every scan, automatically.</p>
-              </div>
-
-              <div className="space-y-4 flex-1">
-                {WHAT_GET.map(({ icon, label, desc, color, bg }) => (
-                  <div key={label} className="flex items-start gap-3 group">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-                      style={{ background: bg, color }}>
-                      {icon}
-                    </div>
-                    <div className="pt-0.5">
-                      <p className="text-sm font-bold text-gray-800 leading-tight">{label}</p>
-                      <p className="text-[14px] text-gray-400 leading-relaxed mt-0.5">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          </div>
-
-          {/* ═══════════════════════════════════════════
-            ROW 2: Recommended Scope / Best Results With
-        ═══════════════════════════════════════════ */}
-          <div className="bg-white rounded-3xl border border-gray-100 p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div>
-                <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1 text-indigo-600">Guidance</p>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Best Results With</h2>
-                <p className="text-sm text-gray-500 mt-1 max-w-lg leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
-              </div>
-              <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600 border border-indigo-100">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {BEST_PRACTICES.map(({ icon, title, desc }) => (
-                <div key={title} className="flex items-start gap-3 px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-gray-100/60 transition-colors">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-indigo-600 bg-white border border-gray-200">
-                    {icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-800 leading-tight">{title}</p>
-                    <p className="text-[14px] text-gray-500 leading-relaxed mt-1">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Advisory card */}
-            <div className="mt-4 p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-start gap-3.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-700 mt-0.5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-indigo-950">When Inconsistencies May Appear</p>
-                <p className="text-sm text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use the Analysis Inspector to review context before revising.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Template tip ── */}
-          <div className="relative rounded-3xl overflow-hidden border border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50 p-5 flex items-center gap-5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-amber-900">Pro tip: Customize your standard template</p>
-              <p className="text-sm text-amber-700 leading-relaxed mt-0.5">Select your research scope (Quantitative or Qualitative) and refine headings in our standard template to ensure maximum detection accuracy across chapters.</p>
-            </div>
-            <button onClick={() => onNavigate("upload")}
-              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-colors whitespace-nowrap">
-              Try it →
+          <h2 className="text-h2 font-semibold text-gray-900 mb-4">Recent scans</h2>
+          {latestScan && latestScan.user_id === session?.user?.id ? (
+            <button onClick={() => onNavigate("results")} className="w-full grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto] gap-4 py-5 border-y border-gray-200 text-left text-sm hover:bg-gray-50 rounded focus-visible:outline-2 focus-visible:outline-indigo-600">
+              <span className="col-span-2 sm:col-span-1 font-medium text-gray-900 break-words">{(latestScan as any).manuscript_title || (latestScan as any).title || 'Manuscript scan'}</span>
+              <span className="text-meta text-gray-600">This session</span>
+              <span className="tabular-nums text-indigo-700 font-semibold">{latestScan.overall_coherence_score != null ? `${Math.round(latestScan.overall_coherence_score)} / 100` : 'Score unavailable'}</span>
             </button>
-          </div>
-
-          <div className="h-4" />
+          ) : <p className="py-5 border-y border-gray-200 text-sm text-gray-600">No scans in this session yet.</p>}
         </main>
       </>)}
 
@@ -5893,7 +5558,7 @@ export default function App() {
       {screen === "login" && <LoginScreen onNavigate={navigate} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} />}
+      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} latestScan={scanResult} />}
     </div>
   );
 }
