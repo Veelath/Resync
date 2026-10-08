@@ -1567,6 +1567,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [readManuscript, setReadManuscript] = useState(false);
   const scrollPositions = useRef<Record<string, number>>({});
   const returnFocus = useRef<HTMLElement | null>(null);
+  const returnFocusKey = useRef<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
   const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
@@ -1612,6 +1613,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     middlePaneRef.current.scrollTop = activeId || activePairKey ? 0 : (scrollPositions.current[viewKey] ?? 0);
     if (activeId || activePairKey) headingRef.current?.focus({ preventScroll: true });
     else if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
+    else if (returnFocusKey.current) document.querySelector<HTMLElement>(`[data-return-key="${CSS.escape(returnFocusKey.current)}"]`)?.focus({ preventScroll: true });
   }, [activeTab, readManuscript, activeId, activePairKey]);
 
   const ROMAN = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx)$/i;
@@ -1982,6 +1984,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     if (activeId || activePairKey) return;
     scrollPositions.current[viewKey] = middlePaneRef.current?.scrollTop ?? 0;
     returnFocus.current = document.activeElement as HTMLElement;
+    returnFocusKey.current = returnFocus.current?.getAttribute('data-return-key');
   }
 
   function navigateReport(tab: ActiveResultsTab, manuscript = false) {
@@ -2498,256 +2501,102 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </div>
               <div id="report-panel" role="tabpanel" aria-labelledby={'report-tab-' + activeTab}>
             {activeTab === 'inconsistencies' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-                  <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">
-                    {filterType === 'major-issue' ? 'Major Issues' : filterType === 'affected-section' ? 'Affected Sections' : 'All Inconsistencies'} ({visibleInconsistencies.length})
-                  </p>
-                  <div className="flex items-center gap-3">
-                    {(filterType === 'major-issue' || filterType === 'affected-section') && (
-                      <button type="button" onClick={() => setFilterType('all')}
-                        className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">
-                        Show all ({inconsistenciesCount})
-                      </button>
-                    )}
-                    {visibleInconsistencies.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={toggleAllExpanded}
-                        className="text-sm font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 px-2.5 py-1 rounded-lg bg-white hover:bg-gray-50 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
-                      >
-                        {allExpanded ? "Collapse All" : "Expand All"}
-                      </button>
-                    )}
-                  </div>
+              <div className="space-y-5">
+                <div className="flex flex-wrap gap-2" aria-label="Finding filters">
+                  {(['all', 'major-issue', 'affected-section'] as const).map(type => (
+                    <button key={type} aria-pressed={filterType === type} onClick={() => applyFilter(type)} className="px-3 py-2 rounded-md border border-gray-300 text-body font-medium text-gray-700 aria-pressed:bg-indigo-50 aria-pressed:border-indigo-700 aria-pressed:text-indigo-800">
+                      {type === 'all' ? 'All' : ST[type].label}
+                    </button>
+                  ))}
                 </div>
-
                 {visibleInconsistencies.length === 0 ? (
-                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-gray-800 mb-1">No inconsistencies to show</p>
-                    <p className="text-sm text-gray-500">
-                      {inconsistenciesCount === 0
-                        ? 'No inconsistencies were detected across the analyzed sections.'
-                        : 'No findings match the selected filter.'}
-                    </p>
-                  </div>
+                  <p className="text-body text-gray-600">{inconsistenciesCount === 0 ? 'No inconsistencies were detected.' : 'No findings match this filter.'}</p>
                 ) : (
-                  visibleInconsistencies.map((item, idx) => {
-                    const isExpanded = expandedIssueIds.has(item.id);
-                    return (
-                      <div key={item.id}
-                        className={`bg-white rounded-2xl border transition-all ${
-                          activeId === item.id ? `${ST[item.type].border} ring-2 ring-indigo-300 shadow-sm` : 'border-gray-200 hover:border-gray-300'
-                        }`}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            toggleIssueExpanded(item.id);
-                            setActiveId(prev => prev === item.id ? null : item.id);
-                          }}
-                          className="w-full p-4 sm:p-5 flex items-start justify-between gap-3 text-left cursor-pointer"
-                        >
-                          <div className="flex-1 min-w-0 space-y-1.5">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`text-[14px] font-bold px-2 py-0.5 rounded-full border ${ST[item.type].pill}`}>{ST[item.type].label}</span>
-                              <span className="text-sm tabular-nums font-bold text-gray-400">#{idx + 1}</span>
-                              {item.isMissingSection ? (
-                                <span className="text-[14px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-800">
-                                  Missing Section
-                                </span>
-                              ) : (
-                                <span className="text-sm font-semibold" style={{ color: ST[item.type].accentColor }}>{item.section}</span>
-                              )}
+                  <ul className="divide-y divide-gray-200 border-y border-gray-200">
+                    {visibleInconsistencies.map(item => (
+                      <li key={item.id}>
+                        <button data-return-key={item.id} onClick={() => setActiveId(item.id)} className="w-full text-left py-5 flex items-start justify-between gap-4 hover:bg-gray-50">
+                          <div className="space-y-2 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={'text-body px-2 py-0.5 rounded border ' + ST[item.type].pill}>{ST[item.type].label}</span>
+                              <span className="text-body tabular-nums text-gray-600">#{inconsistencyItems.indexOf(item) + 1}</span>
+                              <span className="text-body mono text-gray-600">{item.id}</span>
                             </div>
-                            <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.title}</h3>
+                            <h2 className="text-h3 font-semibold text-gray-900">{item.title}</h2>
+                            <p className="text-body text-gray-600">{item.section}</p>
                           </div>
-                          <div className="shrink-0 p-1 text-gray-400 hover:text-gray-600">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                              <path d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
+                          <span className="text-body text-gray-600" aria-hidden="true">→</span>
                         </button>
-
-                        {isExpanded && (
-                          <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
-                            {item.description && <p className="text-[14px] text-gray-700 leading-relaxed mt-3">{item.description}</p>}
-                            {item.conflictsWith && item.conflictQuote && (
-                              <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
-                                <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-gray-500 mb-1">Conflicts with: {item.conflictsWith}</p>
-                                <p className="text-sm text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
-                              </div>
-                            )}
-                            {item.recommendation && (
-                              <div className="rounded-xl bg-indigo-50/60 border border-indigo-100 p-3">
-                                <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-indigo-800 mb-1">Suggested fix</p>
-                                <p className="text-sm text-indigo-950 font-medium leading-relaxed">{item.recommendation}</p>
-                              </div>
-                            )}
-                            {renderFeedback(item)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             )}
 
-            {/* ── Coherence Pairs tab ── */}
             {activeTab === 'strong_coherence' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-                  <p className="text-sm font-sans font-bold uppercase tracking-wider text-gray-500">
-                    Coherence pairs ({visiblePairs.length}) · target = {PAR_SCORE}
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setShowPairingModal(true)} className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">How pairing works</button>
-                    {filterType === 'strength' && (
-                      <button type="button" onClick={() => setFilterType('all')}
-                        className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer">
-                        Show all ({pairsCount})
-                      </button>
-                    )}
-                  </div>
+              <div className="space-y-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {[{type: 'all' as const, label: 'All'}, {type: 'strength' as const, label: 'Meets target'}].map(({type, label}) => (
+                    <button key={type} aria-pressed={filterType === type} onClick={() => setFilterType(type)} className="px-3 py-2 rounded-md border border-gray-300 text-body font-medium text-gray-700 aria-pressed:bg-indigo-50 aria-pressed:border-indigo-700 aria-pressed:text-indigo-800">{label}</button>
+                  ))}
+                  <button onClick={() => setShowPairingModal(true)} className="text-body text-indigo-700 ml-auto">How pairing works</button>
                 </div>
-
                 {visiblePairs.length === 0 ? (
-                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-gray-800 mb-1">No role pairs to show</p>
-                    <p className="text-sm text-gray-500">
-                      {pairsCount === 0
-                        ? 'No coherence pairs were evaluated for this scan. Required sections may be missing.'
-                        : `No pairs meet the target score of ${PAR_SCORE}.`}
-                    </p>
-                  </div>
+                  <p className="text-body text-gray-600">{pairsCount === 0 ? 'No coherence pairs were evaluated.' : 'No pairs meet the target score.'}</p>
                 ) : (
-                  visiblePairs.map((p, idx) => {
-                    const key = `${p.role_a}__${p.role_b}`;
-                    const isSelected = activePairKey === key;
-                    const score = p.score ?? 0;
-                    const strong = score >= PAR_SCORE;
-                    return (
-                      <button type="button"
-                        key={`${p.role_a}|${p.role_b}|${idx}`}
-                        onClick={() => {
+                  <ul className="divide-y divide-gray-200 border-y border-gray-200">
+                    {visiblePairs.map((pair, index) => (
+                      <li key={pair.role_a + '|' + pair.role_b + index}>
+                        <button data-return-key={pair.role_a + '__' + pair.role_b} onClick={() => {
                           rememberPosition();
                           setActiveIdRaw(null);
-                          setActivePairKey(prev => prev === key ? null : key);
-                        }}
-                        className={`w-full text-left bg-white rounded-2xl border p-5 space-y-3 cursor-pointer transition-all hover:border-indigo-300 ${
-                          isSelected ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-sm' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
-                          <span className={`text-[14px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
-                            {strong ? 'Strong' : 'Below target'} · {Math.round(score)}
-                          </span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                          <div className={`h-full rounded-full ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
-                        </div>
-                        <p className="text-[14px] text-gray-500">Weight {Math.round(p.weight * 100)}% of the coherence score</p>
-                        {p.verification && (
-                          <p className={`text-sm leading-relaxed rounded-xl border px-3 py-2 ${
-                            p.verification.alignment === 'superficial' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                          }`}>
-                            <span className="font-bold capitalize">{p.verification.alignment} alignment.</span> {p.verification.note}
-                          </p>
-                        )}
-                      </button>
-                    );
-                  })
+                          setActivePairKey(pair.role_a + '__' + pair.role_b);
+                        }} className="w-full text-left py-5 space-y-3 hover:bg-gray-50">
+                          <div className="flex items-start justify-between gap-4 text-body">
+                            <h2 className="text-h3 font-semibold text-gray-900">{formatRoleLabel(pair.role_a)} ↔ {formatRoleLabel(pair.role_b)}</h2>
+                            <span className="tabular-nums shrink-0 text-gray-800">{pair.included === false ? 'Not evaluated' : (pair.score ?? 'Unavailable')}</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 rounded overflow-hidden" aria-hidden="true">
+                            <div className="h-full bg-indigo-600" style={{width: `${pair.included === false ? 0 : Math.max(0, Math.min(100, pair.score ?? 0))}%`}} />
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             )}
 
-            {/* ── Citations tab ── */}
             {activeTab === 'citations' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => {
-                    const isSelected = citationFilter === s;
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setCitationFilter(prev => prev === s ? null : s)}
-                        className={`rounded-xl border px-4 py-3 text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs"
-                            : "bg-white border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-[14px] font-sans font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
-                          {isSelected && (
-                            <span className="text-[14px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xl font-black text-gray-900 mt-0.5">{citeCount(s)}</p>
-                      </button>
-                    );
-                  })}
+              <div className="space-y-5">
+                <div className="flex flex-wrap gap-2" aria-label="Citation filters">
+                  <button aria-pressed={!citationFilter} onClick={() => setCitationFilter(null)} className="px-3 py-2 rounded-md border border-gray-300 text-body font-medium text-gray-700 aria-pressed:bg-indigo-50 aria-pressed:border-indigo-700 aria-pressed:text-indigo-800">All</button>
+                  {(['live', 'restricted', 'neutral', 'dead'] as const).map(status => (
+                    <button key={status} aria-pressed={citationFilter === status} onClick={() => setCitationFilter(status)} className="px-3 py-2 rounded-md border border-gray-300 text-body font-medium text-gray-700 aria-pressed:bg-indigo-50 aria-pressed:border-indigo-700 aria-pressed:text-indigo-800">{CITE_BADGE[status].label} <span className="tabular-nums">{citeCount(status)}</span></button>
+                  ))}
                 </div>
-
-                {citationFilter && (
-                  <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-sm">
-                    <span className="text-indigo-950 font-medium">
-                      Filtering by: <strong className="font-bold uppercase tracking-wider">{CITE_BADGE[citationFilter].label}</strong> ({displayedCitations.length} of {citationsCount})
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setCitationFilter(null)}
-                      className="text-sm font-bold text-indigo-700 hover:underline cursor-pointer"
-                    >
-                      Show All
-                    </button>
-                  </div>
-                )}
-
                 {displayedCitations.length === 0 ? (
-                  <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-gray-800 mb-1">
-                      {citationFilter ? `No ${CITE_BADGE[citationFilter].label.toLowerCase()} citations` : "No citations to show"}
-                    </p>
-                    <p className="text-sm text-gray-500 mb-3">
-                      {citationFilter
-                        ? `No citations with status "${CITE_BADGE[citationFilter].label}" were found.`
-                        : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
-                    </p>
-                    {citationFilter && (
-                      <button
-                        type="button"
-                        onClick={() => setCitationFilter(null)}
-                        className="text-sm font-bold text-indigo-600 hover:underline cursor-pointer"
-                      >
-                        Show all citations
-                      </button>
-                    )}
-                  </div>
+                  <p className="text-body text-gray-600">{citationFilter ? 'No citations match this filter.' : `No citations detected (${scan?.citations_audited ?? 0} sources audited).`}</p>
                 ) : (
-                  <div className="space-y-2">
-                    {displayedCitations.map((cite, ci) => (
-                      <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
-                        <span className="text-[14px] tabular-nums font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                          <p className="text-[14px] text-gray-800 leading-snug">
-                            {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                            {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                            {cite.ref}
-                          </p>
-                          {cite.url && (/^https?:\/\//i.test(cite.url)
-                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-sm mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
-                            : <p className="text-[12px] meta mono truncate mt-1 text-gray-400">{cite.url}</p>)}
+                  <div className="divide-y divide-gray-200 border-y border-gray-200">
+                    {displayedCitations.map(cite => (
+                      <details key={cite.id} className="py-4 text-body text-gray-800">
+                        <summary className="cursor-pointer">
+                          <span className="inline-flex flex-wrap items-center gap-2 ml-2">
+                            <span className="tabular-nums text-gray-600">{localCitations.indexOf(cite) + 1}.</span>
+                            <span className="font-medium">{cite.authors ? `${cite.authors}${cite.year ? ` (${cite.year})` : ''}` : (cite.ref.match(/^.*?\(\d{4}[a-z]?\)/)?.[0] || cite.ref.slice(0, 90) || cite.title || 'Reference')}</span>
+                            <span className={'px-2 py-0.5 rounded ' + CITE_BADGE[cite.status].badge}>{CITE_BADGE[cite.status].label}</span>
+                          </span>
+                        </summary>
+                        <div className="pt-4 pl-5 space-y-3">
+                          {cite.title && <h2 className="text-h3 font-semibold">{cite.title}</h2>}
+                          <p>{cite.ref}</p>
+                          {cite.url && (/^https?:\/\//i.test(cite.url) ? (
+                            <a href={cite.url} target="_blank" rel="noopener noreferrer" className="block mono text-body break-all text-indigo-700 underline">{cite.url}</a>
+                          ) : <p className="mono break-all">{cite.url}</p>)}
                         </div>
-                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[14px] font-bold ${CITE_BADGE[cite.status].badge}`}>
-                          {CITE_BADGE[cite.status].label}
-                        </span>
-                      </div>
+                      </details>
                     ))}
                   </div>
                 )}
