@@ -373,9 +373,13 @@ function AssessmentBadge({ type }: { type: AssessmentType }) {
 }
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
+function scoreBandTone(score: number, band = '') {
+  return /strong|high|solid/i.test(band) ? 'strong' : /moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
+}
+
 function ScoreRing({ score, size = 112, band, showLabel = true }: { score: number; size?: number; band?: string; showLabel?: boolean }) {
   const r = 38; const circ = 2 * Math.PI * r;
-  const tone = band ? (/strong|high|solid/i.test(band) ? 'strong' : /moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak') : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
+  const tone = scoreBandTone(score, band);
   const label = band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
   return (
     <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label}`}>
@@ -2014,16 +2018,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         {item.evidence && (
           <section className="space-y-2">
             <h3 className="text-h3 font-semibold">Evidence</h3>
-            <blockquote className="pl-4 border-l-2 border-gray-300 whitespace-pre-wrap">{item.evidence}</blockquote>
+            <blockquote className="p-4 rounded-md bg-gray-50 border-l-2 border-gray-300 whitespace-pre-wrap">{item.evidence}</blockquote>
           </section>
         )}
         {item.conflictQuote && (
           <section className="space-y-2">
             <h3 className="text-h3 font-semibold">Comparison: {item.conflictsWith}</h3>
-            <blockquote className="pl-4 border-l-2 border-gray-300 whitespace-pre-wrap">{item.conflictQuote}</blockquote>
+            <blockquote className="p-4 rounded-md bg-gray-50 border-l-2 border-gray-300 whitespace-pre-wrap">{item.conflictQuote}</blockquote>
           </section>
         )}
-        <section className="space-y-2">
+        <section className="space-y-2 bg-indigo-50 border border-indigo-100 rounded-md p-5">
           <h3 className="text-h3 font-semibold">Recommendation</h3>
           <p>{item.recommendation}</p>
         </section>
@@ -2047,7 +2051,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         {!!scan?.missing_sections?.length && <p>Missing sections: {scan.missing_sections.map(formatRoleLabel).join(', ')}</p>}
         {localItems.filter(item => item.type === 'overall-status' || item.type === 'strength').map(item => (
           <button key={item.id} className="block w-full text-left py-3 border-b border-gray-200" onClick={() => setActiveId(item.id)}>
-            <span className="mono">{item.id}</span> · {item.title}
+            <span className={`inline-block w-2 h-2 rounded-full mr-2 ${ST[item.type].dot}`} aria-hidden="true" /><span className="mono">{item.id}</span> · {item.title}
           </button>
         ))}
         {aiText && (
@@ -2465,9 +2469,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <h1 className="text-h1 sm:text-[34px] sm:leading-[42px] font-semibold max-w-[780px]">{displayTitle}</h1>
                 {author && <p className="text-body text-gray-600">{author}</p>}
               </div>
-              <div className="flex flex-wrap gap-x-8 gap-y-3 items-center">
-                <p className="text-[76px] leading-none font-semibold tabular-nums tracking-tight">{Math.round(score)}<span className="text-h2 text-gray-600 font-normal ml-2">/ 100</span></p>
-                <p className="text-h2 font-medium">{band}</p>
+              <div className="score-band flex flex-wrap gap-x-6 gap-y-3 items-center" data-band={scoreBandTone(score, band)}>
+                <ScoreRing score={score} size={176} band={band} showLabel={false} />
+                <p className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-body font-semibold" style={{color:'var(--band)',background:'var(--band-surface)'}}><span className="w-2 h-2 rounded-full bg-current" aria-hidden="true" />{band}</p>
               </div>
               <div className="space-y-2 max-w-[740px]">
                 <h2 className="text-h3 font-semibold">Revision priority</h2>
@@ -2475,9 +2479,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </div>
               <div className="grid grid-cols-1 min-[560px]:grid-cols-2 gap-3 pt-2">
                 {tabList.filter(tab => tab.id !== 'overview').map(tab => (
-                  <button key={tab.id} onClick={() => navigateReport(tab.id)} className={outlineButton + ' text-left'}>{tab.label} →</button>
+                  <button key={tab.id} onClick={() => navigateReport(tab.id)} className={`report-destination ${tab.id === 'inconsistencies' ? 'bg-surface-warn text-amber-900 border-amber-200' : tab.id === 'strong_coherence' ? 'bg-surface-success text-emerald-900 border-emerald-200' : 'bg-surface-info text-blue-900 border-blue-200'}`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5 shrink-0" aria-hidden="true"><path d={tab.id === 'inconsistencies' ? 'M12 3L2 21h20L12 3zm0 6v5m0 3v1' : tab.id === 'strong_coherence' ? 'M9 15l6-6M8 17l-1 1a4 4 0 01-6-6l4-4a4 4 0 016 0m2-1l1-1a4 4 0 016 6l-4 4a4 4 0 01-6 0' : 'M7 5h10v16H3V9l4-4zm0 0v5H3m7 4h4m-4 3h4M10 2h11v15'} /></svg>
+                    <span className="flex-1">{tab.label}</span><span aria-hidden="true">→</span>
+                  </button>
                 ))}
-                <button onClick={() => navigateReport('overview', true)} className={outlineButton + ' text-left'}>Read Manuscript →</button>
+                <button onClick={() => navigateReport('overview', true)} className="report-destination bg-slate-50 text-slate-800 border-slate-200"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5 shrink-0" aria-hidden="true"><path d="M12 5v16m0-16C9 3 5 3 2 4v15c3-1 7-1 10 2 3-3 7-3 10-2V4c-3-1-7-1-10 1z" /></svg><span className="flex-1">Read Manuscript</span><span aria-hidden="true">→</span></button>
               </div>
               <details className="border-t border-gray-200 pt-5 text-body">
                 <summary className="cursor-pointer text-gray-600">Report notes and strengths</summary>
@@ -2513,11 +2520,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 ) : (
                   <ul className="divide-y divide-gray-200 border-y border-gray-200">
                     {visibleInconsistencies.map(item => (
-                      <li key={item.id}>
-                        <button data-return-key={item.id} onClick={() => setActiveId(item.id)} className="w-full text-left py-5 flex items-start justify-between gap-4 hover:bg-gray-50">
+                      <li key={item.id} className={`border-l-2 ${item.type === 'major-issue' ? 'border-l-rose-500' : 'border-l-blue-500'}`}>
+                        <button data-return-key={item.id} onClick={() => setActiveId(item.id)} className="w-full text-left p-5 flex items-start justify-between gap-4 hover:bg-gray-50">
                           <div className="space-y-2 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className={'text-body px-2 py-0.5 rounded border ' + ST[item.type].pill}>{ST[item.type].label}</span>
+                              <AssessmentBadge type={item.type} />
                               <span className="text-body tabular-nums text-gray-600">#{inconsistencyItems.indexOf(item) + 1}</span>
                               <span className="text-body mono text-gray-600">{item.id}</span>
                             </div>
