@@ -364,34 +364,33 @@ function GIcon() {
 
 function AssessmentBadge({ type }: { type: AssessmentType }) {
   const m: Record<AssessmentType, { label: string; c: string }> = {
-    "overall-status": { label: "Overall Status", c: "bg-amber-50 text-amber-800 border-amber-200" },
-    "strength": { label: "Key Strength", c: "bg-emerald-50 text-emerald-800 border-emerald-200" },
-    "major-issue": { label: "Major Issue", c: "bg-rose-50 text-rose-800 border-rose-200" },
-    "affected-section": { label: "Affected Section", c: "bg-blue-50 text-blue-800 border-blue-200" },
+    "overall-status": { label: "Overall Status", c: "bg-surface-warn text-amber-800 border-amber-200" },
+    "strength": { label: "Key Strength", c: "bg-surface-success text-emerald-800 border-emerald-200" },
+    "major-issue": { label: "Major Issue", c: "bg-surface-error text-rose-800 border-rose-200" },
+    "affected-section": { label: "Affected Section", c: "bg-surface-info text-blue-800 border-blue-200" },
   };
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-semibold border font-sans ${m[type].c}`}>{m[type].label}</span>;
+  return <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-sm font-semibold border font-sans ${m[type].c}`}><span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />{m[type].label}</span>;
 }
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
-function ScoreRing({ score, size = 112 }: { score: number; size?: number }) {
+function ScoreRing({ score, size = 112, band, showLabel = true }: { score: number; size?: number; band?: string; showLabel?: boolean }) {
   const r = 38; const circ = 2 * Math.PI * r;
-  const color = score >= 80 ? "#16a34a" : score >= 60 ? "#d97706" : "#dc2626";
-  const label = score >= 80 ? "Strong" : score >= 60 ? "Moderate" : "Needs Work";
+  const tone = band ? (/strong|high|solid/i.test(band) ? 'strong' : /moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak') : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
+  const label = band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
   return (
-    <div className="flex flex-col items-center gap-1.5" role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label} Coherence`}>
+    <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label}`}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
-          <circle cx="50" cy="50" r={r} fill="none" stroke={BL} strokeWidth="9" />
-          <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="9" strokeLinecap="round"
-            strokeDasharray={`${(score / 100) * circ} ${circ}`}
-            style={{ filter: `drop-shadow(0 0 8px ${color}55)`, transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }} />
+          <circle cx="50" cy="50" r={r} fill="var(--band-surface)" stroke="var(--band-surface)" strokeWidth="9" />
+          <circle cx="50" cy="50" r={r} fill="none" stroke="var(--band)" strokeWidth="9" strokeLinecap="round" className="score-ring-arc"
+            strokeDasharray={`${(Math.max(0, Math.min(100, score)) / 100) * circ} ${circ}`} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold tabular-nums leading-none tabular-nums" style={{ color }}>{Math.round(score)}</span>
+          <span className={`${size >= 150 ? 'text-[44px]' : 'text-2xl'} font-semibold tabular-nums leading-none`} style={{ color: 'var(--band)' }}>{Math.round(score)}</span>
           <span className="text-[14px] text-gray-400 tabular-nums">/100</span>
         </div>
       </div>
-      <span className="text-sm font-semibold text-gray-500">{label} Coherence</span>
+      {showLabel && <span className="text-sm font-semibold text-gray-600">{label}</span>}
     </div>
   );
 }
