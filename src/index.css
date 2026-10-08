@@ -18,6 +18,8 @@
   --text-h2--line-height: 28px;
   --text-h1: 28px;
   --text-h1--line-height: 36px;
+  --color-gray-400: oklch(0.50 0.022 261.325);
+  --color-gray-500: oklch(0.50 0.022 261.325);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

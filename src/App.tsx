@@ -883,7 +883,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
           <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Standard Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-3 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all shadow-sm"
-              style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
+              style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#4b5563" }}>
               2
             </div>
             <div>
@@ -892,7 +892,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px] bg-gray-200" />
-          <div className="flex items-center gap-3 opacity-60">
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-gray-100 text-gray-400">
               3
             </div>
@@ -1018,7 +1018,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
                         </div>
                         <input type="url" value={link} onChange={e => { setLink(e.target.value); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/..."
-                          className="w-full h-12 pl-11 pr-4 rounded-xl border-2 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                          className="w-full h-12 pl-11 pr-4 rounded-xl border-2 text-sm text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                           style={{ borderColor: link ? B : "#e5e7eb" }}
                           onFocus={e => (e.target.style.borderColor = B)} onBlur={e => (e.target.style.borderColor = link ? B : "#e5e7eb")} />
                       </div>
@@ -1058,7 +1058,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
               {/* Right: Prep guide */}
               <div className="lg:sticky lg:top-24 space-y-3">
                 <div className="rounded-2xl p-5" style={{ background: BL, border: `1px solid ${B}18` }}>
-                  <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: `${B}99` }}>Scan preparation</p>
+                  <p className="text-[14px] font-sans font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Scan preparation</p>
                   <p className="text-sm font-bold text-gray-800 leading-snug">Configuring your scope ensures accurate cross-chapter checking.</p>
                 </div>
 
@@ -1148,7 +1148,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   className={`px-3.5 py-2 rounded-xl text-sm font-semibold border transition-colors flex items-center gap-1.5 ${
                     hasSavedTemplate
                       ? "border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
-                      : "cursor-not-allowed text-gray-300 border-gray-100 bg-gray-50/50"
+                      : "cursor-not-allowed text-gray-600 border-gray-100 bg-gray-50/50"
                   }`}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
@@ -1391,7 +1391,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Credit Cost:</span>
-                      <span className="font-bold text-emerald-600">1 Credit</span>
+                      <span className="font-bold text-emerald-700">1 Credit</span>
                     </div>
                   </div>
                 </div>
@@ -1483,7 +1483,7 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                 style={{
                   background: isDone ? "#f0fdf4" : isActive ? BL : "#fafafa",
                   borderColor: isDone ? "#bbf7d0" : isActive ? `${B}30` : "#f3f4f6",
-                  opacity: !isDone && !isActive ? 0.5 : 1,
+                  opacity: 1,
                 }}>
                 <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                   style={{ background: isDone ? "#22c55e" : isActive ? B : "#e5e7eb" }}>
@@ -1495,10 +1495,10 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                   }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
+                  <p className="text-sm font-semibold" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#4b5563" }}>{step.label}</p>
                 </div>
                 <span className="text-sm font-sans font-bold shrink-0"
-                  style={{ color: isDone ? "#16a34a" : isActive ? B : "transparent" }}>
+                  style={{ color: isDone ? "#15803d" : B, visibility: !isDone && !isActive ? "hidden" : "visible" }}>
                   {isDone ? "Done" : isActive ? "Running…" : "—"}
                 </span>
               </div>
@@ -3696,7 +3696,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
                     value={currentPw}
                     onChange={e => setCurrentPw(e.target.value)}
                     placeholder="Enter current password"
-                    className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                    className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                     style={{ borderColor: "#e5e7eb" }}
                     onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                     onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
@@ -3719,7 +3719,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
                     value={newPw}
                     onChange={e => setNewPw(e.target.value)}
                     placeholder="Minimum 8 characters"
-                    className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                    className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                     style={{ borderColor: "#e5e7eb" }}
                     onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                     onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
@@ -3743,7 +3743,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
                     value={confirmPw}
                     onChange={e => setConfirmPw(e.target.value)}
                     placeholder="Re-enter new password"
-                    className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                    className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                     style={{ borderColor: "#e5e7eb" }}
                     onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                     onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
@@ -4206,7 +4206,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
                       value={cardName}
                       onChange={e => setCardName(e.target.value)}
                       placeholder="Thesis Author"
-                      className="w-full h-10 px-3.5 rounded-xl border text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                      className="w-full h-10 px-3.5 rounded-xl border text-sm text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                       style={{ borderColor: "#e5e7eb" }}
                       onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                       onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
@@ -4221,7 +4221,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
                         value={cardNumber}
                         onChange={e => setCardNumber(e.target.value)}
                         placeholder="4242 4242 4242 4242"
-                        className="w-full h-10 px-3.5 pr-10 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                        className="w-full h-10 px-3.5 pr-10 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                         style={{ borderColor: "#e5e7eb" }}
                         onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                         onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
@@ -4243,7 +4243,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
                         onChange={e => setCardExpiry(e.target.value)}
                         placeholder="MM/YY"
                         maxLength={5}
-                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-sans text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-sans text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                         style={{ borderColor: "#e5e7eb" }}
                         onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                         onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
@@ -4257,7 +4257,7 @@ function DashboardScreen({ onNavigate, session, onLogout, latestScan }: { onNavi
                         onChange={e => setCardCvc(e.target.value)}
                         placeholder="123"
                         maxLength={4}
-                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
+                        className="w-full h-10 px-3.5 rounded-xl border text-sm font-mono text-gray-800 placeholder:text-gray-600 focus:outline-none transition-all"
                         style={{ borderColor: "#e5e7eb" }}
                         onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
                         onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
