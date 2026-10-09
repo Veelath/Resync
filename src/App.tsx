@@ -179,10 +179,10 @@ const CITATIONS: Citation[] = [
 ];
 
 const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
-  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-gray-100 bg-gray-50" },
-  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-100 bg-amber-50" },
+  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
+  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-200 bg-surface-warn" },
   neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
-  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-red-100 bg-red-50" },
+  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-rose-200 bg-surface-error" },
 };
 
 const AI_TEXT_DISCLAIMER =
@@ -2061,7 +2061,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         )}
         {!!scan?.missing_sections?.length && <p className="rounded-md border border-rose-200 bg-surface-error p-4 text-rose-900">Missing sections: {scan.missing_sections.map(formatRoleLabel).join(', ')}</p>}
         {localItems.filter(item => item.type === 'overall-status' || item.type === 'strength').map(item => (
-          <button key={item.id} className="block w-full text-left py-3 border-b border-gray-200" onClick={() => setActiveId(item.id)}>
+          <button key={item.id} className={`block w-full text-left px-4 py-3 rounded-md border ${ST[item.type].border} ${ST[item.type].bg}`} onClick={() => setActiveId(item.id)}>
             <span className={`inline-block w-2 h-2 rounded-full mr-2 ${ST[item.type].dot}`} aria-hidden="true" /><span className="mono">{item.id}</span> · {item.title}
           </button>
         ))}
@@ -2512,7 +2512,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     const next = e.key === 'ArrowRight' ? (index + 1) % tabList.length : e.key === 'ArrowLeft' ? (index + tabList.length - 1) % tabList.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabList.length - 1 : -1;
                     if (next < 0) return;
                     e.preventDefault(); navigateReport(tabList[next].id);
-                    document.getElementById('report-tab-' + tabList[next].id)?.focus();
+                    returnFocus.current = document.getElementById('report-tab-' + tabList[next].id);
+                    returnFocus.current?.focus();
                   }} className="text-body font-medium text-gray-700 aria-selected:text-indigo-700">{tab.label}</button>
                 ))}
               </div>
@@ -2531,8 +2532,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 ) : (
                   <ul className="divide-y divide-gray-200 border-y border-gray-200">
                     {visibleInconsistencies.map(item => (
-                      <li key={item.id} className={`border-l-2 ${item.type === 'major-issue' ? 'border-l-rose-500' : 'border-l-blue-500'}`}>
-                        <button data-return-key={item.id} onClick={() => setActiveId(item.id)} className="w-full text-left p-5 flex items-start justify-between gap-4 hover:bg-gray-50">
+                      <li key={item.id} className={`border-l-2 ${item.type === 'major-issue' ? 'border-l-rose-500' : 'border-l-blue-500'} ${ST[item.type].bg}`}>
+                        <button data-return-key={item.id} onClick={() => setActiveId(item.id)} className="w-full text-left p-5 flex items-start justify-between gap-4 hover:brightness-[0.98]">
                           <div className="space-y-2 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <AssessmentBadge type={item.type} />
@@ -2564,7 +2565,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 ) : (
                   <ul className="divide-y divide-gray-200 border-y border-gray-200">
                     {visiblePairs.map((pair, index) => (
-                      <li key={pair.role_a + '|' + pair.role_b + index}>
+                      <li key={pair.role_a + '|' + pair.role_b + index} className="score-band" data-band={pair.included === false || pair.score == null ? 'unassessed' : scoreBandTone(pair.score)}>
                         <button data-return-key={pair.role_a + '__' + pair.role_b} onClick={() => {
                           rememberPosition();
                           setActiveIdRaw(null);
@@ -2572,10 +2573,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         }} className="w-full text-left py-5 space-y-3 hover:bg-gray-50">
                           <div className="flex items-start justify-between gap-4 text-body">
                             <h2 className="text-h3 font-semibold text-gray-900">{formatRoleLabel(pair.role_a)} ↔ {formatRoleLabel(pair.role_b)}</h2>
-                            <span className="tabular-nums shrink-0 text-gray-800">{pair.included === false ? 'Not evaluated' : (pair.score ?? 'Unavailable')}</span>
+                            <span className="tabular-nums shrink-0 rounded-full px-2.5 py-0.5 font-semibold" style={{color:'var(--band)',background:'var(--band-surface)'}}>{pair.included === false ? 'Not evaluated' : (pair.score ?? 'Unavailable')}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 rounded overflow-hidden" aria-hidden="true">
-                            <div className="h-full bg-indigo-600" style={{width: `${pair.included === false ? 0 : Math.max(0, Math.min(100, pair.score ?? 0))}%`}} />
+                          <div className="h-1.5 rounded overflow-hidden" style={{background:'var(--band-surface)'}} aria-hidden="true">
+                            <div className="h-full" style={{width: `${pair.included === false ? 0 : Math.max(0, Math.min(100, pair.score ?? 0))}%`,background:'var(--band)'}} />
                           </div>
                         </button>
                       </li>
@@ -2596,9 +2597,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 {displayedCitations.length === 0 ? (
                   <p className="text-body text-gray-600">{citationFilter ? 'No citations match this filter.' : `No citations detected (${scan?.citations_audited ?? 0} sources audited).`}</p>
                 ) : (
-                  <div className="divide-y divide-gray-200 border-y border-gray-200">
+                  <div className="space-y-3">
                     {displayedCitations.map(cite => (
-                      <details key={cite.id} className="py-4 text-body text-gray-800">
+                      <details key={cite.id} className={`rounded-lg border p-4 text-body text-gray-800 ${CITE_BADGE[cite.status].row}`}>
                         <summary className="cursor-pointer">
                           <span className="inline-flex flex-wrap items-center gap-2 ml-2">
                             <span className="tabular-nums text-gray-600">{localCitations.indexOf(cite) + 1}.</span>
