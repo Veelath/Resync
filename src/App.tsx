@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import resyncLogo from "@/imports/resync-logo.png";
 import resultsPreview from "@/assets/results-overview.webp";
 import type React from 'react';
@@ -378,6 +378,7 @@ function scoreBandTone(score: number, band = '') {
 }
 
 function ScoreRing({ score, size = 112, band, showLabel = true }: { score: number; size?: number; band?: string; showLabel?: boolean }) {
+  const gradientId = useId();
   const r = 38; const circ = 2 * Math.PI * r;
   const tone = scoreBandTone(score, band);
   const label = band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
@@ -385,8 +386,14 @@ function ScoreRing({ score, size = 112, band, showLabel = true }: { score: numbe
     <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label}`}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="15%" stopColor="var(--band)" />
+              <stop offset="100%" stopColor="var(--brand)" />
+            </linearGradient>
+          </defs>
           <circle cx="50" cy="50" r={r} fill="var(--band-surface)" stroke="var(--band-surface)" strokeWidth="9" />
-          <circle cx="50" cy="50" r={r} fill="none" stroke="var(--band)" strokeWidth="9" strokeLinecap="round" className="score-ring-arc"
+          <circle cx="50" cy="50" r={r} fill="none" stroke={`url(#${gradientId})`} strokeWidth="9" strokeLinecap="round" className="score-ring-arc"
             strokeDasharray={`${(Math.max(0, Math.min(100, score)) / 100) * circ} ${circ}`} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">

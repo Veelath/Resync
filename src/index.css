@@ -6,6 +6,8 @@
 @font-face { font-family: 'IBM Plex Mono'; src: url('./assets/fonts/IBMPlexMono-Regular.ttf'); font-weight: 400; font-display: swap; }
 
 @theme inline {
+  --color-brand: var(--brand);
+  --color-brand-light: var(--brand-light);
   --font-sans: 'IBM Plex Sans', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
   --text-meta: 12px;
@@ -47,11 +49,14 @@
 }
 
 :root {
+  --brand: #1a1fcc;
+  --brand-light: #eef0ff;
+  --brand-gradient: linear-gradient(135deg, var(--brand), #2d35e8);
   --surface-info: #eff6ff;
   --surface-success: #ecfdf5;
   --surface-warn: #fffbeb;
   --surface-error: #fff1f2;
-  --gradient-primary: linear-gradient(135deg, #1a1fcc, #6d28d9);
+  --gradient-primary: var(--brand-gradient);
   --background: #ffffff;
   --foreground: #0d1147;
   --card: #f4f6ff;
@@ -87,6 +92,7 @@ h1, h2, h3 {
 .score-band { --band: var(--color-band-moderate); --band-surface: var(--surface-warn); }
 .score-band[data-band="strong"] { --band: var(--color-band-strong); --band-surface: var(--surface-success); }
 .score-band[data-band="weak"] { --band: var(--color-band-weak); --band-surface: var(--surface-error); }
+.score-band[data-band="unassessed"] { --band: #475569; --band-surface: #f1f5f9; }
 .score-ring-arc { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--band) 25%, transparent)); }
 .brand-action { background: var(--gradient-primary); box-shadow: 0 5px 16px #1a1fcc1a; }
 .colour-landing { background: linear-gradient(180deg, #eef0ff 76px, #f8f9ff 360px, #fff 850px); }
