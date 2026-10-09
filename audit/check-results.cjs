@@ -23,4 +23,8 @@ assert.equal(context.pairHasMissingSection({ role_a: 'results', role_b: 'discuss
 assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 'Bolaños F'), true);
 assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 2024), true);
 assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 'Different title'), false);
+assert.equal(context.extractDisplayTitle('RESYNC: AN AI-POWERED RESEARCH MANUSCRIPT\nCORRELATION AND INCONSISTENCY\nDETECTION SYSTEM\n\nA Capstone Proposal'), 'RESYNC: AN AI-POWERED RESEARCH MANUSCRIPT CORRELATION AND INCONSISTENCY DETECTION SYSTEM');
+assert.equal(context.extractDisplayTitle('i\n\nA'.repeat(0)), null);
+const longTitle = 'LONG TITLE ' + 'word '.repeat(50);
+assert.equal(context.extractDisplayTitle(longTitle + '\n\nBody'), longTitle.trim());
 console.log('Results checks passed: boundaries, status thresholds, topic order, no unrelated fallback.');

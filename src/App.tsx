@@ -1929,6 +1929,22 @@ function citationContains(reference: string, value: string | number | undefined)
   return value != null && normalize(reference).includes(normalize(String(value)));
 }
 
+function extractDisplayTitle(text: string | null) {
+  if (!text) return null;
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.trim());
+  const trivial = (line: string) => !line || /^(?:\d+|[ivxlcdm]+)$/i.test(line);
+  const first = lines.findIndex(line => !trivial(line));
+  if (first < 0) return null;
+  const title = [lines[first]];
+  const uppercase = lines[first] === lines[first].toUpperCase();
+  for (const line of lines.slice(first + 1)) {
+    if (trivial(line) || /^(?:a\s+(?:capstone|thesis|research|project)|submitted|presented|by\b)/i.test(line)) break;
+    if (uppercase && line !== line.toUpperCase()) break;
+    title.push(line);
+  }
+  return title.join(' ');
+}
+
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
@@ -1987,16 +2003,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     middlePaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeTab]);
 
-  const ROMAN = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx)$/i;
-  const isTrivial = (s: string) => ROMAN.test(s) || /^\d+$/.test(s) || s.trim().length < 3;
-  const titleLines = manuscriptText
-    ?.split(/\r?\n/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0 && !isTrivial(s))
-    .slice(0, 2);
-  const cleanedTitle = titleLines && titleLines.length > 0
-    ? titleLines.join(" ").slice(0, 200)
-    : null;
+  const cleanedTitle = useMemo(() => extractDisplayTitle(manuscriptText), [manuscriptText]);
 
   const cleanedFilename = scan?.doc_url
     ? (scan.doc_url.startsWith('http')
