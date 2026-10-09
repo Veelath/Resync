@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import resyncLogo from "@/imports/Untitled_design__1_.png";
 import spacyLogo from "@/assets/technology/spacy.png";
 import geminiLogo from "@/assets/technology/gemini.svg";
@@ -908,7 +908,9 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
 
 let lastScanError: string | null = null;
 
-function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: ScanResponse) => void }) {
+type DisplayScan = ScanResponse & { template_toc?: string[] };
+
+function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [researchType, setResearchType] = useState<ResearchType | null>(null);
   const [mode, setMode] = useState<UploadMode>("file");
@@ -1099,7 +1101,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         template_toc: templateToc,
         manuscript_title: (mode === 'file' && uploadedFile) ? uploadedFile.name.replace(/\.[^/.]+$/, '') : undefined,
       });
-      if (onScanComplete) onScanComplete(result);
+      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc });
     } catch (e: any) {
       console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
@@ -1874,8 +1876,53 @@ const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: strin
 
 type MobileResultsPane = "findings" | "report" | "xai";
 
-function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
+const SECTION_STATUS = {
+  Present: { icon: '✓', color: 'text-emerald-700' },
+  Stub: { icon: '⚠', color: 'text-amber-800' },
+  Missing: { icon: '✗', color: 'text-rose-700' },
+  Unassessed: { icon: '—', color: 'text-gray-600' },
+};
+type ReportSection = { key: string; name: string; role: string; text: string; status: keyof typeof SECTION_STATUS };
+
+function sectionRole(name: string): string {
+  const heading = name.toLowerCase().replace(/_/g, ' ').replace(/^\s*(?:chapter\s+[\divxlc]+[.:\s-]*|\d+(?:\.\d+)*[.)]?\s+)/i, '').trim();
+  const aliases: Record<string, string> = {
+    'background of the study': 'introduction', 'introduction': 'introduction',
+    'objectives of the study': 'objectives', 'research objectives': 'objectives',
+    'research methodology': 'methodology', 'materials and methods': 'methodology',
+    'conclusions': 'conclusion', 'conclusions and recommendations': 'conclusion',
+    'review of related literature': 'literature review', 'bibliography': 'references',
+  };
+  return aliases[heading] || heading;
+}
+
+function buildReportSections(topics: string[], detected: string[], missing: string[], text: string | null): ReportSection[] {
+  const lines = (text || '').split(/\r?\n/);
+  const roles = new Set([...topics, ...detected, ...missing].map(sectionRole));
+  const headings = lines.flatMap((line, index) => {
+    const role = sectionRole(line);
+    return line.trim() && roles.has(role) ? [{ role, index }] : [];
+  });
+  return topics.map((name, index) => {
+    const role = sectionRole(name);
+    const matching = headings.filter(heading => heading.role === role);
+    const content = matching.map(heading => {
+      const next = headings.find(other => other.index > heading.index);
+      return lines.slice(heading.index + 1, next?.index ?? lines.length).join('\n').trim();
+    }).join('\n\n');
+    const wordCount = content ? content.split(/\s+/).length : 0;
+    // shortcut: only explicit heading matches supply text; upgrade when the API returns section spans.
+    const status = missing.some(section => sectionRole(section) === role) ? 'Missing'
+      : !detected.some(section => sectionRole(section) === role) ? 'Unassessed'
+      : matching.length && wordCount >= 40 ? 'Present'
+      : matching.length && wordCount > 0 ? 'Stub' : 'Unassessed';
+    return { key: `${index}:${role}`, name, role, text: content, status };
+  });
+}
+
+function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
+  const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
@@ -1884,6 +1931,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [feedbackPending, setFeedbackPending] = useState<Record<string, boolean>>({});
   const [feedbackError, setFeedbackError] = useState<Record<string, string>>({});
   const middlePaneRef = useRef<HTMLDivElement>(null);
+  const sectionPaneRef = useRef<HTMLDivElement>(null);
+  const sectionReadingPositions = useRef<Record<string, number>>({});
   const [manuscriptText, setManuscriptText] = useState<string | null>(null);
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
@@ -1899,6 +1948,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     setActiveIdRaw(prev => {
       const resolved = typeof next === "function" ? (next as (p: string | null) => string | null)(prev) : next;
       if (resolved) {
+        setActiveSectionRole(null);
         setActivePairKey(null);
       }
       if (!isDesktop()) {
@@ -2047,6 +2097,50 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   const findingsCount = isSample ? localItems.length : (scan?.inconsistencies?.length ?? 0);
   const sectionsCount = isSample ? localParagraphs.length : (scan?.sections_analyzed?.length ?? 0);
+
+  const reportSections = useMemo(() => isSample
+    ? PARAGRAPHS.map((para, index): ReportSection => ({ key: `${index}:${sectionRole(para.heading)}`, name: para.heading,
+        role: sectionRole(para.heading), text: para.text, status: para.text.split(/\s+/).length >= 40 ? 'Present' : 'Stub' }))
+    : buildReportSections(scan?.template_toc || [], scan?.sections_analyzed || [], scan?.missing_sections || [], manuscriptText),
+    [isSample, scan, manuscriptText]);
+  const activeSection = reportSections.find(section => section.key === activeSectionRole);
+
+  useEffect(() => {
+    if (activeSectionRole && sectionPaneRef.current) sectionPaneRef.current.scrollTop = sectionReadingPositions.current[activeSectionRole] || 0;
+  }, [activeSectionRole, mobilePane]);
+
+  function sectionFindings(section: ReportSection) {
+    if (isSample) {
+      const para = PARAGRAPHS.find(p => sectionRole(p.heading) === section.role);
+      return localItems.filter(item => para?.assessments.some(assessment => assessment.itemId === item.id));
+    }
+    return localItems.filter(item => scan?.inconsistencies.some((inc, index) =>
+      (inc.inconsistency_id || `inc-${index}`) === item.id &&
+      (sectionRole(inc.section_a) === section.role || sectionRole(inc.section_b || '') === section.role)) ||
+      scan?.verifications?.some((v, index) => item.id === `ver-${index}` &&
+        (sectionRole(v.role_a) === section.role || sectionRole(v.role_b) === section.role)));
+  }
+
+  function renderSectionText(section: ReportSection) {
+    const matches = isSample
+      ? (PARAGRAPHS.find(p => sectionRole(p.heading) === section.role)?.assessments || [])
+      : sectionFindings(section).flatMap(item => [item.evidence, item.conflictQuote]
+          .filter((phrase): phrase is string => !!phrase?.trim())
+          .map(phrase => ({ phrase, itemId: item.id, type: item.type })));
+    const ordered = matches.map(match => ({ ...match, index: section.text.indexOf(match.phrase) }))
+      .filter(match => match.index >= 0).sort((a, b) => a.index - b.index);
+    const nodes: React.ReactNode[] = [];
+    let cursor = 0;
+    ordered.forEach((match, index) => {
+      if (match.index < cursor) return;
+      nodes.push(section.text.slice(cursor, match.index));
+      nodes.push(<button key={`${match.itemId}-${index}`} type="button" onClick={() => setActiveId(match.itemId)}
+        className={`${ST[match.type].hl} text-left whitespace-pre-wrap focus-visible:ring-2 focus-visible:ring-indigo-600`}>{match.phrase}</button>);
+      cursor = match.index + match.phrase.length;
+    });
+    nodes.push(section.text.slice(cursor));
+    return nodes;
+  }
 
   const score = isSample ? 74 : scan?.overall_coherence_score || 0;
   const dead = localCitations.filter(c => c.status === "dead").length;
@@ -2350,6 +2444,18 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       </div>
 
       {/* ── Navbar ── */}
+      <div className="hidden print:block p-8 space-y-6">
+        <h2 className="text-lg font-bold">All findings and recommendations</h2>
+        {localItems.map(item => (
+          <section key={item.id} className="space-y-2">
+            <h3 className="font-bold">{item.title}</h3>
+            <p>{item.section}</p><p>{item.description}</p><p>{item.significance}</p>
+            {item.evidence && <p>{item.evidence}</p>}
+            {item.conflictQuote && <p>{item.conflictQuote}</p>}
+            <p>{item.recommendation}</p>
+          </section>
+        ))}
+      </div>
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 h-12 flex items-center gap-3">
           <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors shrink-0 rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
@@ -2586,7 +2692,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <span className="text-[11px] text-gray-300">•</span>
                 <span className="text-[11px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
                 <span className="text-[11px] text-gray-300">•</span>
-                <span className="text-[11px] text-gray-400">Click any highlight to see Assessment Details</span>
+                <span className="text-[11px] text-gray-400">Select a section to review its analysis</span>
               </div>
             </div>
 
@@ -2767,7 +2873,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </div>
 
               {/* Affected Sections */}
-              <div className="pt-5">
+              <div className="hidden">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -2837,7 +2943,30 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               ))}
             </div>
 
-            {/* Document body — continuous paper */}
+            <section aria-label="Report by Section" className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+              <h2 className="text-lg font-bold text-gray-900">Report by Section</h2>
+              {reportSections.map(section => (
+                <button key={section.key} type="button" aria-pressed={activeSectionRole === section.key}
+                  onClick={() => {
+                    setActiveIdRaw(null);
+                    setActivePairKey(null);
+                    setActiveSectionRole(section.key);
+                    setIsRightCollapsed(false);
+                    if (!isDesktop()) setMobilePane("xai");
+                  }}
+                  className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${activeSectionRole === section.key ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-200 hover:border-indigo-400'}`}>
+                  <span aria-hidden="true" className={SECTION_STATUS[section.status].color}>{SECTION_STATUS[section.status].icon}</span>
+                  <span className="flex-1 min-w-0 text-gray-900 font-semibold">{section.name}</span>
+                  <span className={`text-xs font-semibold ${SECTION_STATUS[section.status].color}`}>{section.status}</span>
+                  <span className="text-xs text-indigo-700">Review →</span>
+                </button>
+              ))}
+              {!reportSections.length && <p className="text-sm text-gray-600">No template topics are available for this report.</p>}
+            </section>
+            </>)}
+
+            <div className="hidden print:block">
+            {/* Full manuscript is independent of the selected tab when printing. */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {localParagraphs.map((para, i) => {
                 const hasActive = para.assessments.some(pi => pi.itemId === activeId);
@@ -3301,7 +3430,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </div>
               )}
             </div>
-            </>)}
+            </div>
 
             {/* ── Inconsistencies tab ── */}
             {activeTab === 'inconsistencies' && (
@@ -3438,6 +3567,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         key={`${p.role_a}|${p.role_b}|${idx}`}
                         onClick={() => {
                           setActivePairKey(prev => prev === key ? null : key);
+                          setActiveSectionRole(null);
                           setActiveId(null);
                           if (!isDesktop()) setMobilePane("xai");
                         }}
@@ -3592,16 +3722,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Findings & Recommendations</h3>
-                <p className="text-[11px] mono font-bold uppercase tracking-wider text-indigo-600">Analysis Inspector</p>
+                <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Analysis & Recommendations</h3>
               </div>
             </div>
-            {(activeItem || activePair) && (
+            {(activeSection || activeItem || activePair) && (
               <button
                 type="button"
                 onClick={() => {
                   setActiveId(null);
                   setActivePairKey(null);
+                  setActiveSectionRole(null);
                 }}
                 className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
                 Reset
@@ -3609,13 +3739,40 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {activePair ? (() => {
+          <div ref={sectionPaneRef} className="flex-1 overflow-y-auto"
+            onScroll={e => { if (activeSectionRole) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
+            {activeSection ? (
+              <div className="p-6 space-y-5">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{activeSection.name}</h2>
+                  <span className={`text-sm font-semibold ${SECTION_STATUS[activeSection.status].color}`}>{activeSection.status}</span>
+                </div>
+                {activeSection.status === 'Missing' || activeSection.status === 'Unassessed' ? (
+                  <p className="text-sm text-gray-700">This section was not detected in the manuscript.</p>
+                ) : (
+                  <div className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed break-words">{renderSectionText(activeSection)}</div>
+                )}
+                <h3 className="text-sm font-bold text-gray-900">Findings on this section</h3>
+                {sectionFindings(activeSection).map(item => {
+                  const finding = scan?.inconsistencies.find(inc => inc.inconsistency_id === item.id || `inc-${scan.inconsistencies.indexOf(inc)}` === item.id);
+                  return (
+                    <div key={item.id} className="rounded-xl border border-gray-200 p-4 space-y-3 text-sm text-gray-700">
+                      <button type="button" onClick={() => setActiveId(item.id)} className="font-bold text-indigo-700 text-left focus-visible:ring-2 focus-visible:ring-indigo-600">{item.title}</button>
+                      <p>{finding?.explanation_what || item.questionOrSubtitle}</p>
+                      <p>{finding?.explanation_why || item.description}</p>
+                      {item.recommendation && <p><strong>Suggested fix: </strong>{item.recommendation}</p>}
+                      {renderFeedback(item)}
+                    </div>
+                  );
+                })}
+                {!sectionFindings(activeSection).length && <p className="text-sm text-gray-600">No findings were returned for this section.</p>}
+              </div>
+            ) : activePair ? (() => {
               const score = activePair.score ?? 0;
               const strong = score >= PAR_SCORE;
               const isIncluded = activePair.included !== false;
               return (
-                <div className="px-6 py-6 space-y-5">
+                    <div className="px-6 py-6 space-y-5">
                   {/* Pair header */}
                   <div className="rounded-2xl p-5 border-2 border-indigo-200 bg-indigo-50/40">
                     <div className="flex items-start justify-between mb-2.5">
@@ -3754,6 +3911,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </div>
 
                 {/* Categories Breakdown */}
+                <p className="text-sm text-gray-600">Select a section above to view its analysis</p>
                 <div className="w-full mt-1 space-y-2 text-left">
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
                   {(["strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
@@ -5720,7 +5878,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               </div>
               <div>
                 <p className="text-xs font-bold text-indigo-950">When Inconsistencies May Appear</p>
-                <p className="text-xs text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use the Analysis Inspector to review context before revising.</p>
+                <p className="text-xs text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use Detailed Analysis & Recommendations to review context before revising.</p>
               </div>
             </div>
           </div>
@@ -6115,7 +6273,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
   const [session, setSession] = useState<Session | null>(null);
-  const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
+  const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
 
