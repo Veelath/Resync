@@ -2719,7 +2719,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study • Academic Year 2023–2024</p>
               )}
               <div className="flex items-center gap-3 pt-4 border-t border-gray-100 flex-wrap">
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Scan complete</span>
+                <span role="status" className="text-[11px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
+                  {!isSample && (manuscriptLoading || (!!scan?.analysis_run_id && manuscriptText === null && !manuscriptError))
+                    ? 'Analysis complete · loading manuscript…'
+                    : manuscriptError ? 'Analysis complete · preview unavailable' : 'Scan complete'}
+                </span>
                 <span className="text-[11px] text-gray-500 font-medium">Overall Assessment: <strong className={isSample ? "text-amber-700" : "text-gray-900"}>{isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}</strong></span>
                 <span className="text-[11px] text-gray-300">•</span>
                 <span className="text-[11px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
