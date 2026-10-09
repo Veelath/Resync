@@ -2924,7 +2924,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             : "border-red-100 bg-red-50"
                           }`}>
                             <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 [overflow-wrap:anywhere]">
                               {!cite.ref && cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
                               <p className="text-[13px] text-gray-800 leading-snug">
                                 {!cite.ref && cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
@@ -3546,7 +3546,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     {displayedCitations.map((cite, ci) => (
                       <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
                         <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 [overflow-wrap:anywhere]">
                           {!cite.ref && cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
                           <p className="text-[13px] text-gray-800 leading-snug">
                             {!cite.ref && cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
