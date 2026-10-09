@@ -1899,9 +1899,12 @@ function sectionRole(name: string): string {
 function buildReportSections(topics: string[], detected: string[], missing: string[], text: string | null): ReportSection[] {
   const lines = (text || '').split(/\r?\n/);
   const roles = new Set([...topics, ...detected, ...missing].map(sectionRole));
+  const tocHeadings = lines.filter(line => /\s{2,}(?:\d+|[ivxlcdm]+)\s*$/i.test(line))
+    .map(line => sectionRole(line.replace(/\s{2,}(?:\d+|[ivxlcdm]+)\s*$/i, '')));
+  const boundaries = new Set([...roles, ...tocHeadings]);
   const headings = lines.flatMap((line, index) => {
     const role = sectionRole(line);
-    return line.trim() && roles.has(role) ? [{ role, index }] : [];
+    return line.trim() && boundaries.has(role) ? [{ role, index }] : [];
   });
   return topics.map((name, index) => {
     const role = sectionRole(name);
@@ -2122,7 +2125,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const activeSection = reportSections.find(section => section.key === activeSectionRole);
 
   useEffect(() => {
-    if (activeSectionRole && sectionPaneRef.current) sectionPaneRef.current.scrollTop = sectionReadingPositions.current[activeSectionRole] || 0;
+    if (activeSectionRole && sectionPaneRef.current && (mobilePane === 'xai' || isDesktop())) sectionPaneRef.current.scrollTop = sectionReadingPositions.current[activeSectionRole] || 0;
   }, [activeSectionRole, mobilePane]);
 
   function sectionFindings(section: ReportSection) {
@@ -3754,7 +3757,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           </div>
 
           <div ref={sectionPaneRef} className="flex-1 overflow-y-auto"
-            onScroll={e => { if (activeSectionRole) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
+            onScroll={e => { if (activeSectionRole && e.currentTarget.clientHeight > 0) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
             {activeSection ? (
               <div className="p-6 space-y-5">
                 <div>
@@ -3781,13 +3784,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 })}
                 {!sectionFindings(activeSection).length && <p className="text-sm text-gray-600">No findings were returned for this section.</p>}
               </div>
-            ) : activePair ? (() => {
+            ) : activePair && !activeItem ? (() => {
               const score = activePair.score ?? 0;
               const strong = score >= PAR_SCORE;
               const isIncluded = activePair.included !== false;
               const sectionMissing = !isSample && pairHasMissingSection(activePair, scan?.sections_analyzed || []);
               return (
-                    <div className="px-6 py-6 space-y-5">
+                <div className="px-6 py-6 space-y-5">
                   {/* Pair header */}
                   <div className="rounded-2xl p-5 border-2 border-indigo-200 bg-indigo-50/40">
                     <div className="flex items-start justify-between mb-2.5">

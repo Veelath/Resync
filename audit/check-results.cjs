@@ -5,7 +5,7 @@ const ts = require('typescript');
 const source = fs.readFileSync('src/App.tsx', 'utf8');
 const helpers = source.slice(source.indexOf('const SECTION_STATUS'), source.indexOf('function ResultsScreen'));
 const context = vm.createContext({});
-vm.runInContext(ts.transpile(helpers), context);
+vm.runInContext(ts.transpile(helpers, { target: ts.ScriptTarget.ES2022 }), context);
 const sections = (topics, detected, missing, text) => context.buildReportSections(topics, detected, missing, text);
 for (const [words, status] of [[0, 'Unassessed'], [1, 'Stub'], [39, 'Stub'], [40, 'Present']]) {
   assert.equal(sections(['Methodology'], ['methodology'], [], 'Methodology\n' + Array(words).fill('word').join(' '))[0].status, status);
@@ -24,7 +24,10 @@ assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intellige
 assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 2024), true);
 assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 'Different title'), false);
 assert.equal(context.extractDisplayTitle('RESYNC: AN AI-POWERED RESEARCH MANUSCRIPT\nCORRELATION AND INCONSISTENCY\nDETECTION SYSTEM\n\nA Capstone Proposal'), 'RESYNC: AN AI-POWERED RESEARCH MANUSCRIPT CORRELATION AND INCONSISTENCY DETECTION SYSTEM');
-assert.equal(context.extractDisplayTitle('i\n\nA'.repeat(0)), null);
+assert.equal(context.extractDisplayTitle(null), null);
+assert.equal(context.extractDisplayTitle('i\n\n1\n\nTitle\n\nBody'), 'Title');
 const longTitle = 'LONG TITLE ' + 'word '.repeat(50);
 assert.equal(context.extractDisplayTitle(longTitle + '\n\nBody'), longTitle.trim());
+const bounded = sections(['Background of the Study'], ['introduction'], [], 'TABLE OF CONTENTS\nRationale of the Study    1\nSignificance of the Study    2\n\nBackground of the Study\nFirst passage\n\nRationale of the Study\nUnrelated passage\n\nSignificance of the Study\nAnother passage');
+assert.equal(bounded[0].text, 'First passage');
 console.log('Results checks passed: boundaries, status thresholds, topic order, no unrelated fallback.');
