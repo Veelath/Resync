@@ -170,6 +170,12 @@ interface Citation {
   year?: number | string;
 }
 
+function citationText(value: string = ""): string {
+  const text = document.createElement("textarea");
+  text.innerHTML = value;
+  return text.value.replace(/<\/?[a-z][^>]*>/gi, "").trim();
+}
+
 const CITATIONS: Citation[] = [
   { id: "c1", ref: "Bandura, A. (1997). Self-efficacy: The exercise of control.", url: "https://doi.org/10.1002/rrq.121", status: "live" },
   { id: "c2", ref: "Cruz, M. et al. (2023). Digital transformation in Philippine HEIs.", url: "https://journals.pup.edu.ph/index.php/jrm/article/view/1024", status: "dead" },
@@ -2021,11 +2027,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
         return {
           id: `cit-${i}`,
-          ref: c.citation_raw_reference_text || c.citation || "",
+          ref: citationText(c.citation_raw_reference_text || c.citation || ""),
           url: c.citation_primary_link || "",
           status,
-          title: c.citation_crossref_title,
-          authors: c.citation_authors_parsed,
+          title: citationText(c.citation_crossref_title),
+          authors: citationText(c.citation_authors_parsed),
           year: c.citation_year_parsed
         };
       });
