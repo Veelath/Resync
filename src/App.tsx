@@ -2556,10 +2556,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <button
                   key={t}
                   type="button"
-                  onClick={() => applyFilter(filterType === t ? "all" : t)}
+                  onClick={() => applyFilter(!isSample && t === 'affected-section' ? 'all' : filterType === t ? "all" : t)}
                   className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
                   <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                  <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
+                  <span className="text-xs font-medium text-gray-700 flex-1">{!isSample && t === 'affected-section' ? 'Primary sections in findings' : ST[t].label}</span>
                   <span className={`text-xs font-black ${ST[t].pillTxt}`}>
                     {isSample ? localItems.filter(i => i.type === t).length : (
                       t === 'strength' ? (scan?.verifications?.length ?? 0) :
@@ -2609,10 +2609,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </button>
               <button
                 type="button"
-                onClick={() => applyFilter("affected-section")}
+                onClick={() => applyFilter(isSample ? "affected-section" : "all")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                   }`}>
-                Affected ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
+                {isSample ? 'Affected' : 'Primary sections'} ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
               </button>
             </div>
           </div>
@@ -2937,7 +2937,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   onClick={() => applyFilter(filterType === t ? "all" : t)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
                   <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} aria-hidden="true" />
-                  <span>{ST[t].label}</span>
+                  <span>{!isSample && t === 'affected-section' ? 'Non-material findings' : ST[t].label}</span>
                   <span className="tabular-nums">({localItems.filter(i => i.type === t).length})</span>
                 </button>
               ))}
@@ -3922,8 +3922,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
                       <span className={`w-3.5 h-3.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{ST[t].label}</p>
-                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
+                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{!isSample && t === 'affected-section' ? 'Non-material findings' : ST[t].label}</p>
+                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{!isSample && t === 'affected-section' ? 'Findings outside the Major Issue category' : ASSESSMENT_TYPE_INFO[t].question}</p>
                       </div>
                       <span className="text-xs sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
                         {localItems.filter(i => i.type === t).length}
