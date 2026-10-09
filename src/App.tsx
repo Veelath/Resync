@@ -3047,7 +3047,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             : "border-red-100 bg-red-50"
                           }`}>
                             <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 citation-text">
                               {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
                               <p className="text-[13px] text-gray-800 leading-snug">
                                 {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
@@ -3055,7 +3055,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                                 {cite.ref}
                               </p>
                               {cite.url && (
-                                 <p className={`text-[11px] mono truncate mt-1 ${
+                                 <p className={`text-[11px] mono citation-text mt-1 ${
                                    cite.status === "live" ? "text-gray-400" 
                                    : cite.status === "restricted" ? "text-amber-600" 
                                    : cite.status === "neutral" ? "text-slate-400"
@@ -3672,7 +3672,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     {displayedCitations.map((cite, ci) => (
                       <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
                         <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-5 shrink-0">{ci + 1}</span>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 citation-text">
                           {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
                           <p className="text-[13px] text-gray-800 leading-snug">
                             {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
@@ -3680,8 +3680,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             {cite.ref}
                           </p>
                           {cite.url && (/^https?:\/\//i.test(cite.url)
-                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
-                            : <p className="text-[11px] mono truncate mt-1 text-gray-400">{cite.url}</p>)}
+                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono citation-text mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
+                            : <p className="text-[11px] mono citation-text mt-1 text-gray-400">{cite.url}</p>)}
                         </div>
                         <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
                           {CITE_BADGE[cite.status].label}
