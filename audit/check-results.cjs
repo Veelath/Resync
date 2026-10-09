@@ -18,4 +18,6 @@ assert.equal(rows[1].text, 'One word');
 assert.equal(rows[0].text, 'Other words');
 assert.equal(context.sectionRole('3.1 Research Methodology'), 'methodology');
 assert.ok(!source.includes('Analysis Inspector'));
+assert.equal(context.pairHasMissingSection({ role_a: 'results', role_b: 'discussion' }, ['results']), true);
+assert.equal(context.pairHasMissingSection({ role_a: 'results', role_b: 'discussion' }, ['results', 'discussion']), false);
 console.log('Results checks passed: boundaries, status thresholds, topic order, no unrelated fallback.');

@@ -1920,6 +1920,10 @@ function buildReportSections(topics: string[], detected: string[], missing: stri
   });
 }
 
+function pairHasMissingSection(pair: Pick<RolePairScore, 'role_a' | 'role_b'>, detected: string[]) {
+  return [pair.role_a, pair.role_b].some(role => !detected.some(name => sectionRole(name) === sectionRole(role)));
+}
+
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
@@ -3564,6 +3568,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     const isSelected = activePairKey === key;
                     const score = p.score ?? 0;
                     const strong = score >= PAR_SCORE;
+                    const sectionMissing = !isSample && pairHasMissingSection(p, scan?.sections_analyzed || []);
                     return (
                       <div
                         key={`${p.role_a}|${p.role_b}|${idx}`}
@@ -3580,7 +3585,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
                           <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
-                            {strong ? 'Strong' : 'Below target'} · {Math.round(score)}
+                            {sectionMissing ? 'Not comparable · section missing' : `${strong ? 'Strong' : 'Below target'} · ${Math.round(score)}`}
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
@@ -3773,6 +3778,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               const score = activePair.score ?? 0;
               const strong = score >= PAR_SCORE;
               const isIncluded = activePair.included !== false;
+              const sectionMissing = !isSample && pairHasMissingSection(activePair, scan?.sections_analyzed || []);
               return (
                     <div className="px-6 py-6 space-y-5">
                   {/* Pair header */}
@@ -3809,7 +3815,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
                         strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
                       }`}>
-                        {strong ? 'Strong' : 'Below target'}
+                        {sectionMissing ? 'Not comparable · section missing' : strong ? 'Strong' : 'Below target'}
                       </span>
                     </div>
                     <p className="text-2xl font-bold mono text-gray-900 tabular-nums">
@@ -3831,7 +3837,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </div>
 
                   {/* Missing section check / Verification Note */}
-                  {!isIncluded ? (
+                  {sectionMissing || !isIncluded ? (
                     <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 font-medium leading-relaxed">
                       This pair could not be evaluated — one or both sections are missing.
                     </div>
