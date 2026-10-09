@@ -2049,13 +2049,17 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         {isSample && (
           <>
             <p>{OVERALL_ASSESSMENT.statusDescription}</p>
-            <h3 className="text-h3 font-semibold">Strengths</h3>
-            <ul className="list-disc pl-5">{OVERALL_ASSESSMENT.strengths.map(text => <li key={text}>{text}</li>)}</ul>
-            <h3 className="text-h3 font-semibold">Issues</h3>
-            <ul className="list-disc pl-5">{OVERALL_ASSESSMENT.majorIssues.map(text => <li key={text}>{text}</li>)}</ul>
+            <section className="space-y-3 rounded-xl border border-emerald-200 bg-surface-success p-5">
+              <h3 className="text-h3 font-semibold text-emerald-900">Strengths</h3>
+              <ul className="list-disc pl-5">{OVERALL_ASSESSMENT.strengths.map(text => <li key={text}>{text}</li>)}</ul>
+            </section>
+            <section className="space-y-3 rounded-xl border border-rose-200 bg-surface-error p-5">
+              <h3 className="text-h3 font-semibold text-rose-900">Issues</h3>
+              <ul className="list-disc pl-5">{OVERALL_ASSESSMENT.majorIssues.map(text => <li key={text}>{text}</li>)}</ul>
+            </section>
           </>
         )}
-        {!!scan?.missing_sections?.length && <p>Missing sections: {scan.missing_sections.map(formatRoleLabel).join(', ')}</p>}
+        {!!scan?.missing_sections?.length && <p className="rounded-md border border-rose-200 bg-surface-error p-4 text-rose-900">Missing sections: {scan.missing_sections.map(formatRoleLabel).join(', ')}</p>}
         {localItems.filter(item => item.type === 'overall-status' || item.type === 'strength').map(item => (
           <button key={item.id} className="block w-full text-left py-3 border-b border-gray-200" onClick={() => setActiveId(item.id)}>
             <span className={`inline-block w-2 h-2 rounded-full mr-2 ${ST[item.type].dot}`} aria-hidden="true" /><span className="mono">{item.id}</span> · {item.title}
@@ -2476,7 +2480,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <h1 className="text-h1 sm:text-[34px] sm:leading-[42px] font-semibold max-w-[780px]">{displayTitle}</h1>
                 {author && <p className="text-body text-gray-600">{author}</p>}
               </div>
-              <div className="score-band flex flex-wrap gap-x-6 gap-y-3 items-center" data-band={scoreBandTone(score, band)}>
+              <div className="report-score score-band flex flex-wrap gap-x-6 gap-y-3 items-center" data-band={scoreBandTone(score, band)}>
                 <ScoreRing score={score} size={176} band={band} showLabel={false} />
                 <p className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-body font-semibold" style={{color:'var(--band)',background:'var(--band-surface)'}}><span className="w-2 h-2 rounded-full bg-current" aria-hidden="true" />{band}</p>
               </div>
