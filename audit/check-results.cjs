@@ -20,4 +20,7 @@ assert.equal(context.sectionRole('3.1 Research Methodology'), 'methodology');
 assert.ok(!source.includes('Analysis Inspector'));
 assert.equal(context.pairHasMissingSection({ role_a: 'results', role_b: 'discussion' }, ['results']), true);
 assert.equal(context.pairHasMissingSection({ role_a: 'results', role_b: 'discussion' }, ['results', 'discussion']), false);
+assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 'Bolaños F'), true);
+assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 2024), true);
+assert.equal(context.citationContains('Bolaños, F. (2024). Artificial intelligence.', 'Different title'), false);
 console.log('Results checks passed: boundaries, status thresholds, topic order, no unrelated fallback.');

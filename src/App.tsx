@@ -1924,6 +1924,11 @@ function pairHasMissingSection(pair: Pick<RolePairScore, 'role_a' | 'role_b'>, d
   return [pair.role_a, pair.role_b].some(role => !detected.some(name => sectionRole(name) === sectionRole(role)));
 }
 
+function citationContains(reference: string, value: string | number | undefined) {
+  const normalize = (text: string) => text.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  return value != null && normalize(reference).includes(normalize(String(value)));
+}
+
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
@@ -2286,6 +2291,22 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const citationsCount = localCitations.length;
   const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
   const displayedCitations = citationFilter ? localCitations.filter(c => c.status === citationFilter) : localCitations;
+
+  function renderCitation(cite: Citation) {
+    const link = /^https?:\/\//i.test(cite.url)
+      ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="citation-text text-indigo-700 hover:underline">{cite.url}</a>
+      : <span>{cite.url}</span>;
+    const parts = cite.url ? cite.ref.split(cite.url) : [cite.ref];
+    return (
+      <div className="flex-1 min-w-0 citation-text text-[13px] text-gray-800 leading-relaxed">
+        {cite.title && !citationContains(cite.ref, cite.title) && <p className="font-bold">{cite.title}</p>}
+        {cite.authors && !citationContains(cite.ref, cite.authors) && <p>{cite.authors}</p>}
+        {cite.year && !citationContains(cite.ref, cite.year) && <p>{cite.year}</p>}
+        <p>{parts[0]}{parts.length > 1 && link}{parts.slice(1).join('')}</p>
+        {cite.url && parts.length === 1 && <p className="mt-1">{link}</p>}
+      </div>
+    );
+  }
 
   const aiText: AITextIndicator | null = isSample ? SAMPLE_AI_TEXT : (scan?.ai_text_indicator ?? null);
 
@@ -3051,22 +3072,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             : "border-red-100 bg-red-50"
                           }`}>
                             <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
-                            <div className="flex-1 min-w-0 citation-text">
-                              {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                              <p className="text-[13px] text-gray-800 leading-snug">
-                                {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                                {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                                {cite.ref}
-                              </p>
-                              {cite.url && (
-                                 <p className={`text-[11px] mono citation-text mt-1 ${
-                                   cite.status === "live" ? "text-gray-400" 
-                                   : cite.status === "restricted" ? "text-amber-600" 
-                                   : cite.status === "neutral" ? "text-slate-400"
-                                   : "text-red-500"
-                                 }`}>{cite.url}</p>
-                              )}
-                            </div>
+                            {renderCitation(cite)}
                             
                             {/* Status Badge */}
                             <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -3677,17 +3683,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     {displayedCitations.map((cite, ci) => (
                       <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
                         <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-5 shrink-0">{ci + 1}</span>
-                        <div className="flex-1 min-w-0 citation-text">
-                          {cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                          <p className="text-[13px] text-gray-800 leading-snug">
-                            {cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                            {cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                            {cite.ref}
-                          </p>
-                          {cite.url && (/^https?:\/\//i.test(cite.url)
-                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono citation-text mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
-                            : <p className="text-[11px] mono citation-text mt-1 text-gray-400">{cite.url}</p>)}
-                        </div>
+                        {renderCitation(cite)}
                         <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
                           {CITE_BADGE[cite.status].label}
                         </span>
