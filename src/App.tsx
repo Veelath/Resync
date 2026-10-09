@@ -4878,7 +4878,7 @@ const CREDIT_PACKAGES = [
 ] as const;
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void }) {
+function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
@@ -5699,7 +5699,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   </svg>
                   <span>Start a Scan</span>
                 </button>
-                <button onClick={() => onNavigate("results")}
+                <button onClick={() => onNavigate("results", true)}
                   className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-white hover:bg-white/15 border-1.5 border-white/30 backdrop-blur-sm active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 cursor-pointer">
                   <span>Preview sample</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
