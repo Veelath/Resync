@@ -3477,6 +3477,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         }`}>
                         <button
                           type="button"
+                          aria-expanded={isExpanded}
+                          aria-controls={`finding-content-${item.id}`}
                           onClick={() => {
                             toggleIssueExpanded(item.id);
                             setActiveId(prev => prev === item.id ? null : item.id);
@@ -3505,7 +3507,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         </button>
 
                         {isExpanded && (
-                          <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
+                          <div id={`finding-content-${item.id}`} className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
                             {item.description && <p className="text-[13px] text-gray-700 leading-relaxed mt-3">{item.description}</p>}
                             {item.conflictsWith && item.conflictQuote && (
                               <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
