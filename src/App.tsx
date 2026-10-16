@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import resyncLogo from "@/imports/Untitled_design__1_.png";
 import spacyLogo from "@/assets/technology/spacy.png";
 import geminiLogo from "@/assets/technology/gemini.svg";
@@ -8,6 +8,7 @@ import type { Session } from '@supabase/supabase-js';
 import type { CitedReference, RolePairScore, AITextIndicator } from './types';
 import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript, createCreditCheckout, confirmCreditCheckout } from './services/api';
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
+import { useId } from 'react';
 
 type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard" | "reset-password";
 type UploadMode = "file" | "link";
@@ -186,10 +187,10 @@ const CITATIONS: Citation[] = [
 ];
 
 const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
-  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-gray-100 bg-gray-50" },
-  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-100 bg-amber-50" },
+  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
+  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-200 bg-surface-warn" },
   neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
-  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-red-100 bg-red-50" },
+  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-rose-200 bg-surface-error" },
 };
 
 const AI_TEXT_DISCLAIMER =
@@ -371,34 +372,44 @@ function GIcon() {
 
 function AssessmentBadge({ type }: { type: AssessmentType }) {
   const m: Record<AssessmentType, { label: string; c: string }> = {
-    "overall-status": { label: "Overall Status", c: "bg-amber-50 text-amber-800 border-amber-200" },
-    "strength": { label: "Key Strength", c: "bg-emerald-50 text-emerald-800 border-emerald-200" },
-    "major-issue": { label: "Major Issue", c: "bg-rose-50 text-rose-800 border-rose-200" },
-    "affected-section": { label: "Affected Section", c: "bg-blue-50 text-blue-800 border-blue-200" },
+    "overall-status": { label: "Overall Status", c: "bg-surface-warn text-amber-800 border-amber-200" },
+    "strength": { label: "Key Strength", c: "bg-surface-success text-emerald-800 border-emerald-200" },
+    "major-issue": { label: "Major Issue", c: "bg-surface-error text-rose-800 border-rose-200" },
+    "affected-section": { label: "Affected Section", c: "bg-surface-info text-blue-800 border-blue-200" },
   };
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border mono ${m[type].c}`}>{m[type].label}</span>;
+  return <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border font-sans ${m[type].c}`}><span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />{m[type].label}</span>;
 }
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
-function ScoreRing({ score, size = 112 }: { score: number; size?: number }) {
+function scoreBandTone(score: number, band = '') {
+  return /strong|high|solid/i.test(band) ? 'strong' : /moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
+}
+
+function ScoreRing({ score, size = 112, band, showLabel = true }: { score: number; size?: number; band?: string; showLabel?: boolean }) {
+  const gradientId = useId();
   const r = 38; const circ = 2 * Math.PI * r;
-  const color = score >= 80 ? "#16a34a" : score >= 60 ? "#d97706" : "#dc2626";
-  const label = score >= 80 ? "Strong" : score >= 60 ? "Moderate" : "Needs Work";
+  const tone = scoreBandTone(score, band);
+  const label = band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
   return (
-    <div className="flex flex-col items-center gap-1.5" role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label} Coherence`}>
+    <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label}`}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
-          <circle cx="50" cy="50" r={r} fill="none" stroke={BL} strokeWidth="9" />
-          <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="9" strokeLinecap="round"
-            strokeDasharray={`${(score / 100) * circ} ${circ}`}
-            style={{ filter: `drop-shadow(0 0 8px ${color}55)`, transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }} />
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="15%" stopColor="var(--band)" />
+              <stop offset="100%" stopColor="var(--brand)" />
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r={r} fill="var(--band-surface)" stroke="var(--band-surface)" strokeWidth="9" />
+          <circle cx="50" cy="50" r={r} fill="none" stroke={`url(#${gradientId})`} strokeWidth="9" strokeLinecap="round" className="score-ring-arc"
+            strokeDasharray={`${(Math.max(0, Math.min(100, score)) / 100) * circ} ${circ}`} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold mono leading-none tabular-nums" style={{ color }}>{Math.round(score)}</span>
-          <span className="text-[10px] text-gray-400 mono">/100</span>
+          <span className={`${size >= 150 ? 'text-[44px]' : 'text-2xl'} font-bold mono leading-none tabular-nums`} style={{ color: 'var(--band)' }}>{Math.round(score)}</span>
+          <span className="text-[10px] text-gray-400 mono tabular-nums">/100</span>
         </div>
       </div>
-      <span className="text-xs font-semibold text-gray-500">{label} Coherence</span>
+      {showLabel && <span className="text-xs font-semibold text-gray-600">{label}</span>}
     </div>
   );
 }
@@ -914,7 +925,9 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
 
 let lastScanError: string | null = null;
 
-function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: ScanResponse) => void }) {
+type DisplayScan = ScanResponse & { template_toc?: string[] };
+
+function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [researchType, setResearchType] = useState<ResearchType | null>(null);
   const [mode, setMode] = useState<UploadMode>("file");
@@ -1105,7 +1118,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         template_toc: templateToc,
         manuscript_title: (mode === 'file' && uploadedFile) ? uploadedFile.name.replace(/\.[^/.]+$/, '') : undefined,
       });
-      if (onScanComplete) onScanComplete(result);
+      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc });
     } catch (e: any) {
       console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
@@ -1880,8 +1893,81 @@ const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: strin
 
 type MobileResultsPane = "findings" | "report" | "xai";
 
-function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: ScanResponse | null; isSample?: boolean }) {
+const SECTION_STATUS = {
+  Present: { icon: '✓', color: 'text-emerald-700' },
+  Stub: { icon: '⚠', color: 'text-amber-800' },
+  Missing: { icon: '✗', color: 'text-rose-700' },
+  Unassessed: { icon: '—', color: 'text-gray-600' },
+};
+type ReportSection = { key: string; name: string; role: string; text: string; status: keyof typeof SECTION_STATUS };
+
+function sectionRole(name: string): string {
+  const heading = name.toLowerCase().replace(/_/g, ' ').replace(/^\s*(?:chapter\s+[\divxlc]+[.:\s-]*|\d+(?:\.\d+)*[.)]?\s+)/i, '').trim();
+  const aliases: Record<string, string> = {
+    'background of the study': 'introduction', 'introduction': 'introduction',
+    'objectives of the study': 'objectives', 'research objectives': 'objectives',
+    'research methodology': 'methodology', 'materials and methods': 'methodology',
+    'conclusions': 'conclusion', 'conclusions and recommendations': 'conclusion',
+    'review of related literature': 'literature review', 'bibliography': 'references',
+  };
+  return aliases[heading] || heading;
+}
+
+function buildReportSections(topics: string[], detected: string[], missing: string[], text: string | null): ReportSection[] {
+  const lines = (text || '').split(/\r?\n/);
+  const roles = new Set([...topics, ...detected, ...missing].map(sectionRole));
+  const tocHeadings = lines.filter(line => /\s{2,}(?:\d+|[ivxlcdm]+)\s*$/i.test(line))
+    .map(line => sectionRole(line.replace(/\s{2,}(?:\d+|[ivxlcdm]+)\s*$/i, '')));
+  const boundaries = new Set([...roles, ...tocHeadings]);
+  const headings = lines.flatMap((line, index) => {
+    const role = sectionRole(line);
+    return line.trim() && boundaries.has(role) ? [{ role, index }] : [];
+  });
+  return topics.map((name, index) => {
+    const role = sectionRole(name);
+    const matching = headings.filter(heading => heading.role === role);
+    const content = matching.map(heading => {
+      const next = headings.find(other => other.index > heading.index);
+      return lines.slice(heading.index + 1, next?.index ?? lines.length).join('\n').trim();
+    }).join('\n\n');
+    const wordCount = content ? content.split(/\s+/).length : 0;
+    // shortcut: only explicit heading matches supply text; upgrade when the API returns section spans.
+    const status = missing.some(section => sectionRole(section) === role) ? 'Missing'
+      : !detected.some(section => sectionRole(section) === role) ? 'Unassessed'
+      : matching.length && wordCount >= 40 ? 'Present'
+      : matching.length && wordCount > 0 ? 'Stub' : 'Unassessed';
+    return { key: `${index}:${role}`, name, role, text: content, status };
+  });
+}
+
+function pairHasMissingSection(pair: Pick<RolePairScore, 'role_a' | 'role_b'>, detected: string[]) {
+  return [pair.role_a, pair.role_b].some(role => !detected.some(name => sectionRole(name) === sectionRole(role)));
+}
+
+function citationContains(reference: string, value: string | number | undefined) {
+  const normalize = (text: string) => text.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  return value != null && normalize(reference).includes(normalize(String(value)));
+}
+
+function extractDisplayTitle(text: string | null) {
+  if (!text) return null;
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.trim());
+  const trivial = (line: string) => !line || /^(?:\d+|[ivxlcdm]+)$/i.test(line);
+  const first = lines.findIndex(line => !trivial(line));
+  if (first < 0) return null;
+  const title = [lines[first]];
+  const uppercase = lines[first] === lines[first].toUpperCase();
+  for (const line of lines.slice(first + 1)) {
+    if (trivial(line) || /^(?:a\s+(?:capstone|thesis|research|project)|submitted|presented|by\b)/i.test(line)) break;
+    if (uppercase && line !== line.toUpperCase()) break;
+    title.push(line);
+  }
+  return title.join(' ');
+}
+
+function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
+  const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
   const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
@@ -1890,6 +1976,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [feedbackPending, setFeedbackPending] = useState<Record<string, boolean>>({});
   const [feedbackError, setFeedbackError] = useState<Record<string, string>>({});
   const middlePaneRef = useRef<HTMLDivElement>(null);
+  const sectionPaneRef = useRef<HTMLDivElement>(null);
+  const sectionReadingPositions = useRef<Record<string, number>>({});
   const [manuscriptText, setManuscriptText] = useState<string | null>(null);
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [manuscriptError, setManuscriptError] = useState<string | null>(null);
@@ -1905,6 +1993,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     setActiveIdRaw(prev => {
       const resolved = typeof next === "function" ? (next as (p: string | null) => string | null)(prev) : next;
       if (resolved) {
+        setActiveSectionRole(null);
         setActivePairKey(null);
       }
       if (!isDesktop()) {
@@ -1934,16 +2023,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     middlePaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeTab]);
 
-  const ROMAN = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx)$/i;
-  const isTrivial = (s: string) => ROMAN.test(s) || /^\d+$/.test(s) || s.trim().length < 3;
-  const titleLines = manuscriptText
-    ?.split(/\r?\n/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0 && !isTrivial(s))
-    .slice(0, 2);
-  const cleanedTitle = titleLines && titleLines.length > 0
-    ? titleLines.join(" ").slice(0, 200)
-    : null;
+  const cleanedTitle = useMemo(() => extractDisplayTitle(manuscriptText), [manuscriptText]);
 
   const cleanedFilename = scan?.doc_url
     ? (scan.doc_url.startsWith('http')
@@ -2054,6 +2134,50 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const findingsCount = isSample ? localItems.length : (scan?.inconsistencies?.length ?? 0);
   const sectionsCount = isSample ? localParagraphs.length : (scan?.sections_analyzed?.length ?? 0);
 
+  const reportSections = useMemo(() => isSample
+    ? PARAGRAPHS.map((para, index): ReportSection => ({ key: `${index}:${sectionRole(para.heading)}`, name: para.heading,
+        role: sectionRole(para.heading), text: para.text, status: para.text.split(/\s+/).length >= 40 ? 'Present' : 'Stub' }))
+    : buildReportSections(scan?.template_toc || [], scan?.sections_analyzed || [], scan?.missing_sections || [], manuscriptText),
+    [isSample, scan, manuscriptText]);
+  const activeSection = reportSections.find(section => section.key === activeSectionRole);
+
+  useEffect(() => {
+    if (activeSectionRole && sectionPaneRef.current && (mobilePane === 'xai' || isDesktop())) sectionPaneRef.current.scrollTop = sectionReadingPositions.current[activeSectionRole] || 0;
+  }, [activeSectionRole, mobilePane]);
+
+  function sectionFindings(section: ReportSection) {
+    if (isSample) {
+      const para = PARAGRAPHS.find(p => sectionRole(p.heading) === section.role);
+      return localItems.filter(item => para?.assessments.some(assessment => assessment.itemId === item.id));
+    }
+    return localItems.filter(item => scan?.inconsistencies.some((inc, index) =>
+      (inc.inconsistency_id || `inc-${index}`) === item.id &&
+      (sectionRole(inc.section_a) === section.role || sectionRole(inc.section_b || '') === section.role)) ||
+      scan?.verifications?.some((v, index) => item.id === `ver-${index}` &&
+        (sectionRole(v.role_a) === section.role || sectionRole(v.role_b) === section.role)));
+  }
+
+  function renderSectionText(section: ReportSection) {
+    const matches = isSample
+      ? (PARAGRAPHS.find(p => sectionRole(p.heading) === section.role)?.assessments || [])
+      : sectionFindings(section).flatMap(item => [item.evidence, item.conflictQuote]
+          .filter((phrase): phrase is string => !!phrase?.trim())
+          .map(phrase => ({ phrase, itemId: item.id, type: item.type })));
+    const ordered = matches.map(match => ({ ...match, index: section.text.indexOf(match.phrase) }))
+      .filter(match => match.index >= 0).sort((a, b) => a.index - b.index);
+    const nodes: React.ReactNode[] = [];
+    let cursor = 0;
+    ordered.forEach((match, index) => {
+      if (match.index < cursor) return;
+      nodes.push(section.text.slice(cursor, match.index));
+      nodes.push(<button key={`${match.itemId}-${index}`} type="button" onClick={() => setActiveId(match.itemId)}
+        className={`${ST[match.type].hl} text-left whitespace-pre-wrap focus-visible:ring-2 focus-visible:ring-indigo-600`}>{match.phrase}</button>);
+      cursor = match.index + match.phrase.length;
+    });
+    nodes.push(section.text.slice(cursor));
+    return nodes;
+  }
+
   const score = isSample ? 74 : scan?.overall_coherence_score || 0;
   const dead = localCitations.filter(c => c.status === "dead").length;
   function scrollToSection(sectionIndex: number, itemId?: string) {
@@ -2076,29 +2200,29 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     "overall-status": {
       hl: "bg-amber-200 rounded px-0.5 cursor-pointer hover:bg-amber-300 transition-colors",
       hlActive: "bg-amber-300 rounded px-0.5 cursor-pointer ring-2 ring-amber-500 ring-offset-1",
-      pill: "bg-amber-50 border border-amber-200 text-amber-800",
-      pillTxt: "text-amber-800", dot: "bg-amber-500", border: "border-amber-200", bg: "bg-amber-50",
+      pill: "bg-surface-warn border border-amber-200 text-amber-800",
+      pillTxt: "text-amber-800", dot: "bg-amber-500", border: "border-amber-200", bg: "bg-surface-warn",
       accentColor: "#d97706", label: "Overall Status",
     },
     strength: {
       hl: "bg-emerald-200 rounded px-0.5 cursor-pointer hover:bg-emerald-300 transition-colors",
       hlActive: "bg-emerald-300 rounded px-0.5 cursor-pointer ring-2 ring-emerald-500 ring-offset-1",
-      pill: "bg-emerald-50 border border-emerald-200 text-emerald-800",
-      pillTxt: "text-emerald-800", dot: "bg-emerald-500", border: "border-emerald-200", bg: "bg-emerald-50",
+      pill: "bg-surface-success border border-emerald-200 text-emerald-800",
+      pillTxt: "text-emerald-800", dot: "bg-emerald-500", border: "border-emerald-200", bg: "bg-surface-success",
       accentColor: "#059669", label: "Key Strength",
     },
     "major-issue": {
       hl: "bg-rose-200 rounded px-0.5 cursor-pointer hover:bg-rose-300 transition-colors",
       hlActive: "bg-rose-300 rounded px-0.5 cursor-pointer ring-2 ring-rose-500 ring-offset-1",
-      pill: "bg-rose-50 border border-rose-200 text-rose-800",
-      pillTxt: "text-rose-800", dot: "bg-rose-500", border: "border-rose-200", bg: "bg-rose-50",
+      pill: "bg-surface-error border border-rose-200 text-rose-800",
+      pillTxt: "text-rose-800", dot: "bg-rose-500", border: "border-rose-200", bg: "bg-surface-error",
       accentColor: "#e11d48", label: "Major Issue",
     },
     "affected-section": {
       hl: "bg-blue-200 rounded px-0.5 cursor-pointer hover:bg-blue-300 transition-colors",
       hlActive: "bg-blue-300 rounded px-0.5 cursor-pointer ring-2 ring-blue-500 ring-offset-1",
-      pill: "bg-blue-50 border border-blue-200 text-blue-800",
-      pillTxt: "text-blue-800", dot: "bg-blue-500", border: "border-blue-200", bg: "bg-blue-50",
+      pill: "bg-surface-info border border-blue-200 text-blue-800",
+      pillTxt: "text-blue-800", dot: "bg-blue-500", border: "border-blue-200", bg: "bg-surface-info",
       accentColor: "#2563eb", label: "Affected Section",
     },
   };
@@ -2194,6 +2318,22 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const citationsCount = localCitations.length;
   const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
   const displayedCitations = citationFilter ? localCitations.filter(c => c.status === citationFilter) : localCitations;
+
+  function renderCitation(cite: Citation) {
+    const link = /^https?:\/\//i.test(cite.url)
+      ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="citation-text text-indigo-700 hover:underline">{cite.url}</a>
+      : <span>{cite.url}</span>;
+    const parts = cite.url ? cite.ref.split(cite.url) : [cite.ref];
+    return (
+      <div className="flex-1 min-w-0 citation-text text-[13px] text-gray-800 leading-relaxed">
+        {cite.title && !citationContains(cite.ref, cite.title) && <p className="font-bold">{cite.title}</p>}
+        {cite.authors && !citationContains(cite.ref, cite.authors) && <p>{cite.authors}</p>}
+        {cite.year && !citationContains(cite.ref, cite.year) && <p>{cite.year}</p>}
+        <p>{parts[0]}{parts.length > 1 && link}{parts.slice(1).join('')}</p>
+        {cite.url && parts.length === 1 && <p className="mt-1">{link}</p>}
+      </div>
+    );
+  }
 
   const aiText: AITextIndicator | null = isSample ? SAMPLE_AI_TEXT : (scan?.ai_text_indicator ?? null);
 
@@ -2356,8 +2496,20 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       </div>
 
       {/* ── Navbar ── */}
+      <div className="hidden print:block p-8 space-y-6">
+        <h2 className="text-lg font-bold">All findings and recommendations</h2>
+        {localItems.map(item => (
+          <section key={item.id} className="space-y-2">
+            <h3 className="font-bold">{item.title}</h3>
+            <p>{item.section}</p><p>{item.description}</p><p>{item.significance}</p>
+            {item.evidence && <p>{item.evidence}</p>}
+            {item.conflictQuote && <p>{item.conflictQuote}</p>}
+            <p>{item.recommendation}</p>
+          </section>
+        ))}
+      </div>
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
-        <div className="px-5 h-12 flex items-center gap-3">
+        <div className="px-5 py-2 sm:py-0 sm:h-12 flex flex-wrap sm:flex-nowrap items-center gap-3">
           <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors shrink-0 rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Home
           </button>
@@ -2366,7 +2518,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <span className="text-xs text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
-          <div className="ml-auto flex items-center gap-2 shrink-0">
+          <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setShowPairingModal(true)}
@@ -2456,10 +2608,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <button
                   key={t}
                   type="button"
-                  onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
+                  onClick={() => applyFilter(!isSample && t === 'affected-section' ? 'all' : filterType === t ? "all" : t)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
                   <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                  <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
+                  <span className="text-xs font-medium text-gray-700 flex-1">{!isSample && t === 'affected-section' ? 'Primary sections in findings' : ST[t].label}</span>
                   <span className={`text-xs font-black ${ST[t].pillTxt}`}>
                     {isSample ? localItems.filter(i => i.type === t).length : (
                       t === 'strength' ? (scan?.verifications?.length ?? 0) :
@@ -2509,10 +2661,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </button>
               <button
                 type="button"
-                onClick={() => applyFilter("affected-section")}
+                onClick={() => applyFilter(isSample ? "affected-section" : "all")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                   }`}>
-                Affected ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
+                {isSample ? 'Affected' : 'Primary sections'} ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
               </button>
             </div>
           </div>
@@ -2587,12 +2739,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study • Academic Year 2023–2024</p>
               )}
               <div className="flex items-center gap-3 pt-4 border-t border-gray-100 flex-wrap">
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Scan complete</span>
+                <span role="status" className="text-[11px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
+                  {!isSample && (manuscriptLoading || (!!scan?.analysis_run_id && manuscriptText === null && !manuscriptError))
+                    ? 'Analysis complete · loading manuscript…'
+                    : manuscriptError ? 'Analysis complete · preview unavailable' : 'Scan complete'}
+                </span>
                 <span className="text-[11px] text-gray-500 font-medium">Overall Assessment: <strong className={isSample ? "text-amber-700" : "text-gray-900"}>{isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}</strong></span>
                 <span className="text-[11px] text-gray-300">•</span>
                 <span className="text-[11px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
                 <span className="text-[11px] text-gray-300">•</span>
-                <span className="text-[11px] text-gray-400">Click any highlight to see Assessment Details</span>
+                <span className="text-[11px] text-gray-400">Select a section to review its analysis</span>
               </div>
             </div>
 
@@ -2773,7 +2929,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </div>
 
               {/* Affected Sections */}
-              <div className="pt-5">
+              <div className="hidden">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -2837,13 +2993,36 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   onClick={() => applyFilter(filterType === t ? "all" : t)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
                   <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} aria-hidden="true" />
-                  <span>{ST[t].label}</span>
+                  <span>{!isSample && t === 'affected-section' ? 'Non-material findings' : ST[t].label}</span>
                   <span className="tabular-nums">({localItems.filter(i => i.type === t).length})</span>
                 </button>
               ))}
             </div>
 
-            {/* Document body — continuous paper */}
+            <section aria-label="Report by Section" className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+              <h2 className="text-lg font-bold text-gray-900">Report by Section</h2>
+              {reportSections.map(section => (
+                <button key={section.key} type="button" aria-pressed={activeSectionRole === section.key}
+                  onClick={() => {
+                    setActiveIdRaw(null);
+                    setActivePairKey(null);
+                    setActiveSectionRole(section.key);
+                    setIsRightCollapsed(false);
+                    if (!isDesktop()) setMobilePane("xai");
+                  }}
+                  className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${activeSectionRole === section.key ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-200 hover:border-indigo-400'}`}>
+                  <span aria-hidden="true" className={SECTION_STATUS[section.status].color}>{SECTION_STATUS[section.status].icon}</span>
+                  <span className="flex-1 min-w-0 text-gray-900 font-semibold">{section.name}</span>
+                  <span className={`text-xs font-semibold ${SECTION_STATUS[section.status].color}`}>{section.status}</span>
+                  <span className="text-xs text-indigo-700">Review →</span>
+                </button>
+              ))}
+              {!reportSections.length && <p className="text-sm text-gray-600">No template topics are available for this report.</p>}
+            </section>
+            </>)}
+
+            <div className="hidden print:block">
+            {/* Full manuscript is independent of the selected tab when printing. */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {localParagraphs.map((para, i) => {
                 const hasActive = para.assessments.some(pi => pi.itemId === activeId);
@@ -2878,7 +3057,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                               <button key={pi.itemId}
                                 aria-pressed={activeId === pi.itemId}
                                 onClick={() => setActiveId(prev => prev === pi.itemId ? null : pi.itemId)}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
                                 {ST[pi.type].label}
                               </button>
                             ))
@@ -2924,22 +3103,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             : "border-red-100 bg-red-50"
                           }`}>
                             <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
-                            <div className="flex-1 min-w-0 [overflow-wrap:anywhere]">
-                              {!cite.ref && cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                              <p className="text-[13px] text-gray-800 leading-snug">
-                                {!cite.ref && cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                                {!cite.ref && cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                                {cite.ref}
-                              </p>
-                              {cite.url && (
-                                 <p className={`text-[11px] mono truncate mt-1 ${
-                                   cite.status === "live" ? "text-gray-400" 
-                                   : cite.status === "restricted" ? "text-amber-600" 
-                                   : cite.status === "neutral" ? "text-slate-400"
-                                   : "text-red-500"
-                                 }`}>{cite.url}</p>
-                              )}
-                            </div>
+                            {renderCitation(cite)}
                             
                             {/* Status Badge */}
                             <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -3307,7 +3471,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </div>
               )}
             </div>
-            </>)}
+            </div>
 
             {/* ── Inconsistencies tab ── */}
             {activeTab === 'inconsistencies' && (
@@ -3354,6 +3518,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         }`}>
                         <button
                           type="button"
+                          aria-expanded={isExpanded}
+                          aria-controls={`finding-content-${item.id}`}
                           onClick={() => {
                             toggleIssueExpanded(item.id);
                             setActiveId(prev => prev === item.id ? null : item.id);
@@ -3382,7 +3548,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         </button>
 
                         {isExpanded && (
-                          <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
+                          <div id={`finding-content-${item.id}`} className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
                             {item.description && <p className="text-[13px] text-gray-700 leading-relaxed mt-3">{item.description}</p>}
                             {item.conflictsWith && item.conflictQuote && (
                               <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
@@ -3439,11 +3605,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     const isSelected = activePairKey === key;
                     const score = p.score ?? 0;
                     const strong = score >= PAR_SCORE;
+                    const sectionMissing = !isSample && pairHasMissingSection(p, scan?.sections_analyzed || []);
                     return (
                       <div
                         key={`${p.role_a}|${p.role_b}|${idx}`}
                         onClick={() => {
                           setActivePairKey(prev => prev === key ? null : key);
+                          setActiveSectionRole(null);
                           setActiveId(null);
                           if (!isDesktop()) setMobilePane("xai");
                         }}
@@ -3454,7 +3622,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
                           <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
-                            {strong ? 'Strong' : 'Below target'} · {Math.round(score)}
+                            {sectionMissing ? 'Not comparable · section missing' : `${strong ? 'Strong' : 'Below target'} · ${Math.round(score)}`}
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
@@ -3545,18 +3713,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <div className="space-y-2">
                     {displayedCitations.map((cite, ci) => (
                       <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
-                        <span className="text-[11px] mono font-bold text-gray-300 mt-0.5 w-5 shrink-0">{ci + 1}</span>
-                        <div className="flex-1 min-w-0 [overflow-wrap:anywhere]">
-                          {!cite.ref && cite.title && <p className="text-sm font-bold text-gray-900 mb-0.5 leading-snug">{cite.title}</p>}
-                          <p className="text-[13px] text-gray-800 leading-snug">
-                            {!cite.ref && cite.authors && <span className="font-medium mr-1">{cite.authors}.</span>}
-                            {!cite.ref && cite.year && <span className="text-gray-500 mr-1">({cite.year}).</span>}
-                            {cite.ref}
-                          </p>
-                          {cite.url && (/^https?:\/\//i.test(cite.url)
-                            ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="text-[11px] mono truncate mt-1 block text-indigo-600 hover:underline">{cite.url}</a>
-                            : <p className="text-[11px] mono truncate mt-1 text-gray-400">{cite.url}</p>)}
-                        </div>
+                        <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-5 shrink-0">{ci + 1}</span>
+                        {renderCitation(cite)}
                         <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
                           {CITE_BADGE[cite.status].label}
                         </span>
@@ -3598,16 +3756,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Findings & Recommendations</h3>
-                <p className="text-[11px] mono font-bold uppercase tracking-wider text-indigo-600">Analysis Inspector</p>
+                <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Analysis & Recommendations</h3>
               </div>
             </div>
-            {(activeItem || activePair) && (
+            {(activeSection || activeItem || activePair) && (
               <button
                 type="button"
                 onClick={() => {
                   setActiveId(null);
                   setActivePairKey(null);
+                  setActiveSectionRole(null);
                 }}
                 className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
                 Reset
@@ -3615,11 +3773,39 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {activePair ? (() => {
+          <div ref={sectionPaneRef} className="flex-1 overflow-y-auto"
+            onScroll={e => { if (activeSectionRole && e.currentTarget.clientHeight > 0) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
+            {activeSection ? (
+              <div className="p-6 space-y-5">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{activeSection.name}</h2>
+                  <span className={`text-sm font-semibold ${SECTION_STATUS[activeSection.status].color}`}>{activeSection.status}</span>
+                </div>
+                {activeSection.status === 'Missing' || activeSection.status === 'Unassessed' ? (
+                  <p className="text-sm text-gray-700">This section was not detected in the manuscript.</p>
+                ) : (
+                  <div className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed break-words">{renderSectionText(activeSection)}</div>
+                )}
+                <h3 className="text-sm font-bold text-gray-900">Findings on this section</h3>
+                {sectionFindings(activeSection).map(item => {
+                  const finding = scan?.inconsistencies.find(inc => inc.inconsistency_id === item.id || `inc-${scan.inconsistencies.indexOf(inc)}` === item.id);
+                  return (
+                    <div key={item.id} className="rounded-xl border border-gray-200 p-4 space-y-3 text-sm text-gray-700">
+                      <button type="button" onClick={() => setActiveId(item.id)} className="font-bold text-indigo-700 text-left focus-visible:ring-2 focus-visible:ring-indigo-600">{item.title}</button>
+                      <p>{finding?.explanation_what || item.questionOrSubtitle}</p>
+                      <p>{finding?.explanation_why || item.description}</p>
+                      {item.recommendation && <p><strong>Suggested fix: </strong>{item.recommendation}</p>}
+                      {renderFeedback(item)}
+                    </div>
+                  );
+                })}
+                {!sectionFindings(activeSection).length && <p className="text-sm text-gray-600">No findings were returned for this section.</p>}
+              </div>
+            ) : activePair && !activeItem ? (() => {
               const score = activePair.score ?? 0;
               const strong = score >= PAR_SCORE;
               const isIncluded = activePair.included !== false;
+              const sectionMissing = !isSample && pairHasMissingSection(activePair, scan?.sections_analyzed || []);
               return (
                 <div className="px-6 py-6 space-y-5">
                   {/* Pair header */}
@@ -3656,7 +3842,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
                         strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
                       }`}>
-                        {strong ? 'Strong' : 'Below target'}
+                        {sectionMissing ? 'Not comparable · section missing' : strong ? 'Strong' : 'Below target'}
                       </span>
                     </div>
                     <p className="text-2xl font-bold mono text-gray-900 tabular-nums">
@@ -3678,7 +3864,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </div>
 
                   {/* Missing section check / Verification Note */}
-                  {!isIncluded ? (
+                  {sectionMissing || !isIncluded ? (
                     <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 font-medium leading-relaxed">
                       This pair could not be evaluated — one or both sections are missing.
                     </div>
@@ -3760,6 +3946,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 </div>
 
                 {/* Categories Breakdown */}
+                <p className="text-sm text-gray-600">Select a section above to view its analysis</p>
                 <div className="w-full mt-1 space-y-2 text-left">
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
                   {(["strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
@@ -3768,8 +3955,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
                       <span className={`w-3.5 h-3.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{ST[t].label}</p>
-                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
+                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{!isSample && t === 'affected-section' ? 'Non-material findings' : ST[t].label}</p>
+                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{!isSample && t === 'affected-section' ? 'Findings outside the Major Issue category' : ASSESSMENT_TYPE_INFO[t].question}</p>
                       </div>
                       <span className="text-xs sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
                         {localItems.filter(i => i.type === t).length}
@@ -3785,7 +3972,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <div className={`rounded-2xl p-5 border-2 ${ST[activeItem.type].border} ${ST[activeItem.type].bg}`}>
                   <div className="flex items-start justify-between mb-2.5">
                     <AssessmentBadge type={activeItem.type} />
-                    <button onClick={() => setActiveId(null)} className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5">
+                    <button type="button" aria-label="Close finding detail" onClick={() => setActiveId(null)} className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
                     </button>
                   </div>
@@ -4708,7 +4895,7 @@ const CREDIT_PACKAGES = [
 ] as const;
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen) => void; session?: Session | null; onLogout?: () => void }) {
+function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
@@ -5529,7 +5716,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   </svg>
                   <span>Start a Scan</span>
                 </button>
-                <button onClick={() => onNavigate("results")}
+                <button onClick={() => onNavigate("results", true)}
                   className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm sm:text-base text-white hover:bg-white/15 border-1.5 border-white/30 backdrop-blur-sm active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 cursor-pointer">
                   <span>Preview sample</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
@@ -5726,7 +5913,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               </div>
               <div>
                 <p className="text-xs font-bold text-indigo-950">When Inconsistencies May Appear</p>
-                <p className="text-xs text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use the Analysis Inspector to review context before revising.</p>
+                <p className="text-xs text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use Detailed Analysis & Recommendations to review context before revising.</p>
               </div>
             </div>
           </div>
@@ -6121,7 +6308,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
   const [session, setSession] = useState<Session | null>(null);
-  const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
+  const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
 
