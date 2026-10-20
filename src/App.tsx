@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import resyncLogo from "@/imports/Untitled_design__1_.png";
 import spacyLogo from "@/assets/technology/spacy.png";
 import geminiLogo from "@/assets/technology/gemini.svg";
+import guidanceArtwork from "@/assets/guidance-reference.png";
+import { ArrowUp, Info } from "lucide-react";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
@@ -352,8 +354,26 @@ const BH = "#2d35e8";  // hover
 const BL = "#eef0ff";  // light tint
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
-function Logo({ className = "" }: { className?: string }) {
+function Logo({ className = "", header = false }: { className?: string; header?: boolean }) {
+  if (header) return <span className={`relative block shrink-0 overflow-hidden aspect-[3135/1542] ${className}`}><img src={resyncLogo} alt="ReSync" className="absolute max-w-none" style={{ width: "116.91%", height: "205.25%", left: "-8.006%", top: "-48.703%" }} /></span>;
   return <img src={resyncLogo} alt="ReSync" className={`object-contain ${className}`} />;
+}
+
+function BackToTop() {
+  const endRef = useRef<HTMLDivElement>(null);
+  const [atEnd, setAtEnd] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setAtEnd(entry.isIntersecting), { rootMargin: "0px 0px 80px 0px" });
+    if (endRef.current) observer.observe(endRef.current);
+    return () => observer.disconnect();
+  }, []);
+  return <>
+    <div ref={endRef} className="h-px" aria-hidden="true" />
+    {atEnd && <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })}
+      className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+      <ArrowUp className="h-4 w-4" aria-hidden="true" />Back to top
+    </button>}
+  </>;
 }
 
 function Spinner({ cls = "w-4 h-4" }: { cls?: string }) {
@@ -510,7 +530,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
-          <Logo className="h-9 w-auto" />
+          <Logo header className="h-8 sm:h-10" />
           <div className="hidden md:flex items-center gap-1">
             {[
               { label: "Overview", id: "section-overview" },
@@ -859,6 +879,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
           Resync is a decision-support tool. Final judgment on your manuscript always rests with your adviser and panel.
         </p>
       </section>
+      <BackToTop />
     </div>
   );
 }
@@ -5129,7 +5150,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 000 4h6a2 2 0 000-4M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
       label: "Fix Recommendations",
-      desc: "Concrete, actionable rewrites for each flagged issue — ready to apply.",
+      desc: "Concrete, actionable rewrites for each flagged issue, ready to apply.",
       color: "#059669",
       bg: "#f0fdf4",
     },
@@ -5170,36 +5191,12 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
   ];
 
   const BEST_PRACTICES = [
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
-      title: "Digital Text Manuscripts",
-      desc: "Reads .docx, .pdf, and Google Docs — full section detection and sentence-level alignment checks on standard text.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>,
-      title: "Standard Academic Structure",
-      desc: "Supports Chapter 1–5 and IMRaD thesis structures — automatically aligns headings with standard capstone roles.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 6h16M4 12h16M4 18h16" /></svg>,
-      title: "Single-Column Text Flow",
-      desc: "Analyzes continuous narrative flow — preserves logical reading order across consecutive sections and subsections.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>,
-      title: "Direct Prose Content",
-      desc: "Examines argumentative prose, hypotheses, and conclusions — cross-examines factual claims directly against findings.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
-      title: "Open Reference Accessibility",
-      desc: "Verifies reference citations against Crossref DOIs and open web registries — confirms accessibility and text mentions.",
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-      title: "Methodological Focus",
-      desc: "Tailors coherence rules to your methodology — evaluates statistical alignment for Quantitative and thematic depth for Qualitative studies.",
-    },
+    { title: "Digital Manuscripts", desc: "DOCX, PDF, Google Docs", x: 200, y: 228 },
+    { title: "Standard Structure", desc: "Chapter 1–5 & IMRaD", x: 690, y: 228 },
+    { title: "Single-Column Flow", desc: "Sequential reading order", x: 1190, y: 228 },
+    { title: "Direct Prose", desc: "Claims and conclusions", x: 220, y: 520 },
+    { title: "Open References", desc: "Citations and DOI checks", x: 700, y: 520 },
+    { title: "Method Focus", desc: "Qualitative or quantitative fit", x: 1190, y: 520 },
   ];
 
   return (
@@ -5207,16 +5204,15 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
       {/* ── Top nav ── */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-4" style={{ height: 58 }}>
-          <div className="flex items-center gap-3 shrink-0 mr-2">
-            <Logo className="h-8 w-auto" />
-            <div className="h-5 w-px bg-gray-100 hidden md:block" />
-            <span className="text-[11px] mono font-bold uppercase tracking-widest text-gray-400 hidden md:block">Academic Workspace</span>
+        <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-2 md:gap-4" style={{ height: 64 }}>
+          <div className="flex items-center shrink-0">
+            <Logo header className="h-7 sm:h-10" />
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard", "Academic Profile"] as const).map(label => (
               <button key={label} onClick={() => setActiveNav(label as typeof activeNav)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                aria-label={label}
+                className="flex items-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ background: activeNav === label ? B : "transparent", color: activeNav === label ? "white" : "#6b7280", boxShadow: activeNav === label ? `0 2px 10px ${B}30` : "none" }}>
                 {label === "Dashboard" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>}
                 {label === "Academic Profile" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>}
@@ -5224,18 +5220,18 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:bg-gray-50 cursor-default"
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <div aria-label={`Credits: ${creditsLoading ? "loading" : creditBalance ?? "unavailable"}`} className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:bg-gray-50 cursor-default"
               style={{ borderColor: `${B}20`, background: `${B}06`, color: B }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-              Credits: {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
+              <span className="hidden sm:inline">Credits:</span> {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
             </div>
-            <div className="h-5 w-px bg-gray-100" />
+            <div className="h-5 w-px bg-gray-100 hidden sm:block" />
             <button aria-label="Notifications" className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
               <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white" />
             </button>
-            <div className="h-5 w-px bg-gray-100" />
+            <div className="h-5 w-px bg-gray-100 hidden sm:block" />
             <div ref={profileMenuRef} className="relative">
               <button
                 onClick={() => setProfileMenuOpen(open => !open)}
@@ -5746,177 +5742,104 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
         {/* ── Main body ── */}
         <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">
 
-          {/* ═══════════════════════════════════════════
-            ROW 1: How It Works (left) + What You Get Back (right)
-        ═══════════════════════════════════════════ */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-            {/* ── How It Works ── spans 2 cols */}
-            <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-              <div className="mb-8">
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Process</p>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">How It Works</h2>
-                <p className="text-xs text-gray-400 mt-1">Four simple steps from manuscript to coherence report.</p>
-              </div>
-
-              {/* Staggered 4-step flow with bezier connectors */}
-              {/*
-              Layout (top-aligned flex, cards 2 & 4 pushed down by mt-10 ≈ 40px):
-              Card height ≈ 180px → container height ≈ 220px
-              Card 1 center-y ≈ 90   Card 2 center-y ≈ 130
-              Connectors span the full 220px height with bezier curves between those y-values.
-            */}
-              <div className="flex items-start" style={{ minHeight: 220 }}>
-
-                {/* Step 1 */}
-                <div className="flex-1 min-w-0">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3 h-full" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[0].icon}
-                    </div>
-                    <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 1</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[0].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[0].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connector 1→2: bezier curving down-right */}
-                <div className="shrink-0 self-stretch relative" style={{ width: 40 }}>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 220" preserveAspectRatio="none">
-                    <path d="M0,90 C20,90 20,130 40,130" stroke="#c7d2fe" strokeWidth="2" strokeDasharray="5 4" fill="none" strokeLinecap="round" />
-                    <polygon points="33,126 40,130 33,134" fill="#c7d2fe" />
-                  </svg>
-                </div>
-
-                {/* Step 2 — shifted down */}
-                <div className="flex-1 min-w-0 mt-10">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[1].icon}
-                    </div>
-                    <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 2</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[1].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[1].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connector 2→3: bezier curving up-right */}
-                <div className="shrink-0 self-stretch relative" style={{ width: 40 }}>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 220" preserveAspectRatio="none">
-                    <path d="M0,130 C20,130 20,90 40,90" stroke="#c7d2fe" strokeWidth="2" strokeDasharray="5 4" fill="none" strokeLinecap="round" />
-                    <polygon points="33,86 40,90 33,94" fill="#c7d2fe" />
-                  </svg>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex-1 min-w-0">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[2].icon}
-                    </div>
-                    <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 3</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[2].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[2].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connector 3→4: bezier curving down-right */}
-                <div className="shrink-0 self-stretch relative" style={{ width: 40 }}>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 220" preserveAspectRatio="none">
-                    <path d="M0,90 C20,90 20,130 40,130" stroke="#c7d2fe" strokeWidth="2" strokeDasharray="5 4" fill="none" strokeLinecap="round" />
-                    <polygon points="33,126 40,130 33,134" fill="#c7d2fe" />
-                  </svg>
-                </div>
-
-                {/* Step 4 — shifted down */}
-                <div className="flex-1 min-w-0 mt-10">
-                  <div className="rounded-2xl p-5 flex flex-col items-center text-center gap-3" style={{ background: BL }}>
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: B, color: "white" }}>
-                      {STEPS[3].icon}
-                    </div>
-                    <div>
-                      <span className="text-[10px] mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 4</span>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{STEPS[3].label}</p>
-                      <p className="text-[11px] text-gray-400 mt-1 leading-snug">{STEPS[3].desc}</p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
+          {/* Process */}
+          <section className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white px-6 py-10 sm:px-8 lg:px-10 lg:py-12" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
+            <div aria-hidden="true" className="absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-indigo-50/80" />
+            <div aria-hidden="true" className="absolute right-12 top-10 hidden grid-cols-5 gap-3 opacity-60 lg:grid">
+              {Array.from({ length: 20 }, (_, index) => <span key={index} className="h-1.5 w-1.5 rounded-full bg-indigo-100" />)}
             </div>
 
-            {/* ── What You Get Back ── */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 flex flex-col" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-              <div className="mb-6">
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: "#059669" }}>Outputs</p>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">What You Get Back</h2>
-                <p className="text-xs text-gray-400 mt-1">Four deliverables, every scan, automatically.</p>
-              </div>
+            <div className="relative z-10 mb-10 text-center">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.28em]" style={{ color: B }}>Process</p>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">How It Works</h2>
+              <p className="mt-2 text-sm text-gray-500 sm:text-base">Four simple steps from manuscript to coherence report.</p>
+            </div>
 
-              <div className="space-y-4 flex-1">
-                {WHAT_GET.map(({ icon, label, desc, color, bg }) => (
-                  <div key={label} className="flex items-start gap-3 group">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-                      style={{ background: bg, color }}>
-                      {icon}
-                    </div>
-                    <div className="pt-0.5">
-                      <p className="text-xs font-bold text-gray-800 leading-tight">{label}</p>
-                      <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">{desc}</p>
-                    </div>
-                  </div>
+            <div className="relative z-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:min-h-[310px] lg:grid-cols-4 lg:gap-14">
+              <svg aria-hidden="true" className="pointer-events-none absolute inset-0 hidden h-full w-full lg:block" viewBox="0 0 1200 310" preserveAspectRatio="none">
+                <path d="M258 126 C278 126 292 174 314 174" stroke="#818cf8" strokeWidth="3" strokeDasharray="8 8" fill="none" strokeLinecap="round" />
+                <path d="M572 174 C592 174 606 126 628 126" stroke="#818cf8" strokeWidth="3" strokeDasharray="8 8" fill="none" strokeLinecap="round" />
+                <path d="M886 126 C906 126 920 174 942 174" stroke="#818cf8" strokeWidth="3" strokeDasharray="8 8" fill="none" strokeLinecap="round" />
+                {[258, 314, 572, 628, 886, 942].map((x, index) => (
+                  <g key={x}>
+                    <circle cx={x} cy={index % 2 === 0 ? 126 : 174} r="10" fill="white" stroke="#e0e7ff" strokeWidth="4" />
+                    <circle cx={x} cy={index % 2 === 0 ? 126 : 174} r="4" fill={B} />
+                  </g>
                 ))}
-              </div>
+              </svg>
 
+              {STEPS.map((step, index) => (
+                <article key={step.num} className={`relative ${index % 2 === 1 ? "lg:mt-12" : ""}`}>
+                  <span aria-hidden="true" className="absolute -top-10 left-4 text-7xl font-bold leading-none text-indigo-50 sm:text-8xl">
+                    {String(step.num).padStart(2, "0")}
+                  </span>
+                  <div className="relative flex min-h-[220px] h-full flex-col items-center rounded-3xl border border-indigo-100 bg-white/95 p-6 text-center shadow-[0_14px_36px_rgba(26,31,204,0.08)]">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-lg shadow-indigo-200" style={{ background: `linear-gradient(145deg, ${B}, #3b40e8)` }}>
+                      {step.icon}
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: B }}>Step {step.num}</p>
+                    <h3 className="mt-2 text-lg font-bold leading-tight text-gray-950">{step.label}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-500">{step.desc}</p>
+                  </div>
+                </article>
+              ))}
             </div>
-          </div>
+          </section>
+
+          {/* Outputs */}
+          <section className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
+            <div className="mb-5">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-primary">Outputs</p>
+              <h2 className="text-xl font-bold tracking-tight text-foreground">What You Get</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Four deliverables, every scan, automatically.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {WHAT_GET.map(({ icon, label, desc, color, bg }) => (
+                <div key={label} className="flex items-start gap-3 rounded-2xl bg-gray-50 p-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: bg, color }}>
+                    {icon}
+                  </div>
+                  <div className="pt-0.5">
+                    <h3 className="text-sm font-bold leading-tight text-foreground">{label}</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* ═══════════════════════════════════════════
             ROW 2: Recommended Scope / Best Results With
         ═══════════════════════════════════════════ */}
-          <div className="bg-white rounded-3xl border border-gray-100 p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div>
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1 text-indigo-600">Guidance</p>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Best Results With</h2>
-                <p className="text-xs text-gray-500 mt-1 max-w-lg leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
-              </div>
-              <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600 border border-indigo-100">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
+          <section className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
+            <div className="mb-8">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1 text-primary">Guidance</p>
+              <h2 className="text-xl font-bold text-foreground tracking-tight">Best Results With</h2>
+              <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {BEST_PRACTICES.map(({ icon, title, desc }) => (
-                <div key={title} className="flex items-start gap-3 px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-gray-100/60 transition-colors">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-indigo-600 bg-white border border-gray-200">
-                    {icon}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+              {BEST_PRACTICES.map(({ title, desc, x, y }) => (
+                <div key={title} className="flex flex-col items-center text-center">
+                  <div className="relative w-56 h-[132px] overflow-hidden mb-3" aria-hidden="true" style={{ maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent), linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)", maskComposite: "intersect" }}>
+                    <img src={guidanceArtwork} alt="" loading="lazy" className="absolute max-w-none mix-blend-multiply" style={{ width: 1170.4, height: 658.7, left: -x * 0.7, top: -y * 0.7 }} />
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-800 leading-tight">{title}</p>
-                    <p className="text-[11px] text-gray-500 leading-relaxed mt-1">{desc}</p>
-                  </div>
+                  <h3 className="text-xl font-bold text-foreground leading-tight">{title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-1">{desc}</p>
                 </div>
               ))}
             </div>
 
             {/* Advisory card */}
-            <div className="mt-4 p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-start gap-3.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-700 mt-0.5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <div className="mt-8 p-4 rounded-2xl bg-muted border border-border flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shrink-0 text-primary">
+                <Info className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-xs font-bold text-indigo-950">When Inconsistencies May Appear</p>
-                <p className="text-xs text-indigo-900/80 leading-relaxed mt-0.5">Findings highlight genuine semantic divergences, unaddressed research objectives, or unlinked empirical claims between chapters. If a flagged item was intentional, use Detailed Analysis & Recommendations to review context before revising.</p>
+                <p className="text-sm leading-relaxed text-muted-foreground"><strong className="text-foreground">When inconsistencies may appear.</strong> Review flagged findings in Detailed Analysis & Recommendations.</p>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* ── Template tip ── */}
           <div className="relative rounded-3xl overflow-hidden border border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50 p-5 flex items-center gap-5">
@@ -5935,6 +5858,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
           <div className="h-4" />
         </main>
+        <BackToTop />
       </>)}
 
       {/* ── Mock Payment Modal ── */}
