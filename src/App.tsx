@@ -2651,21 +2651,20 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             <ScoreRing score={score} size={88} />
             <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
             <div className="w-full mt-1.5 space-y-1">
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[])
+              {(["overall-status", "strength", "major-issue"] as AssessmentType[])
                 .filter(t => isSample || t !== "overall-status")
                 .map(t => (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => applyFilter(!isSample && t === 'affected-section' ? 'all' : filterType === t ? "all" : t)}
+                  onClick={() => applyFilter(filterType === t ? "all" : t)}
                   className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
                   <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                  <span className="text-xs font-medium text-gray-700 flex-1">{!isSample && t === 'affected-section' ? 'Primary sections in findings' : ST[t].label}</span>
+                  <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
                   <span className={`text-xs font-black ${ST[t].pillTxt}`}>
                     {isSample ? localItems.filter(i => i.type === t).length : (
                       t === 'strength' ? (scan?.verifications?.length ?? 0) :
-                      t === 'major-issue' ? (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) :
-                      new Set(scan?.inconsistencies?.map(i => i.section_a)).size
+                      (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)
                     )}
                   </span>
                 </button>
@@ -2707,13 +2706,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
                   }`}>
                 Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter(isSample ? "affected-section" : "all")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "affected-section" ? "bg-blue-700 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                  }`}>
-                {isSample ? 'Affected' : 'Primary sections'} ({isSample ? 3 : new Set(scan?.inconsistencies?.map(i => i.section_a)).size})
               </button>
             </div>
           </div>
@@ -3034,7 +3026,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {/* Highlight legend — compact inline */}
             <div className="flex items-center gap-2 px-1 mb-5 flex-wrap">
               <span className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mr-1">Highlights:</span>
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
+              {(["overall-status", "strength", "major-issue"] as AssessmentType[]).map(t => (
                 <button
                   key={t}
                   type="button"
@@ -3042,7 +3034,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   onClick={() => applyFilter(filterType === t ? "all" : t)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
                   <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} aria-hidden="true" />
-                  <span>{!isSample && t === 'affected-section' ? 'Non-material findings' : ST[t].label}</span>
+                  <span>{ST[t].label}</span>
                   <span className="tabular-nums">({localItems.filter(i => i.type === t).length})</span>
                 </button>
               ))}
@@ -3730,6 +3722,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {/* ── Citations tab ── */}
             {activeTab === 'citations' && (
               <div className="space-y-4">
+                <p className="text-xs text-gray-500">Click any status card to filter the list. Click it again to clear.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => {
                     const isSelected = citationFilter === s;
