@@ -4031,14 +4031,14 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <p className="text-sm text-gray-600">Select a section above to view its analysis</p>
                 <div className="w-full mt-1 space-y-2 text-left">
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
-                  {(["strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
+                  {(["strength", "major-issue"] as AssessmentType[]).map(t => (
                     <div key={t}
                       onClick={() => applyFilter(t)}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
                       <span className={`w-3.5 h-3.5 rounded-sm shrink-0 ${ST[t].dot}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{!isSample && t === 'affected-section' ? 'Non-material findings' : ST[t].label}</p>
-                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{!isSample && t === 'affected-section' ? 'Findings outside the Major Issue category' : ASSESSMENT_TYPE_INFO[t].question}</p>
+                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{ST[t].label}</p>
+                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
                       </div>
                       <span className="text-xs sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
                         {localItems.filter(i => i.type === t).length}
