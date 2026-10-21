@@ -7,7 +7,7 @@ import { ArrowUp, Info } from "lucide-react";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import type { CitedReference, RolePairScore, AITextIndicator } from './types';
+import type { CitedReference, RolePairScore, AITextIndicator, DismissedPair } from './types';
 import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript, createCreditCheckout, confirmCreditCheckout } from './services/api';
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
 import { useId } from 'react';
@@ -28,9 +28,13 @@ interface AssessmentItem {
   questionOrSubtitle: string;
   description: string;
   significance: string;
+  section_a?: string;
+  explanation_what?: string;
   evidence?: string;
+  evidence_verified?: boolean;
   conflictsWith?: string;
   conflictQuote?: string;
+  objectives_unaddressed?: string[];
   recommendation: string;
   isMissingSection?: boolean;
 }
@@ -90,10 +94,15 @@ const ASSESSMENT_ITEMS: AssessmentItem[] = [
     section: "Chapter 1 → Chapter 4",
     targetSectionIndex: 1,
     questionOrSubtitle: "Most important inconsistencies detected",
-    description: "Objective 3 is not clearly reflected in the findings.",
+    description: "The findings report workload correlation but no moderation analysis for the peer-support objective, leaving that stated aim unanswered.",
+    section_a: "Objectives of the Study",
+    explanation_what: "Objective 3 is not clearly reflected in the findings.",
     significance: "Panelists will immediately identify that Objective 3 (moderating role of peer support) has no corresponding moderation results in Chapter 4.",
+    evidence: "assess the moderating role of peer support on burnout levels among the identified population",
+    evidence_verified: true,
     conflictsWith: "Chapter 4 — Results and Discussion",
-    conflictQuote: "Objective 3: assess the moderating role of peer support on burnout levels.",
+    conflictQuote: "Pearson correlation analysis showed a significant positive relationship between workload and burnout (r=0.61, p<0.001)",
+    objectives_unaddressed: ["Assess the moderating role of peer support on burnout levels among the identified population."],
     recommendation: "Add the moderation regression analysis in Chapter 4, or refine Objective 3 to match the analyzed bivariate data.",
   },
   {
@@ -204,6 +213,15 @@ const SAMPLE_PAIRS: RolePairScore[] = [
   { role_a: "methodology",  role_b: "results",     weight: 0.20, included: true, score: 80 },
   { role_a: "results",      role_b: "discussion",  weight: 0.16, included: true, score: 68 },
   { role_a: "objectives",   role_b: "conclusion",  weight: 0.16, included: true, score: 52 },
+];
+
+const SAMPLE_DISMISSED_PAIRS: DismissedPair[] = [
+  {
+    role_a: "results",
+    role_b: "discussion",
+    score: 68,
+    reason: "The discussion accurately interprets the reported results; the lower text-similarity score does not indicate a material inconsistency."
+  }
 ];
 
 const SAMPLE_AI_TEXT: AITextIndicator = {
@@ -2078,9 +2096,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         questionOrSubtitle: isMissingSection ? "Missing section" : (inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding"),
         description: inc.explanation_why || inc.explanation_what,
         significance: isMissingSection ? "Structural requirement" : "Requires attention",
+        section_a: inc.section_a,
+        explanation_what: inc.explanation_what,
         evidence: inc.evidence_a,
+        evidence_verified: inc.evidence_verified,
         conflictsWith: isMissingSection ? undefined : inc.section_b,
         conflictQuote: isMissingSection ? undefined : inc.evidence_b,
+        objectives_unaddressed: inc.objectives_unaddressed,
         recommendation: inc.suggested_fix,
         isMissingSection
       };
@@ -2300,6 +2322,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   type EnrichedPair = RolePairScore & {
     verification?: { alignment: string; note: string };
+    dismissalReason?: string;
   };
 
   const SAMPLE_VERIFICATIONS: Record<string, { alignment: 'substantive' | 'superficial'; note: string }> = {
@@ -2320,6 +2343,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const verificationByPair = new Map(
     (scan?.verifications ?? []).map(v => [`${v.role_a}|${v.role_b}`, v] as const)
   );
+  const dismissalByPair = new Map<string, string>(
+    (isSample ? SAMPLE_DISMISSED_PAIRS : scan?.score_breakdown?.coherence_detail?.dismissed_pairs ?? [])
+      .map(p => [`${p.role_a}|${p.role_b}`, p.reason] as const)
+  );
   const allPairs: EnrichedPair[] = (
     isSample
       ? (SAMPLE_PAIRS as EnrichedPair[])
@@ -2329,7 +2356,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       ...p,
       verification: isSample
         ? SAMPLE_VERIFICATIONS[`${p.role_a}|${p.role_b}`]
-        : verificationByPair.get(`${p.role_a}|${p.role_b}`)
+        : verificationByPair.get(`${p.role_a}|${p.role_b}`),
+      dismissalReason: dismissalByPair.get(`${p.role_a}|${p.role_b}`)
     }))
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const visiblePairs: EnrichedPair[] = filterType === "strength" ? allPairs.filter(p => p.included && (p.score ?? 0) >= PAR_SCORE) : allPairs;
@@ -3570,11 +3598,41 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                         {isExpanded && (
                           <div id={`finding-content-${item.id}`} className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 space-y-3 border-t border-gray-100">
-                            {item.description && <p className="text-[13px] text-gray-700 leading-relaxed mt-3">{item.description}</p>}
-                            {item.conflictsWith && item.conflictQuote && (
+                            {!item.isMissingSection && item.explanation_what && (
+                              <div className="mt-3 space-y-1">
+                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500">What was found</p>
+                                <p className="text-[13px] text-gray-700 leading-relaxed">{item.explanation_what}</p>
+                              </div>
+                            )}
+                            {item.description && (item.isMissingSection ? (
+                              <p className="text-[13px] text-gray-700 leading-relaxed mt-3">{item.description}</p>
+                            ) : (
+                              <div className="space-y-1">
+                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500">Why it matters</p>
+                                <p className="text-[13px] text-gray-700 leading-relaxed">{item.description}</p>
+                              </div>
+                            ))}
+                            {!item.isMissingSection && item.evidence && item.conflictQuote && (
+                              <div className="rounded-xl bg-emerald-50/50 border border-emerald-200 p-3 space-y-2">
+                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-emerald-800">Grounding Evidence</p>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                  <div className="bg-white rounded-lg border border-emerald-200/80 p-3">
+                                    <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">{formatRoleLabel(item.section_a || item.section)}</p>
+                                    <p className="text-xs text-gray-700 italic leading-relaxed">"{item.evidence}"</p>
+                                  </div>
+                                  <div className="bg-white rounded-lg border border-emerald-200/80 p-3">
+                                    <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">{formatRoleLabel(item.conflictsWith || item.section)}</p>
+                                    <p className="text-xs text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {!item.isMissingSection && !!item.objectives_unaddressed?.length && (
                               <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
-                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">Conflicts with: {item.conflictsWith}</p>
-                                <p className="text-xs text-gray-700 italic leading-relaxed">"{item.conflictQuote}"</p>
+                                <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-500 mb-1">Unachieved Objectives</p>
+                                <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-700 leading-relaxed">
+                                  {item.objectives_unaddressed.map((objective, objectiveIndex) => <li key={`${objectiveIndex}-${objective}`}>{objective}</li>)}
+                                </ol>
                               </div>
                             )}
                             {item.recommendation && (
@@ -3655,6 +3713,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             p.verification.alignment === 'superficial' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
                           }`}>
                             <span className="font-bold capitalize">{p.verification.alignment} alignment.</span> {p.verification.note}
+                          </p>
+                        )}
+                        {p.included && !sectionMissing && p.dismissalReason && (
+                          <p className="text-xs leading-relaxed rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900">
+                            <span className="font-bold">No material inconsistency found.</span> {p.dismissalReason}
                           </p>
                         )}
                       </div>
@@ -3889,6 +3952,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 font-medium leading-relaxed">
                       This pair could not be evaluated — one or both sections are missing.
                     </div>
+                  ) : activePair.dismissalReason ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900 leading-relaxed">
+                      <p className="font-bold mb-1">No material inconsistency found</p>
+                      <p>{activePair.dismissalReason}</p>
+                    </div>
                   ) : activePair.verification ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
@@ -4061,7 +4129,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <div className="rounded-2xl p-4 border border-emerald-200 bg-emerald-50/50">
                       <div className="flex items-center gap-2 mb-2">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 text-emerald-700"><path d="M5 12l5 5L20 7" /></svg>
-                        <p className="text-xs mono font-bold uppercase tracking-wider text-emerald-800">Verified Evidence in Manuscript</p>
+                        <p className="text-xs mono font-bold uppercase tracking-wider text-emerald-800">{activeItem.evidence_verified ? 'Verified Evidence in Manuscript' : 'Evidence in Manuscript'}</p>
                       </div>
                       <p className="text-sm text-emerald-950 leading-relaxed italic bg-white rounded-xl px-4 py-3 border border-emerald-200/80 shadow-2xs">
                         "{activeItem.evidence}"
