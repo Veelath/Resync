@@ -3245,6 +3245,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </div>
                 </div>
 
+                <p className="text-xs text-gray-600 px-1">How well each section matches the one it should.</p>
+
                 {visiblePairs.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
                     <p className="text-sm font-bold text-gray-800 mb-1">No role pairs to show</p>
@@ -3277,13 +3279,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
                           <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
-                            {sectionMissing ? 'Not comparable · section missing' : `${strong ? 'Strong' : 'Below target'} · ${Math.round(score)}`}
+                            {sectionMissing ? "Can't compare — section missing" : `${strong ? 'Strong' : 'Needs work'} · ${Math.round(score)}`}
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
                           <div className={`h-full rounded-full ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
                         </div>
-                        <p className="text-[11px] text-gray-500">Weight {Math.round(p.weight * 100)}% of the coherence score</p>
+                        <p className="text-[11px] text-gray-500">Counts for {Math.round(p.weight * 100)}% of the overall score</p>
                         {p.verification && (
                           <p className={`text-xs leading-relaxed rounded-xl border px-3 py-2 ${
                             p.verification.alignment === 'superficial' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
@@ -3293,7 +3295,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         )}
                         {p.included && !sectionMissing && p.dismissalReason && (
                           <p className="text-xs leading-relaxed rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900">
-                            <span className="font-bold">No material inconsistency found.</span> {p.dismissalReason}
+                            <span className="font-bold">No material inconsistency found.</span> {p.dismissalReason.replaceAll('embedding-similarity score', 'text-similarity score')}
                           </p>
                         )}
                       </div>
@@ -3334,6 +3336,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     );
                   })}
                 </div>
+
+                <p className="text-xs text-gray-500">Restricted = paywalled · Neutral = couldn't verify.</p>
 
                 {citationFilter && (
                   <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
@@ -3531,7 +3535,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <button key={section.key} type="button" onClick={() => setActiveSectionRole(section.key)}
                   className="w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-indigo-600">
                   <span className="truncate text-gray-800">{section.name}</span>
-                  <span className={`shrink-0 ${SECTION_STATUS[section.status].color}`}>{section.status}</span>
+                  <span className={`shrink-0 ${SECTION_STATUS[section.status].color}`}>{section.status === 'Unassessed' ? 'Not checked yet' : section.status}</span>
                 </button>
               ))}
             </div>
@@ -3551,7 +3555,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <div className="p-6 space-y-5">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">{activeSection.name}</h2>
-                  <span className={`text-sm font-semibold ${SECTION_STATUS[activeSection.status].color}`}>{activeSection.status}</span>
+                  <span className={`text-sm font-semibold ${SECTION_STATUS[activeSection.status].color}`}>{activeSection.status === 'Unassessed' ? 'Not checked yet' : activeSection.status}</span>
                 </div>
                 {activeSection.status === 'Missing' || activeSection.status === 'Unassessed' ? (
                   <p className="text-sm text-gray-700">This section was not detected in the manuscript.</p>
@@ -3601,7 +3605,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       {formatRoleLabel(activePair.role_a)} ↔ {formatRoleLabel(activePair.role_b)}
                     </h3>
                     <p className="text-xs text-indigo-700 font-medium">
-                      Weight: <span className="tabular-nums">{Math.round(activePair.weight * 100)}%</span> of the coherence score
+                      Counts for <span className="tabular-nums">{Math.round(activePair.weight * 100)}%</span> of the overall score
                     </p>
                   </div>
 
@@ -3614,7 +3618,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
                         strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
                       }`}>
-                        {sectionMissing ? 'Not comparable · section missing' : strong ? 'Strong' : 'Below target'}
+                        {sectionMissing ? "Can't compare — section missing" : strong ? 'Strong' : 'Needs work'}
                       </span>
                     </div>
                     <p className="text-2xl font-bold mono text-gray-900 tabular-nums">
@@ -3643,7 +3647,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   ) : activePair.dismissalReason ? (
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900 leading-relaxed">
                       <p className="font-bold mb-1">No material inconsistency found</p>
-                      <p>{activePair.dismissalReason}</p>
+                      <p>{activePair.dismissalReason.replaceAll('embedding-similarity score', 'text-similarity score')}</p>
                     </div>
                   ) : activePair.verification ? (
                     <div className="space-y-3">
@@ -3658,7 +3662,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </div>
                       <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-2xs">
                         <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed">
-                          {activePair.verification.note}
+                          {activePair.verification.note.replaceAll('embedding-similarity score', 'text-similarity score')}
                         </p>
                       </div>
                     </div>
@@ -3693,7 +3697,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                     {isSample ? "Moderate Coherence Overall" : `${scan?.score_breakdown?.band || "Unknown"} Coherence`}
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Analysis Synthesis</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Summary</h3>
                   <p className="text-[15px] text-gray-600 leading-relaxed font-serif italic mb-4">
                     “{isSample ? OVERALL_ASSESSMENT.question : "What is the actual condition of this manuscript based on the analysis?"}”
                   </p>
@@ -3718,7 +3722,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">Analysis Guidance</span>
                   </div>
                   <p className="text-xs sm:text-[13px] text-indigo-900/80 leading-relaxed">
-                    Click any highlighted passage or sidebar finding to inspect why the AI flagged it, view cross-chapter evidence, and read specific rewrite recommendations.
+                    Click any highlighted passage or sidebar finding to inspect why the AI flagged it, view evidence from other sections, and read specific rewrite recommendations.
                   </p>
                 </div>
 
@@ -3768,7 +3772,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                   {/* Purpose / Question Prompt */}
                   <div className="space-y-1">
-                    <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400">Analysis Dimension</p>
+                    <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400">Summary</p>
                     <p className="text-sm sm:text-[15px] text-gray-800 font-serif italic leading-relaxed">“{activeItem.questionOrSubtitle}”</p>
                   </div>
 
