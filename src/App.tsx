@@ -2023,7 +2023,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
-  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isRightCollapsed, setIsRightCollapsed] = useState(false);
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
@@ -2201,7 +2200,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   }
 
   function renderSectionText(section: ReportSection) {
-    const matches = isSample
+    const matches = section.key === 'full-manuscript'
+      ? localItems.flatMap(item => [item.evidence, item.conflictQuote]
+          .filter((phrase): phrase is string => !!phrase?.trim())
+          .map(phrase => ({ phrase, itemId: item.id, type: item.type })))
+      : isSample
       ? (PARAGRAPHS.find(p => sectionRole(p.heading) === section.role)?.assessments || [])
       : sectionFindings(section).flatMap(item => [item.evidence, item.conflictQuote]
           .filter((phrase): phrase is string => !!phrase?.trim())
@@ -2226,13 +2229,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   function scrollToSection(sectionIndex: number, itemId?: string) {
     if (itemId) setActiveId(itemId);
     const el = document.getElementById(`sec-${sectionIndex}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
-  function scrollToAssessment() {
-    const el = document.getElementById("overall-assessment");
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -2593,24 +2589,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>
       </nav>
 
-      {/* ── 3-column body ── */}
-      <div className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">
+      {/* ── Results body ── */}
+      <main className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">
 
-        {isLeftCollapsed && (
-          <button
-            type="button"
-            onClick={() => setIsLeftCollapsed(false)}
-            aria-label="Expand findings sidebar"
-            aria-expanded={false}
-            title="Expand findings sidebar"
-            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-l-0 border-gray-200 rounded-r-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-            <span className="text-xs font-semibold">Show Assessment</span>
-          </button>
-        )}
         {isRightCollapsed && (
           <button
             type="button"
@@ -2626,125 +2607,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             </svg>
           </button>
         )}
-
-        {/* ══ LEFT: sidebar — score + assessment findings list ══ */}
-        <div className={`${mobilePane === "findings" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-y-auto transition-all duration-300 ${
-          isLeftCollapsed
-            ? "lg:w-0 lg:border-r-0 lg:overflow-hidden print:lg:w-72"
-            : "lg:w-72 xl:w-80 border-r border-gray-100"
-        }`}>
-          {/* Score ring */}
-          <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsLeftCollapsed(true)}
-              aria-label="Collapse findings sidebar"
-              aria-expanded={!isLeftCollapsed}
-              title="Collapse findings sidebar"
-              className="hidden lg:flex absolute top-3.5 right-3.5 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              <span className="text-xs font-semibold">Hide Assessment</span>
-            </button>
-            <ScoreRing score={score} size={88} />
-            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
-            <div className="w-full mt-1.5 space-y-1">
-              {(["overall-status", "strength", "major-issue"] as AssessmentType[])
-                .filter(t => isSample || t !== "overall-status")
-                .map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
-                  <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                  <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
-                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>
-                    {isSample ? localItems.filter(i => i.type === t).length : (
-                      t === 'strength' ? (scan?.verifications?.length ?? 0) :
-                      (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Assessment Filter Bar */}
-          <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-2 px-0.5">
-              <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Assessment</span>
-              {filterType !== "all" && (
-                <button
-                  type="button"
-                  onClick={() => setFilterType("all")}
-                  className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-                  Show all ({localItems.length})
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={() => applyFilter("all")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}>
-                All ({localItems.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("strength")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  }`}>
-                Strengths ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("major-issue")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
-                  }`}>
-                Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
-              </button>
-            </div>
-          </div>
-
-          {/* Assessment Items list */}
-          <div className="px-3.5 py-3 flex-1 space-y-1.5">
-            {filteredItems.map((item, idx) => (
-              <button key={item.id}
-                onClick={() => {
-                  setActiveId(prev => prev === item.id ? null : item.id);
-                  if (activeTab === 'overview') scrollToSection(item.targetSectionIndex);
-                  else if (activeTab === 'citations')
-                    setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
-                }}
-                className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
-                  }`}>
-                <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${ST[item.type].dot}`} />
-                <div className="flex-1 min-w-0">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider block ${ST[item.type].pillTxt}`}>{ST[item.type].label}</span>
-                  <span className="text-[13px] font-semibold text-gray-800 leading-snug line-clamp-2 mt-0.5">{item.title}</span>
-                  <span className="text-xs text-gray-500 leading-tight truncate block mt-1">{item.section}</span>
-                </div>
-                <span className="text-xs mono font-bold text-gray-400 shrink-0 mt-0.5">#{idx + 1}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Highlight legend */}
-          <div className="px-4 py-3.5 border-t border-gray-100 space-y-2">
-            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500 mb-1">Highlight key</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
-                <span key={t} className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold ${ST[t].hl.split(" ").filter(c => c.startsWith("bg-")).join(" ")} ${ST[t].pillTxt}`}>
-                  {ST[t].label}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {/* ══ CENTER: tab bar + tab content ══ */}
         <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
@@ -2764,303 +2626,25 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             ))}
           </div>
           <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 lg:px-10 py-8 flex-1">
-            {activeTab === 'overview' && (<>
-
-            {/* Document header */}
-            <div className="bg-white rounded-2xl border border-gray-200 px-10 pt-10 pb-8 mb-6 shadow-sm">
-              {isSample && (
-                <p className="text-[10px] mono font-bold uppercase tracking-widest mb-3" style={{ color: B }}>
-                  Sample Manuscript Report
-                </p>
-              )}
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
-                {displayTitle}
-              </h1>
-              {isSample && (
-                <p className="text-sm text-gray-500 mb-5">A descriptive-correlational study • Academic Year 2023–2024</p>
-              )}
-              <div className="flex items-center gap-3 pt-4 border-t border-gray-100 flex-wrap">
-                <span role="status" className="text-[11px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
-                  {!isSample && (manuscriptLoading || (!!scan?.analysis_run_id && manuscriptText === null && !manuscriptError))
-                    ? 'Analysis complete · loading manuscript…'
-                    : manuscriptError ? 'Analysis complete · preview unavailable' : 'Scan complete'}
-                </span>
-                <span className="text-[11px] text-gray-500 font-medium">Overall Assessment: <strong className={isSample ? "text-amber-700" : "text-gray-900"}>{isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}</strong></span>
-                <span className="text-[11px] text-gray-300">•</span>
-                <span className="text-[11px] text-gray-400">{findingsCount} findings across {sectionsCount} sections</span>
-                <span className="text-[11px] text-gray-300">•</span>
-                <span className="text-[11px] text-gray-400">Select a section to review its analysis</span>
-              </div>
-            </div>
-
-            {/* ══ OVERALL ASSESSMENT EXECUTIVE CARD ══ */}
-            <div id="overall-assessment" className="scroll-mt-14 bg-white rounded-2xl border border-gray-200 p-8 mb-6 shadow-xs">
-
-              {/* Card Header */}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-gray-100">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-indigo-700 bg-indigo-50 border border-indigo-100">
-                      Overall Assessment
-                    </span>
-                    <span className="text-xs text-gray-400">· Executive Synthesis</span>
+            {activeTab === 'overview' && (
+              <article className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-sm">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">{displayTitle}</h1>
+                {manuscriptLoading && <p className="text-sm text-gray-600">Loading manuscript text…</p>}
+                {manuscriptError && <p role="alert" className="text-sm text-rose-700">{manuscriptError}</p>}
+                {isSample ? localParagraphs.map((para, index) => (
+                  <section key={index} className="py-5 border-t border-gray-100">
+                    <h2 className="font-bold text-gray-900 mb-3">{para.heading}</h2>
+                    <p className="text-sm leading-7 text-gray-700">{renderPara(para)}</p>
+                  </section>
+                )) : manuscriptText ? (
+                  <div className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">
+                    {renderSectionText({ key: 'full-manuscript', name: displayTitle, role: '', text: manuscriptText, status: 'Present' })}
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Overall Manuscript Assessment</h2>
-                  <p className="text-xs text-gray-500 italic mt-1 font-serif">
-                    “{OVERALL_ASSESSMENT.question}”
-                  </p>
-                </div>
-
-                {/* Overall Status Badge */}
-                <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
-                  <span className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Overall Status</span>
-                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-200 bg-amber-50">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                    <span className="text-xs font-black text-amber-800 tracking-wide uppercase">
-                      {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
-                    </span>
-                  </div>
-                  {isSample && (
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
-                      <span>Scale:</span>
-                      <span className="text-gray-400">High</span>
-                      <span>•</span>
-                      <span className="font-bold text-amber-700 underline">Moderate</span>
-                      <span>•</span>
-                      <span className="text-gray-400">Low</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Overall Status Condition Summary */}
-              <div className="py-5 border-b border-gray-100">
-                <div className="flex items-center gap-2 mb-2.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-indigo-600">
-                    <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
-                  </svg>
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">
-                    Overall Status Condition
-                  </span>
-                  <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
-                    {isSample ? OVERALL_ASSESSMENT.status : (scan?.score_breakdown?.band || "Pending")}
-                  </span>
-                </div>
-                <div className="bg-amber-50/40 rounded-xl p-4 sm:p-5 border border-amber-100/80">
-                  <p className="text-sm text-gray-700 leading-relaxed font-normal">
-                    {isSample 
-                      ? OVERALL_ASSESSMENT.statusDescription 
-                      : (scan?.score_breakdown?.biggest_lever?.reason || "To be developed")}
-                  </p>
-                </div>
-              </div>
-
-              {/* 2-Column Grid: Key Strengths & Major Issues */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-5 border-b border-gray-100">
-                {/* Key Strengths */}
-                <div className="bg-emerald-50/40 rounded-xl p-5 border border-emerald-100 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M20 6L9 17l-5-5" /></svg>
-                        </div>
-                        <h3 className="text-sm font-bold text-emerald-950">Key Strengths</h3>
-                      </div>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
-                        {isSample ? OVERALL_ASSESSMENT.strengths.length : (scan?.verifications?.length ?? 0)} Verified
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-emerald-700/80 italic mb-3">What the manuscript does consistently</p>
-                    {isSample ? (
-                      <ul className="space-y-2.5">
-                        {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
-                            <span>{str}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      (scan?.verifications && scan.verifications.length > 0) ? (
-                        <ul className="space-y-2.5">
-                          {scan.verifications.map((v, idx) => (
-                            <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
-                              <span><strong className="text-emerald-900">{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-xs text-gray-500 italic">
-                          Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
-                        </p>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* Major Issues */}
-                <div className="bg-rose-50/40 rounded-xl p-5 border border-rose-100 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        </div>
-                        <h3 className="text-sm font-bold text-rose-950">Major Issues</h3>
-                      </div>
-                      <span className="text-[10px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
-                        {isSample ? OVERALL_ASSESSMENT.majorIssues.length : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)} Detected
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-rose-700/80 italic mb-3">Most important inconsistencies detected</p>
-                    {isSample ? (
-                      <ul className="space-y-2.5">
-                        {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
-                            <span>{iss}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      (scan?.inconsistencies && scan.inconsistencies.filter(i => i.finding_status === 'material_issue').length > 0) ? (
-                        <ul className="space-y-2.5">
-                          {(() => {
-                            const allMaterial = scan.inconsistencies.filter(i => i.finding_status === 'material_issue');
-                            const isMissingSection = (i: typeof allMaterial[0]) => !i.section_b || i.coherence_score == null;
-                            const missingSecs = allMaterial.filter(isMissingSection);
-                            const regularIssues = allMaterial.filter(i => !isMissingSection(i));
-                            return (
-                              <>
-                                {missingSecs.length > 0 && (
-                                  <li className="flex items-start gap-2.5 text-xs text-rose-900 leading-snug bg-rose-100/70 p-3 rounded-xl border border-rose-200">
-                                    <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0 mt-1" />
-                                    <div className="flex-1">
-                                      <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-rose-950 uppercase text-[10px] tracking-wider">Missing Required Sections ({missingSecs.length})</span>
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-800">Completeness Alert</span>
-                                      </div>
-                                      <p className="text-xs text-rose-900 font-semibold">
-                                        {missingSecs.map(i => formatRoleLabel(i.section_a)).join(" · ")}
-                                      </p>
-                                      <p className="text-[11px] text-rose-700 mt-1 leading-relaxed">
-                                        Required academic sections are absent from this draft. Add these sections to satisfy standard thesis submission requirements.
-                                      </p>
-                                    </div>
-                                  </li>
-                                )}
-                                {regularIssues.map((iss, idx) => (
-                                  <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 leading-snug">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-1.5" />
-                                    <span><strong className="text-rose-900">{iss.section_a} ↔ {iss.section_b}:</strong> {iss.explanation_what}</span>
-                                  </li>
-                                ))}
-                              </>
-                            );
-                          })()}
-                        </ul>
-                      ) : (
-                        <p className="text-xs text-gray-500 italic">No major issues detected.</p>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Affected Sections */}
-              <div className="hidden">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M7 16l-4-4m0 0l4-4m-4 4h18M17 8l4 4m0 0l-4 4" /></svg>
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900">Affected Sections</h3>
-                  </div>
-                  <span className="text-[11px] text-gray-500 italic">Which chapters/sections are involved</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                  {isSample ? (
-                    OVERALL_ASSESSMENT.affectedSections.map((sec, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => scrollToSection(sec.targetSectionIndex, sec.itemId)}
-                        className="group flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:border-blue-400 hover:shadow-xs transition-all text-left cursor-pointer"
-                      >
-                        <div>
-                          <span className="text-xs font-bold text-gray-800 group-hover:text-blue-600 transition-colors block">
-                            {sec.label}
-                          </span>
-                          <span className="text-[10px] text-gray-400 mt-0.5 block">
-                            Click to inspect cross-section conflict
-                          </span>
-                        </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5 shrink-0">
-                          <path d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    ))
-                  ) : (
-                    Array.from(new Set(scan?.inconsistencies?.map(i => i.section_a).filter(Boolean) || [])).map((secName, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 bg-gray-50 text-left"
-                      >
-                        <div>
-                          <span className="text-xs font-bold text-gray-800 block">
-                            {secName}
-                          </span>
-                          <span className="text-[10px] text-gray-400 mt-0.5 block">
-                            Inconsistencies detected in this section
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Highlight legend — compact inline */}
-            <div className="flex items-center gap-2 px-1 mb-5 flex-wrap">
-              <span className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mr-1">Highlights:</span>
-              {(["overall-status", "strength", "major-issue"] as AssessmentType[]).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  aria-pressed={filterType === t}
-                  onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? `${ST[t].bg} ${ST[t].border} ring-2 ring-indigo-400` : ST[t].pill}`}>
-                  <span className={`w-2 h-2 rounded-sm inline-block ${ST[t].dot}`} aria-hidden="true" />
-                  <span>{ST[t].label}</span>
-                  <span className="tabular-nums">({localItems.filter(i => i.type === t).length})</span>
-                </button>
-              ))}
-            </div>
-
-            <section aria-label="Report by Section" className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
-              <h2 className="text-lg font-bold text-gray-900">Report by Section</h2>
-              {reportSections.map(section => (
-                <button key={section.key} type="button" aria-pressed={activeSectionRole === section.key}
-                  onClick={() => {
-                    setActiveIdRaw(null);
-                    setActivePairKey(null);
-                    setActiveSectionRole(section.key);
-                    setIsRightCollapsed(false);
-                    if (!isDesktop()) setMobilePane("xai");
-                  }}
-                  className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${activeSectionRole === section.key ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-200 hover:border-indigo-400'}`}>
-                  <span aria-hidden="true" className={SECTION_STATUS[section.status].color}>{SECTION_STATUS[section.status].icon}</span>
-                  <span className="flex-1 min-w-0 text-gray-900 font-semibold">{section.name}</span>
-                  <span className={`text-xs font-semibold ${SECTION_STATUS[section.status].color}`}>{section.status}</span>
-                  <span className="text-xs text-indigo-700">Review →</span>
-                </button>
-              ))}
-              {!reportSections.length && <p className="text-sm text-gray-600">No template topics are available for this report.</p>}
-            </section>
-            </>)}
+                ) : !manuscriptLoading && !manuscriptError && (
+                  <p className="text-sm text-gray-600">Manuscript text is unavailable for this scan.</p>
+                )}
+              </article>
+            )}
 
             <div className="hidden print:block">
             {/* Full manuscript is independent of the selected tab when printing. */}
@@ -3852,6 +3436,117 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
           <div ref={sectionPaneRef} className="flex-1 overflow-y-auto"
             onScroll={e => { if (activeSectionRole && e.currentTarget.clientHeight > 0) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
+          {/* Score ring */}
+          <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
+            <ScoreRing score={score} size={88} />
+            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
+            <div className="w-full mt-1.5 space-y-1">
+              {(["overall-status", "strength", "major-issue"] as AssessmentType[])
+                .filter(t => isSample || t !== "overall-status")
+                .map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => applyFilter(filterType === t ? "all" : t)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
+                  <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
+                  <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
+                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>
+                    {isSample ? localItems.filter(i => i.type === t).length : (
+                      t === 'strength' ? (scan?.verifications?.length ?? 0) :
+                      (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)
+                    )}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Assessment Filter Bar */}
+          <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-2 px-0.5">
+              <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Assessment</span>
+              {filterType !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => setFilterType("all")}
+                  className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                  Show all ({localItems.length})
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => applyFilter("all")}
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}>
+                All ({localItems.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => applyFilter("strength")}
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  }`}>
+                Strengths ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
+              </button>
+              <button
+                type="button"
+                onClick={() => applyFilter("major-issue")}
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                  }`}>
+                Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
+              </button>
+            </div>
+          </div>
+
+          {/* Assessment Items list */}
+          <div className="px-3.5 py-3 flex-1 space-y-1.5">
+            {filteredItems.map((item, idx) => (
+              <button key={item.id}
+                onClick={() => {
+                  setActiveId(prev => prev === item.id ? null : item.id);
+                  
+                  if (activeTab === 'citations')
+                    setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
+                }}
+                className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
+                  }`}>
+                <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${ST[item.type].dot}`} />
+                <div className="flex-1 min-w-0">
+                  <span className={`text-[11px] font-bold uppercase tracking-wider block ${ST[item.type].pillTxt}`}>{ST[item.type].label}</span>
+                  <span className="text-[13px] font-semibold text-gray-800 leading-snug line-clamp-2 mt-0.5">{item.title}</span>
+                  <span className="text-xs text-gray-500 leading-tight truncate block mt-1">{item.section}</span>
+                </div>
+                <span className="text-xs mono font-bold text-gray-400 shrink-0 mt-0.5">#{idx + 1}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Highlight legend */}
+          <details className="px-5 py-3 border-t border-gray-100">
+            <summary className="text-xs font-bold text-gray-700 cursor-pointer">Report by Section ({reportSections.length})</summary>
+            <div className="mt-3 space-y-1">
+              {reportSections.map(section => (
+                <button key={section.key} type="button" onClick={() => setActiveSectionRole(section.key)}
+                  className="w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-indigo-600">
+                  <span className="truncate text-gray-800">{section.name}</span>
+                  <span className={`shrink-0 ${SECTION_STATUS[section.status].color}`}>{section.status}</span>
+                </button>
+              ))}
+            </div>
+          </details>
+          <div className="px-4 py-3.5 border-t border-gray-100 space-y-2">
+            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500 mb-1">Highlight key</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
+                <span key={t} className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold ${ST[t].hl.split(" ").filter(c => c.startsWith("bg-")).join(" ")} ${ST[t].pillTxt}`}>
+                  {ST[t].label}
+                </span>
+              ))}
+            </div>
+          </div>
+
             {activeSection ? (
               <div className="p-6 space-y-5">
                 <div>
@@ -4179,12 +3874,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           </div>
         </div>
 
-      </div>
+      </main>
 
       {/* ── Mobile bottom navigation bar ── */}
-      <nav className="lg:hidden shrink-0 grid grid-cols-3 border-t border-gray-200 bg-white print:hidden z-30" aria-label="Mobile report panes">
+      <nav className="lg:hidden shrink-0 grid grid-cols-2 border-t border-gray-200 bg-white print:hidden z-30" aria-label="Mobile report panes">
         {([
-          { id: "findings" as const, label: "Summary" },
           { id: "report" as const, label: "Manuscript" },
           { id: "xai" as const, label: "Inspector" },
         ]).map(({ id, label }) => (
