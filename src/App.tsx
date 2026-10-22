@@ -2267,6 +2267,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   };
 
   const filteredItems = filterType === "all" ? localItems : localItems.filter(i => i.type === filterType);
+  const strongestAlignment = localItems.find(i => i.type === "strength");
+  const needsAttention = localItems.find(i => i.type === "major-issue");
   const activeItem = activeId ? localItems.find(i => i.id === activeId) ?? null : null;
   const itemIdx = activeItem ? localItems.findIndex(i => i.id === activeItem.id) : -1;
 
@@ -3263,6 +3265,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     const score = p.score ?? 0;
                     const strong = score >= PAR_SCORE;
                     const sectionMissing = !isSample && pairHasMissingSection(p, scan?.sections_analyzed || []);
+                    const hasScore = !sectionMissing && p.included !== false && p.score != null;
                     return (
                       <div
                         key={`${p.role_a}|${p.role_b}|${idx}`}
@@ -3279,12 +3282,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-gray-900">{formatRoleLabel(p.role_a)} ↔ {formatRoleLabel(p.role_b)}</p>
                           <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
-                            {sectionMissing ? "Can't compare — section missing" : `${strong ? 'Strong' : 'Needs work'} · ${Math.round(score)}`}
+                            {sectionMissing ? "Can't compare — section missing" : hasScore ? `${strong ? 'Strong' : 'Needs work'} · ${Math.round(score)}` : 'Not checked yet'}
                           </span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                        {hasScore && <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
                           <div className={`h-full rounded-full ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
-                        </div>
+                        </div>}
                         <p className="text-[11px] text-gray-500">Counts for {Math.round(p.weight * 100)}% of the overall score</p>
                         {p.verification && (
                           <p className={`text-xs leading-relaxed rounded-xl border px-3 py-2 ${
@@ -3466,6 +3469,23 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             </div>
           </div>
 
+          <div className="px-4 py-3 border-b border-gray-100 grid grid-cols-1 gap-2">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2.5">
+              <span className="text-emerald-700 text-base leading-none" aria-hidden="true">✓</span>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-emerald-900">Strongest Alignment</h4>
+                <p className="text-xs text-emerald-800 truncate" title={strongestAlignment?.title}>{strongestAlignment?.title || "No verified alignment yet"}</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex items-start gap-2.5">
+              <span className="text-rose-700 text-base leading-none" aria-hidden="true">!</span>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-rose-900">Needs Attention</h4>
+                <p className="text-xs text-rose-800 truncate" title={needsAttention?.title}>{needsAttention?.title || "No major issue found"}</p>
+              </div>
+            </div>
+          </div>
+
           {/* Assessment Filter Bar */}
           <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-100">
             <div className="flex items-center justify-between mb-2 px-0.5">
@@ -3504,8 +3524,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             </div>
           </div>
 
-          {/* Assessment Items list */}
+          {/* Recommendations stay visible while a finding's detail is open. */}
           <div className="px-3.5 py-3 flex-1 space-y-1.5">
+            <h4 className="px-3 pb-1 text-xs mono font-bold uppercase tracking-wider text-gray-500">Recommendations</h4>
             {filteredItems.map((item, idx) => (
               <button key={item.id}
                 onClick={() => {
@@ -3516,13 +3537,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 }}
                 className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
                   }`}>
-                <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${ST[item.type].dot}`} />
+                <span className={`text-xs mono font-bold shrink-0 mt-0.5 ${ST[item.type].pillTxt}`}>{idx + 1}.</span>
                 <div className="flex-1 min-w-0">
                   <span className={`text-[11px] font-bold uppercase tracking-wider block ${ST[item.type].pillTxt}`}>{ST[item.type].label}</span>
                   <span className="text-[13px] font-semibold text-gray-800 leading-snug line-clamp-2 mt-0.5">{item.title}</span>
                   <span className="text-xs text-gray-500 leading-tight truncate block mt-1">{item.section}</span>
                 </div>
-                <span className="text-xs mono font-bold text-gray-400 shrink-0 mt-0.5">#{idx + 1}</span>
               </button>
             ))}
           </div>
@@ -3610,7 +3630,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </div>
 
                   {/* Score block */}
-                  <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-2">
+                  {!sectionMissing && isIncluded && activePair.score != null && <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
                         Pair Coherence Score
@@ -3637,7 +3657,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
                       />
                     </div>
-                  </div>
+                  </div>}
 
                   {/* Missing section check / Verification Note */}
                   {sectionMissing || !isIncluded ? (
