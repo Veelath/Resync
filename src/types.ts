@@ -31,7 +31,7 @@ export interface Inconsistency {
   // than showing a fabricated one.
   evidence_verified?: boolean;
   objectives_unaddressed?: string[];
-  finding_status?: 'material_issue';
+  finding_status?: 'material_issue' | 'key_strength';
 
   // Legacy/UI aliases
   sectionA?: string;
@@ -115,6 +115,7 @@ export interface CitedReference {
 export interface ScoreBreakdown {
   overall_score: number;
   band: string;
+  v6_dimensions?: Record<string, Record<string, number | null>> | null;
   structural_completeness_score?: number | null;
   cross_chapter_coherence_score?: number | null;
   citation_integrity_score?: number | null;

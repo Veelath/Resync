@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import resyncLogo from "@/imports/Untitled_design__1_.png";
+import resyncLogo from "@/imports/Untitled_design__1_.webp";
 import spacyLogo from "@/assets/technology/spacy.png";
 import geminiLogo from "@/assets/technology/gemini.svg";
-import guidanceArtwork from "@/assets/guidance-reference.png";
+import guidanceArtwork from "@/assets/guidance-reference.webp";
 import { ArrowUp, Info } from "lucide-react";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import type { CitedReference, RolePairScore, AITextIndicator, DismissedPair } from './types';
+import type { CitedReference, RolePairScore, AITextIndicator, DismissedPair, ScoreBreakdown } from './types';
 import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript, createCreditCheckout, confirmCreditCheckout } from './services/api';
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
 import { useId } from 'react';
@@ -17,7 +17,7 @@ type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
 type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
-type AssessmentType = "overall-status" | "strength" | "major-issue" | "affected-section";
+type AssessmentType = "overall-status" | "strength" | "key-strength" | "major-issue" | "affected-section";
 
 interface AssessmentItem {
   id: string;
@@ -199,7 +199,7 @@ const CITATIONS: Citation[] = [
 
 const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
   live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
-  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-700",    row: "border-amber-200 bg-surface-warn" },
+  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-800",    row: "border-amber-200 bg-surface-warn" },
   neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
   dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-rose-200 bg-surface-error" },
 };
@@ -411,7 +411,8 @@ function GIcon() {
 function AssessmentBadge({ type }: { type: AssessmentType }) {
   const m: Record<AssessmentType, { label: string; c: string }> = {
     "overall-status": { label: "Overall Status", c: "bg-surface-warn text-amber-800 border-amber-200" },
-    "strength": { label: "Key Strength", c: "bg-surface-success text-emerald-800 border-emerald-200" },
+    "strength": { label: "Verified Alignment", c: "bg-surface-success text-emerald-800 border-emerald-200" },
+    "key-strength": { label: "Key Strength", c: "bg-surface-success text-emerald-800 border-emerald-200" },
     "major-issue": { label: "Major Issue", c: "bg-surface-error text-rose-800 border-rose-200" },
     "affected-section": { label: "Affected Section", c: "bg-surface-info text-blue-800 border-blue-200" },
   };
@@ -494,8 +495,8 @@ function PreviewCard() {
           <div className="flex-1 space-y-1.5">
             {[
               { label: "Logic Gaps", n: 2, c: "text-violet-600 bg-violet-50 border-violet-200" },
-              { label: "Contradictions", n: 2, c: "text-red-600 bg-red-50 border-red-200" },
-              { label: "Redundancies", n: 1, c: "text-amber-600 bg-amber-50 border-amber-200" },
+              { label: "Contradictions", n: 2, c: "text-red-700 bg-red-50 border-red-200" },
+              { label: "Redundancies", n: 1, c: "text-amber-800 bg-amber-50 border-amber-200" },
             ].map(({ label, n, c }) => (
               <div key={label} className={`flex justify-between items-center text-xs px-2.5 py-1 rounded-lg border ${c}`}>
                 <span className="font-medium">{label}</span>
@@ -506,7 +507,7 @@ function PreviewCard() {
         </div>
         {/* highlighted passage */}
         <div className="px-5 py-4 space-y-2">
-          <div className="text-[10px] mono font-bold text-blue-500 uppercase tracking-widest">Chapter 1 — Statement of the Problem</div>
+          <div className="text-[10px] mono font-bold text-blue-700 uppercase tracking-widest">Chapter 1 — Statement of the Problem</div>
           <p className="text-xs text-gray-600 leading-relaxed">
             The study aims to{" "}
             <mark className="bg-violet-100 border border-violet-300 text-violet-800 rounded px-0.5 not-italic" style={{ background: undefined, textDecoration: "none" }}>
@@ -565,6 +566,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
         </div>
       </nav>
 
+      <main>
       {/* ── Hero ── */}
       <section className="relative overflow-hidden">
         {/* background grid */}
@@ -678,7 +680,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                     <p className="text-xs text-gray-400">.docx or Google Docs link · max 25&nbsp;MB</p>
                     <div className="mt-5 flex items-center justify-center gap-2">
                       <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs text-gray-300 font-medium">or</span>
+                      <span className="text-xs text-gray-600 font-medium">or</span>
                       <div className="flex-1 h-px bg-gray-100" />
                     </div>
                     <button className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2" style={{ background: `linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
@@ -897,6 +899,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
           Resync is a decision-support tool. Final judgment on your manuscript always rests with your adviser and panel.
         </p>
       </section>
+      </main>
       <BackToTop />
     </div>
   );
@@ -1238,32 +1241,32 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
       <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-10">
 
         {/* Step Progress Bar */}
-        <div className="mb-8 p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex items-center justify-between gap-4">
-          <div role="button" tabIndex={0} aria-label="Go to Step 1: Manuscript and Research Scope" className="flex items-center gap-3 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
+        <div className="mb-8 p-3 sm:p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 min-w-0">
+          <div role="button" tabIndex={0} aria-label="Go to Step 1: Manuscript and Research Scope" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm"
               style={{ background: step === 1 ? B : "#16a34a" }}>
               {step > 1 ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
               ) : "1"}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold text-gray-900">1. Manuscript & Research Scope</p>
               <p className="text-[11px] text-gray-400">Select research type & upload .docx</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
-          <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Standard Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-3 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
+          <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Standard Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-2 sm:gap-3 min-w-0 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
               style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
               2
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Standard Template (Editable)</p>
               <p className="text-[11px] text-gray-400">Review & customize chapter headings</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px] bg-gray-200" />
-          <div className="flex items-center gap-3 opacity-60">
+          <div className="flex items-center gap-2 sm:gap-3 opacity-60">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gray-100 text-gray-400">
               3
             </div>
@@ -1418,7 +1421,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                     <p className="text-center text-xs text-gray-400">Select Quantitative or Qualitative to continue</p>
                   )}
                   {scanError && (
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+                    <div role="alert" className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-red-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                       <p className="flex-1 leading-snug font-medium">{scanError}</p>
                     </div>
@@ -1725,7 +1728,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   </button>
                 </div>
                 {scanError && (
-                  <div className="mt-3 flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+                  <div role="alert" className="mt-3 flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-red-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                     <p className="flex-1 leading-snug font-medium">{scanError}</p>
                   </div>
@@ -1911,9 +1914,15 @@ const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: strin
     question: "What is the actual condition of this manuscript based on the analysis?",
   },
   strength: {
-    label: "Key Strength",
+    label: "Verified Alignment",
     short: "Consistent Alignment",
     long: "Key strengths reflect areas where your manuscript demonstrates consistent logical correspondence across chapters, satisfying standard academic defense criteria.",
+    question: "What the manuscript does consistently",
+  },
+  "key-strength": {
+    label: "Key Strength",
+    short: "Coherent Evidence",
+    long: "The manuscript shows a supported connection between these sections.",
     question: "What the manuscript does consistently",
   },
   "major-issue": {
@@ -2004,6 +2013,11 @@ function extractDisplayTitle(text: string | null) {
   return title.join(' ');
 }
 
+function normalizeManuscriptPreview(text: string) {
+  // Google Docs plain-text exports can start with a Roman-numeral page marker.
+  return text.replace(/^\uFEFF?(?:(?:[ \t]*\r?\n)*[ \t]*(?:\d+|[ivxlcdm]+)[ \t]*(?:\r?\n)+)/i, '');
+}
+
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeId, setActiveIdRaw] = useState<string | null>(null);
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
@@ -2047,9 +2061,11 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       setManuscriptError(null);
       fetchManuscript(scan.analysis_run_id)
         .then(res => {
-          if (res.available && res.text) setManuscriptText(res.text);
+          if (res.available && res.text) setManuscriptText(normalizeManuscriptPreview(res.text));
           else if (res.reason === 'private') setManuscriptError("Document is no longer accessible");
           else if (res.reason === 'non_gdocs') setManuscriptError("Preview is only available for Google Docs");
+          else if (res.reason === 'timeout') setManuscriptError("Manuscript preview timed out. Please try again.");
+          else if (res.status) setManuscriptError(`Manuscript preview unavailable (HTTP ${res.status})`);
           else setManuscriptError("Manuscript preview unavailable");
         })
         .catch(() => setManuscriptError("Manuscript preview unavailable"))
@@ -2065,7 +2081,18 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   const cleanedFilename = scan?.doc_url
     ? (scan.doc_url.startsWith('http')
-        ? scan.doc_url.split('/').pop()?.replace(/\.(docx|pdf|doc)$/i, '') || null
+        ? (() => {
+            try {
+              const url = new URL(scan.doc_url);
+              if (url.hostname.toLowerCase() === 'docs.google.com' && /^\/document\/d\//i.test(url.pathname)) {
+                return 'Google Docs manuscript';
+              }
+              return decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || '')
+                .replace(/\.(docx|pdf|doc)$/i, '') || null;
+            } catch {
+              return null;
+            }
+          })()
         : scan.doc_url.replace(/\.(docx|pdf|doc)$/i, ''))
     : null;
 
@@ -2084,7 +2111,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       const isMissingSection = !inc.section_b;
       return {
         id: inc.inconsistency_id || `inc-${i}`,
-        type: (inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType,
+        type: (inc.finding_status === 'key_strength' ? "key-strength" : inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType,
         title: isMissingSection
           ? `Required section "${formatRoleLabel(inc.section_a)}"`
           : (inc.explanation_what ?? "").trim().replace(/\.$/, "") || "Finding",
@@ -2092,9 +2119,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           ? "Missing Section"
           : `${inc.section_a} ↔ ${inc.section_b}`,
         targetSectionIndex: 0,
-        questionOrSubtitle: isMissingSection ? "Missing section" : (inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding"),
+        questionOrSubtitle: inc.finding_status === 'key_strength' ? "What the manuscript does consistently" : isMissingSection ? "Missing section" : (inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding"),
         description: inc.explanation_why || inc.explanation_what,
-        significance: isMissingSection ? "Structural requirement" : "Requires attention",
+        significance: inc.finding_status === 'key_strength' ? "Supported cross-section alignment" : isMissingSection ? "Structural requirement" : "Requires attention",
         section_a: inc.section_a,
         explanation_what: inc.explanation_what,
         evidence: inc.evidence_a,
@@ -2160,7 +2187,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : (scan?.inconsistencies ?? []).flatMap((inc, i) => {
      const itemId = inc.inconsistency_id || `inc-${i}`;
-     const t = ((inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section") as AssessmentType;
+     const t = (inc.finding_status === 'key_strength' ? "key-strength" : (inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section") as AssessmentType;
      const p: typeof PARAGRAPHS = [];
      if (inc.section_a) p.push({
        type: "section", chapter: "", heading: inc.section_a, text: inc.evidence_a || inc.explanation_what,
@@ -2225,6 +2252,18 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   }
 
   const score = isSample ? 74 : scan?.overall_coherence_score || 0;
+  const v6Dimensions = (scan?.score_breakdown as ScoreBreakdown | undefined)?.v6_dimensions;
+  const advisoryDimensions = ([
+    ['objectives_alignment', 'Objectives alignment'],
+    ['methodology_fit', 'Methodology fit'],
+    ['numeric_consistency', 'Numeric consistency'],
+    ['claim_support', 'Claim support'],
+    ['overall_coherence', 'Overall coherence'],
+  ] as const).flatMap(([key, label]) => {
+    const values = Object.values(v6Dimensions ?? {}).map(pair => pair?.[key])
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1);
+    return values.length ? [{ key, label, value: values.reduce((sum, value) => sum + value, 0) / values.length }] : [];
+  });
   const dead = localCitations.filter(c => c.status === "dead").length;
   function scrollToSection(sectionIndex: number, itemId?: string) {
     if (itemId) setActiveId(itemId);
@@ -2248,6 +2287,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       hlActive: "bg-emerald-300 rounded px-0.5 cursor-pointer ring-2 ring-emerald-500 ring-offset-1",
       pill: "bg-surface-success border border-emerald-200 text-emerald-800",
       pillTxt: "text-emerald-800", dot: "bg-emerald-500", border: "border-emerald-200", bg: "bg-surface-success",
+      accentColor: "#059669", label: "Verified Alignment",
+    },
+    "key-strength": {
+      hl: "bg-emerald-200 rounded px-0.5 cursor-pointer hover:bg-emerald-300 transition-colors",
+      hlActive: "bg-emerald-300 rounded px-0.5 cursor-pointer ring-2 ring-emerald-500 ring-offset-1",
+      pill: "bg-surface-success border border-emerald-200 text-emerald-800",
+      pillTxt: "text-emerald-800", dot: "bg-emerald-500", border: "border-emerald-200", bg: "bg-surface-success",
       accentColor: "#059669", label: "Key Strength",
     },
     "major-issue": {
@@ -2267,7 +2313,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   };
 
   const filteredItems = filterType === "all" ? localItems : localItems.filter(i => i.type === filterType);
-  const strongestAlignment = localItems.find(i => i.type === "strength");
+  const strongestAlignment = localItems.find(i => i.type === "key-strength" || i.type === "strength");
   const needsAttention = localItems.find(i => i.type === "major-issue");
   const activeItem = activeId ? localItems.find(i => i.id === activeId) ?? null : null;
   const itemIdx = activeItem ? localItems.findIndex(i => i.id === activeItem.id) : -1;
@@ -2296,9 +2342,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   }
 
   // ── Tab data ──
-  const inconsistencyItems = localItems.filter(i => i.type === "major-issue" || i.type === "affected-section");
+  const inconsistencyItems = localItems.filter(i => i.type === "key-strength" || i.type === "major-issue" || i.type === "affected-section");
   const visibleInconsistencies =
-    filterType === "major-issue" || filterType === "affected-section"
+    filterType === "key-strength" || filterType === "major-issue" || filterType === "affected-section"
       ? inconsistencyItems.filter(i => i.type === filterType)
       : inconsistencyItems;
   const inconsistenciesCount = inconsistencyItems.length;
@@ -2386,7 +2432,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   const tabList: Array<{ id: ActiveResultsTab; label: string }> = [
     { id: 'overview',         label: 'Overview' },
-    { id: 'inconsistencies',  label: `Inconsistencies (${inconsistenciesCount})` },
+    { id: 'inconsistencies',  label: `Findings (${inconsistenciesCount})` },
     { id: 'strong_coherence', label: `Coherence Pairs (${pairsCount})` },
     { id: 'citations',        label: `Citations (${citationsCount})` },
   ];
@@ -2395,7 +2441,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   // Strengths ("ver-N") and the sample overall-status card are excluded.
   const canGiveFeedback = (it: AssessmentItem | null): it is AssessmentItem =>
     !!it &&
-    (it.type === "major-issue" || it.type === "affected-section") &&
+    (it.type === "key-strength" || it.type === "major-issue" || it.type === "affected-section") &&
     (isSample || !!scan?.inconsistencies?.some(i => i.inconsistency_id === it.id));
 
   async function handleFeedback(item: AssessmentItem, helpful: boolean) {
@@ -2472,7 +2518,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   function applyFilter(next: AssessmentType | "all") {
     setFilterType(next);
-    if (next === "major-issue" || next === "affected-section") setActiveTab("inconsistencies");
+    if (next === "key-strength" || next === "major-issue" || next === "affected-section") setActiveTab("inconsistencies");
     else if (next === "strength") setActiveTab("strong_coherence");
     else if (next === "overall-status") setActiveTab("overview");
     else if (activeTab === "citations") setActiveTab("inconsistencies"); // "all"
@@ -2506,9 +2552,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <li key={idx}>{str}</li>
                 ))}
               </ul>
-            ) : (scan?.verifications && scan.verifications.length > 0) ? (
+            ) : (scan?.inconsistencies?.some(i => i.finding_status === 'key_strength') || (scan?.verifications && scan.verifications.length > 0)) ? (
               <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
-                {scan.verifications.map((v, idx) => (
+                {scan?.inconsistencies?.filter(i => i.finding_status === 'key_strength').map((inc, idx) => (
+                  <li key={`strength-${idx}`}><strong>{inc.section_a} ↔ {inc.section_b}:</strong> {inc.explanation_what || inc.explanation_why}</li>
+                ))}
+                {scan?.verifications?.map((v, idx) => (
                   <li key={idx}><strong>{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</li>
                 ))}
               </ul>
@@ -2598,7 +2647,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <button
             type="button"
             onClick={() => setIsRightCollapsed(false)}
-            aria-label="Expand inspector sidebar"
+            aria-label="Show Analysis"
             aria-expanded={false}
             title="Expand inspector sidebar"
             className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-r-0 border-gray-200 rounded-l-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
@@ -2616,10 +2665,23 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {tabList.map(tab => (
               <button
                 key={tab.id}
+                id={`results-tab-${tab.id}`}
                 type="button"
                 role="tab"
                 aria-selected={activeTab === tab.id}
+                aria-controls="results-tab-panel"
+                tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
+                onKeyDown={e => {
+                  const index = tabList.findIndex(item => item.id === tab.id);
+                  const next = e.key === 'ArrowRight' ? (index + 1) % tabList.length
+                    : e.key === 'ArrowLeft' ? (index - 1 + tabList.length) % tabList.length
+                    : e.key === 'Home' ? 0 : e.key === 'End' ? tabList.length - 1 : -1;
+                  if (next < 0) return;
+                  e.preventDefault();
+                  setActiveTab(tabList[next].id);
+                  document.getElementById(`results-tab-${tabList[next].id}`)?.focus();
+                }}
                 className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
                   activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
                 }`}>
@@ -2627,7 +2689,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </button>
             ))}
           </div>
-          <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 lg:px-10 py-8 flex-1">
+          <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 lg:px-10 py-8 flex-1">
             {activeTab === 'overview' && (
               <article className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-sm">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">{displayTitle}</h1>
@@ -2735,7 +2797,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             {/* Status Badge */}
                             <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
                               cite.status === "live" ? "bg-emerald-100 text-emerald-700"
-                              : cite.status === "restricted" ? "bg-amber-100 text-amber-700"
+                              : cite.status === "restricted" ? "bg-amber-100 text-amber-800"
                               : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
                               : "bg-red-100 text-red-700"
                             }`}>
@@ -2804,7 +2866,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       const matches: PhraseMatch[] = [];
                       scan.inconsistencies.forEach(inc => {
                         const itemId = inc.inconsistency_id || "";
-                        const t = (inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType;
+                        const t = (inc.finding_status === 'key_strength' ? "key-strength" : inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType;
                         if (inc.evidence_a && inc.evidence_a.trim().length > 10) {
                           const idx = manuscriptText.indexOf(inc.evidence_a);
                           if (idx !== -1) matches.push({ phrase: inc.evidence_a, itemId, type: t, index: idx });
@@ -3105,10 +3167,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 px-1">
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
-                    {filterType === 'major-issue' ? 'Major Issues' : filterType === 'affected-section' ? 'Affected Sections' : 'All Inconsistencies'} ({visibleInconsistencies.length})
+                    {filterType === 'key-strength' ? 'Key Strengths' : filterType === 'major-issue' ? 'Major Issues' : filterType === 'affected-section' ? 'Affected Sections' : 'All Findings'} ({visibleInconsistencies.length})
                   </p>
                   <div className="flex items-center gap-3">
-                    {(filterType === 'major-issue' || filterType === 'affected-section') && (
+                    {(filterType === 'key-strength' || filterType === 'major-issue' || filterType === 'affected-section') && (
                       <button type="button" onClick={() => setFilterType('all')}
                         className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
                         Show all ({inconsistenciesCount})
@@ -3128,10 +3190,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
                 {visibleInconsistencies.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-gray-200 px-6 py-10 text-center">
-                    <p className="text-sm font-bold text-gray-800 mb-1">No inconsistencies to show</p>
+                    <p className="text-sm font-bold text-gray-800 mb-1">No findings to show</p>
                     <p className="text-xs text-gray-500">
                       {inconsistenciesCount === 0
-                        ? 'No inconsistencies were detected across the analyzed sections.'
+                        ? 'No findings were detected across the analyzed sections.'
                         : 'No findings match the selected filter.'}
                     </p>
                   </div>
@@ -3168,7 +3230,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                             <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.title}</h3>
                           </div>
                           <div className="shrink-0 p-1 text-gray-400 hover:text-gray-600">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} aria-hidden="true">
                               <path d="M19 9l-7 7-7-7" />
                             </svg>
                           </div>
@@ -3327,7 +3389,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">{CITE_BADGE[s].label}</p>
+                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-600">{CITE_BADGE[s].label}</p>
                           {isSelected && (
                             <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
                               Active
@@ -3408,7 +3470,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               <button
                 type="button"
                 onClick={() => setIsRightCollapsed(true)}
-                aria-label="Collapse inspector sidebar"
+                aria-label="Hide Analysis"
                 aria-expanded={!isRightCollapsed}
                 title="Collapse inspector sidebar"
                 className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer mr-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
@@ -3447,8 +3509,21 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
             <ScoreRing score={score} size={88} />
             <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
+            {advisoryDimensions.length > 0 && (
+              <div className="w-full mt-2 space-y-2" aria-label="Advisory coherence dimensions">
+                <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Advisory dimensions · pair average</p>
+                {advisoryDimensions.map(({ key, label, value }) => (
+                  <div key={key}>
+                    <div className="flex justify-between text-xs text-gray-700"><span>{label}</span><span className="font-bold tabular-nums">{Math.round(value * 100)}%</span></div>
+                    <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={Math.round(value * 100)} aria-valuemin={0} aria-valuemax={100}>
+                      <div className="h-full rounded-full bg-indigo-500" style={{ width: `${value * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="w-full mt-1.5 space-y-1">
-              {(["overall-status", "strength", "major-issue"] as AssessmentType[])
+              {(["overall-status", "strength", "key-strength", "major-issue"] as AssessmentType[])
                 .filter(t => isSample || t !== "overall-status")
                 .map(t => (
                 <button
@@ -3461,6 +3536,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <span className={`text-xs font-black ${ST[t].pillTxt}`}>
                     {isSample ? localItems.filter(i => i.type === t).length : (
                       t === 'strength' ? (scan?.verifications?.length ?? 0) :
+                      t === 'key-strength' ? (scan?.inconsistencies?.filter(i => i.finding_status === 'key_strength').length ?? 0) :
                       (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)
                     )}
                   </span>
@@ -3512,7 +3588,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 onClick={() => applyFilter("strength")}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   }`}>
-                Strengths ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
+                Verified Alignments ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
               </button>
               <button
                 type="button"
@@ -3520,6 +3596,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
                   }`}>
                 Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
+              </button>
+              <button
+                type="button"
+                onClick={() => applyFilter("key-strength")}
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "key-strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>
+                Key Strengths ({isSample ? 0 : (scan?.inconsistencies?.filter(i => i.finding_status === 'key_strength').length ?? 0)})
               </button>
             </div>
           </div>
@@ -3563,7 +3645,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
           <div className="px-4 py-3.5 border-t border-gray-100 space-y-2">
             <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500 mb-1">Highlight key</p>
             <div className="flex flex-wrap gap-1.5">
-              {(["overall-status", "strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
+              {(["overall-status", "strength", "key-strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
                 <span key={t} className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold ${ST[t].hl.split(" ").filter(c => c.startsWith("bg-")).join(" ")} ${ST[t].pillTxt}`}>
                   {ST[t].label}
                 </span>
@@ -3750,7 +3832,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 <p className="text-sm text-gray-600">Select a section above to view its analysis</p>
                 <div className="w-full mt-1 space-y-2 text-left">
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
-                  {(["strength", "major-issue"] as AssessmentType[]).map(t => (
+                  {(["strength", "key-strength", "major-issue"] as AssessmentType[]).map(t => (
                     <div key={t}
                       onClick={() => applyFilter(t)}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
@@ -3802,7 +3884,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-500 shrink-0">
                         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                       </svg>
-                      <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Why the AI Flagged This</p>
+                      <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">{activeItem.type === 'key-strength' ? 'Why this is a strength' : 'Why the AI Flagged This'}</p>
                     </div>
                     <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed font-normal bg-gray-50 p-4 rounded-2xl border border-gray-200/80">
                       {activeItem.description}
@@ -3859,7 +3941,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </svg>
                     </div>
                     <div>
-                      <p className="text-xs mono font-bold uppercase tracking-wider" style={{ color: B }}>Actionable Recommendation</p>
+                      <p className="text-xs mono font-bold uppercase tracking-wider" style={{ color: B }}>{activeItem.type === 'key-strength' ? 'How to preserve this strength' : 'Actionable Recommendation'}</p>
                       <p className="text-[11px] text-gray-500 font-medium">Adviser Guidance & Revision Step</p>
                     </div>
                   </div>
@@ -4027,14 +4109,15 @@ function AuthLayout({ children, onNavigate }: { children: React.ReactNode; onNav
 function FieldInput({ label, type = "text", value, onChange, placeholder, right, required = true }: {
   label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; right?: React.ReactNode; required?: boolean;
 }) {
+  const id = useId();
   const [focused, setFocused] = useState(false);
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
+        <label htmlFor={id} className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
         {right}
       </div>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
+      <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         className="w-full h-11 px-4 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
         style={{ borderColor: focused ? B : "#e5e7eb", boxShadow: focused ? `0 0 0 3px ${B}12` : "none" }} />
@@ -4119,9 +4202,10 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
 
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
+            <label htmlFor="email-input" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
             <div className="relative">
               <input
+                id="email-input"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -4140,7 +4224,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
+              <label htmlFor="password-input" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
               <button
                 type="button"
                 onClick={() => {
@@ -4157,6 +4241,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
             </div>
             <div className="relative">
               <input
+                id="password-input"
                 type={showPw ? "text" : "password"}
                 value={pw}
                 onChange={e => setPw(e.target.value)}
@@ -4368,9 +4453,9 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
 
           {/* password */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
+            <label htmlFor="signup-password-input" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
             <div className="relative">
-              <input type={showPw ? "text" : "password"} value={pw} onChange={e => setPw(e.target.value)} placeholder="At least 8 characters" required
+              <input id="signup-password-input" type={showPw ? "text" : "password"} value={pw} onChange={e => setPw(e.target.value)} placeholder="At least 8 characters" required
                 className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
                 style={{ borderColor: "#e5e7eb" }}
                 onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
@@ -5014,7 +5099,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             <div ref={profileMenuRef} className="relative">
               <button
                 onClick={() => setProfileMenuOpen(open => !open)}
-                aria-label="User account menu"
+                aria-label={`${profile.fullName} user account menu`}
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
                 className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
@@ -5549,7 +5634,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
               {STEPS.map((step, index) => (
                 <article key={step.num} className={`relative ${index % 2 === 1 ? "lg:mt-12" : ""}`}>
-                  <span aria-hidden="true" className="absolute -top-10 left-4 text-7xl font-bold leading-none text-indigo-50 sm:text-8xl">
+                  <span aria-hidden="true" className="absolute -top-10 left-4 text-7xl font-bold leading-none text-gray-500 sm:text-8xl">
                     {String(step.num).padStart(2, "0")}
                   </span>
                   <div className="relative flex min-h-[220px] h-full flex-col items-center rounded-3xl border border-indigo-100 bg-white/95 p-6 text-center shadow-[0_14px_36px_rgba(26,31,204,0.08)]">

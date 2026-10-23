@@ -573,27 +573,49 @@ export interface ManuscriptResponse {
   available: boolean;
   text?: string;
   reason?: string;
+  status?: number;
   fetched_at?: string;
 }
 
+const MANUSCRIPT_PREVIEW_TIMEOUT_MS = 15_000;
+
 export async function fetchManuscript(analysisRunId: string): Promise<ManuscriptResponse> {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
-    const response = await fetch(`${API_BASE_URL}/api/scans/${analysisRunId}/manuscript`, {
-      method: 'GET',
-      headers: await authHeaders(),
+    const request = (async () => {
+      const response = await fetch(`${API_BASE_URL}/api/scans/${analysisRunId}/manuscript`, {
+        method: 'GET',
+        headers: await authHeaders(),
+        signal: controller.signal,
+      });
+
+      if (response.status === 400) {
+        return { available: false, reason: 'non_gdocs' };
+      }
+
+      if (!response.ok) {
+        return { available: false, reason: 'http_error', status: response.status };
+      }
+
+      return await response.json();
+    })();
+
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        controller.abort();
+        reject(new Error('manuscript-preview-timeout'));
+      }, MANUSCRIPT_PREVIEW_TIMEOUT_MS);
     });
-    
-    if (response.status === 400) {
-      return { available: false, reason: 'non_gdocs' };
-    }
-    
-    if (!response.ok) {
-      return { available: false, reason: 'unreachable' };
-    }
-    
-    return await response.json();
+
+    return await Promise.race([request, timeout]);
   } catch (e) {
     console.error('fetchManuscript failed:', e);
-    return { available: false, reason: 'unreachable' };
+    return {
+      available: false,
+      reason: e instanceof Error && e.message === 'manuscript-preview-timeout' ? 'timeout' : 'unreachable',
+    };
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }
