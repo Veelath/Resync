@@ -420,7 +420,7 @@ function scoreBandTone(score: number, band = '') {
   return /strong|high/i.test(band) ? 'strong' : /solid|moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
 }
 
-function ScoreRing({ score, size = 112, band, showLabel = true }: { score: number; size?: number; band?: string; showLabel?: boolean }) {
+function ScoreRing({ score, size = 112, band, showLabel = true, solidArc = false }: { score: number; size?: number; band?: string; showLabel?: boolean; solidArc?: boolean }) {
   const gradientId = useId();
   const r = 38; const circ = 2 * Math.PI * r;
   const tone = scoreBandTone(score, band);
@@ -429,14 +429,14 @@ function ScoreRing({ score, size = 112, band, showLabel = true }: { score: numbe
     <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label}`}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
-          <defs>
+          {!solidArc && <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="15%" stopColor="var(--band)" />
               <stop offset="100%" stopColor="var(--brand)" />
             </linearGradient>
-          </defs>
+          </defs>}
           <circle cx="50" cy="50" r={r} fill="var(--band-surface)" stroke="var(--band-surface)" strokeWidth="9" />
-          <circle cx="50" cy="50" r={r} fill="none" stroke={`url(#${gradientId})`} strokeWidth="9" strokeLinecap="round" className="score-ring-arc"
+          <circle cx="50" cy="50" r={r} fill="none" stroke={solidArc ? 'var(--brand)' : `url(#${gradientId})`} strokeWidth="9" strokeLinecap="round" className="score-ring-arc"
             strokeDasharray={`${(Math.max(0, Math.min(100, score)) / 100) * circ} ${circ}`} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -1911,7 +1911,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
   const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
-  const [analysisTab, setAnalysisTab] = useState<'synthesis' | 'recommendations' | 'references'>('synthesis');
+  const [analysisTab, setAnalysisTab] = useState<'synthesis' | 'recommendations'>('synthesis');
   const [analysisExpanded, setAnalysisExpanded] = useState(true);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
   const [feedbackPending, setFeedbackPending] = useState<Record<string, boolean>>({});
@@ -2135,7 +2135,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     ['methodology_fit', 'Methodology fit', 'bg-emerald-500'],
     ['numeric_consistency', 'Numeric consistency', 'bg-rose-500'],
     ['claim_support', 'Claim support', 'bg-blue-500'],
-    ['overall_coherence', 'Overall coherence', 'bg-primary'],
   ] as const).map(([key, label, color]) => {
     const values = Object.values(v6Dimensions ?? {}).map(pair => pair?.[key])
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1);
@@ -2640,14 +2639,13 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             onScroll={e => { if (activeSectionRole && e.currentTarget.clientHeight > 0) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
           {/* Score ring */}
           <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
-            <ScoreRing score={score} size={88} band={displayBand} />
+            <ScoreRing score={score} size={88} band={displayBand} solidArc />
             <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
             {advisoryDimensions.some(dimension => dimension.value !== null) && (
               <div className="w-full mt-2 space-y-2" aria-label="Advisory coherence dimensions">
-                <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Advisory dimensions · pair average</p>
                 <div className="grid grid-cols-2 gap-2">
-                {advisoryDimensions.map(({ key, label, color, value }, index) => (
-                  <div key={key} className={`min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3 ${index === 4 ? 'col-span-2' : ''}`}>
+                {advisoryDimensions.map(({ key, label, color, value }) => (
+                  <div key={key} className="min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3">
                     <div className="flex items-start gap-2 text-xs text-gray-700">
                       <span className={`mt-1 size-2 shrink-0 rounded-full ${color}`} aria-hidden="true" />
                       <span className="min-w-0 flex-1 leading-tight">{label}</span>
@@ -2671,9 +2669,9 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             </button>
             {analysisExpanded && <div id="coherence-analysis-content">
               <div role="tablist" aria-label="Coherence analysis tabs" className="flex border-y border-gray-100 px-4 overflow-x-auto">
-                {([['synthesis', 'AI synthesis', null], ['recommendations', 'Recommendations', recommendations.length], ['references', 'References', localCitations.length]] as const).map(([id, label, count], index) => (
+                {([['synthesis', 'AI synthesis', null], ['recommendations', 'Recommendations', recommendations.length]] as const).map(([id, label, count], index) => (
                   <button key={id} type="button" role="tab" aria-selected={analysisTab === id} aria-controls="analysis-tab-panel" id={`analysis-tab-${id}`} tabIndex={analysisTab === id ? 0 : -1} onClick={() => setAnalysisTab(id)} onKeyDown={event => {
-                    const tabs = ['synthesis', 'recommendations', 'references'] as const;
+                    const tabs = ['synthesis', 'recommendations'] as const;
                     const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
                     if (next < 0) return;
                     event.preventDefault();
@@ -2714,17 +2712,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                       </div>
                     </div>
                   )) : <p className="text-sm text-gray-500">No findings have both a manuscript quote and a suggested fix.</p>}
-                </div>}
-                {analysisTab === 'references' && <div>
-                  <h3 className="text-sm font-bold text-slate-900">Supporting references</h3>
-                  <p className="text-xs text-gray-500 mt-2 mb-4">References found in this manuscript.</p>
-                  {localCitations.length ? <div className="divide-y divide-gray-100">{localCitations.map((cite, index) => (
-                    <div key={cite.id} className="flex items-start gap-3 py-3">
-                      <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
-                      <div className="min-w-0 text-xs text-gray-700 leading-relaxed">{renderCitation(cite)}</div>
-                    </div>
-                  ))}</div> : <p className="text-sm text-gray-500">No references were found in this manuscript.</p>}
-                  <p className="border-t border-gray-100 pt-4 mt-4 text-[11px] text-gray-400">✦ &nbsp;AI guidance · Review before applying</p>
                 </div>}
               </div>
               <div className="border-t border-gray-100">
