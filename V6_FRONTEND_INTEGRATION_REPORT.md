@@ -363,4 +363,282 @@ Final checks:
 npm.cmd run lint  -> PASS, tsc --noEmit, exit code 0
 npm.cmd run build -> PASS, Vite 6.4.3, 2,092 modules transformed, exit code 0
 git diff --check -> PASS, no output
+
 ```
+
+## Coherence Ring and Progress-Step Label Fixes
+
+### Bug 1 — coherence ring
+
+#### Finding before the fix
+
+- The live Results route is ResultsScreen in src/App.tsx, not the unreferenced legacy src/components/ResultDetails.tsx.
+- src/App.tsx:423-424 used the band helper, but classified solid with the green strong tone. The Results ring call at src/App.tsx:3507 did not pass scan.score_breakdown.band, so real scans fell back to score-only cutoffs.
+- The canonical backend bands are in D:\RESYNC_DEV\backend\bcknd\resync - backend\services\scoring.py:431-436: Strong for scores >=85, Solid for scores >=70, and Needs Revision below 70.
+- The reported four-way ring/percentage-bar layout is not present in this checkout. The actual Results implementation has one SVG progress arc plus four category rows showing counts. The before live sample DOM reported:
+
+~~~text
+ariaLabel: Coherence score: 74 out of 100, Moderate Coherence
+dataBand: moderate
+arcDasharray: 176.68317083788995 238.76104167282426
+rows: Overall Status 1; Verified Alignment 3; Key Strength 0; Major Issue 3
+~~~
+
+The dash length is 74% of the 238.761 circumference, so the fill was already score-driven; the real defect was that the color did not use the backend band. The before screenshot showed the single 74/100 ring with its amber/brand gradient, not a static four-way split.
+
+#### Fix
+
+- src/App.tsx:423-424 now maps Strong/High to green, Solid/Moderate/Medium to the existing amber tone, and Needs Revision/weak bands to rose.
+- src/App.tsx:2250-2251 derives displayBand from the real scan.score_breakdown.band and keeps the sample's existing Moderate Coherence label.
+- src/App.tsx:3507 passes band=displayBand to the Results ring.
+
+After the fix, the live sample Results render reported:
+
+~~~text
+ariaLabel: Coherence score: 74 out of 100, Moderate Coherence
+dataBand: moderate
+arcDasharray: 176.68317083788995 238.76104167282426
+bandColor: #92400e
+bandSurface: #fffbeb
+~~~
+
+The screenshot showed the 74/100 ring still filled to 74%, with the existing amber moderate treatment and the same visible category rows. A real authenticated scan was not available in this browser session; the real-scan band path is verified in source from scan.score_breakdown.band to ScoreRing.
+
+#### Highlight verification
+
+No highlight fix was needed. Both views already use the established categories:
+
+- Real scans: src/App.tsx:2866-2899 maps material_issue to major-issue, key_strength to key-strength, and other findings to affected-section; src/App.tsx:2274-2311 supplies the rose, emerald, and blue styles.
+- Sample report: src/App.tsx:2948-3155 uses the same rose/emerald/blue families in its inline marks.
+
+The live sample DOM before and after returned distinct classes/colors, including bg-rose-200 for issue marks, bg-emerald-200 for strength/alignment marks, and bg-blue-200 for affected-section marks. No flat single-color highlight view was observed.
+
+### Bug 2 — redundant progress-step labels
+
+#### Finding before the fix
+
+- The active ProcessingScreen at src/App.tsx:1788-1905 rendered the four requested steps and the redundant expression at src/App.tsx:1874-1877: Done, Running…, or —.
+- The unreferenced legacy src/components/ScanForm.tsx:495-535 contained the same visible Done and Running… labels, so both copies were cleaned up.
+
+#### Fix and after verification
+
+- Removed only the trailing status-text spans from src/App.tsx and src/components/ScanForm.tsx.
+- Kept the status icons, step titles, progress bar, finalizing state, and footer.
+
+The reproduced post-fix ProcessingScreen snapshot was:
+
+~~~text
+progressbar "Manuscript analysis progress" value="50"
+Reading your manuscript
+Checking section alignment
+Analyzing cross-chapter coherence
+Verifying citation links
+Typically 2–3 minutes · do not close this tab
+~~~
+
+There was no Done, Running…, or — beside any step. The screenshot showed the check icons for completed steps, the active/pulsing dot state, the progress bar, and the unchanged footer.
+
+### Verification commands
+
+~~~text
+npm run lint
+> react-example@0.0.0 lint
+> tsc --noEmit
+exit code 0
+
+npm run build
+vite v6.4.3 building for production...
+✓ 2092 modules transformed.
+✓ built in 29.34s
+exit code 0
+~~~
+
+The build kept the existing Vite warning about chunks larger than 500 kB. git diff --check also passed with exit code 0 and no output. The only browser console/network error observed was the unrelated pre-existing GET /favicon.ico [404]; no Results or ProcessingScreen runtime error was observed.
+
+## Results Screen Mockup Layout
+
+### Built
+
+1. The left pane now keeps the manuscript visible independently of the analysis tabs, with a manuscript eyebrow, the existing derived title in a serif display face, completion badge, divider, and a live assessment line. The real-scan line takes the band from `score_breakdown.band`, counts `inconsistencies`, and counts distinct nonempty `section_a`/`section_b` values touched by those findings. The sample path uses its own findings and assessed paragraph headings. The existing red, green, and blue highlight classes remain in use. See `src/App.tsx:2093`, `src/App.tsx:2197`, `src/App.tsx:2667`.
+2. The current score ring and its existing advisory/count content remain at the top right. The pre-existing band-color change was preserved. The mockup's four-color ring and four percentage cards were not added. See `src/App.tsx:2866`.
+3. A collapsible Coherence analysis section now contains AI synthesis, Recommendations, and References above the existing four tabs. AI synthesis uses the existing sample assessment or the real scan's `score_breakdown.biggest_lever.reason`, with an empty state when that reason is absent; the existing Strongest Alignment and Needs Attention cards were moved into it. Recommendations use only a finding's nonempty `evidence_a` (falling back to `evidence_b`) together with its `suggested_fix`; the count is the number of qualifying cards. References use the scan's existing citation list and existing citation renderer, with the requested guidance footer. See `src/App.tsx:2201`, `src/App.tsx:2322`, `src/App.tsx:2905`, `src/App.tsx:2926`, `src/App.tsx:2947`, `src/App.tsx:2958`.
+4. The old left-pane four-tab strip was removed. Overview, Findings, Coherence Pairs, and Citations now sit below the new tab block on the right; the latter three retain their prior content and counts. Overview shows the existing Report by Section names and detection statuses, which provide a useful summary while the manuscript itself remains continuously visible on the left. Both the real and sample paths use this same layout. See `src/App.tsx:2971`, `src/App.tsx:3000`, `src/App.tsx:3001`, `src/App.tsx:3130`, `src/App.tsx:3209`.
+
+### Omitted for lack of data
+
+- No subtitle: neither the backend scan result nor the existing sample report provides a dedicated subtitle.
+- No “Page 1 of 12” counter: no page count or current page is provided.
+- No category eyebrow on reference entries: citation records do not have a category field.
+- No separate publication/source line: the citation record supplies raw reference text and optional link/title/authors/year, but no reliably separate source field. Publication details remain in the citation text when present.
+- No invented synthesis prose when `biggest_lever.reason` is absent, and no recommendation cards for findings without both a quote and suggested fix. The real backend currently supplies suggested fixes, not guaranteed sentence-level rewrites.
+
+### Render verification and comparison
+
+There was no authenticated browser session. I temporarily injected a fixture with the full `ScanResponse` field shape, two findings, two citations, a score breakdown, and manuscript text, then rendered `ResultsScreen` with `isSample=false` at `http://localhost:3000/?__verify_results`. This exercised the real-scan branch but was **not a completed backend scan**. The fixture code and browser storage entries were removed afterward. In the browser, the real path showed the derived title, 2 findings across 3 touched sections, 2 recommendation cards, 2 references, the four old tabs with their counts, and the original Findings content. Collapsing the analysis hid its contents while the manuscript stayed visible. The sample path also rendered the shared structure and was checked at desktop and mobile widths.
+
+Screenshots, all outside the repo under `C:\Users\NHMIER\.claude\jobs\4a24cd9e\tmp\mockup-verify\`:
+
+- `real-full.png` — full desktop Results screen.
+- `real-header.png` — left header block.
+- `real-synthesis.png`, `real-recommendations.png`, `real-references.png` — each new tab selected.
+- `real-old-tabs.png` — the four existing tabs below the new block.
+- `sample-final.png`, `sample-mobile.png` — sample desktop and mobile checks.
+
+Concrete differences from mockups 01–04: the current score ring and score details remain by explicit scope; the right pane also retains its existing Analysis header, filters, recommendation list, and finding inspector, so it is longer than the mockup. The application navigation uses Home and its existing controls rather than the mockup's Scans breadcrumb. The fixture had 2 findings/2 references and the existing sample has 10 findings across 8 touched sections, 4 qualifying recommendations, and 6 citations, rather than the mockup's illustrative 10/5 and 3-card counts. Reference entries have no category or separate source line. The real manuscript plain-text preview includes its original title line as part of the document text. The subtitle and page counter are absent as noted above.
+
+### Command output
+
+```text
+npm run lint
+> react-example@0.0.0 lint
+> tsc --noEmit
+exit code 0
+
+npm run build
+> react-example@0.0.0 build
+> vite build
+vite v6.4.3 building for production...
+✓ 2092 modules transformed.
+dist/assets/index-UOUS64NL.css                  94.88 kB │ gzip: 16.64 kB
+dist/assets/index-CJT9JSGv.js                  396.81 kB │ gzip: 123.81 kB
+dist/assets/index-B-Ez09y9.js                  676.24 kB │ gzip: 176.78 kB
+✓ built in 10.56s
+exit code 0
+```
+
+The build also reported its existing warning for a chunk over 500 kB. `git diff --check` exited 0 with only line-ending warnings for the already modified report and `ScanForm.tsx`.
+
+```text
+warning: in the working copy of 'V6_FRONTEND_INTEGRATION_REPORT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/ScanForm.tsx', LF will be replaced by CRLF the next time Git touches it
+ V6_FRONTEND_INTEGRATION_REPORT.md   | 156 ++++++++
+ src/App.tsx                         | 705 +++++++++++-------------------------
+ src/assets/guidance-reference.png   | Bin 1446264 -> 0 bytes
+ src/components/ScanForm.tsx         |   8 +-
+ src/imports/Untitled_design__1_.png | Bin 801931 -> 0 bytes
+ 5 files changed, 376 insertions(+), 493 deletions(-)
+```
+
+The worktree already contained unrelated modifications and untracked files at the start of this task. This implementation changed only the Results section of `src/App.tsx` and appended this report section; the earlier `App.tsx` and `ScanForm.tsx` edits were preserved. No commit or push was made.
+
+
+## Results Panel Removals and Research Type
+
+### Changes
+
+- Removed the legacy Hide Analysis / Detailed Analysis & Recommendations header and collapse toggle. The right pane starts with the score ring; its four count rows and real-scan advisory dimension bars remain (src/App.tsx:2638-2679).
+- Removed the separate Assessment filters, numbered Recommendations sidebar, Report by Section disclosure, Highlight Key, coherence badge, summary/guidance/categories block, and the finding inspector (src/App.tsx:2679-3053). The collapsible Coherence analysis and its three tabs, plus Overview, Findings, Coherence Pairs, and Citations, remain (src/App.tsx:2681-3052).
+- The Overview tab uses the same section data as the removed Report by Section disclosure. Per the requested stop condition, its section list was preserved (src/App.tsx:2774); deleting it would empty Overview. For scans without a template, the list now falls back to detected and missing section names (src/App.tsx:1847-1859).
+- Inline highlights are plain mark elements with the existing colors (src/App.tsx:2119,2188-2190). The inspector state and click handlers are gone. Findings cards retain their own expandable content inside the Findings tab.
+- Removed the research type dropdown, its required-field gate, and scope-only copy from the main upload flow. The normal scan sends no template; a user can still attach or load an optional chapter template (src/App.tsx:1103-1115,1143,1247-1409). src/components/ScanForm.tsx already had no research type select or request field and was left unchanged by this task.
+
+### Backend and payload check
+
+The actual backend is D:\RESYNC_DEV\backend\bcknd\resync - backend. ScanRequest has no request research_type field; only user_id is required and template_toc defaults to None (main.py:289-324). research_type: Optional[str] = None at main.py:387 belongs to the response score breakdown. The pipeline passes req.template_toc to the parser (main.py:616-618). When the template is omitted, the parser runs auto_detect_sections, sets auto_detected: True, and returns the detected research type and confidence (services/parser.py:199-229). Its keyword heuristic returns quantitative, qualitative, mixed, or unknown (services/parser.py:429-450), and confidence affects structural scoring (main.py:634-637, services/scoring.py:92). Supplying a template instead takes the TOC path and returns research_type: "unknown" (services/parser.py:304-306); auto detection for scans with custom templates would require a backend change.
+
+Chrome DevTools captured the frontend's intercepted outgoing POST /api/scans/start body with an unauthenticated fixture user: {"user_id":"fixture-user","doc_url":"https://docs.google.com/document/d/fixture-id/edit"}. It contains neither research_type nor template_toc. Capture: C:\Users\NHMIER\.claude\jobs\4a24cd9e\tmp\removal-verify\outgoing-scan-payload.json. No credit-consuming request was submitted. The running backend's OpenAPI schema confirmed only user_id is required and there is no request research_type field. A direct parser self-check in the backend .venv with an omitted template returned {'auto_detected': True, 'research_type': 'quantitative', 'detection_confidence': 1.0}.
+
+### Visual and DOM verification
+
+Screenshots are outside the repo in C:\Users\NHMIER\.claude\jobs\4a24cd9e\tmp\removal-verify\:
+
+- sample-right-top.jpg, sample-right-bottom.jpg
+- real-fixture-right-top.jpg, real-fixture-right-bottom.jpg
+- scan-setup-no-dropdown.jpg
+
+The real view used a temporary fixture shaped from a backend response because no authenticated session was available. The fixture and test routes were removed afterward. In both sample and real DOM checks, a highlighted manuscript passage was MARK with no role or tab index, its cursor was auto, and clicking it left "Why the AI Flagged This" absent. The sample retained all seven requested tabs. The real Overview fallback showed section rows after the template omission change.
+
+### Commands
+
+    npm run lint
+    > react-example@0.0.0 lint
+    > tsc --noEmit
+    exit code 0
+
+    npm run build
+    > react-example@0.0.0 build
+    > vite build
+    vite v6.4.3 building for production...
+    ? 2092 modules transformed.
+    dist/assets/index-Ciiu9OhX.css  94.84 kB ? gzip: 16.63 kB
+    dist/assets/index-CJT9JSGv.js  396.81 kB ? gzip: 123.81 kB
+    dist/assets/index-DqJBi7DY.js  649.73 kB ? gzip: 171.13 kB
+    ? built in 12.37s
+    exit code 0
+
+Vite warned that a chunk exceeds 500 kB. git diff --check exited 0 with line-ending warnings for the previously modified report and ScanForm.tsx. No commit or push was made.
+
+## Dimension Cards, Progress Markers, and Back Navigation
+
+### Task 1 — dimension cards
+
+- `src/App.tsx:277,2133-2142,2645-2666`: added five fixed sample values (72, 68, 75, 70, 74) and rendered both sample and real advisory dimensions as a 2×2 tile grid plus a full-width Overall coherence tile. The real scan still averages finite pair values within `[0,1]`; each missing dimension renders `—` with an empty bar, and the group disappears when all five are missing. Existing amber, emerald, rose, blue, and primary color classes supply the dots and bars.
+- `src/App.tsx:2669`: removed the four count rows beneath the score ring and their now-unused status palette fields. The ring, band, and Coherence analysis remain.
+- Browser evidence: sample displayed `72%, 68%, 75%, 70%, 74%`; a temporary response-shaped real-scan fixture displayed `74%, 70%, —, 72%, 76%`. The fixture was removed from `App.tsx` after capture. No authenticated real scan was available.
+
+### Task 2 — processing markers
+
+- `src/App.tsx:1781-1818`: each pipeline marker is now at the row's right edge. The Finalizing row retains its title and subtitle and no longer has a trailing “Finalizing…” label.
+- `src/components/ScanForm.tsx:495-544`: applied the same right-edge order to completed, active, and pending markers in its separate full-screen scanning overlay.
+- Browser evidence: the live `ProcessingScreen` showed 25% at mid-progress and 99% with the Finalizing row visible. The `ScanForm` overlay was code-reviewed and passed lint/build; its authenticated upload flow was not exercised.
+
+### Task 3 — back/navigation audit
+
+`App.tsx` switches screens with React state. Before this change it did not add browser history entries; browser Back could leave the app or fail to return to the preceding app screen. `src/App.tsx:5290-5412` now records meaningful screens in `window.history.state`, handles `popstate`, and replaces transient processing/login/signup entries with the next meaningful destination. Back falls back to Home at the first internal entry and protects authenticated screens after sign-out.
+
+| Control (current file:line) | Screen | Before | After / decision |
+| --- | --- | --- | --- |
+| Back, `src/App.tsx:1184` | Upload step 1 | Landing page, even when opened from Dashboard | Previous meaningful screen; Home only with no previous screen. Fixed. |
+| Back to Step 1, `src/App.tsx:1184,1632` | Upload step 2 | Upload step 1 | Same local step; correct. |
+| Home breadcrumb, `src/App.tsx:2452` | Results | Landing page | Explicit Home link; retained as allowed. Browser Back now returns the previous meaningful screen. |
+| Back, `src/App.tsx:3279` | Login, Signup, Reset Password | Landing page | Previous meaningful screen, with Home fallback. Fixed through shared AuthLayout. |
+| Back to login, `src/App.tsx:3904` | Reset Password | Login | Explicit login destination; retained. General Back skips auth screens. |
+| Back to packages, `src/App.tsx:5054` | Dashboard payment modal | Package selection | Same local modal step; correct. |
+| Return to Dashboard, `src/App.tsx:5277` | Payment receipt | Dashboard | Explicit destination; correct. |
+| Back to top, `src/App.tsx:400` | Home/Dashboard | Scrolls to top | Scroll control; correct. |
+| Back; Back to Manuscript Upload, `src/components/ScanForm.tsx:365,960` | Separate ScanForm | `onBack` callback or browser Back; local upload step | ScanForm is not mounted by App; callback and local step retained. |
+| `< Home`, `src/components/ResultDetails.tsx:230` | Separate ResultDetails | `onBack` callback or browser Back | Explicit Home breadcrumb in an unmounted component; retained. |
+| Back to landing page, `src/components/AuthAndLanding.tsx:136,240,333` | Separate auth views | Landing page | Explicit destination in unmounted components; retained. |
+| Browser Back | Any App screen | No state-based screen history | Restores the previous meaningful screen; processing and auth entries resolve to their prior screen. Fixed. |
+
+Click-through output from Playwright against `http://localhost:3000`:
+
+```text
+login: 1
+login Back: home
+signup: 1
+signup Back: home
+upload Back: home (temporary unauthenticated route fixture, removed)
+browser Back from sample: Check your manuscript for coherence.
+```
+
+The upload fallback and sample browser Back were exercised. An authenticated Dashboard → Upload → real Results click-through could not be run without a session; the history logic and production build were checked, and no test fixture remains in the app.
+
+### Screenshots
+
+All screenshots are outside the repository under `C:\Users\NHMIER\.claude\jobs\4a24cd9e\tmp\cards-progress-back-verify\`:
+
+- `sample-results-right-pane-top.png`
+- `real-results-right-pane-top-missing-dimension.png` (temporary response-shaped fixture)
+- `processing-mid-progress.png`
+- `processing-finalizing.png`
+
+### Commands and output
+
+```text
+npm run lint
+> tsc --noEmit
+exit code 0
+
+npm run build
+vite v6.4.3 building for production...
+✓ 2092 modules transformed.
+✓ built in 11.12s
+exit code 0
+Warning: some chunks are larger than 500 kB after minification.
+
+git diff --check
+exit code 0 (existing LF/CRLF warnings for the report and ScanForm.tsx)
+```
+
+No commit or push was made.

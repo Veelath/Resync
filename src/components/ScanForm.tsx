@@ -498,18 +498,13 @@ export default function ScanForm({
                       key={check.id}
                       className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-2xl p-4 flex items-center justify-between transition-all"
                     >
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-7 h-7 rounded-full bg-[#22c55e] text-white flex items-center justify-center shrink-0 shadow-xs">
-                          <Check className="w-4 h-4 stroke-[3]" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-[#14532d]">{check.title}</h4>
-                          <p className="text-xs font-mono text-[#15803d]/80 mt-0.5">{check.tech}</p>
-                        </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-[#14532d]">{check.title}</h4>
+                        <p className="text-xs font-mono text-[#15803d]/80 mt-0.5">{check.tech}</p>
                       </div>
-                      <span className="text-xs font-bold text-[#16a34a] font-sans">
-                        Done
-                      </span>
+                      <div className="w-7 h-7 rounded-full bg-[#22c55e] text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Check className="w-4 h-4 stroke-[3]" />
+                      </div>
                     </div>
                   );
                 }
@@ -520,19 +515,14 @@ export default function ScanForm({
                       key={check.id}
                       className="bg-[#eff6ff] border-2 border-[#131bb4] rounded-2xl p-4 flex items-center justify-between transition-all shadow-xs"
                     >
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-7 h-7 rounded-full bg-[#131bb4] text-white flex items-center justify-center shrink-0 shadow-xs relative">
-                          <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping absolute" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-white relative" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900">{check.title}</h4>
-                          <p className="text-xs font-mono text-[#131bb4] mt-0.5">{check.tech}</p>
-                        </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">{check.title}</h4>
+                        <p className="text-xs font-mono text-[#131bb4] mt-0.5">{check.tech}</p>
                       </div>
-                      <span className="text-xs font-bold text-[#131bb4] font-mono animate-pulse">
-                        Running…
-                      </span>
+                      <div className="w-7 h-7 rounded-full bg-[#131bb4] text-white flex items-center justify-center shrink-0 shadow-xs relative">
+                        <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping absolute" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-white relative" />
+                      </div>
                     </div>
                   );
                 }
@@ -543,14 +533,12 @@ export default function ScanForm({
                     key={check.id}
                     className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between opacity-40 transition-all"
                   >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 font-bold text-xs flex items-center justify-center shrink-0">
-                        {check.id}
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-slate-500">{check.title}</h4>
-                        <p className="text-xs font-mono text-slate-400 mt-0.5">{check.tech}</p>
-                      </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-500">{check.title}</h4>
+                      <p className="text-xs font-mono text-slate-400 mt-0.5">{check.tech}</p>
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 font-bold text-xs flex items-center justify-center shrink-0">
+                      {check.id}
                     </div>
                   </div>
                 );
@@ -559,7 +547,7 @@ export default function ScanForm({
 
             {/* Bottom Note */}
             <p className="text-xs text-slate-400 pt-3">
-              Typically 2–3 minutes · do not close this tab
+              2–3 minutes · do not close this tab
             </p>
 
           </div>

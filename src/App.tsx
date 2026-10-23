@@ -274,6 +274,14 @@ const OVERALL_ASSESSMENT: OverallAssessmentData = {
   ],
 };
 
+const SAMPLE_ADVISORY_DIMENSIONS = {
+  objectives_alignment: 0.72,
+  methodology_fit: 0.68,
+  numeric_consistency: 0.75,
+  claim_support: 0.70,
+  overall_coherence: 0.74,
+};
+
 interface ParaAssessment { type: AssessmentType; phrase: string; itemId: string; }
 
 interface Section {
@@ -408,20 +416,8 @@ function GIcon() {
   return <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>;
 }
 
-function AssessmentBadge({ type }: { type: AssessmentType }) {
-  const m: Record<AssessmentType, { label: string; c: string }> = {
-    "overall-status": { label: "Overall Status", c: "bg-surface-warn text-amber-800 border-amber-200" },
-    "strength": { label: "Verified Alignment", c: "bg-surface-success text-emerald-800 border-emerald-200" },
-    "key-strength": { label: "Key Strength", c: "bg-surface-success text-emerald-800 border-emerald-200" },
-    "major-issue": { label: "Major Issue", c: "bg-surface-error text-rose-800 border-rose-200" },
-    "affected-section": { label: "Affected Section", c: "bg-surface-info text-blue-800 border-blue-200" },
-  };
-  return <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border font-sans ${m[type].c}`}><span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />{m[type].label}</span>;
-}
-
-// ─── Score Ring ───────────────────────────────────────────────────────────────
 function scoreBandTone(score: number, band = '') {
-  return /strong|high|solid/i.test(band) ? 'strong' : /moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
+  return /strong|high/i.test(band) ? 'strong' : /solid|moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
 }
 
 function ScoreRing({ score, size = 112, band, showLabel = true }: { score: number; size?: number; band?: string; showLabel?: boolean }) {
@@ -905,33 +901,13 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
   );
 }
 
-// ─── Research Types & Standard Templates ──────────────────────────────────────
-type ResearchType = "quantitative" | "qualitative";
-
+// ─── Research Types & Optional Templates ──────────────────────────────────────
 interface TemplateChapter {
   id: string;
   title: string;
   sections: string[];
 }
 
-const DEFAULT_TEMPLATES: Record<ResearchType, TemplateChapter[]> = {
-  quantitative: [
-    { id: "c1", title: "Chapter 1 — Introduction", sections: ["Background of the Study", "Statement of the Problem", "Research Hypotheses", "Conceptual Framework", "Significance of the Study", "Scope & Delimitations"] },
-    { id: "c2", title: "Chapter 2 — Review of Related Literature", sections: ["Theoretical Framework", "Review of Related Literature & Studies", "Synthesis of the State of the Art"] },
-    { id: "c3", title: "Chapter 3 — Methodology", sections: ["Research Design", "Population & Sampling Technique", "Instrumentation & Validation", "Data Gathering Procedure", "Statistical Treatment of Data"] },
-    { id: "c4", title: "Chapter 4 — Results and Discussion", sections: ["Descriptive Statistical Analysis", "Hypothesis Testing & Correlation", "Interpretation of Findings"] },
-    { id: "c5", title: "Chapter 5 — Summary, Conclusions & Recommendations", sections: ["Summary of Findings", "Conclusions", "Recommendations for Practice & Future Research"] },
-  ],
-  qualitative: [
-    { id: "c1", title: "Chapter 1 — Introduction", sections: ["Background & Phenomenon of Interest", "Statement of the Problem", "Central Research Questions", "Significance of the Study", "Epistemological & Reflexive Stance"] },
-    { id: "c2", title: "Chapter 2 — Review of Related Literature", sections: ["Conceptual & Thematic Foundations", "Critical Synthesis of Existing Studies", "Theoretical Lens"] },
-    { id: "c3", title: "Chapter 3 — Methodology", sections: ["Qualitative Paradigm (Phenomenology/Case Study)", "Informant Selection & Purposive Sampling", "Interview Protocol & Data Generation", "Thematic Analysis Procedures", "Trustworthiness, Credibility & Ethical Considerations"] },
-    { id: "c4", title: "Chapter 4 — Emergent Themes & Narrative Findings", sections: ["Core Thematic Findings", "Narrative Synthesis & Participant Quotes", "Cross-Theme Discussion"] },
-    { id: "c5", title: "Chapter 5 — Discussion, Conclusions & Implications", sections: ["Synthesis of Emergent Themes", "Theoretical & Practical Implications", "Conclusions", "Recommendations & Future Research Directions"] },
-  ],
-};
-
-// ─── Upload ───────────────────────────────────────────────────────────────────
 async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
   const mammoth = await import('mammoth');
   const arrayBuffer = await file.arrayBuffer();
@@ -969,9 +945,8 @@ let lastScanError: string | null = null;
 
 type DisplayScan = ScanResponse & { template_toc?: string[] };
 
-function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s: Screen) => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void }) {
+function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [researchType, setResearchType] = useState<ResearchType | null>(null);
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -1024,7 +999,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
   }
 
   function handleSaveTemplate() {
-    if (!researchType) return;
+    if (!templateChapters.some(chapter => chapter.sections.length)) return;
     try {
       const existing = localStorage.getItem("resync_saved_template");
       if (existing) {
@@ -1032,7 +1007,6 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         if (!confirmed) return;
       }
       const dataToSave = {
-        type: researchType,
         chapters: templateChapters,
         savedAt: new Date().toISOString(),
       };
@@ -1051,12 +1025,6 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
       const saved = JSON.parse(raw);
       if (!saved || typeof saved !== "object" || !Array.isArray(saved.chapters)) {
         return;
-      }
-      if (saved.type !== researchType) {
-        const confirmed = window.confirm(
-          "Saved template is for " + saved.type + ". Load it anyway? Your current research type is " + researchType + "."
-        );
-        if (!confirmed) return;
       }
       setTemplateChapters(saved.chapters);
       showTemplateToast("Saved template loaded.");
@@ -1083,8 +1051,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
           .map(l => l.replace(/^["'\s]+|["',\s]+$/g, '').trim())
           .filter(Boolean);
         if (lines.length === 0) {
-          setTemplateParseError('No headings found in the template. Using default template.');
-          setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
+          setTemplateParseError('No headings found in the template. No template will be sent.');
+          setTemplateChapters([]);
         } else {
           setTemplateChapters([{
             id: "c1",
@@ -1096,26 +1064,19 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
       }
       const parsed = await parseDocxTemplate(file);
       if (parsed.length === 0) {
-        setTemplateParseError('No headings found in the template. Using default template.');
-        setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
+        setTemplateParseError('No headings found in the template. No template will be sent.');
+        setTemplateChapters([]);
       } else {
         setTemplateChapters(parsed);
       }
     } catch {
-      setTemplateParseError('Could not parse the template file. Using default template.');
-      setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
+      setTemplateParseError('Could not parse the template file. No template will be sent.');
+      setTemplateChapters([]);
     }
   }
 
-  function handleSelectResearchType(t: ResearchType) {
-    setResearchType(t);
-    setTemplateChapters(DEFAULT_TEMPLATES[t]);
-    lastScanError = null;
-    setScanError(null);
-  }
-
   function handleResetTemplate() {
-    setTemplateChapters(researchType ? DEFAULT_TEMPLATES[researchType] : []);
+    setTemplateChapters([]);
     setCustomTemplateFile(null);
     setTemplateParseError(null);
     if (customTemplateInputRef.current) customTemplateInputRef.current.value = '';
@@ -1123,7 +1084,6 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
 
   async function handleScan() {
     if (!session?.user) { onNavigate("login"); return; }
-    if (!researchType) return;
     lastScanError = null;
     setScanError(null);
     setIsScanning(true);
@@ -1150,9 +1110,9 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
       navigatedToProcessing = true;
 
       const rawSections = templateChapters.flatMap(c => c.sections);
-      const templateToc = rawSections.some(s => /^references|bibliography/i.test(s))
-        ? rawSections
-        : [...rawSections, "References"];
+      const templateToc = rawSections.length
+        ? rawSections.some(s => /^references|bibliography/i.test(s)) ? rawSections : [...rawSections, "References"]
+        : undefined;
       const result = await executeManuscriptScan({
         user_id: session.user.id,
         file: uploadedFile ?? undefined,
@@ -1188,10 +1148,9 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
     setTemplateChapters(prev => prev.map((ch, i) => i === cIdx ? { ...ch, sections: ch.sections.map((s, si) => si === sIdx ? val : s) } : ch));
   }
 
-  const canProceedToStep2 = researchType !== null && (mode === "file" ? !!uploadedFile : link.trim().length > 0);
+  const canProceedToStep2 = mode === "file" ? !!uploadedFile : link.trim().length > 0;
 
   function handleStep1Continue() {
-    if (!researchType) return;
     if (mode === "file") {
       if (!uploadedFile) {
         setScanError("Please select a manuscript file to upload.");
@@ -1222,7 +1181,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => step === 2 ? setStep(1) : onNavigate("home")} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+            <button onClick={() => step === 2 ? setStep(1) : onBack()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
               {step === 2 ? "Back to Step 1" : "Back"}
             </button>
@@ -1231,7 +1190,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
-              Step {step} of 2: {step === 1 ? "Manuscript & Scope" : "Standard Template"}
+              Step {step} of 2: {step === 1 ? "Manuscript" : "Optional Template"}
             </span>
           </div>
         </div>
@@ -1242,7 +1201,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
 
         {/* Step Progress Bar */}
         <div className="mb-8 p-3 sm:p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 min-w-0">
-          <div role="button" tabIndex={0} aria-label="Go to Step 1: Manuscript and Research Scope" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
+          <div role="button" tabIndex={0} aria-label="Go to Step 1: Manuscript" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm"
               style={{ background: step === 1 ? B : "#16a34a" }}>
               {step > 1 ? (
@@ -1250,18 +1209,18 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
               ) : "1"}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-gray-900">1. Manuscript & Research Scope</p>
-              <p className="text-[11px] text-gray-400">Select research type & upload .docx</p>
+              <p className="text-xs font-bold text-gray-900">1. Manuscript</p>
+              <p className="text-[11px] text-gray-400">Upload .docx or add Google Docs link</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
-          <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Standard Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-2 sm:gap-3 min-w-0 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
+          <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Optional Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-2 sm:gap-3 min-w-0 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
               style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
               2
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Standard Template (Editable)</p>
+              <p className="text-xs font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Optional Template (Editable)</p>
               <p className="text-[11px] text-gray-400">Review & customize chapter headings</p>
             </div>
           </div>
@@ -1278,44 +1237,18 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
         </div>
 
         {/* ════════════════════════════════════════════════════════════════
-            STEP 1: MANUSCRIPT INTAKE & RESEARCH SCOPE
+            STEP 1: MANUSCRIPT INTAKE
         ════════════════════════════════════════════════════════════════ */}
         {step === 1 ? (
           <div>
             <div className="mb-8">
               <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 1 · Manuscript Intake</p>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Select research scope & upload manuscript</h1>
-              <p className="text-gray-500 text-sm">Choose Quantitative or Qualitative so ReSync loads the matching standard chapter template. You can edit it in Step 2.</p>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Upload manuscript</h1>
+              <p className="text-gray-500 text-sm">ReSync detects the research type from your manuscript. A chapter template is optional in Step 2.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
               <div className="space-y-7">
-
-                {/* 1. Research Scope Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500">Research Type Scope</label>
-                    <span className="text-[11px] font-semibold" style={{ color: researchType ? "#16a34a" : "#dc2626" }}>
-                      {researchType ? "Selected" : "Required: choose one"}
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <select
-                      value={researchType || ""}
-                      onChange={e => handleSelectResearchType(e.target.value as ResearchType)}
-                      className="w-full h-12 px-4 pr-10 border-2 rounded-xl bg-white text-sm font-medium text-gray-800 transition-all cursor-pointer appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
-                      style={{ borderColor: researchType ? B : "#e5e7eb" }}
-                    >
-                      <option value="" disabled>Select research type…</option>
-                      <option value="quantitative">Quantitative</option>
-                      <option value="qualitative">Qualitative</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><polyline points="6 9 12 15 18 9" /></svg>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">Quantitative for numerical/hypothesis-driven studies; Qualitative for thematic/narrative studies.</p>
-                </div>
 
                 {/* 2. Manuscript Source */}
                 <div>
@@ -1417,9 +1350,6 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   >
                     Continue to Template Setup (Step 2) →
                   </button>
-                  {!researchType && (
-                    <p className="text-center text-xs text-gray-400">Select Quantitative or Qualitative to continue</p>
-                  )}
                   {scanError && (
                     <div role="alert" className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-red-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
@@ -1433,14 +1363,14 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
               <div className="lg:sticky lg:top-24 space-y-3">
                 <div className="rounded-2xl p-5" style={{ background: BL, border: `1px solid ${B}18` }}>
                   <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: `${B}99` }}>Scan preparation</p>
-                  <p className="text-sm font-bold text-gray-800 leading-snug">Configuring your scope ensures accurate cross-chapter checking.</p>
+                  <p className="text-sm font-bold text-gray-800 leading-snug">Clear chapter headings help ReSync check cross-chapter coherence.</p>
                 </div>
 
                 {[
                   {
                     n: "1",
-                    title: "Choose research scope",
-                    body: "Quantitative or Qualitative methodology allows ReSync to apply tailored validation rules.",
+                    title: "Prepare chapter headings",
+                    body: "ReSync detects the research type and section structure from your manuscript.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
                   },
                   {
@@ -1451,8 +1381,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   },
                   {
                     n: "3",
-                    title: "Standard template edit",
-                    body: "In Step 2, you can edit headings in our standard template to match your adviser's guidelines.",
+                    title: "Optional template",
+                    body: "In Step 2, you can attach a chapter template if your school requires one.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
                   },
                 ].map(({ n, title, body, icon }) => (
@@ -1476,19 +1406,16 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
           </div>
         ) : (
           /* ════════════════════════════════════════════════════════════════
-              STEP 2: STANDARD TEMPLATE (EDITABLE)
+              STEP 2: OPTIONAL TEMPLATE
           ════════════════════════════════════════════════════════════════ */
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 2 · Chapter Template</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800">
-                    {researchType}
-                  </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Review & edit standard template</h1>
-                <p className="text-gray-500 text-sm mt-1">ReSync provides this standard structure based on your scope. You can rename, add, or remove headings to match your school's format.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Optional chapter template</h1>
+                <p className="text-gray-500 text-sm mt-1">Skip this step to let ReSync detect sections and research type. Attach or load a template only if your school requires specific headings.</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {templateNotification && (
@@ -1503,6 +1430,7 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                 <button
                   type="button"
                   onClick={handleSaveTemplate}
+                  disabled={!templateChapters.some(chapter => chapter.sections.length)}
                   className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
@@ -1545,14 +1473,14 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                   Remove All Sections
                 </button>
 
-                {/* Button 4: Reset to Standard */}
+                {/* Button 4: Clear Template */}
                 <button
                   type="button"
                   onClick={handleResetTemplate}
                   className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
-                  Reset to Standard
+                  Clear Template
                 </button>
               </div>
             </div>
@@ -1748,10 +1676,8 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
                       <span className="font-semibold text-gray-800 truncate max-w-[170px]">{uploadedFile?.name || "Google Docs link"}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Scope:</span>
-                      <span className="font-bold capitalize" style={{ color: B }}>
-                        {researchType}
-                      </span>
+                      <span className="text-gray-400">Template:</span>
+                      <span className="font-bold" style={{ color: B }}>{templateChapters.length ? "Custom" : "Auto-detect"}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Chapters:</span>
@@ -1772,7 +1698,9 @@ function UploadScreen({ onNavigate, session, onScanComplete }: { onNavigate: (s:
 
                 <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-xs text-amber-800 leading-relaxed">
                   <p className="font-bold text-amber-900 mb-1">Template Customization Tip</p>
-                  Click any heading pill to rename it. Resync will align your manuscript’s headings with this structure to flag skipped sections and out-of-order arguments.
+                  {templateChapters.length
+                    ? "Click a heading pill to rename it. ReSync will use this structure to check sections."
+                    : "No template selected. ReSync will detect sections and research type from the manuscript."}
                 </div>
               </div>
             </div>
@@ -1859,6 +1787,9 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                   borderColor: isDone ? "#bbf7d0" : isActive ? `${B}30` : "#f3f4f6",
                   opacity: !isDone && !isActive ? 0.5 : 1,
                 }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
+                </div>
                 <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                   style={{ background: isDone ? "#22c55e" : isActive ? B : "#e5e7eb" }}>
                   {isDone
@@ -1868,13 +1799,6 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                       : <span className="text-xs font-bold text-gray-400 mono tabular-nums">{i + 1}</span>
                   }
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
-                </div>
-                <span className="text-xs mono font-bold shrink-0"
-                  style={{ color: isDone ? "#16a34a" : isActive ? B : "transparent" }}>
-                  {isDone ? "Done" : isActive ? "Running…" : "—"}
-                </span>
               </div>
             );
           })}
@@ -1884,21 +1808,17 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                 background: BL,
                 borderColor: `${B}30`,
               }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                style={{ background: B }}>
-                <div className="w-2 h-2 rounded-full bg-white animate-ping" />
-              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900">Finalizing your report…</p>
                 <p className="text-xs text-gray-500">Synthesizing findings across chapters</p>
               </div>
-              <span className="text-xs mono font-bold shrink-0 animate-pulse" style={{ color: B }}>
-                Finalizing…
-              </span>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: B }}>
+                <div className="w-2 h-2 rounded-full bg-white animate-ping" />
+              </div>
             </div>
           )}
         </div>
-        <p className="text-center text-xs text-gray-400 mt-8">Typically 2–3 minutes · do not close this tab</p>
+        <p className="text-center text-xs text-gray-400 mt-8">2–3 minutes · do not close this tab</p>
       </div>
     </div>
   );
@@ -1906,39 +1826,6 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 // ─── Results ──────────────────────────────────────────────────────────────────
-const ASSESSMENT_TYPE_INFO: Record<AssessmentType, { label: string; short: string; long: string; question: string }> = {
-  "overall-status": {
-    label: "Overall Status",
-    short: "Manuscript Condition",
-    long: "The overall synthesis evaluates whether the problem, objectives, methodology, findings, and conclusions form an unbroken logical chain suitable for academic submission.",
-    question: "What is the actual condition of this manuscript based on the analysis?",
-  },
-  strength: {
-    label: "Verified Alignment",
-    short: "Consistent Alignment",
-    long: "Key strengths reflect areas where your manuscript demonstrates consistent logical correspondence across chapters, satisfying standard academic defense criteria.",
-    question: "What the manuscript does consistently",
-  },
-  "key-strength": {
-    label: "Key Strength",
-    short: "Coherent Evidence",
-    long: "The manuscript shows a supported connection between these sections.",
-    question: "What the manuscript does consistently",
-  },
-  "major-issue": {
-    label: "Major Issue",
-    short: "Important Inconsistency",
-    long: "Major issues represent substantive inconsistencies across chapters (e.g. unaddressed objectives, unsupported conclusions, or conflicting terminology) that require revision before submission.",
-    question: "Most important inconsistencies detected",
-  },
-  "affected-section": {
-    label: "Affected Section",
-    short: "Cross-Chapter Conflict",
-    long: "Affected sections identify the specific chapter pairs where misalignment or broken conceptual threads were detected.",
-    question: "Which chapters/sections are involved",
-  },
-};
-
 type MobileResultsPane = "findings" | "report" | "xai";
 
 const SECTION_STATUS = {
@@ -1962,6 +1849,7 @@ function sectionRole(name: string): string {
 }
 
 function buildReportSections(topics: string[], detected: string[], missing: string[], text: string | null): ReportSection[] {
+  const sectionNames = topics.length ? topics : [...new Set([...detected, ...missing])];
   const lines = (text || '').split(/\r?\n/);
   const roles = new Set([...topics, ...detected, ...missing].map(sectionRole));
   const tocHeadings = lines.filter(line => /\s{2,}(?:\d+|[ivxlcdm]+)\s*$/i.test(line))
@@ -1971,7 +1859,7 @@ function buildReportSections(topics: string[], detected: string[], missing: stri
     const role = sectionRole(line);
     return line.trim() && boundaries.has(role) ? [{ role, index }] : [];
   });
-  return topics.map((name, index) => {
+  return sectionNames.map((name, index) => {
     const role = sectionRole(name);
     const matching = headings.filter(heading => heading.role === role);
     const content = matching.map(heading => {
@@ -2019,16 +1907,15 @@ function normalizeManuscriptPreview(text: string) {
 }
 
 function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
-  const [activeId, setActiveIdRaw] = useState<string | null>(null);
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
-  const [filterType, setFilterType] = useState<AssessmentType | "all">("all");
   const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
+  const [analysisTab, setAnalysisTab] = useState<'synthesis' | 'recommendations' | 'references'>('synthesis');
+  const [analysisExpanded, setAnalysisExpanded] = useState(true);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
   const [feedbackPending, setFeedbackPending] = useState<Record<string, boolean>>({});
   const [feedbackError, setFeedbackError] = useState<Record<string, string>>({});
-  const middlePaneRef = useRef<HTMLDivElement>(null);
   const sectionPaneRef = useRef<HTMLDivElement>(null);
   const sectionReadingPositions = useRef<Record<string, number>>({});
   const [manuscriptText, setManuscriptText] = useState<string | null>(null);
@@ -2037,23 +1924,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
-  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
 
   const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
-
-  const setActiveId: React.Dispatch<React.SetStateAction<string | null>> = (next) => {
-    setActiveIdRaw(prev => {
-      const resolved = typeof next === "function" ? (next as (p: string | null) => string | null)(prev) : next;
-      if (resolved) {
-        setActiveSectionRole(null);
-        setActivePairKey(null);
-      }
-      if (!isDesktop()) {
-        setMobilePane(resolved ? "xai" : "report");
-      }
-      return resolved;
-    });
-  };
 
   useEffect(() => {
     if (!isSample && scan?.analysis_run_id && manuscriptText === null && !manuscriptError) {
@@ -2072,10 +1944,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         .finally(() => setManuscriptLoading(false));
     }
   }, [isSample, scan?.analysis_run_id, manuscriptText, manuscriptError]);
-
-  useEffect(() => {
-    middlePaneRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTab]);
 
   const cleanedTitle = useMemo(() => extractDisplayTitle(manuscriptText), [manuscriptText]);
 
@@ -2201,7 +2069,16 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   });
 
   const findingsCount = isSample ? localItems.length : (scan?.inconsistencies?.length ?? 0);
-  const sectionsCount = isSample ? localParagraphs.length : (scan?.sections_analyzed?.length ?? 0);
+  const sectionsCount = isSample
+    ? new Set(localParagraphs.filter(para => para.assessments.length > 0).map(para => para.heading)).size
+    : new Set((scan?.inconsistencies ?? []).flatMap(inc => [inc.section_a, inc.section_b]).filter(Boolean).map(section => section.trim().toLowerCase())).size;
+  const recommendations = isSample
+    ? localItems.filter(item => item.evidence?.trim() && item.recommendation?.trim())
+        .map(item => ({ id: item.id, quote: item.evidence!, revision: item.recommendation }))
+    : (scan?.inconsistencies ?? []).flatMap((inc, index) => {
+        const quote = inc.evidence_a?.trim() || inc.evidence_b?.trim();
+        return quote && inc.suggested_fix?.trim() ? [{ id: inc.inconsistency_id || `inc-${index}`, quote, revision: inc.suggested_fix.trim() }] : [];
+      });
 
   const reportSections = useMemo(() => isSample
     ? PARAGRAPHS.map((para, index): ReportSection => ({ key: `${index}:${sectionRole(para.heading)}`, name: para.heading,
@@ -2230,12 +2107,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     const matches = section.key === 'full-manuscript'
       ? localItems.flatMap(item => [item.evidence, item.conflictQuote]
           .filter((phrase): phrase is string => !!phrase?.trim())
-          .map(phrase => ({ phrase, itemId: item.id, type: item.type })))
+          .map(phrase => ({ phrase, type: item.type })))
       : isSample
       ? (PARAGRAPHS.find(p => sectionRole(p.heading) === section.role)?.assessments || [])
       : sectionFindings(section).flatMap(item => [item.evidence, item.conflictQuote]
           .filter((phrase): phrase is string => !!phrase?.trim())
-          .map(phrase => ({ phrase, itemId: item.id, type: item.type })));
+          .map(phrase => ({ phrase, type: item.type })));
     const ordered = matches.map(match => ({ ...match, index: section.text.indexOf(match.phrase) }))
       .filter(match => match.index >= 0).sort((a, b) => a.index - b.index);
     const nodes: React.ReactNode[] = [];
@@ -2243,8 +2120,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     ordered.forEach((match, index) => {
       if (match.index < cursor) return;
       nodes.push(section.text.slice(cursor, match.index));
-      nodes.push(<button key={`${match.itemId}-${index}`} type="button" onClick={() => setActiveId(match.itemId)}
-        className={`${ST[match.type].hl} text-left whitespace-pre-wrap focus-visible:ring-2 focus-visible:ring-indigo-600`}>{match.phrase}</button>);
+      nodes.push(<mark key={index} className={ST[match.type].hl}>{match.phrase}</mark>);
       cursor = match.index + match.phrase.length;
     });
     nodes.push(section.text.slice(cursor));
@@ -2252,71 +2128,52 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   }
 
   const score = isSample ? 74 : scan?.overall_coherence_score || 0;
+  const displayBand = isSample ? "Moderate Coherence" : scan?.score_breakdown?.band;
   const v6Dimensions = (scan?.score_breakdown as ScoreBreakdown | undefined)?.v6_dimensions;
   const advisoryDimensions = ([
-    ['objectives_alignment', 'Objectives alignment'],
-    ['methodology_fit', 'Methodology fit'],
-    ['numeric_consistency', 'Numeric consistency'],
-    ['claim_support', 'Claim support'],
-    ['overall_coherence', 'Overall coherence'],
-  ] as const).flatMap(([key, label]) => {
+    ['objectives_alignment', 'Objectives alignment', 'bg-amber-500'],
+    ['methodology_fit', 'Methodology fit', 'bg-emerald-500'],
+    ['numeric_consistency', 'Numeric consistency', 'bg-rose-500'],
+    ['claim_support', 'Claim support', 'bg-blue-500'],
+    ['overall_coherence', 'Overall coherence', 'bg-primary'],
+  ] as const).map(([key, label, color]) => {
     const values = Object.values(v6Dimensions ?? {}).map(pair => pair?.[key])
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1);
-    return values.length ? [{ key, label, value: values.reduce((sum, value) => sum + value, 0) / values.length }] : [];
+    return { key, label, color, value: isSample ? SAMPLE_ADVISORY_DIMENSIONS[key] : values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null };
   });
   const dead = localCitations.filter(c => c.status === "dead").length;
-  function scrollToSection(sectionIndex: number, itemId?: string) {
-    if (itemId) setActiveId(itemId);
-    const el = document.getElementById(`sec-${sectionIndex}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
-  type STEntry = { hl: string; hlActive: string; pill: string; pillTxt: string; dot: string; border: string; bg: string; accentColor: string; label: string };
+  type STEntry = { hl: string; pill: string; accentColor: string; label: string };
   const ST: Record<AssessmentType, STEntry> = {
     "overall-status": {
-      hl: "bg-amber-200 rounded px-0.5 cursor-pointer hover:bg-amber-300 transition-colors",
-      hlActive: "bg-amber-300 rounded px-0.5 cursor-pointer ring-2 ring-amber-500 ring-offset-1",
+      hl: "bg-amber-200 rounded px-0.5",
       pill: "bg-surface-warn border border-amber-200 text-amber-800",
-      pillTxt: "text-amber-800", dot: "bg-amber-500", border: "border-amber-200", bg: "bg-surface-warn",
       accentColor: "#d97706", label: "Overall Status",
     },
     strength: {
-      hl: "bg-emerald-200 rounded px-0.5 cursor-pointer hover:bg-emerald-300 transition-colors",
-      hlActive: "bg-emerald-300 rounded px-0.5 cursor-pointer ring-2 ring-emerald-500 ring-offset-1",
+      hl: "bg-emerald-200 rounded px-0.5",
       pill: "bg-surface-success border border-emerald-200 text-emerald-800",
-      pillTxt: "text-emerald-800", dot: "bg-emerald-500", border: "border-emerald-200", bg: "bg-surface-success",
       accentColor: "#059669", label: "Verified Alignment",
     },
     "key-strength": {
-      hl: "bg-emerald-200 rounded px-0.5 cursor-pointer hover:bg-emerald-300 transition-colors",
-      hlActive: "bg-emerald-300 rounded px-0.5 cursor-pointer ring-2 ring-emerald-500 ring-offset-1",
+      hl: "bg-emerald-200 rounded px-0.5",
       pill: "bg-surface-success border border-emerald-200 text-emerald-800",
-      pillTxt: "text-emerald-800", dot: "bg-emerald-500", border: "border-emerald-200", bg: "bg-surface-success",
       accentColor: "#059669", label: "Key Strength",
     },
     "major-issue": {
-      hl: "bg-rose-200 rounded px-0.5 cursor-pointer hover:bg-rose-300 transition-colors",
-      hlActive: "bg-rose-300 rounded px-0.5 cursor-pointer ring-2 ring-rose-500 ring-offset-1",
+      hl: "bg-rose-200 rounded px-0.5",
       pill: "bg-surface-error border border-rose-200 text-rose-800",
-      pillTxt: "text-rose-800", dot: "bg-rose-500", border: "border-rose-200", bg: "bg-surface-error",
       accentColor: "#e11d48", label: "Major Issue",
     },
     "affected-section": {
-      hl: "bg-blue-200 rounded px-0.5 cursor-pointer hover:bg-blue-300 transition-colors",
-      hlActive: "bg-blue-300 rounded px-0.5 cursor-pointer ring-2 ring-blue-500 ring-offset-1",
+      hl: "bg-blue-200 rounded px-0.5",
       pill: "bg-surface-info border border-blue-200 text-blue-800",
-      pillTxt: "text-blue-800", dot: "bg-blue-500", border: "border-blue-200", bg: "bg-surface-info",
       accentColor: "#2563eb", label: "Affected Section",
     },
   };
 
-  const filteredItems = filterType === "all" ? localItems : localItems.filter(i => i.type === filterType);
   const strongestAlignment = localItems.find(i => i.type === "key-strength" || i.type === "strength");
   const needsAttention = localItems.find(i => i.type === "major-issue");
-  const activeItem = activeId ? localItems.find(i => i.id === activeId) ?? null : null;
-  const itemIdx = activeItem ? localItems.findIndex(i => i.id === activeItem.id) : -1;
+  const synthesis = isSample ? OVERALL_ASSESSMENT.statusDescription : scan?.score_breakdown?.biggest_lever?.reason;
 
   function renderPara(para: typeof localParagraphs[0]) {
     if (!para.assessments.length) return <>{para.text}</>;
@@ -2325,13 +2182,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
     para.assessments.forEach(({ phrase, type, itemId }) => {
       const idx = txt.indexOf(phrase);
       if (idx === -1) return;
-      const isActive = activeId === itemId;
       parts.push(txt.slice(0, idx));
       parts.push(
         <mark key={itemId + phrase}
-          className={isActive ? ST[type].hlActive : ST[type].hl}
-          style={{ textDecoration: "none" }}
-          onClick={() => setActiveId(prev => prev === itemId ? null : itemId)}>
+          className={ST[type].hl}>
           {phrase}
         </mark>
       );
@@ -2343,10 +2197,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 
   // ── Tab data ──
   const inconsistencyItems = localItems.filter(i => i.type === "key-strength" || i.type === "major-issue" || i.type === "affected-section");
-  const visibleInconsistencies =
-    filterType === "key-strength" || filterType === "major-issue" || filterType === "affected-section"
-      ? inconsistencyItems.filter(i => i.type === filterType)
-      : inconsistencyItems;
+  const visibleInconsistencies = inconsistencyItems;
   const inconsistenciesCount = inconsistencyItems.length;
 
   const toggleIssueExpanded = (id: string) => {
@@ -2404,7 +2255,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       dismissalReason: dismissalByPair.get(`${p.role_a}|${p.role_b}`)
     }))
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const visiblePairs: EnrichedPair[] = filterType === "strength" ? allPairs.filter(p => p.included && (p.score ?? 0) >= PAR_SCORE) : allPairs;
+  const visiblePairs = allPairs;
   const pairsCount = allPairs.length;
   const activePair = activePairKey ? allPairs.find(p => `${p.role_a}__${p.role_b}` === activePairKey) ?? null : null;
 
@@ -2514,14 +2365,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
         </div>
       </div>
     );
-  }
-
-  function applyFilter(next: AssessmentType | "all") {
-    setFilterType(next);
-    if (next === "key-strength" || next === "major-issue" || next === "affected-section") setActiveTab("inconsistencies");
-    else if (next === "strength") setActiveTab("strong_coherence");
-    else if (next === "overall-status") setActiveTab("overview");
-    else if (activeTab === "citations") setActiveTab("inconsistencies"); // "all"
   }
 
   return (
@@ -2643,60 +2486,22 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       {/* ── Results body ── */}
       <main className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">
 
-        {isRightCollapsed && (
-          <button
-            type="button"
-            onClick={() => setIsRightCollapsed(false)}
-            aria-label="Show Analysis"
-            aria-expanded={false}
-            title="Expand inspector sidebar"
-            className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 items-center gap-1.5 px-2.5 py-2 bg-white border border-r-0 border-gray-200 rounded-l-lg shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
-          >
-            <span className="text-xs font-semibold">Show Analysis</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-        )}
-
-        {/* ══ CENTER: tab bar + tab content ══ */}
-        <div ref={middlePaneRef} className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-gray-100 flex-col`}>
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 lg:px-8 flex items-center gap-1 overflow-x-auto xl:overflow-visible shadow-2xs shrink-0 print:hidden" role="tablist" aria-label="Results tabs">
-            {tabList.map(tab => (
-              <button
-                key={tab.id}
-                id={`results-tab-${tab.id}`}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls="results-tab-panel"
-                tabIndex={activeTab === tab.id ? 0 : -1}
-                onClick={() => setActiveTab(tab.id)}
-                onKeyDown={e => {
-                  const index = tabList.findIndex(item => item.id === tab.id);
-                  const next = e.key === 'ArrowRight' ? (index + 1) % tabList.length
-                    : e.key === 'ArrowLeft' ? (index - 1 + tabList.length) % tabList.length
-                    : e.key === 'Home' ? 0 : e.key === 'End' ? tabList.length - 1 : -1;
-                  if (next < 0) return;
-                  e.preventDefault();
-                  setActiveTab(tabList[next].id);
-                  document.getElementById(`results-tab-${tabList[next].id}`)?.focus();
-                }}
-                className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
-                  activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
-                }`}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-6 lg:px-10 py-8 flex-1">
-            {activeTab === 'overview' && (
-              <article className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-sm">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">{displayTitle}</h1>
+        {/* Manuscript stays visible independently of the analysis tabs. */}
+        <div className={`${mobilePane === "report" ? "flex" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex flex-1 min-w-0 overflow-y-auto bg-white flex-col`}>
+          <div className="sticky top-0 z-20 px-6 lg:px-10 py-3 bg-white border-b border-gray-100 text-xs font-semibold text-gray-500 print:hidden">▤ &nbsp;Manuscript preview</div>
+          <div className="w-full max-w-5xl mx-auto px-6 lg:px-10 py-10">
+            <header className="mb-7 print:hidden">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 mb-5">{isSample ? 'Sample manuscript report' : 'Manuscript report'}</p>
+              <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-slate-900 max-w-3xl text-balance" style={{ fontFamily: 'Georgia, serif' }}>{displayTitle}</h1>
+              <div className="border-t border-gray-100 mt-7 pt-4">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"><span aria-hidden="true">✓</span>Analysis complete</span>
+                <p className="text-xs text-gray-500 mt-3">Overall assessment {displayBand && <strong className="text-amber-700">{displayBand}</strong>} <span aria-hidden="true">·</span> {findingsCount} findings across {sectionsCount} sections</p>
+              </div>
+            </header>
+              <article className="bg-white print:hidden">
                 {manuscriptLoading && <p className="text-sm text-gray-600">Loading manuscript text…</p>}
-                {manuscriptError && <p role="alert" className="text-sm text-rose-700">{manuscriptError}</p>}
                 {isSample ? localParagraphs.map((para, index) => (
-                  <section key={index} className="py-5 border-t border-gray-100">
+                  <section key={index} id={`sec-${index}`} className="py-5 border-t border-gray-100">
                     <h2 className="font-bold text-gray-900 mb-3">{para.heading}</h2>
                     <p className="text-sm leading-7 text-gray-700">{renderPara(para)}</p>
                   </section>
@@ -2704,24 +2509,27 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   <div className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">
                     {renderSectionText({ key: 'full-manuscript', name: displayTitle, role: '', text: manuscriptText, status: 'Present' })}
                   </div>
-                ) : !manuscriptLoading && !manuscriptError && (
-                  <p className="text-sm text-gray-600">Manuscript text is unavailable for this scan.</p>
+                ) : !manuscriptLoading && (
+                  <div className="space-y-5">
+                    <p role={manuscriptError ? 'alert' : undefined} className="text-sm text-gray-600">{manuscriptError || 'Manuscript preview unavailable'} · Showing analyzed section excerpts.</p>
+                    {localParagraphs.map((para, index) => (
+                      <section key={index} id={`sec-${index}`} className="border-t border-gray-100 pt-4">
+                        <h2 className="font-bold text-gray-900 mb-2">{para.heading}</h2>
+                        <p className="text-sm leading-7 text-gray-700">{renderPara(para)}</p>
+                      </section>
+                    ))}
+                  </div>
                 )}
               </article>
-            )}
-
             <div className="hidden print:block">
             {/* Full manuscript is independent of the selected tab when printing. */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {localParagraphs.map((para, i) => {
-                const hasActive = para.assessments.some(pi => pi.itemId === activeId);
-                const activeType = para.assessments.find(pi => pi.itemId === activeId)?.type;
                 const isChapterHead = para.type === "chapter-heading";
                 return (
                   <div key={i}
                     id={`sec-${i}`}
-                    className={`scroll-mt-14 transition-colors duration-200 ${hasActive && activeType ? "" : ""}`}
-                    style={{ background: hasActive && activeType ? `${ST[activeType].accentColor}05` : undefined }}>
+                    className="scroll-mt-14">
 
                     {/* Divider between entries */}
                     {i > 0 && <div className={`mx-8 lg:mx-12 border-t ${isChapterHead ? "border-gray-200 my-0" : "border-gray-100 my-0"}`} />}
@@ -2743,12 +2551,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                           {para.assessments.length === 0
                             ? <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">Aligned</span>
                             : [...new Map(para.assessments.map(pi => [pi.itemId, pi])).values()].map(pi => (
-                              <button key={pi.itemId}
-                                aria-pressed={activeId === pi.itemId}
-                                onClick={() => setActiveId(prev => prev === pi.itemId ? null : pi.itemId)}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${activeId === pi.itemId ? `${ST[pi.type].bg} ${ST[pi.type].border} scale-105` : ST[pi.type].pill}`}>
+                              <span key={pi.itemId}
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ST[pi.type].pill}`}>
                                 {ST[pi.type].label}
-                              </button>
+                              </span>
                             ))
                           }
                         </div>
@@ -2824,358 +2630,141 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               )}
             </div>{/* end document paper */}
 
-            {/* ══ R3: INLINE MANUSCRIPT WITH SECTION HIGHLIGHTS (Ported from ResultDetails.tsx:626-950) ══ */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-10 shadow-xs space-y-8 font-sans leading-relaxed text-gray-800 mt-8">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-5 flex-wrap gap-3">
-                <div>
-                  <span className="text-[10px] mono font-bold uppercase tracking-widest text-indigo-600 block">
-                    Inline Manuscript Inspection
-                  </span>
-                  <h2 className="font-serif text-2xl font-bold text-gray-900 mt-1">
-                    Continuous Manuscript with Section Highlights
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Click any highlighted passage to inspect findings and recommendations in the right Explainable AI panel.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
-                    Major Issue
-                  </span>
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Key Strength
-                  </span>
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
-                    Affected Section
-                  </span>
+            </div>{/* print paper */}
+          </div>
+        </div>
+
+        {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
+        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100`}>
+          <div ref={sectionPaneRef} className="flex-1 overflow-y-auto"
+            onScroll={e => { if (activeSectionRole && e.currentTarget.clientHeight > 0) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
+          {/* Score ring */}
+          <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
+            <ScoreRing score={score} size={88} band={displayBand} />
+            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
+            {advisoryDimensions.some(dimension => dimension.value !== null) && (
+              <div className="w-full mt-2 space-y-2" aria-label="Advisory coherence dimensions">
+                <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Advisory dimensions · pair average</p>
+                <div className="grid grid-cols-2 gap-2">
+                {advisoryDimensions.map(({ key, label, color, value }, index) => (
+                  <div key={key} className={`min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3 ${index === 4 ? 'col-span-2' : ''}`}>
+                    <div className="flex items-start gap-2 text-xs text-gray-700">
+                      <span className={`mt-1 size-2 shrink-0 rounded-full ${color}`} aria-hidden="true" />
+                      <span className="min-w-0 flex-1 leading-tight">{label}</span>
+                      <span className="font-bold tabular-nums text-gray-900">{value === null ? '—' : `${Math.round(value * 100)}%`}</span>
+                    </div>
+                    <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role={value === null ? undefined : 'progressbar'} aria-label={label} aria-valuenow={value === null ? undefined : Math.round(value * 100)} aria-valuemin={value === null ? undefined : 0} aria-valuemax={value === null ? undefined : 100}>
+                      <div className={`h-full rounded-full ${color}`} style={{ width: `${(value ?? 0) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* R3 Renderer: Real fetched text vs sample chapters */}
-              {!isSample ? (
-                manuscriptLoading ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-gray-400 space-y-4">
-                    <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                    <p className="text-sm font-bold text-gray-700">Loading manuscript text...</p>
-                  </div>
-                ) : manuscriptText ? (
-                  <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-800 leading-relaxed font-serif">
-                    {(() => {
-                      if (!scan?.inconsistencies?.length) return manuscriptText;
-                      interface PhraseMatch { phrase: string; itemId: string; type: AssessmentType; index: number; }
-                      const matches: PhraseMatch[] = [];
-                      scan.inconsistencies.forEach(inc => {
-                        const itemId = inc.inconsistency_id || "";
-                        const t = (inc.finding_status === 'key_strength' ? "key-strength" : inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType;
-                        if (inc.evidence_a && inc.evidence_a.trim().length > 10) {
-                          const idx = manuscriptText.indexOf(inc.evidence_a);
-                          if (idx !== -1) matches.push({ phrase: inc.evidence_a, itemId, type: t, index: idx });
-                        }
-                        if (inc.evidence_b && inc.evidence_b.trim().length > 10) {
-                          const idx = manuscriptText.indexOf(inc.evidence_b);
-                          if (idx !== -1) matches.push({ phrase: inc.evidence_b, itemId, type: t, index: idx });
-                        }
-                      });
-                      if (matches.length === 0) return manuscriptText;
-                      matches.sort((a, b) => a.index - b.index);
-                      const nonOverlapping: PhraseMatch[] = [];
-                      let lastEnd = 0;
-                      for (const m of matches) {
-                        if (m.index >= lastEnd) {
-                          nonOverlapping.push(m);
-                          lastEnd = m.index + m.phrase.length;
-                        }
-                      }
-                      const nodes: React.ReactNode[] = [];
-                      let cursor = 0;
-                      nonOverlapping.forEach((m, idx) => {
-                        if (m.index > cursor) nodes.push(manuscriptText.slice(cursor, m.index));
-                        const isActive = activeId === m.itemId;
-                        nodes.push(
-                          <mark
-                            key={`${m.itemId}-${idx}`}
-                            onClick={() => setActiveId(prev => prev === m.itemId ? null : m.itemId)}
-                            className={`font-semibold px-1 py-0.5 rounded cursor-pointer transition-all ${
-                              isActive ? ST[m.type].hlActive : ST[m.type].hl
-                            }`}
-                            style={{ textDecoration: "none" }}
-                          >
-                            {m.phrase}
-                          </mark>
-                        );
-                        cursor = m.index + m.phrase.length;
-                      });
-                      if (cursor < manuscriptText.length) nodes.push(manuscriptText.slice(cursor));
-                      return nodes;
-                    })()}
-                  </div>
-                ) : (
-                  /* Fallback to parsed section paragraphs when GDocs preview is unavailable */
-                  <div className="space-y-6">
-                    {manuscriptError && (
-                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
-                        {manuscriptError} — displaying parsed manuscript section excerpts below.
-                      </p>
-                    )}
-                    {localParagraphs.map((para, i) => (
-                      <div key={i} className="border-b border-gray-100 pb-5 space-y-2">
-                        <h3 className="font-serif font-bold text-base text-gray-900">{para.heading}</h3>
-                        <p className="text-sm text-gray-700 leading-relaxed">{renderPara(para)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )
-              ) : (
-                /* Sample Manuscript content (adapted from ResultDetails.tsx:630-934) */
-                <div className="space-y-8">
-                  {/* CHAPTER 1 */}
-                  <section id="inline-chapter-1" className="space-y-4 border-b border-gray-100 pb-8">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
-                          CHAPTER 1
-                        </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
-                          Introduction
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                        Major Issue
-                      </span>
-                    </div>
-                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                      Academic burnout has emerged as a significant psychological concern among university students worldwide, with particular severity observed in science, technology, engineering, and mathematics (STEM) programs. This study investigates the predictors of academic burnout among{' '}
-                      <mark
-                        onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
-                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                          activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
-                        }`}
-                      >
-                        STEM undergraduates across Philippine universities, covering both rural and urban settings.
-                      </mark>
-                      {' '}The increasing competitive pressure, rigorous coursework, and limited psychosocial support structures in Philippine higher education create conditions that are especially conducive to burnout progression.
-                    </p>
-
-                    <div className="pt-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-gray-900">
-                          Objectives of the Study
-                        </h4>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                          Major Issue
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        This study specifically aims to: (1) identify the prevalence of academic burnout among STEM students; (2) determine burnout predictors among students in{' '}
-                        <mark
-                          onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
-                          className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                            activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
-                          }`}
-                        >
-                          urban barangays in Metro Manila only;
-                        </mark>
-                        {' '}and (3) assess the moderating role of peer support on burnout levels among the identified population.
-                      </p>
-                    </div>
-
-                    <div className="pt-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-gray-900">
-                          Statement of the Problem
-                        </h4>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                          Affected Section
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        Despite growing awareness of mental health issues in tertiary education, few empirical studies have examined the specific predictors of burnout within Philippine STEM contexts. The study will{' '}
-                        <mark
-                          onClick={() => setActiveId(prev => prev === 'a8' ? null : 'a8')}
-                          className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                            activeId === 'a8' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
-                          }`}
-                        >
-                          measure student engagement using biometric data
-                        </mark>
-                        {' '}collected over one semester to answer three research questions: (1) What is the current burnout level among STEM undergraduates? (2) Which academic and environmental factors best predict burnout? (3) Does peer support moderate the relationship between workload and burnout?
-                      </p>
-                    </div>
-                  </section>
-
-                  {/* CHAPTER 2 */}
-                  <section id="inline-chapter-2" className="space-y-4 border-b border-gray-100 pb-8">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
-                          CHAPTER 2
-                        </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
-                          Review of Related Literature
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                        Major Issue
-                      </span>
-                    </div>
-                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                      <mark
-                        onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
-                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                          activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
-                        }`}
-                      >
-                        Technology acceptance, defined as the degree to which an individual believes that using a particular system would enhance their performance,
-                      </mark>
-                      {' '}is central to understanding digital tool adoption in education. Several frameworks build on this foundational concept, establishing baseline metrics for technological adaptation.
-                    </p>
-
-                    <div className="pt-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-serif font-bold text-base text-gray-900">
-                          Conceptual Framework
-                        </h4>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                          Major Issue
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        <mark
-                          onClick={() => setActiveId(prev => prev === 'a7' ? null : 'a7')}
-                          className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                            activeId === 'a7' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
-                          }`}
-                        >
-                          Technology acceptance, defined as the degree to which an individual believes that using a particular system would enhance their performance,
-                        </mark>
-                        {' '}serves as the theoretical anchor for this study's digital-tool adoption model. Building on this definition, the framework positions perceived usefulness and perceived ease of use as mediating variables between environmental stressors and burnout outcomes.
-                      </p>
-                    </div>
-                  </section>
-
-                  {/* CHAPTER 3 */}
-                  <section id="inline-chapter-3" className="space-y-4 border-b border-gray-100 pb-8">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
-                          CHAPTER 3
-                        </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
-                          Methodology
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        Affected Section
-                      </span>
-                    </div>
-                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                      A descriptive-correlational research design was employed to examine the relationship between academic workload, peer support, and burnout among university students. Data were collected using the{' '}
-                      <mark
-                        onClick={() => setActiveId(prev => prev === 'a8' ? null : 'a8')}
-                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                          activeId === 'a8' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
-                        }`}
-                      >
-                        Maslach Burnout Inventory–Student Survey (MBI-SS) and the Academic Workload Scale (AWS).
-                      </mark>
-                      {' '}The research instruments were administered via an online survey platform during the second semester of Academic Year 2023–2024. A total of{' '}
-                      <mark
-                        onClick={() => setActiveId(prev => prev === 'a9' ? null : 'a9')}
-                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                          activeId === 'a9' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
-                        }`}
-                      >
-                        120 respondents
-                      </mark>
-                      {' '}were recruited through stratified random sampling across four Metro Manila universities, with quotas set per year level and degree program.
-                    </p>
-                  </section>
-
-                  {/* CHAPTER 4 */}
-                  <section id="inline-chapter-4" className="space-y-4 border-b border-gray-100 pb-8">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
-                          CHAPTER 4
-                        </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
-                          Results and Discussion
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                        Major Issue
-                      </span>
-                    </div>
-                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                      A total of{' '}
-                      <mark
-                        onClick={() => setActiveId(prev => prev === 'a9' ? null : 'a9')}
-                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                          activeId === 'a9' ? 'bg-blue-200 text-blue-950 ring-2 ring-blue-500 font-bold shadow-xs' : 'bg-blue-50 text-blue-800 border-b-2 border-blue-300 hover:bg-blue-100'
-                        }`}
-                      >
-                        108 respondents submitted complete responses
-                      </mark>
-                      {' '}after data cleaning and exclusion of incomplete forms. Descriptive statistics revealed that 61% of respondents scored in the high burnout range on the MBI-SS emotional exhaustion subscale. Pearson correlation analysis showed a significant positive relationship between workload and burnout (r=0.61, p&lt;0.001), indicating that heavier perceived workloads are strongly associated with higher burnout levels.{' '}
-                      <mark
-                        onClick={() => setActiveId(prev => prev === 'a6' ? null : 'a6')}
-                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                          activeId === 'a6' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
-                        }`}
-                      >
-                        Peer tutoring had no significant effect on algebra scores (p=0.38)
-                      </mark>
-                      , suggesting that tutoring alone does not improve academic outcomes without structural support.
-                    </p>
-                  </section>
-
-                  {/* CHAPTER 5 */}
-                  <section id="inline-chapter-5" className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] mono uppercase tracking-widest text-indigo-600 font-bold block">
-                          CHAPTER 5
-                        </span>
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mt-0.5">
-                          Conclusions and Recommendations
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                        Major Issue
-                      </span>
-                    </div>
-                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                      The findings confirm that academic workload is the most consistent predictor of burnout among STEM undergraduates in the sampled institutions. Peer support was found to moderate the workload–burnout relationship only when students had consistent access to structured support programs. It is recommended that universities{' '}
-                      <mark
-                        onClick={() => setActiveId(prev => prev === 'a6' ? null : 'a6')}
-                        className={`font-semibold px-1.5 py-0.5 rounded cursor-pointer transition-all ${
-                          activeId === 'a6' ? 'bg-rose-200 text-rose-950 ring-2 ring-rose-500 font-bold shadow-xs' : 'bg-rose-50 text-rose-800 border-b-2 border-rose-300 hover:bg-rose-100'
-                        }`}
-                      >
-                        expand the peer tutoring program as a primary intervention strategy
-                      </mark>
-                      . Student affairs offices should deploy workload monitoring systems across all STEM departments to catch early signs of burnout and deploy timely interventions.
-                    </p>
-                  </section>
-                </div>
-              )}
+          <section className="border-b border-gray-100">
+            <button type="button" className="w-full flex items-center gap-3 px-5 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" aria-expanded={analysisExpanded} aria-controls="coherence-analysis-content" onClick={() => setAnalysisExpanded(value => !value)}>
+              <span className="size-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg" aria-hidden="true">✦</span>
+              <span className="flex-1"><span className="block text-[10px] font-bold uppercase tracking-widest text-gray-400">Analysis</span><span className="block text-base font-bold text-slate-900">Coherence analysis</span></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-4 text-gray-500 transition-transform ${analysisExpanded ? '' : '-rotate-90'}`} aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            {analysisExpanded && <div id="coherence-analysis-content">
+              <div role="tablist" aria-label="Coherence analysis tabs" className="flex border-y border-gray-100 px-4 overflow-x-auto">
+                {([['synthesis', 'AI synthesis', null], ['recommendations', 'Recommendations', recommendations.length], ['references', 'References', localCitations.length]] as const).map(([id, label, count], index) => (
+                  <button key={id} type="button" role="tab" aria-selected={analysisTab === id} aria-controls="analysis-tab-panel" id={`analysis-tab-${id}`} tabIndex={analysisTab === id ? 0 : -1} onClick={() => setAnalysisTab(id)} onKeyDown={event => {
+                    const tabs = ['synthesis', 'recommendations', 'references'] as const;
+                    const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+                    if (next < 0) return;
+                    event.preventDefault();
+                    setAnalysisTab(tabs[next]);
+                    document.getElementById(`analysis-tab-${tabs[next]}`)?.focus();
+                  }} className={`px-3 py-3 text-xs font-bold whitespace-nowrap border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${analysisTab === id ? 'text-indigo-600 border-indigo-600' : 'text-gray-500 border-transparent hover:text-gray-900'}`}>{label}{count !== null && <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 tabular-nums">{count}</span>}</button>
+                ))}
+              </div>
+              <div role="tabpanel" id="analysis-tab-panel" aria-labelledby={`analysis-tab-${analysisTab}`} className="px-5 py-6">
+                {analysisTab === 'synthesis' && <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900">Summary</h3>
+                  <p className="text-sm leading-relaxed text-gray-600">{synthesis || 'No synthesis summary is available for this scan.'}</p>
+          <div className="px-4 py-3 border-b border-gray-100 grid grid-cols-1 gap-2">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2.5">
+              <span className="text-emerald-700 text-base leading-none" aria-hidden="true">✓</span>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-emerald-900">Strongest Alignment</h4>
+                <p className="text-xs text-emerald-800 truncate" title={strongestAlignment?.title}>{strongestAlignment?.title || "No verified alignment yet"}</p>
+              </div>
             </div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex items-start gap-2.5">
+              <span className="text-rose-700 text-base leading-none" aria-hidden="true">!</span>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-rose-900">Needs Attention</h4>
+                <p className="text-xs text-rose-800 truncate" title={needsAttention?.title}>{needsAttention?.title || "No major issue found"}</p>
+              </div>
             </div>
+          </div>
 
-            {/* ── Inconsistencies tab ── */}
+                </div>}
+                {analysisTab === 'recommendations' && <div className="space-y-4">
+                  {recommendations.length ? recommendations.map((recommendation, index) => (
+                    <div key={recommendation.id} className="flex items-start gap-3">
+                      <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+                      <div className="min-w-0 flex-1 rounded-xl bg-gray-50 p-3 space-y-2">
+                        <div className="rounded-lg bg-gray-100 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Original sentence</p><p className="text-xs text-gray-700 leading-relaxed">“{recommendation.quote}”</p></div>
+                        <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 mb-1">Recommended revision</p><p className="text-xs text-gray-700 leading-relaxed">{recommendation.revision}</p></div>
+                      </div>
+                    </div>
+                  )) : <p className="text-sm text-gray-500">No findings have both a manuscript quote and a suggested fix.</p>}
+                </div>}
+                {analysisTab === 'references' && <div>
+                  <h3 className="text-sm font-bold text-slate-900">Supporting references</h3>
+                  <p className="text-xs text-gray-500 mt-2 mb-4">References found in this manuscript.</p>
+                  {localCitations.length ? <div className="divide-y divide-gray-100">{localCitations.map((cite, index) => (
+                    <div key={cite.id} className="flex items-start gap-3 py-3">
+                      <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+                      <div className="min-w-0 text-xs text-gray-700 leading-relaxed">{renderCitation(cite)}</div>
+                    </div>
+                  ))}</div> : <p className="text-sm text-gray-500">No references were found in this manuscript.</p>}
+                  <p className="border-t border-gray-100 pt-4 mt-4 text-[11px] text-gray-400">✦ &nbsp;AI guidance · Review before applying</p>
+                </div>}
+              </div>
+              <div className="border-t border-gray-100">
+          <div className="bg-white border-b border-gray-200 px-3 flex items-center gap-1 overflow-x-auto xl:overflow-visible shadow-2xs shrink-0 print:hidden" role="tablist" aria-label="Results tabs">
+            {tabList.map(tab => (
+              <button
+                key={tab.id}
+                id={`results-tab-${tab.id}`}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls="results-tab-panel"
+                tabIndex={activeTab === tab.id ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={e => {
+                  const index = tabList.findIndex(item => item.id === tab.id);
+                  const next = e.key === 'ArrowRight' ? (index + 1) % tabList.length
+                    : e.key === 'ArrowLeft' ? (index - 1 + tabList.length) % tabList.length
+                    : e.key === 'Home' ? 0 : e.key === 'End' ? tabList.length - 1 : -1;
+                  if (next < 0) return;
+                  e.preventDefault();
+                  setActiveTab(tabList[next].id);
+                  document.getElementById(`results-tab-${tabList[next].id}`)?.focus();
+                }}
+                className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
+                  activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
+                }`}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+                <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
+                  {activeTab === 'overview' && <div className="space-y-2"><h3 className="text-sm font-bold text-slate-900">Report by section</h3>{reportSections.map(section => <button key={section.key} type="button" onClick={() => setActiveSectionRole(section.key)} className="w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-indigo-600"><span className="truncate text-gray-800">{section.name}</span><span className={`shrink-0 ${SECTION_STATUS[section.status].color}`}>{section.status === 'Unassessed' ? 'Not checked yet' : section.status}</span></button>)}</div>}
             {activeTab === 'inconsistencies' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 px-1">
                   <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
-                    {filterType === 'key-strength' ? 'Key Strengths' : filterType === 'major-issue' ? 'Major Issues' : filterType === 'affected-section' ? 'Affected Sections' : 'All Findings'} ({visibleInconsistencies.length})
+                    All Findings ({visibleInconsistencies.length})
                   </p>
                   <div className="flex items-center gap-3">
-                    {(filterType === 'key-strength' || filterType === 'major-issue' || filterType === 'affected-section') && (
-                      <button type="button" onClick={() => setFilterType('all')}
-                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-                        Show all ({inconsistenciesCount})
-                      </button>
-                    )}
                     {visibleInconsistencies.length > 0 && (
                       <button
                         type="button"
@@ -3201,18 +2790,12 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   visibleInconsistencies.map((item, idx) => {
                     const isExpanded = expandedIssueIds.has(item.id);
                     return (
-                      <div key={item.id}
-                        className={`bg-white rounded-2xl border transition-all ${
-                          activeId === item.id ? `${ST[item.type].border} ring-2 ring-indigo-300 shadow-sm` : 'border-gray-200 hover:border-gray-300'
-                        }`}>
+                      <div key={item.id} className="bg-white rounded-2xl border border-gray-200">
                         <button
                           type="button"
                           aria-expanded={isExpanded}
                           aria-controls={`finding-content-${item.id}`}
-                          onClick={() => {
-                            toggleIssueExpanded(item.id);
-                            setActiveId(prev => prev === item.id ? null : item.id);
-                          }}
+                          onClick={() => toggleIssueExpanded(item.id)}
                           className="w-full p-4 sm:p-5 flex items-start justify-between gap-3 text-left cursor-pointer"
                         >
                           <div className="flex-1 min-w-0 space-y-1.5">
@@ -3300,12 +2883,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   </p>
                   <div className="flex items-center gap-3">
                     <button type="button" onClick={() => setShowPairingModal(true)} className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">How pairing works</button>
-                    {filterType === 'strength' && (
-                      <button type="button" onClick={() => setFilterType('all')}
-                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-                        Show all ({pairsCount})
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -3334,7 +2911,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                         onClick={() => {
                           setActivePairKey(prev => prev === key ? null : key);
                           setActiveSectionRole(null);
-                          setActiveId(null);
                           if (!isDesktop()) setMobilePane("xai");
                         }}
                         className={`bg-white rounded-2xl border p-5 space-y-3 cursor-pointer transition-all hover:border-indigo-300 ${
@@ -3455,203 +3031,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
               </div>
             )}
 
-            <div className="h-10" />
-          </div>{/* end max-w wrapper */}
-        </div>{/* end center column */}
-
-        {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
-        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-hidden transition-all duration-300 ${
-          isRightCollapsed
-            ? "lg:w-0 lg:border-l-0 lg:overflow-hidden print:lg:w-[360px]"
-            : "lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100"
-        }`}>
-          <div className="shrink-0 px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white/90">
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsRightCollapsed(true)}
-                aria-label="Hide Analysis"
-                aria-expanded={!isRightCollapsed}
-                title="Collapse inspector sidebar"
-                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 transition-all cursor-pointer mr-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5" aria-hidden="true">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-                <span className="text-xs font-semibold">Hide Analysis</span>
-              </button>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 leading-tight">Detailed Analysis & Recommendations</h3>
-              </div>
-            </div>
-            {(activeSection || activeItem || activePair) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveId(null);
-                  setActivePairKey(null);
-                  setActiveSectionRole(null);
-                }}
-                className="text-xs text-gray-500 hover:text-gray-900 font-bold px-2 py-1 rounded-md hover:bg-gray-100 transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-                Reset
-              </button>
-            )}
-          </div>
-
-          <div ref={sectionPaneRef} className="flex-1 overflow-y-auto"
-            onScroll={e => { if (activeSectionRole && e.currentTarget.clientHeight > 0) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
-          {/* Score ring */}
-          <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
-            <ScoreRing score={score} size={88} />
-            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
-            {advisoryDimensions.length > 0 && (
-              <div className="w-full mt-2 space-y-2" aria-label="Advisory coherence dimensions">
-                <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Advisory dimensions · pair average</p>
-                {advisoryDimensions.map(({ key, label, value }) => (
-                  <div key={key}>
-                    <div className="flex justify-between text-xs text-gray-700"><span>{label}</span><span className="font-bold tabular-nums">{Math.round(value * 100)}%</span></div>
-                    <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={Math.round(value * 100)} aria-valuemin={0} aria-valuemax={100}>
-                      <div className="h-full rounded-full bg-indigo-500" style={{ width: `${value * 100}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="w-full mt-1.5 space-y-1">
-              {(["overall-status", "strength", "key-strength", "major-issue"] as AssessmentType[])
-                .filter(t => isSample || t !== "overall-status")
-                .map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => applyFilter(filterType === t ? "all" : t)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${filterType === t ? "bg-gray-100" : "hover:bg-gray-50"}`}>
-                  <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                  <span className="text-xs font-medium text-gray-700 flex-1">{ST[t].label}</span>
-                  <span className={`text-xs font-black ${ST[t].pillTxt}`}>
-                    {isSample ? localItems.filter(i => i.type === t).length : (
-                      t === 'strength' ? (scan?.verifications?.length ?? 0) :
-                      t === 'key-strength' ? (scan?.inconsistencies?.filter(i => i.finding_status === 'key_strength').length ?? 0) :
-                      (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="px-4 py-3 border-b border-gray-100 grid grid-cols-1 gap-2">
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2.5">
-              <span className="text-emerald-700 text-base leading-none" aria-hidden="true">✓</span>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-emerald-900">Strongest Alignment</h4>
-                <p className="text-xs text-emerald-800 truncate" title={strongestAlignment?.title}>{strongestAlignment?.title || "No verified alignment yet"}</p>
-              </div>
-            </div>
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex items-start gap-2.5">
-              <span className="text-rose-700 text-base leading-none" aria-hidden="true">!</span>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-rose-900">Needs Attention</h4>
-                <p className="text-xs text-rose-800 truncate" title={needsAttention?.title}>{needsAttention?.title || "No major issue found"}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Assessment Filter Bar */}
-          <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-2 px-0.5">
-              <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Assessment</span>
-              {filterType !== "all" && (
-                <button
-                  type="button"
-                  onClick={() => setFilterType("all")}
-                  className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-                  Show all ({localItems.length})
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={() => applyFilter("all")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}>
-                All ({localItems.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("strength")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  }`}>
-                Verified Alignments ({isSample ? 3 : (scan?.verifications?.length ?? 0)})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("major-issue")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "major-issue" ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-700 hover:bg-rose-100"
-                  }`}>
-                Major Issues ({isSample ? 3 : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0)})
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilter("key-strength")}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${filterType === "key-strength" ? "bg-emerald-700 text-white" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>
-                Key Strengths ({isSample ? 0 : (scan?.inconsistencies?.filter(i => i.finding_status === 'key_strength').length ?? 0)})
-              </button>
-            </div>
-          </div>
-
-          {/* Recommendations stay visible while a finding's detail is open. */}
-          <div className="px-3.5 py-3 flex-1 space-y-1.5">
-            <h4 className="px-3 pb-1 text-xs mono font-bold uppercase tracking-wider text-gray-500">Recommendations</h4>
-            {filteredItems.map((item, idx) => (
-              <button key={item.id}
-                onClick={() => {
-                  setActiveId(prev => prev === item.id ? null : item.id);
-                  
-                  if (activeTab === 'citations')
-                    setActiveTab(item.type === 'strength' ? 'strong_coherence' : 'inconsistencies');
-                }}
-                className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left border transition-all cursor-pointer ${activeId === item.id ? `${ST[item.type].bg} ${ST[item.type].border} shadow-xs` : "border-transparent hover:bg-gray-50"
-                  }`}>
-                <span className={`text-xs mono font-bold shrink-0 mt-0.5 ${ST[item.type].pillTxt}`}>{idx + 1}.</span>
-                <div className="flex-1 min-w-0">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider block ${ST[item.type].pillTxt}`}>{ST[item.type].label}</span>
-                  <span className="text-[13px] font-semibold text-gray-800 leading-snug line-clamp-2 mt-0.5">{item.title}</span>
-                  <span className="text-xs text-gray-500 leading-tight truncate block mt-1">{item.section}</span>
                 </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Highlight legend */}
-          <details className="px-5 py-3 border-t border-gray-100">
-            <summary className="text-xs font-bold text-gray-700 cursor-pointer">Report by Section ({reportSections.length})</summary>
-            <div className="mt-3 space-y-1">
-              {reportSections.map(section => (
-                <button key={section.key} type="button" onClick={() => setActiveSectionRole(section.key)}
-                  className="w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-indigo-600">
-                  <span className="truncate text-gray-800">{section.name}</span>
-                  <span className={`shrink-0 ${SECTION_STATUS[section.status].color}`}>{section.status === 'Unassessed' ? 'Not checked yet' : section.status}</span>
-                </button>
-              ))}
-            </div>
-          </details>
-          <div className="px-4 py-3.5 border-t border-gray-100 space-y-2">
-            <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500 mb-1">Highlight key</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(["overall-status", "strength", "key-strength", "major-issue", "affected-section"] as AssessmentType[]).map(t => (
-                <span key={t} className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold ${ST[t].hl.split(" ").filter(c => c.startsWith("bg-")).join(" ")} ${ST[t].pillTxt}`}>
-                  {ST[t].label}
-                </span>
-              ))}
-            </div>
-          </div>
+              </div>
+            </div>}
+          </section>
 
             {activeSection ? (
               <div className="p-6 space-y-5">
@@ -3669,7 +3052,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   const finding = scan?.inconsistencies.find(inc => inc.inconsistency_id === item.id || `inc-${scan.inconsistencies.indexOf(inc)}` === item.id);
                   return (
                     <div key={item.id} className="rounded-xl border border-gray-200 p-4 space-y-3 text-sm text-gray-700">
-                      <button type="button" onClick={() => setActiveId(item.id)} className="font-bold text-indigo-700 text-left focus-visible:ring-2 focus-visible:ring-indigo-600">{item.title}</button>
+                      <h4 className="font-bold text-indigo-700">{item.title}</h4>
                       <p>{finding?.explanation_what || item.questionOrSubtitle}</p>
                       <p>{finding?.explanation_why || item.description}</p>
                       {item.recommendation && <p><strong>Suggested fix: </strong>{item.recommendation}</p>}
@@ -3679,7 +3062,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                 })}
                 {!sectionFindings(activeSection).length && <p className="text-sm text-gray-600">No findings were returned for this section.</p>}
               </div>
-            ) : activePair && !activeItem ? (() => {
+            ) : activePair ? (() => {
               const score = activePair.score ?? 0;
               const strong = score >= PAR_SCORE;
               const isIncluded = activePair.included !== false;
@@ -3787,196 +3170,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   )}
                 </div>
               );
-            })() : !activeItem ? (
-              <div className="flex flex-col items-center justify-center min-h-full px-6 py-8 text-center gap-5">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs" style={{ background: BL }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8" style={{ color: B }}>
-                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold uppercase mb-3">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                    {isSample ? "Moderate Coherence Overall" : `${scan?.score_breakdown?.band || "Unknown"} Coherence`}
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Summary</h3>
-                  <p className="text-[15px] text-gray-600 leading-relaxed font-serif italic mb-4">
-                    “{isSample ? OVERALL_ASSESSMENT.question : "What is the actual condition of this manuscript based on the analysis?"}”
-                  </p>
-                  <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed text-left bg-gray-50/90 p-4 sm:p-5 rounded-2xl border border-gray-200/80">
-                    {isSample 
-                      ? OVERALL_ASSESSMENT.statusDescription 
-                      : (() => {
-                          const band = scan?.score_breakdown?.band || "Unknown";
-                          const reason = scan?.score_breakdown?.biggest_lever?.reason;
-                          if (!reason) return "To be developed";
-                          const truncatedReason = reason.length > 120 ? reason.slice(0, 117) + "..." : reason;
-                          return `Coherence band: ${band}. ${truncatedReason}`;
-                        })()
-                    }
-                  </p>
-                </div>
-
-                {/* XAI & Recommendations Info Notice */}
-                <div className="w-full text-left p-4 rounded-2xl border border-indigo-100 bg-indigo-50/60">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <svg className="w-4 h-4 text-indigo-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">Analysis Guidance</span>
-                  </div>
-                  <p className="text-xs sm:text-[13px] text-indigo-900/80 leading-relaxed">
-                    Click any highlighted passage or sidebar finding to inspect why the AI flagged it, view evidence from other sections, and read specific rewrite recommendations.
-                  </p>
-                </div>
-
-                {/* Categories Breakdown */}
-                <p className="text-sm text-gray-600">Select a section above to view its analysis</p>
-                <div className="w-full mt-1 space-y-2 text-left">
-                  <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400 px-1">Categories Breakdown</p>
-                  {(["strength", "key-strength", "major-issue"] as AssessmentType[]).map(t => (
-                    <div key={t}
-                      onClick={() => applyFilter(t)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer hover:opacity-95 transition-all border border-transparent hover:border-gray-200" style={{ background: `${ST[t].accentColor}0d` }}>
-                      <span className={`w-3.5 h-3.5 rounded-sm shrink-0 ${ST[t].dot}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs sm:text-sm font-bold ${ST[t].pillTxt}`}>{ST[t].label}</p>
-                        <p className="text-xs text-gray-500 leading-snug mt-0.5">{ASSESSMENT_TYPE_INFO[t].question}</p>
-                      </div>
-                      <span className="text-xs sm:text-sm font-bold text-gray-600 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-100">
-                        {localItems.filter(i => i.type === t).length}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="px-6 py-6 space-y-5">
-
-                {/* Finding header */}
-                <div className={`rounded-2xl p-5 border-2 ${ST[activeItem.type].border} ${ST[activeItem.type].bg}`}>
-                  <div className="flex items-start justify-between mb-2.5">
-                    <AssessmentBadge type={activeItem.type} />
-                    <button type="button" aria-label="Close finding detail" onClick={() => setActiveId(null)} className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                    </button>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug mb-1.5">{activeItem.title}</h3>
-                  <p className="text-xs sm:text-sm font-semibold" style={{ color: ST[activeItem.type].accentColor }}>{activeItem.section}</p>
-                </div>
-
-                {/* ── SECTION 1: EXPLAINABLE AI REASONING ── */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-indigo-600">
-                      <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
-                    </svg>
-                    <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Detailed Analysis</span>
-                  </div>
-
-                  {/* Purpose / Question Prompt */}
-                  <div className="space-y-1">
-                    <p className="text-xs mono font-bold uppercase tracking-wider text-gray-400">Summary</p>
-                    <p className="text-sm sm:text-[15px] text-gray-800 font-serif italic leading-relaxed">“{activeItem.questionOrSubtitle}”</p>
-                  </div>
-
-                  {/* What was detected */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-500 shrink-0">
-                        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                      </svg>
-                      <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">{activeItem.type === 'key-strength' ? 'Why this is a strength' : 'Why the AI Flagged This'}</p>
-                    </div>
-                    <p className="text-sm sm:text-[15px] text-gray-800 leading-relaxed font-normal bg-gray-50 p-4 rounded-2xl border border-gray-200/80">
-                      {activeItem.description}
-                    </p>
-                  </div>
-
-                  {/* Why this matters for panel */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0" style={{ color: ST[activeItem.type].accentColor }}>
-                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Significance for Panel / Defense</p>
-                    </div>
-                    <p className="text-sm sm:text-[15px] text-gray-700 leading-relaxed bg-white p-3.5 rounded-xl border border-gray-100">{activeItem.significance}</p>
-                  </div>
-
-                  {/* Cross-chapter conflict quote */}
-                  {activeItem.conflictsWith && activeItem.conflictQuote && (
-                    <div className={`rounded-2xl p-4 border ${ST[activeItem.type].border}`} style={{ background: `${ST[activeItem.type].accentColor}0a` }}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0" style={{ color: ST[activeItem.type].accentColor }}>
-                          <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        <p className="text-xs mono font-bold uppercase tracking-wider" style={{ color: ST[activeItem.type].accentColor }}>Cross-Section Comparison Evidence</p>
-                      </div>
-                      <p className="text-xs sm:text-sm font-bold text-gray-800 mb-2">{activeItem.conflictsWith}</p>
-                      <p className="text-sm text-gray-800 leading-relaxed italic bg-white rounded-xl px-4 py-3 border border-gray-200/80 shadow-2xs">
-                        "{activeItem.conflictQuote}"
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Verified Evidence quote */}
-                  {activeItem.evidence && (
-                    <div className="rounded-2xl p-4 border border-emerald-200 bg-emerald-50/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 text-emerald-700"><path d="M5 12l5 5L20 7" /></svg>
-                        <p className="text-xs mono font-bold uppercase tracking-wider text-emerald-800">{activeItem.evidence_verified ? 'Verified Evidence in Manuscript' : 'Evidence in Manuscript'}</p>
-                      </div>
-                      <p className="text-sm text-emerald-950 leading-relaxed italic bg-white rounded-xl px-4 py-3 border border-emerald-200/80 shadow-2xs">
-                        "{activeItem.evidence}"
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── SECTION 2: ACTIONABLE RECOMMENDATIONS ── */}
-                <div className="rounded-2xl p-5 border-2 border-indigo-200/90 shadow-sm" style={{ background: `linear-gradient(135deg, ${BL}, #f5f7ff)` }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0" style={{ background: B }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-xs mono font-bold uppercase tracking-wider" style={{ color: B }}>{activeItem.type === 'key-strength' ? 'How to preserve this strength' : 'Actionable Recommendation'}</p>
-                      <p className="text-[11px] text-gray-500 font-medium">Adviser Guidance & Revision Step</p>
-                    </div>
-                  </div>
-                  <p className="text-sm sm:text-base font-semibold text-gray-900 leading-relaxed mt-2.5">
-                    {activeItem.recommendation}
-                  </p>
-                </div>
-
-                {/* Feedback — guarded */}
-                {activeItem && renderFeedback(activeItem)}
-
-                {/* Prev / Next controls */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-500 mono font-semibold">Finding {itemIdx + 1} of {localItems.length}</span>
-                  <div className="flex gap-2">
-                    {([{ dir: -1, label: "← Previous" }, { dir: 1, label: "Next →" }]).map(({ dir, label }) => {
-                      const target = localItems[itemIdx + dir];
-                      return (
-                        <button key={label} disabled={!target}
-                          onClick={() => {
-                            if (target) {
-                              setActiveId(target.id);
-                              scrollToSection(target.targetSectionIndex);
-                            }
-                          }}
-                          className="px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-              </div>
-            )}
+                        })() : null}
           </div>
         </div>
 
@@ -3986,7 +3180,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       <nav className="lg:hidden shrink-0 grid grid-cols-2 border-t border-gray-200 bg-white print:hidden z-30" aria-label="Mobile report panes">
         {([
           { id: "report" as const, label: "Manuscript" },
-          { id: "xai" as const, label: "Inspector" },
+          { id: "xai" as const, label: "Analysis" },
         ]).map(({ id, label }) => (
           <button
             key={id}
@@ -4069,7 +3263,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 }
 
 // ─── Auth shared ──────────────────────────────────────────────────────────────
-function AuthLayout({ children, onNavigate }: { children: React.ReactNode; onNavigate: (s: Screen) => void; quote?: string }) {
+function AuthLayout({ children, onNavigate, onBack }: { children: React.ReactNode; onNavigate: (s: Screen) => void; onBack: () => void; quote?: string }) {
   return (
     <div className="min-h-screen w-full flex flex-col justify-between relative overflow-x-hidden" style={{ background: "#f8f9ff" }}>
       {/* Background decorations matching landing page and dashboard */}
@@ -4083,11 +3277,11 @@ function AuthLayout({ children, onNavigate }: { children: React.ReactNode; onNav
           <Logo className="h-9 w-auto" />
         </button>
         <button
-          onClick={() => onNavigate("home")}
+          onClick={onBack}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm text-xs font-semibold text-gray-600 hover:bg-white hover:text-gray-900 transition-all shadow-sm"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-          Back to home
+          Back
         </button>
       </header>
 
@@ -4126,7 +3320,7 @@ function FieldInput({ label, type = "text", value, onChange, placeholder, right,
 }
 
 // ─── Login ────────────────────────────────────────────────────────────────────
-function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) => void; onLoginSuccess?: () => void }) {
+function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate: (s: Screen) => void; onBack: () => void; onLoginSuccess?: () => void }) {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -4172,7 +3366,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
   }
 
   return (
-    <AuthLayout onNavigate={onNavigate}>
+    <AuthLayout onNavigate={onNavigate} onBack={onBack}>
       <div>
         {/* Header */}
         <div className="mb-6">
@@ -4367,7 +3561,7 @@ function LoginScreen({ onNavigate, onLoginSuccess }: { onNavigate: (s: Screen) =
 }
 
 // ─── Signup ───────────────────────────────────────────────────────────────────
-function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen) => void; onSignupSuccess?: () => void }) {
+function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNavigate: (s: Screen) => void; onBack: () => void; onSignupSuccess?: () => void }) {
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -4419,7 +3613,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
   }
 
   return (
-    <AuthLayout onNavigate={onNavigate}>
+    <AuthLayout onNavigate={onNavigate} onBack={onBack}>
       <div>
         <div className="mb-6">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
@@ -4600,7 +3794,7 @@ function SignupScreen({ onNavigate, onSignupSuccess }: { onNavigate: (s: Screen)
 }
 
 // ─── Reset Password ────────────────────────────────────────────────────────────
-function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Screen) => void; onBack: () => void }) {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -4630,7 +3824,7 @@ function ResetPasswordScreen({ onNavigate }: { onNavigate: (s: Screen) => void }
   }
 
   return (
-    <AuthLayout onNavigate={onNavigate}>
+    <AuthLayout onNavigate={onNavigate} onBack={onBack}>
       <div>
         {/* Header */}
         <div className="mb-6">
@@ -5037,7 +4231,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
     {
       num: 2,
       label: "Set Type & Template",
-      desc: "Choose Quantitative or Qualitative methodology, and edit our standard template.",
+      desc: "Upload a manuscript and optionally attach a chapter template.",
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M3 9h18M9 21V9" /></svg>,
     },
     {
@@ -5700,7 +4894,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                 <Info className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-sm leading-relaxed text-muted-foreground"><strong className="text-foreground">When inconsistencies may appear.</strong> Review flagged findings in Detailed Analysis & Recommendations.</p>
+                <p className="text-sm leading-relaxed text-muted-foreground"><strong className="text-foreground">When inconsistencies may appear.</strong> Review flagged findings in the Findings tab.</p>
               </div>
             </div>
           </section>
@@ -5712,7 +4906,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-amber-900">Pro tip: Customize your standard template</p>
-              <p className="text-xs text-amber-700 leading-relaxed mt-0.5">Select your research scope (Quantitative or Qualitative) and refine headings in our standard template to ensure maximum detection accuracy across chapters.</p>
+              <p className="text-xs text-amber-700 leading-relaxed mt-0.5">ReSync detects research type and chapter headings from your manuscript. Attach a template if your school uses custom headings.</p>
             </div>
             <button onClick={() => onNavigate("upload")}
               className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-colors whitespace-nowrap">
@@ -6095,7 +5289,10 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
+  const screenRef = useRef<Screen>("home");
+  const historyIndex = useRef(0);
   const [session, setSession] = useState<Session | null>(null);
+  const sessionRef = useRef<Session | null>(null);
   const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -6108,24 +5305,34 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      sessionRef.current = session;
+      let initialScreen: Screen = 'home';
       if (isRecovery) {
-        setScreen("reset-password");
+        initialScreen = 'reset-password';
       } else if (session && savedScreen && RESTORABLE_SCREENS.includes(savedScreen)) {
-        setScreen(savedScreen);
+        initialScreen = savedScreen;
       } else if (session) {
-        setScreen("dashboard");
+        initialScreen = 'dashboard';
       }
+      screenRef.current = initialScreen;
+      setScreen(initialScreen);
+      window.history.replaceState({ resync: { index: 0, screen: initialScreen, sample: false } }, '');
       setSessionLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+      sessionRef.current = session;
       if (event === 'PASSWORD_RECOVERY') {
+        screenRef.current = 'reset-password';
         setScreen("reset-password");
+        window.history.replaceState({ resync: { index: historyIndex.current, screen: 'home', sample: false } }, '');
       } else if (event === 'SIGNED_IN' && session) {
         setScreen(prev => {
           if (['login', 'signup', 'home'].includes(prev)) {
             sessionStorage.setItem('resync_screen', 'dashboard');
+            screenRef.current = 'dashboard';
+            window.history.replaceState({ resync: { index: historyIndex.current, screen: 'dashboard', sample: false } }, '');
             return "dashboard";
           }
           return prev;
@@ -6134,6 +5341,8 @@ export default function App() {
         setScreen(prev => {
           if (['dashboard', 'upload', 'processing', 'results'].includes(prev)) {
             sessionStorage.setItem('resync_screen', 'home');
+            screenRef.current = 'home';
+            window.history.replaceState({ resync: { index: historyIndex.current, screen: 'home', sample: false } }, '');
             return "home";
           }
           return prev;
@@ -6143,21 +5352,53 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const destination = event.state?.resync as { index: number; screen: Screen; sample: boolean } | undefined;
+      historyIndex.current = destination?.index ?? 0;
+      const target = destination?.screen ?? 'home';
+      const next = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
+      screenRef.current = next;
+      setScreen(next);
+      setIsSampleMode(destination?.sample ?? false);
+      sessionStorage.setItem('resync_screen', next);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   function navigate(s: Screen, asSample = false) {
-    if (s === "dashboard" && !session) {
-      setScreen("login");
-      sessionStorage.setItem('resync_screen', 'login');
-    } else {
-      setIsSampleMode(asSample);
-      setScreen(s);
-      sessionStorage.setItem('resync_screen', s);
-    }
+    const target = s === 'dashboard' && !sessionRef.current ? 'login' : s;
+    const transient = ['processing', 'login', 'signup', 'reset-password'];
+    const previous = window.history.state?.resync?.screen as Screen | undefined;
+    const replacingTransient = transient.includes(screenRef.current) && !transient.includes(target);
+    const entry = { index: historyIndex.current + (replacingTransient ? 0 : 1), screen: transient.includes(target) ? previous ?? 'home' : target, sample: asSample };
+    if (replacingTransient) window.history.replaceState({ resync: entry }, '');
+    else window.history.pushState({ resync: entry }, '');
+    historyIndex.current = entry.index;
+    screenRef.current = target;
+    setIsSampleMode(asSample);
+    setScreen(target);
+    sessionStorage.setItem('resync_screen', target);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goBack() {
+    if (historyIndex.current > 0) window.history.back();
+    else {
+      screenRef.current = 'home';
+      setScreen('home');
+      setIsSampleMode(false);
+      sessionStorage.setItem('resync_screen', 'home');
+      window.history.replaceState({ resync: { index: 0, screen: 'home', sample: false } }, '');
+    }
   }
 
   function handleLoginSuccess() {
     setIsSampleMode(false);
+    screenRef.current = 'dashboard';
     setScreen("dashboard");
+    window.history.replaceState({ resync: { index: historyIndex.current, screen: 'dashboard', sample: false } }, '');
     sessionStorage.setItem('resync_screen', 'dashboard');
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -6165,7 +5406,9 @@ export default function App() {
   async function handleLogout() {
     await supabase.auth.signOut();
     sessionStorage.setItem('resync_screen', 'home');
+    screenRef.current = 'home';
     setScreen('home');
+    window.history.replaceState({ resync: { index: historyIndex.current, screen: 'home', sample: false } }, '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -6181,12 +5424,12 @@ export default function App() {
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes slide-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}} .animate-slide-in{animation:slide-in .3s ease forwards}`}</style>
       {screen === "home" && <HomeScreen onNavigate={navigate} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
+      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
       {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}
-      {screen === "login" && <LoginScreen onNavigate={navigate} onLoginSuccess={handleLoginSuccess} />}
-      {screen === "signup" && <SignupScreen onNavigate={navigate} onSignupSuccess={() => navigate("dashboard")} />}
-      {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} />}
+      {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
+      {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
+      {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
       {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} />}
     </div>
   );
