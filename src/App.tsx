@@ -1,20 +1,21 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useId } from "react";
+import { Logo, BackToTop, Spinner, Eye, GIcon } from './components/AppPrimitives';
+import { ScoreRing } from './components/AppScoreRing';
+import { AuthLayout } from './components/AuthLayout';
 import type { Screen, DisplayScan } from './lib/appTypes';
 import { B, BH, BL } from './lib/brand';
 import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from './data/sampleReport';
 import type { AssessmentType, AssessmentItem, Citation } from './data/sampleReport';
-import resyncLogo from "@/imports/Untitled_design__1_.webp";
 import spacyLogo from "@/assets/technology/spacy.png";
 import geminiLogo from "@/assets/technology/gemini.svg";
 import guidanceArtwork from "@/assets/guidance-reference.webp";
-import { ArrowUp, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import type { CitedReference, RolePairScore, AITextIndicator, DismissedPair, ScoreBreakdown } from './types';
 import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript, createCreditCheckout, confirmCreditCheckout } from './services/api';
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
-import { useId } from 'react';
 
 type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
@@ -52,74 +53,12 @@ const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
-function Logo({ className = "", header = false }: { className?: string; header?: boolean }) {
-  if (header) return <span className={`relative block shrink-0 overflow-hidden aspect-[3135/1542] ${className}`}><img src={resyncLogo} alt="ReSync" className="absolute max-w-none" style={{ width: "116.91%", height: "205.25%", left: "-8.006%", top: "-48.703%" }} /></span>;
-  return <img src={resyncLogo} alt="ReSync" className={`object-contain ${className}`} />;
-}
 
-function BackToTop() {
-  const endRef = useRef<HTMLDivElement>(null);
-  const [atEnd, setAtEnd] = useState(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setAtEnd(entry.isIntersecting), { rootMargin: "0px 0px 80px 0px" });
-    if (endRef.current) observer.observe(endRef.current);
-    return () => observer.disconnect();
-  }, []);
-  return <>
-    <div ref={endRef} className="h-px" aria-hidden="true" />
-    {atEnd && <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })}
-      className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-      <ArrowUp className="h-4 w-4" aria-hidden="true" />Back to top
-    </button>}
-  </>;
-}
 
-function Spinner({ cls = "w-4 h-4" }: { cls?: string }) {
-  return <svg className={`${cls} animate-spin`} viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" /></svg>;
-}
 
-function Eye({ open }: { open: boolean }) {
-  return open
-    ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22" /></svg>
-    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
-}
 
-function GIcon() {
-  return <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>;
-}
 
-function scoreBandTone(score: number, band = '') {
-  return /strong|high/i.test(band) ? 'strong' : /solid|moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
-}
 
-function ScoreRing({ score, size = 112, band, showLabel = true, solidArc = false }: { score: number; size?: number; band?: string; showLabel?: boolean; solidArc?: boolean }) {
-  const gradientId = useId();
-  const r = 38; const circ = 2 * Math.PI * r;
-  const tone = scoreBandTone(score, band);
-  const label = band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
-  return (
-    <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${Math.round(score)} out of 100, ${label}`}>
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
-          {!solidArc && <defs>
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="15%" stopColor="var(--band)" />
-              <stop offset="100%" stopColor="var(--brand)" />
-            </linearGradient>
-          </defs>}
-          <circle cx="50" cy="50" r={r} fill="var(--band-surface)" stroke="var(--band-surface)" strokeWidth="9" />
-          <circle cx="50" cy="50" r={r} fill="none" stroke={solidArc ? 'var(--brand)' : `url(#${gradientId})`} strokeWidth="9" strokeLinecap="round" className="score-ring-arc"
-            strokeDasharray={`${(Math.max(0, Math.min(100, score)) / 100) * circ} ${circ}`} />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`${size >= 150 ? 'text-[44px]' : 'text-2xl'} font-bold mono leading-none tabular-nums`} style={{ color: 'var(--band)' }}>{Math.round(score)}</span>
-          <span className="text-[10px] text-gray-400 mono tabular-nums">/100</span>
-        </div>
-      </div>
-      {showLabel && <span className="text-xs font-semibold text-gray-600">{label}</span>}
-    </div>
-  );
-}
 
 // ─── Animated keyword ─────────────────────────────────────────────────────────
 function Keyword() {
@@ -2921,42 +2860,6 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
 }
 
 // ─── Auth shared ──────────────────────────────────────────────────────────────
-function AuthLayout({ children, onNavigate, onBack }: { children: React.ReactNode; onNavigate: (s: Screen) => void; onBack: () => void; quote?: string }) {
-  return (
-    <div className="min-h-screen w-full flex flex-col justify-between relative overflow-x-hidden" style={{ background: "#f8f9ff" }}>
-      {/* Background decorations matching landing page and dashboard */}
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, rgba(26,31,204,0.06) 1px, transparent 1px)`, backgroundSize: "32px 32px" }} />
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)" }} />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)" }} />
-
-      {/* Top navigation header */}
-      <header className="relative z-10 w-full px-6 md:px-10 lg:px-16 xl:px-20 py-6 flex items-center justify-between">
-        <button onClick={() => onNavigate("home")} className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-          <Logo className="h-9 w-auto" />
-        </button>
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm text-xs font-semibold text-gray-600 hover:bg-white hover:text-gray-900 transition-all shadow-sm"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-          Back
-        </button>
-      </header>
-
-      {/* Main centered card */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-6">
-        <div className="w-full max-w-[440px] bg-white rounded-3xl border border-gray-100 p-8 sm:p-10 shadow-xl" style={{ boxShadow: "0 12px 40px rgba(26,31,204,0.06)" }}>
-          {children}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 py-6 text-center text-xs text-gray-400">
-        © {new Date().getFullYear()} ReSync · AI-Powered Academic Coherence Engine · All rights reserved
-      </footer>
-    </div>
-  );
-}
 
 function FieldInput({ label, type = "text", value, onChange, placeholder, right, required = true }: {
   label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; right?: React.ReactNode; required?: boolean;
