@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import type { Screen, DisplayScan } from './lib/appTypes';
+import { B, BH, BL } from './lib/brand';
 import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from './data/sampleReport';
 import type { AssessmentType, AssessmentItem, Citation } from './data/sampleReport';
 import resyncLogo from "@/imports/Untitled_design__1_.webp";
@@ -14,7 +16,6 @@ import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, 
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
 import { useId } from 'react';
 
-type Screen = "home" | "upload" | "processing" | "results" | "login" | "signup" | "dashboard" | "reset-password";
 type UploadMode = "file" | "link";
 type ResultTab = "manuscript" | "assessment" | "citations";
 type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
@@ -49,9 +50,6 @@ const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row
 
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
-const B = "#1a1fcc";   // brand blue
-const BH = "#2d35e8";  // hover
-const BL = "#eef0ff";  // light tint
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
 function Logo({ className = "", header = false }: { className?: string; header?: boolean }) {
@@ -617,7 +615,6 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
 
 let lastScanError: string | null = null;
 
-type DisplayScan = ScanResponse & { template_toc?: string[] };
 
 function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
