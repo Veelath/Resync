@@ -1,21 +1,7 @@
-import { useState, useEffect, useRef, useMemo, useId } from "react";
-import { Logo, BackToTop, Spinner, Eye, GIcon } from './components/AppPrimitives';
-import { ScoreRing } from './components/AppScoreRing';
-import { AuthLayout } from './components/AuthLayout';
+import { useState, useEffect, useRef } from "react";
 import type { Screen, DisplayScan } from './lib/appTypes';
-import { B, BH, BL } from './lib/brand';
-import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from './data/sampleReport';
-import type { AssessmentType, AssessmentItem, Citation } from './data/sampleReport';
-import spacyLogo from "@/assets/technology/spacy.png";
-import geminiLogo from "@/assets/technology/gemini.svg";
-import guidanceArtwork from "@/assets/guidance-reference.webp";
-import { Info } from "lucide-react";
-import type React from 'react';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import type { CitedReference, RolePairScore, AITextIndicator, DismissedPair, ScoreBreakdown } from './types';
-import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, getCreditBalance, getCreditHistory, API_BASE_URL, authHeaders, fetchManuscript, createCreditCheckout, confirmCreditCheckout } from './services/api';
-import { formatRoleLabel, PAR_SCORE } from './utils.js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
@@ -25,22 +11,6 @@ import { UploadScreen } from './screens/UploadScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ResultsScreen } from './screens/ResultsScreen';
 
-
-// ─── Auth shared ──────────────────────────────────────────────────────────────
-
-
-// ─── Login ────────────────────────────────────────────────────────────────────
-
-// ─── Signup ───────────────────────────────────────────────────────────────────
-
-// ─── Reset Password ────────────────────────────────────────────────────────────
-
-
-
-
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-
-// ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
   const screenRef = useRef<Screen>("home");
