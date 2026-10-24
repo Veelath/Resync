@@ -18,7 +18,6 @@ import { type ScanResponse, mapScanResponseToScanResult, executeManuscriptScan, 
 import { formatRoleLabel, PAR_SCORE } from './utils.js';
 
 type UploadMode = "file" | "link";
-type ResultTab = "manuscript" | "assessment" | "citations";
 type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
 
@@ -61,25 +60,6 @@ const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row
 
 
 // ─── Animated keyword ─────────────────────────────────────────────────────────
-function Keyword() {
-  const words = ["coherent.", "airtight.", "aligned.", "submission‑ready."];
-  const [i, setI] = useState(0);
-  const [vis, setVis] = useState(true);
-  useEffect(() => {
-    const t = setInterval(() => {
-      setVis(false);
-      setTimeout(() => { setI(x => (x + 1) % words.length); setVis(true); }, 280);
-    }, 2800);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <span className="relative inline-block" style={{ transition: "opacity .28s", opacity: vis ? 1 : 0 }}>
-      <span className="relative z-10 px-2" style={{ color: B }}>{words[i]}</span>
-      <span className="absolute inset-0 rounded-md border-2" style={{ borderColor: B, borderRadius: 7 }} />
-      <span className="ml-0.5 inline-block w-0.5 h-[0.85em] align-middle" style={{ background: B, animation: "blink 1s step-end infinite" }} />
-    </span>
-  );
-}
 
 // ─── Product preview card (hero visual) ──────────────────────────────────────
 function PreviewCard() {
@@ -3486,9 +3466,6 @@ function parseUserProfileMetadata(meta?: Record<string, any> | null, email?: str
   return { firstName, middleName, lastName, fullName };
 }
 
-function formatPeso(n: number): string {
-  return "₱" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
 
 const CREDIT_PACKAGES = [
   {
