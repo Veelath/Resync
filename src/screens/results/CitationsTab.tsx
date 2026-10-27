@@ -11,8 +11,8 @@ export function CitationsTab({ citationFilter, setCitationFilter, displayedCitat
   return (
               <div className="space-y-4">
                 <p className="text-xs text-gray-500">Click any status card to filter the list. Click it again to clear.</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => {
+                <div className="grid grid-cols-2 gap-3">
+                  {(['public', 'private'] as Citation["status"][]).map(s => {
                     const isSelected = citationFilter === s;
                     return (
                       <button
@@ -39,7 +39,7 @@ export function CitationsTab({ citationFilter, setCitationFilter, displayedCitat
                   })}
                 </div>
 
-                <p className="text-xs text-gray-500">Restricted = paywalled · Neutral = couldn't verify.</p>
+                <p className="text-xs text-gray-500">Accessible (Public) = anyone can open the source · Inaccessible (Private) = private, or needs permission or a login.</p>
 
                 {citationFilter && (
                   <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
@@ -63,7 +63,7 @@ export function CitationsTab({ citationFilter, setCitationFilter, displayedCitat
                     </p>
                     <p className="text-xs text-gray-500 mb-3">
                       {citationFilter
-                        ? `No citations with status "${CITE_BADGE[citationFilter].label}" were found.`
+                        ? `No citations are marked "${CITE_BADGE[citationFilter].label}".`
                         : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
                     </p>
                     {citationFilter && (

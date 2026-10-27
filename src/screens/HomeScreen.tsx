@@ -57,11 +57,11 @@ function PreviewCard() {
         <div className="px-5 pb-4 flex gap-2">
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-[10px] font-semibold text-green-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-            <span className="tabular-nums">4</span> live
+            <span className="tabular-nums">4</span> public
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] font-semibold text-red-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            <span className="tabular-nums">2</span> dead
+            <span className="tabular-nums">2</span> private
           </div>
           <div className="ml-auto text-[10px] text-gray-400 mono self-center tabular-nums">~2 min scan</div>
         </div>
@@ -152,7 +152,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: 
           {[
             ["6", "Coherence dimensions"],
             ["~2 min", "Per full thesis"],
-            [".docx + GDocs", "Accepted formats"],
+            [".doc/.docx + GDocs", "Accepted formats"],
             ["3 models", "Support the analysis"],
           ].map(([val, label]) => (
             <div key={label} className="flex items-center gap-3">
@@ -184,7 +184,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: 
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Upload</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
-                  Add a <span className="font-semibold text-gray-700">.docx file</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies the document's chapters and can compare them with an uploaded school template.
+                  Add a <span className="font-semibold text-gray-700">Word file (.doc/.docx)</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies the document's chapters and can compare them with an uploaded school template.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-6">
                   {["Chapter mapping", "Template support", "Chapter-aware matching"].map(t => (
@@ -206,7 +206,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: 
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7" style={{ color: B }} aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     </div>
                     <p className="text-sm font-bold text-gray-700 mb-1">Drop your thesis here</p>
-                    <p className="text-xs text-gray-400">.docx or Google Docs link · max 25&nbsp;MB</p>
+                    <p className="text-xs text-gray-400">.doc, .docx or Google Docs link · max 25&nbsp;MB</p>
                     <div className="mt-5 flex items-center justify-center gap-2">
                       <div className="flex-1 h-px bg-gray-100" />
                       <span className="text-xs text-gray-600 font-medium">or</span>

@@ -15,7 +15,7 @@ import type { CitedReference, RolePairScore, AITextIndicator, ScoreBreakdown } f
 import { type ScanResponse, API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
 import { formatRoleLabel, PAR_SCORE } from '../../utils.js';
 
-import { type EnrichedPair, type ActiveResultsTab, type MobileResultsPane, type ReportSection, citationText, SECTION_STATUS, sectionRole, buildReportSections, pairHasMissingSection, citationContains, extractDisplayTitle, normalizeManuscriptPreview } from './helpers';
+import { type EnrichedPair, type ActiveResultsTab, type MobileResultsPane, type ReportSection, citationText, SECTION_STATUS, sectionRole, buildReportSections, pairHasMissingSection, citationContains, extractDisplayTitle, normalizeManuscriptPreview, citationAccess } from './helpers';
 
 export function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
@@ -138,20 +138,7 @@ export function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: 
   const localCitations: Citation[] = isSample
     ? CITATIONS
     : rawCitationsList.map((c: CitedReference, i) => {
-        let status: Citation["status"] = "neutral";
-        const s = c.citation_status || "";
-        
-        if (["verified_doi", "verified_url", "verified_metadata", "accessible"].includes(s) || c.status === "Accessible") {
-          status = "live";
-        } else if (["metadata_mismatch", "restricted", "bot_wall"].includes(s)) {
-          status = "restricted";
-        } else if (["unverified", "unknown_error", "no_link"].includes(s)) {
-          status = "neutral";
-        } else if (s === "broken" || c.status === "Broken Link") {
-          status = "dead";
-        } else if (c.citation_is_accessible) {
-          status = "live";
-        }
+        const status = citationAccess(c);
 
         return {
           id: `cit-${i}`,
@@ -251,7 +238,7 @@ export function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: 
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1);
     return { key, label, color, value: isSample ? SAMPLE_ADVISORY_DIMENSIONS[key] : values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null };
   });
-  const dead = localCitations.filter(c => c.status === "dead").length;
+  const privateCount = localCitations.filter(c => c.status === "private").length;
   type STEntry = { hl: string; pill: string; accentColor: string; label: string };
   const ST: Record<AssessmentType, STEntry> = {
     "overall-status": {
@@ -559,7 +546,7 @@ export function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: 
       <main className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">
 
         {/* Manuscript stays visible independently of the analysis tabs. */}
-        <ManuscriptViewer mobilePane={mobilePane} isSample={isSample} displayTitle={displayTitle} displayBand={displayBand} findingsCount={findingsCount} sectionsCount={sectionsCount} manuscriptLoading={manuscriptLoading} manuscriptText={manuscriptText} manuscriptError={manuscriptError} localParagraphs={localParagraphs} localCitations={localCitations} dead={dead} ST={ST} renderPara={renderPara} renderSectionText={renderSectionText} renderCitation={renderCitation} scan={scan} />
+        <ManuscriptViewer mobilePane={mobilePane} isSample={isSample} displayTitle={displayTitle} displayBand={displayBand} findingsCount={findingsCount} sectionsCount={sectionsCount} manuscriptLoading={manuscriptLoading} manuscriptText={manuscriptText} manuscriptError={manuscriptError} localParagraphs={localParagraphs} localCitations={localCitations} privateCount={privateCount} ST={ST} renderPara={renderPara} renderSectionText={renderSectionText} renderCitation={renderCitation} scan={scan} />
 
         {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
         <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100`}>

@@ -1,5 +1,17 @@
 import type { Citation } from '../../data/sampleReport';
-import type { RolePairScore } from '../../types';
+import type { RolePairScore, CitedReference } from '../../types';
+
+// A citation is public only when its source could be reached without permission. Everything else
+// (paywalled, login/bot-walled, broken or unresolvable, or no link at all) is treated as private.
+export function citationAccess(c: CitedReference): Citation["status"] {
+  if (c.citation_is_accessible === true) return "public";
+  if (c.citation_is_accessible === false) return "private";
+  const s = c.citation_status || "";
+  if (["verified_doi", "verified_url", "verified_metadata", "metadata_mismatch", "accessible"].includes(s) || c.status === "Accessible") {
+    return "public";
+  }
+  return "private";
+}
 
 export type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
@@ -15,10 +27,8 @@ export function citationText(value: string = ""): string {
 
 
 export const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
-  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
-  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-800",    row: "border-amber-200 bg-surface-warn" },
-  neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
-  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-rose-200 bg-surface-error" },
+  public:  { label: "Accessible (Public)",  badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
+  private: { label: "Inaccessible (Private)", badge: "bg-red-100 text-red-700",       row: "border-rose-200 bg-surface-error" },
 };
 
 

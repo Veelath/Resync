@@ -159,19 +159,19 @@ export interface Citation {
   id: string;
   ref: string;
   url: string;
-  status: "live" | "restricted" | "neutral" | "dead";
+  status: "public" | "private";
   title?: string;
   authors?: string;
   year?: number | string;
 }
 
 export const CITATIONS: Citation[] = [
-  { id: "c1", ref: "Bandura, A. (1997). Self-efficacy: The exercise of control.", url: "https://doi.org/10.1002/rrq.121", status: "live" },
-  { id: "c2", ref: "Cruz, M. et al. (2023). Digital transformation in Philippine HEIs.", url: "https://journals.pup.edu.ph/index.php/jrm/article/view/1024", status: "dead" },
-  { id: "c3", ref: "Davis, F.D. (1989). Perceived Usefulness, Perceived Ease of Use.", url: "https://doi.org/10.2307/249008", status: "live" },
-  { id: "c4", ref: "Garcia, L. (2022). Capstone completion barriers in ASEAN universities.", url: "https://researchgate.net/publication/360421089", status: "dead" },
-  { id: "c5", ref: "Reyes, J.A. (2024). Coherence in multi-author research manuscripts.", url: "https://doi.org/10.1016/j.compedu.2024.104801", status: "live" },
-  { id: "c6", ref: "Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.", url: "https://philjol.info/index.php/JPAIR/article/view/7821", status: "live" },
+  { id: "c1", ref: "Bandura, A. (1997). Self-efficacy: The exercise of control.", url: "https://doi.org/10.1002/rrq.121", status: "public" },
+  { id: "c2", ref: "Cruz, M. et al. (2023). Digital transformation in Philippine HEIs.", url: "https://journals.pup.edu.ph/index.php/jrm/article/view/1024", status: "private" },
+  { id: "c3", ref: "Davis, F.D. (1989). Perceived Usefulness, Perceived Ease of Use.", url: "https://doi.org/10.2307/249008", status: "public" },
+  { id: "c4", ref: "Garcia, L. (2022). Capstone completion barriers in ASEAN universities.", url: "https://researchgate.net/publication/360421089", status: "private" },
+  { id: "c5", ref: "Reyes, J.A. (2024). Coherence in multi-author research manuscripts.", url: "https://doi.org/10.1016/j.compedu.2024.104801", status: "public" },
+  { id: "c6", ref: "Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.", url: "https://philjol.info/index.php/JPAIR/article/view/7821", status: "public" },
 ];
 
 export const AI_TEXT_DISCLAIMER =

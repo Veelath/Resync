@@ -14,6 +14,20 @@ interface TemplateChapter {
   sections: string[];
 }
 
+const WORD_EXT_RE = /\.docx?$/i;
+const WORD_MIME_TYPES = [
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
+const WORD_ACCEPT = ".doc,.docx," + WORD_MIME_TYPES.join(",");
+
+// Word documents only (.doc / .docx): checks the extension and, when the browser reports one, the MIME type.
+function isWordFile(file: File): boolean {
+  if (!WORD_EXT_RE.test(file.name)) return false;
+  return !file.type || WORD_MIME_TYPES.includes(file.type);
+}
+
 async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
   const mammoth = await import('mammoth');
   const arrayBuffer = await file.arrayBuffer();
@@ -145,27 +159,15 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
   }
 
   async function handleTemplateFileChange(file: File) {
+    if (!isWordFile(file)) {
+      setCustomTemplateFile(null);
+      setTemplateChapters([]);
+      setTemplateParseError('Unsupported template file. Please upload a Word document (.doc or .docx).');
+      return;
+    }
     setCustomTemplateFile(file);
     setTemplateParseError(null);
     try {
-      if (file.name.endsWith('.txt') || file.type === 'text/plain') {
-        const text = await file.text();
-        const lines = text.split(/\r?\n/)
-          .map(l => l.trim())
-          .map(l => l.replace(/^["'\s]+|["',\s]+$/g, '').trim())
-          .filter(Boolean);
-        if (lines.length === 0) {
-          setTemplateParseError('No headings found in the template. No template will be sent.');
-          setTemplateChapters([]);
-        } else {
-          setTemplateChapters([{
-            id: "c1",
-            title: "Custom Template Sections",
-            sections: lines,
-          }]);
-        }
-        return;
-      }
       const parsed = await parseDocxTemplate(file);
       if (parsed.length === 0) {
         setTemplateParseError('No headings found in the template. No template will be sent.');
@@ -177,6 +179,22 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
       setTemplateParseError('Could not parse the template file. No template will be sent.');
       setTemplateChapters([]);
     }
+  }
+
+  function acceptManuscriptFile(file: File) {
+    lastScanError = null;
+    if (!isWordFile(file)) {
+      setUploadedFile(null);
+      setScanError("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+      return;
+    }
+    if (file.size > MAX_MANUSCRIPT_BYTES) {
+      setUploadedFile(null);
+      setScanError("This file is larger than 25 MB. Please upload a smaller Word document.");
+      return;
+    }
+    setScanError(null);
+    setUploadedFile(file);
   }
 
   function handleResetTemplate() {
@@ -200,9 +218,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
         if (uploadedFile.size === 0) {
           throw new Error("The uploaded document appears to be empty or contains no extractable text.");
         }
-        const lowerName = uploadedFile.name.toLowerCase();
-        if (!lowerName.endsWith(".docx") && !lowerName.endsWith(".pdf")) {
-          throw new Error("This does not look like a research manuscript. Please upload a .docx or .pdf file.");
+        if (!isWordFile(uploadedFile)) {
+          throw new Error("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+        }
+        if (uploadedFile.size > MAX_MANUSCRIPT_BYTES) {
+          throw new Error("This file is larger than 25 MB. Please upload a smaller Word document.");
         }
       } else if (mode === "link") {
         if (!link.trim() || !link.includes("docs.google.com")) {
@@ -264,9 +284,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
         setScanError("The uploaded document appears to be empty or contains no extractable text.");
         return;
       }
-      const lowerName = uploadedFile.name.toLowerCase();
-      if (!lowerName.endsWith(".docx") && !lowerName.endsWith(".pdf")) {
-        setScanError("This does not look like a research manuscript. Please upload a .docx or .pdf file.");
+      if (!isWordFile(uploadedFile)) {
+        setScanError("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+        return;
+      }
+      if (uploadedFile.size > MAX_MANUSCRIPT_BYTES) {
+        setScanError("This file is larger than 25 MB. Please upload a smaller Word document.");
         return;
       }
     } else if (mode === "link") {
@@ -314,7 +337,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold text-gray-900">1. Manuscript</p>
-              <p className="text-[11px] text-gray-400">Upload .docx or add Google Docs link</p>
+              <p className="text-[11px] text-gray-400">Upload .doc/.docx or add Google Docs link</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
@@ -362,8 +385,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
                       [
                         "file",
                         <svg key="file-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
-                        "Upload .docx",
-                        ".docx · max 25\u00A0MB"
+                        "Upload Word file",
+                        ".doc, .docx · max 25\u00A0MB"
                       ],
                       [
                         "link",
@@ -392,11 +415,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
                   {/* Input Dropzone */}
                   {mode === "file" ? (
                     <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) { setUploadedFile(f); lastScanError = null; setScanError(null); } }}
+                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) acceptManuscriptFile(f); }}
                       onClick={() => fileInputRef.current?.click()}
                       className="flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50"
                       style={{ borderColor: drag || uploadedFile ? B : "#e5e7eb", background: drag || uploadedFile ? BL : undefined }}>
-                      <input ref={fileInputRef} type="file" accept=".docx,.pdf" className="hidden" onChange={e => { setUploadedFile(e.target.files?.[0] ?? null); lastScanError = null; setScanError(null); }} />
+                      <input ref={fileInputRef} type="file" accept={WORD_ACCEPT} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) acceptManuscriptFile(f); e.target.value = ""; }} />
                       {uploadedFile ? (
                         <>
                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ background: BL, border: `1px solid ${B}20` }}>
@@ -416,7 +439,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-gray-700">Drop your .docx or .pdf file here</p>
+                            <p className="text-sm font-bold text-gray-700">Drop your .doc or .docx file here</p>
                             <p className="text-xs text-gray-400 mt-1">or click to browse from device · max 25 MB</p>
                           </div>
                         </>
@@ -480,7 +503,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
                   {
                     n: "2",
                     title: "Upload manuscript",
-                    body: ".docx under 25 MB, or Google Docs set to 'Anyone with the link can view'.",
+                    body: ".doc or .docx under 25 MB, or Google Docs set to 'Anyone with the link can view'.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>,
                   },
                   {
@@ -694,8 +717,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
                 {/* Optional institutional file override */}
                 <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
-                    <p className="font-semibold text-gray-800">Have an institutional .docx or .txt template file?</p>
-                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.docx or .txt).</p>
+                    <p className="font-semibold text-gray-800">Have an institutional Word template file?</p>
+                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.doc or .docx).</p>
                   </div>
                   <button
                     type="button"
@@ -708,7 +731,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
                         <span>{customTemplateFile.name}</span>
                       </>
-                    ) : "+ Attach template (.docx, .txt) (Optional)"}
+                    ) : "+ Attach template (.doc, .docx) (Optional)"}
                   </button>
                   {templateParseError && (
                     <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
@@ -716,7 +739,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
                   <input
                     ref={customTemplateInputRef}
                     type="file"
-                    accept=".docx,.txt"
+                    accept={WORD_ACCEPT}
                     className="hidden"
                     onChange={e => {
                       const f = e.target.files?.[0];

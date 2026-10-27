@@ -3,12 +3,13 @@ import type { DisplayScan } from '../../lib/appTypes';
 import { B } from '../../lib/brand';
 import { PARAGRAPHS } from '../../data/sampleReport';
 import type { AssessmentType, Citation } from '../../data/sampleReport';
+import { CITE_BADGE } from './helpers';
 import type { MobileResultsPane, ReportSection } from './helpers';
 
-export function ManuscriptViewer({ mobilePane, isSample, displayTitle, displayBand, findingsCount, sectionsCount, manuscriptLoading, manuscriptText, manuscriptError, localParagraphs, localCitations, dead, ST, renderPara, renderSectionText, renderCitation, scan }: {
+export function ManuscriptViewer({ mobilePane, isSample, displayTitle, displayBand, findingsCount, sectionsCount, manuscriptLoading, manuscriptText, manuscriptError, localParagraphs, localCitations, privateCount, ST, renderPara, renderSectionText, renderCitation, scan }: {
   mobilePane: MobileResultsPane; isSample?: boolean; displayTitle: string; displayBand?: string; findingsCount: number; sectionsCount: number;
   manuscriptLoading: boolean; manuscriptText: string | null; manuscriptError: string | null; localParagraphs: typeof PARAGRAPHS;
-  localCitations: Citation[]; dead: number; ST: Record<AssessmentType, { hl: string; pill: string; accentColor: string; label: string }>;
+  localCitations: Citation[]; privateCount: number; ST: Record<AssessmentType, { hl: string; pill: string; accentColor: string; label: string }>;
   renderPara: (para: typeof PARAGRAPHS[number]) => React.ReactNode; renderSectionText: (section: ReportSection) => React.ReactNode;
   renderCitation: (cite: Citation) => React.ReactNode; scan?: DisplayScan | null;
 }) {
@@ -106,42 +107,28 @@ export function ManuscriptViewer({ mobilePane, isSample, displayTitle, displayBa
                     <div className="flex items-center gap-3 mb-5">
                       <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
                       <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><span className="tabular-nums">{localCitations.length}</span> sources checked</span>
-                      {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{dead}</span> inaccessible</span>}
+                      {privateCount > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{privateCount}</span> inaccessible</span>}
                     </div>
-                    {dead > 0 && (
+                    {privateCount > 0 && (
                       <div className="flex items-start gap-3 px-4 py-3 mb-4 rounded-xl border border-red-200 bg-red-50">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                        <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
+                        <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{privateCount} reference{privateCount > 1 ? "s are" : " is"} private</span> or require{privateCount > 1 ? "" : "s"} permission to open. Readers and reviewers may not be able to check {privateCount > 1 ? "them" : "it"}, so consider citing a public version.</p>
                       </div>
                     )}
                     {localCitations.length > 0 ? (
                       <div className="space-y-2">
                         {localCitations.map((cite, ci) => (
-                          <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                            cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" 
-                            : cite.status === "restricted" ? "border-amber-100 bg-amber-50"
-                            : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
-                            : "border-red-100 bg-red-50"
-                          }`}>
+                          <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${CITE_BADGE[cite.status].row}`}>
                             <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
                             {renderCitation(cite)}
                             
-                            {/* Status Badge */}
-                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                              cite.status === "live" ? "bg-emerald-100 text-emerald-700"
-                              : cite.status === "restricted" ? "bg-amber-100 text-amber-800"
-                              : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
-                              : "bg-red-100 text-red-700"
-                            }`}>
-                              {cite.status === "live" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>Live</>
-                              ) : cite.status === "restricted" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
-                              ) : cite.status === "neutral" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
+                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
+                              {cite.status === "public" ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                               ) : (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
                               )}
+                              {CITE_BADGE[cite.status].label}
                             </div>
                           </div>
                         ))}

@@ -29,7 +29,7 @@ const WHAT_GET = [
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
     label: "Verified Reference List",
-    desc: "Live / dead status for every cited URL and DOI in your bibliography.",
+    desc: "Public or private access status for every cited URL and DOI in your bibliography.",
     color: "#d97706",
     bg: "#fffbeb",
   },
@@ -39,7 +39,7 @@ const STEPS = [
   {
     num: 1,
     label: "Upload Manuscript",
-    desc: "Upload your .docx file or paste a Google Docs share link.",
+    desc: "Upload your Word file or paste a Google Docs share link.",
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
   },
   {
@@ -51,7 +51,7 @@ const STEPS = [
   {
     num: 3,
     label: "Coherence Scan",
-    desc: "AI cross-checks logic gaps, contradictions, redundancies, and dead citations.",
+    desc: "AI cross-checks logic gaps, contradictions, redundancies, and inaccessible citations.",
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
   },
   {
