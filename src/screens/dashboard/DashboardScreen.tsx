@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Logo, BackToTop, Spinner, Eye } from '../components/AppPrimitives';
-import type { Screen } from '../lib/appTypes';
-import { B, BH, BL } from '../lib/brand';
+import { Logo, BackToTop, Spinner, Eye } from '../../components/AppPrimitives';
+import type { Screen } from '../../lib/appTypes';
+import { B, BH, BL } from '../../lib/brand';
 import guidanceArtwork from "@/assets/guidance-reference.webp";
 import { Info } from "lucide-react";
 import type React from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { getCreditBalance, getCreditHistory, createCreditCheckout, confirmCreditCheckout } from '../services/api';
+import { getCreditBalance, getCreditHistory, createCreditCheckout, confirmCreditCheckout } from '../../services/api';
 
 function parseUserProfileMetadata(meta?: Record<string, any> | null, email?: string | null) {
   const rawFullName = meta?.full_name || email?.split('@')[0] || 'User';
