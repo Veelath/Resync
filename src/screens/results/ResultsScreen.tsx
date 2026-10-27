@@ -17,7 +17,7 @@ import { formatRoleLabel, PAR_SCORE } from '../../utils.js';
 
 import { type EnrichedPair, type ActiveResultsTab, type MobileResultsPane, type ReportSection, citationText, SECTION_STATUS, sectionRole, buildReportSections, pairHasMissingSection, citationContains, extractDisplayTitle, normalizeManuscriptPreview, citationAccess } from './helpers';
 
-export function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
+export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (s: Screen) => void; onBack: () => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
@@ -540,7 +540,7 @@ export function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: 
           </section>
         ))}
       </div>
-      <ResultsHeader onNavigate={onNavigate} isSample={isSample} displayTitle={displayTitle} setShowPairingModal={setShowPairingModal} />
+      <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} setShowPairingModal={setShowPairingModal} />
 
       {/* ── Results body ── */}
       <main className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">

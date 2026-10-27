@@ -1,10 +1,11 @@
 import { Logo, LOGO_HEADER_CLASS } from '../../components/AppPrimitives';
 import { B, BH } from '../../lib/brand';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
+import { timeAgo, type AppNotification } from '../../components/ScanNotifications';
 
 type ActiveNav = "Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits";
 
-export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, creditBalance, profile, profileMenuOpen, setProfileMenuOpen, profileMenuRef, onLogout }: {
+export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, creditBalance, profile, profileMenuOpen, setProfileMenuOpen, profileMenuRef, onLogout, notifications, onMarkNotificationsRead, onOpenReport, notifOpen, setNotifOpen, notifRef, unreadCount }: {
   activeNav: ActiveNav;
   setActiveNav: Dispatch<SetStateAction<ActiveNav>>;
   creditsLoading: boolean;
@@ -14,6 +15,13 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
   setProfileMenuOpen: Dispatch<SetStateAction<boolean>>;
   profileMenuRef: RefObject<HTMLDivElement | null>;
   onLogout?: () => void;
+  notifications: AppNotification[];
+  onMarkNotificationsRead?: () => void;
+  onOpenReport?: () => void;
+  notifOpen: boolean;
+  setNotifOpen: Dispatch<SetStateAction<boolean>>;
+  notifRef: RefObject<HTMLDivElement | null>;
+  unreadCount: number;
 }) {
   return (
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
@@ -22,13 +30,12 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
             <Logo header className={LOGO_HEADER_CLASS} />
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
-            {(["Dashboard", "Academic Profile"] as const).map(label => (
+            {(["Dashboard"] as const).map(label => (
               <button key={label} onClick={() => setActiveNav(label as typeof activeNav)}
                 aria-label={label}
                 className="flex items-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ background: activeNav === label ? B : "transparent", color: activeNav === label ? "white" : "#6b7280", boxShadow: activeNav === label ? `0 2px 10px ${B}30` : "none" }}>
                 {label === "Dashboard" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>}
-                {label === "Academic Profile" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>}
                 <span className="hidden sm:block">{label}</span>
               </button>
             ))}
@@ -40,10 +47,41 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
               <span className="hidden sm:inline">Credits:</span> {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
             </div>
             <div className="h-5 w-px bg-gray-100 hidden sm:block" />
-            <button aria-label="Notifications" className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white" />
-            </button>
+            <div ref={notifRef} className="relative">
+              <button
+                aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
+                aria-haspopup="true"
+                aria-expanded={notifOpen}
+                onClick={() => { setNotifOpen(open => !open); if (!notifOpen) onMarkNotificationsRead?.(); }}
+                className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
+                {unreadCount > 0 && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white" />}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-100 bg-white p-2 shadow-xl z-50 animate-slide-in">
+                  <p className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-400">Notifications</p>
+                  {notifications.length === 0 ? (
+                    <p className="px-3 py-6 text-center text-sm text-gray-400">No notifications yet.</p>
+                  ) : (
+                    <ul className="max-h-80 overflow-y-auto">
+                      {notifications.map(n => (
+                        <li key={n.id}>
+                          <button type="button" onClick={() => { setNotifOpen(false); if (n.kind === "success") onOpenReport?.(); }}
+                            className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors">
+                            <span className="mt-0.5 w-2 h-2 rounded-full shrink-0" style={{ background: n.kind === "success" ? "#22c55e" : "#ef4444" }} />
+                            <span className="min-w-0">
+                              <span className="block text-sm font-semibold text-gray-800">{n.title}</span>
+                              <span className="block text-xs text-gray-500 leading-relaxed">{n.message}</span>
+                              <span className="block text-[10px] text-gray-400 mt-0.5">{timeAgo(n.at)}</span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="h-5 w-px bg-gray-100 hidden sm:block" />
             <div ref={profileMenuRef} className="relative">
               <button
@@ -67,6 +105,11 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
                       label: "Dashboard",
                       action: () => setActiveNav("Dashboard"),
                       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+                    },
+                    {
+                      label: "Academic Profile",
+                      action: () => setActiveNav("Academic Profile"),
+                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>,
                     },
                     {
                       label: "Settings",

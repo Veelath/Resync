@@ -1,6 +1,7 @@
 import { CreditsPanel } from './CreditsPanel';
 import { ChangePasswordCard } from './ChangePasswordCard';
 import { DashboardHeader } from './DashboardHeader';
+import type { AppNotification } from '../../components/ScanNotifications';
 import { PaymentModal } from './PaymentModal';
 import { DashboardHome } from './DashboardHome';
 import { AcademicProfileView } from './AcademicProfileView';
@@ -15,11 +16,20 @@ import type React from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { getCreditBalance, getCreditHistory, createCreditCheckout, confirmCreditCheckout } from '../../services/api';
 
-export function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void }) {
+export function DashboardScreen({ onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: () => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const unreadCount = notifications.filter(n => !n.read).length;
+  useEffect(() => {
+    if (!notifOpen) return;
+    const close = (event: MouseEvent) => { if (!notifRef.current?.contains(event.target as Node)) setNotifOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [notifOpen]);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode] = useState(false);
   const initialResolved = parseUserProfileMetadata(session?.user?.user_metadata, session?.user?.email);
@@ -235,7 +245,7 @@ export function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate:
     <div className="min-h-full" style={{ background: "#f8f9ff" }}>
 
       {/* ── Top nav ── */}
-      <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} />
+      <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} notifications={notifications} onMarkNotificationsRead={onMarkNotificationsRead} onOpenReport={onOpenReport} notifOpen={notifOpen} setNotifOpen={setNotifOpen} notifRef={notifRef} unreadCount={unreadCount} />
 
       {activeNav === "Settings" ? (
         <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">

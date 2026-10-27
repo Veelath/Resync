@@ -10,6 +10,7 @@ import { ProcessingScreen } from './screens/ProcessingScreen';
 import { UploadScreen } from './screens/UploadScreen';
 import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
+import { ToastBanner, loadNotifications, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification } from './components/ScanNotifications';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -18,6 +19,12 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const sessionRef = useRef<Session | null>(null);
   const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
+  const [toast, setToast] = useState<AppNotification | null>(null);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanRunRef = useRef(0);
+  const scanSettledRef = useRef(true);
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -83,7 +90,7 @@ export default function App() {
       const target = destination?.screen ?? 'home';
       let next: Screen = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
       // A signed-in user pressing Back must stay signed in: skip the sign-in / sign-up pages.
-      if (sessionRef.current && (next === 'login' || next === 'signup')) next = 'dashboard';
+      if (sessionRef.current && (next === 'login' || next === 'signup' || (next === 'home' && !destination?.sample))) next = 'dashboard';
       screenRef.current = next;
       setScreen(next);
       setIsSampleMode(destination?.sample ?? false);
@@ -95,7 +102,7 @@ export default function App() {
 
   function navigate(s: Screen, asSample = false) {
     const target = s === 'dashboard' && !sessionRef.current ? 'login'
-      : sessionRef.current && (s === 'login' || s === 'signup') ? 'dashboard'
+      : sessionRef.current && (s === 'login' || s === 'signup' || (s === 'home' && !asSample)) ? 'dashboard'
       : s;
     const transient = ['processing', 'login', 'signup', 'reset-password'];
     const previous = window.history.state?.resync?.screen as Screen | undefined;
@@ -122,6 +129,54 @@ export default function App() {
       sessionStorage.setItem('resync_screen', fallback);
       window.history.replaceState({ resync: { index: 0, screen: fallback, sample: false } }, '');
     }
+  }
+
+  function pushNotification(kind: AppNotification["kind"], title: string, message: string) {
+    const item: AppNotification = { id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind, title, message, at: Date.now(), read: false };
+    setNotifications(prev => {
+      const next = [item, ...prev].slice(0, 20);
+      try { localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+    setToast(item);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 8000);
+  }
+
+  function markNotificationsRead() {
+    setNotifications(prev => {
+      const next = prev.map(n => ({ ...n, read: true }));
+      try { localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+  }
+
+  // Each scan run gets one outcome (success or failure) so the sound and toast can never fire twice.
+  function handleScanStart() {
+    scanRunRef.current += 1;
+    scanSettledRef.current = false;
+    setToast(null);
+    unlockAudio();
+  }
+
+  function handleScanCompleted() {
+    if (scanSettledRef.current) return;
+    scanSettledRef.current = true;
+    const played = playCompletionChime();
+    setSoundBlocked(!played);
+    pushNotification("success", "Scan complete", "Your coherence report is ready to review.");
+  }
+
+  function handleScanFailed(message: string) {
+    if (scanSettledRef.current) return;
+    scanSettledRef.current = true;
+    setSoundBlocked(false);
+    pushNotification("error", "Scan did not finish", message);
+  }
+
+  function enableSound() {
+    unlockAudio();
+    setTimeout(() => setSoundBlocked(!playCompletionChime()), 100);
   }
 
   function handleLoginSuccess() {
@@ -153,14 +208,21 @@ export default function App() {
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes slide-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}} .animate-slide-in{animation:slide-in .3s ease forwards}`}</style>
+      <ToastBanner
+        toast={toast}
+        soundBlocked={soundBlocked}
+        onView={scanResult && screen !== "results" ? () => { setToast(null); navigate("results"); } : undefined}
+        onEnableSound={enableSound}
+        onClose={() => setToast(null)}
+      />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
+      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result) => { setScanResult(result); handleScanCompleted(); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
-      {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}
+      {screen === "results" && <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult} isSample={isSampleMode} />}
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} />}
+      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} onOpenReport={() => scanResult && navigate("results")} />}
     </div>
   );
 }

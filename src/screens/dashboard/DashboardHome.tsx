@@ -1,6 +1,5 @@
 import { B, BL } from '../../lib/brand';
 import guidanceArtwork from "@/assets/guidance-reference.webp";
-import { Info } from "lucide-react";
 import type { Session } from '@supabase/supabase-js';
 import type { Screen } from '../../lib/appTypes';
 
@@ -168,7 +167,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
 
               {STEPS.map((step, index) => (
                 <article key={step.num} className={`relative ${index % 2 === 1 ? "lg:mt-12" : ""}`}>
-                  <span aria-hidden="true" className="absolute -top-10 left-4 text-7xl font-bold leading-none text-gray-500 sm:text-8xl">
+                  <span aria-hidden="true" className="pointer-events-none absolute -top-10 left-3 z-20 text-7xl font-extrabold leading-none sm:text-8xl" style={{ color: B, opacity: 0.3 }}>
                     {String(step.num).padStart(2, "0")}
                   </span>
                   <div className="relative flex min-h-[220px] h-full flex-col items-center rounded-3xl border border-indigo-100 bg-white/95 p-6 text-center shadow-[0_14px_36px_rgba(26,31,204,0.08)]">
@@ -214,7 +213,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
             <div className="mb-8">
               <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1 text-primary">Guidance</p>
               <h2 className="text-xl font-bold text-foreground tracking-tight">Best Results With</h2>
-              <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed lg:whitespace-nowrap">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
               {BEST_PRACTICES.map(({ title, desc, x, y }) => (
@@ -228,15 +227,6 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
               ))}
             </div>
 
-            {/* Advisory card */}
-            <div className="mt-8 p-4 rounded-2xl bg-muted border border-border flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shrink-0 text-primary">
-                <Info className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-sm leading-relaxed text-muted-foreground"><strong className="text-foreground">When inconsistencies may appear.</strong> Review flagged findings in the Findings tab.</p>
-              </div>
-            </div>
           </section>
 
           <div className="h-4" />

@@ -62,7 +62,7 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
 
 let lastScanError: string | null = null;
 
-export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void }) {
+export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void; onScanStart?: () => void; onScanFailed?: (message: string) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
@@ -229,6 +229,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
         }
       }
 
+      onScanStart?.();
       onNavigate("processing");
       navigatedToProcessing = true;
 
@@ -247,6 +248,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
     } catch (e: any) {
       console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
+      onScanFailed?.(errMsg);
       lastScanError = errMsg;
       setScanError(errMsg);
       setIsScanning(false);
