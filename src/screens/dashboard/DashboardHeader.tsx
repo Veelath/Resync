@@ -5,7 +5,7 @@ import { timeAgo, type AppNotification } from '../../components/ScanNotification
 
 type ActiveNav = "Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits";
 
-export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, creditBalance, profile, profileMenuOpen, setProfileMenuOpen, profileMenuRef, onLogout, notifications, onMarkNotificationsRead, onOpenReport, notifOpen, setNotifOpen, notifRef, unreadCount }: {
+export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, creditBalance, profile, profileMenuOpen, setProfileMenuOpen, profileMenuRef, onLogout, notifications, onMarkNotificationsRead, onOpenReport, notifOpen, setNotifOpen, notifRef, unreadCount, avatarUrl }: {
   activeNav: ActiveNav;
   setActiveNav: Dispatch<SetStateAction<ActiveNav>>;
   creditsLoading: boolean;
@@ -22,6 +22,7 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
   setNotifOpen: Dispatch<SetStateAction<boolean>>;
   notifRef: RefObject<HTMLDivElement | null>;
   unreadCount: number;
+  avatarUrl: string | null;
 }) {
   return (
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
@@ -91,8 +92,10 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
                 aria-expanded={profileMenuOpen}
                 className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
               >
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
+                <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-white shrink-0" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>}
                 </div>
                 <p className="hidden md:block text-xs font-bold text-gray-800">{profile.fullName}</p>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-3 h-3 text-gray-400 hidden md:block transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>

@@ -167,10 +167,10 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
 
               {STEPS.map((step, index) => (
                 <article key={step.num} className={`relative ${index % 2 === 1 ? "lg:mt-12" : ""}`}>
-                  <span aria-hidden="true" className="pointer-events-none absolute -top-10 left-3 z-20 text-7xl font-extrabold leading-none sm:text-8xl" style={{ color: B, opacity: 0.3 }}>
+                  <span aria-hidden="true" className="pointer-events-none absolute -top-14 left-4 z-20 text-8xl font-extrabold leading-none sm:text-9xl" style={{ color: B, opacity: 0.3 }}>
                     {String(step.num).padStart(2, "0")}
                   </span>
-                  <div className="relative flex min-h-[220px] h-full flex-col items-center rounded-3xl border border-indigo-100 bg-white/95 p-6 text-center shadow-[0_14px_36px_rgba(26,31,204,0.08)]">
+                  <div className="relative flex min-h-[220px] h-full flex-col items-center rounded-3xl border border-indigo-100 bg-white/95 px-6 pb-6 pt-20 text-center shadow-[0_14px_36px_rgba(26,31,204,0.08)]">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-lg shadow-indigo-200" style={{ background: `linear-gradient(145deg, ${B}, #3b40e8)` }}>
                       {step.icon}
                     </div>

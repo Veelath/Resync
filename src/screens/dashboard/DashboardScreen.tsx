@@ -5,7 +5,7 @@ import type { AppNotification } from '../../components/ScanNotifications';
 import { PaymentModal } from './PaymentModal';
 import { DashboardHome } from './DashboardHome';
 import { AcademicProfileView } from './AcademicProfileView';
-import { parseUserProfileMetadata, CREDIT_PACKAGES } from './helpers';
+import { parseUserProfileMetadata, CREDIT_PACKAGES, AVATAR_MAX_BYTES, avatarKey, resizeAvatar } from './helpers';
 import { useState, useEffect, useRef } from "react";
 import { BackToTop } from '../../components/AppPrimitives';
 import type { Screen } from '../../lib/appTypes';
@@ -32,6 +32,33 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
   }, [notifOpen]);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
+    try { return localStorage.getItem(avatarKey(session?.user?.id)); } catch { return null; }
+  });
+  const [avatarError, setAvatarError] = useState("");
+  async function handleAvatarFile(file: File) {
+    setAvatarError("");
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setAvatarError("Please choose a JPEG or PNG image.");
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setAvatarError("That image is larger than 5 MB. Please choose a smaller one.");
+      return;
+    }
+    try {
+      const dataUrl = await resizeAvatar(file);
+      setAvatarUrl(dataUrl);
+      try { localStorage.setItem(avatarKey(session?.user?.id), dataUrl); } catch { setAvatarError("Photo updated, but it could not be saved on this device."); }
+    } catch {
+      setAvatarError("We couldn't read that image. Please try another file.");
+    }
+  }
+  function removeAvatar() {
+    setAvatarUrl(null);
+    setAvatarError("");
+    try { localStorage.removeItem(avatarKey(session?.user?.id)); } catch { /* storage unavailable */ }
+  }
   const initialResolved = parseUserProfileMetadata(session?.user?.user_metadata, session?.user?.email);
   const [profile, setProfile] = useState({
     firstName: initialResolved.firstName,
@@ -245,7 +272,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
     <div className="min-h-full" style={{ background: "#f8f9ff" }}>
 
       {/* ── Top nav ── */}
-      <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} notifications={notifications} onMarkNotificationsRead={onMarkNotificationsRead} onOpenReport={onOpenReport} notifOpen={notifOpen} setNotifOpen={setNotifOpen} notifRef={notifRef} unreadCount={unreadCount} />
+      <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} notifications={notifications} onMarkNotificationsRead={onMarkNotificationsRead} onOpenReport={onOpenReport} notifOpen={notifOpen} setNotifOpen={setNotifOpen} notifRef={notifRef} unreadCount={unreadCount} avatarUrl={avatarUrl} />
 
       {activeNav === "Settings" ? (
         <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">
@@ -285,7 +312,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
         /* ═══════════════════════════════════════════════════
            ACADEMIC PROFILE VIEW (SIMPLIFIED)
         ═══════════════════════════════════════════════════ */
-        <AcademicProfileView setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} />
+        <AcademicProfileView setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
       ) : (<>
 <DashboardHome onNavigate={onNavigate} session={session} greeting={greeting} />
         <BackToTop />

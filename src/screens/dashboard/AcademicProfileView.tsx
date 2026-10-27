@@ -3,16 +3,16 @@ import type { Dispatch, SetStateAction } from 'react';
 
 type ProfileFields = { firstName: string; middleName: string; lastName: string; fullName: string; email: string; contactNumber: string };
 
-export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profile, draft, setDraft, saveProfile, cancelEdit }: { setActiveNav: Dispatch<SetStateAction<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">>; editMode: boolean; setEditMode: Dispatch<SetStateAction<boolean>>; profile: ProfileFields; draft: ProfileFields; setDraft: Dispatch<SetStateAction<ProfileFields>>; saveProfile: () => void; cancelEdit: () => void }) {
+export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profile, draft, setDraft, saveProfile, cancelEdit, avatarUrl, avatarError, handleAvatarFile, removeAvatar }: { setActiveNav: Dispatch<SetStateAction<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">>; editMode: boolean; setEditMode: Dispatch<SetStateAction<boolean>>; profile: ProfileFields; draft: ProfileFields; setDraft: Dispatch<SetStateAction<ProfileFields>>; saveProfile: () => void; cancelEdit: () => void; avatarUrl: string | null; avatarError: string; handleAvatarFile: (file: File) => Promise<void>; removeAvatar: () => void }) {
   return (
-        <main className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-8 space-y-6">
+        <main className="w-full max-w-6xl mx-auto px-6 md:px-10 py-10 space-y-7">
 
           {/* Page header */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account</p>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Academic Profile</h2>
-              <p className="text-xs text-gray-400 mt-1">Manage your personal profile and contact information.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Academic Profile</h2>
+              <p className="text-sm text-gray-500 mt-1.5">Manage your personal profile and contact information.</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {editMode ? (
@@ -40,16 +40,18 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
 
           {/* Identity & Profile Picture Card */}
           <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-            <div className="px-8 py-6 flex flex-col sm:flex-row sm:items-center gap-6" style={{ background: `linear-gradient(90deg, ${BL}, white)` }}>
+            <div className="px-8 sm:px-10 py-9 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8" style={{ background: `linear-gradient(90deg, ${BL}, white)` }}>
               {/* Avatar with Photo change trigger */}
               <div className="relative group shrink-0">
-                <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md"
+                <div className="w-28 h-28 rounded-3xl overflow-hidden flex items-center justify-center text-white text-4xl font-bold shadow-md"
                   style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
-                  {profile.fullName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt={`${profile.fullName} profile picture`} className="w-full h-full object-cover" />
+                    : profile.fullName.split(" ").map(n => n[0]).join("").slice(0, 2)}
                 </div>
-                <label className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-600 hover:text-blue-600 hover:border-blue-400 cursor-pointer transition-all" title="Change profile picture">
+                <label className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-600 hover:text-blue-600 hover:border-blue-400 cursor-pointer transition-all" title="Change profile picture">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
-                  <input type="file" accept="image/*" className="hidden" onChange={() => alert("Profile photo upload dialog")} />
+                  <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) void handleAvatarFile(f); e.target.value = ""; }} />
                 </label>
               </div>
 
@@ -63,24 +65,30 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                       className="text-xl font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-1 focus:border-blue-500 outline-none w-full max-w-sm"
                     />
                   ) : (
-                    <h3 className="text-xl font-bold text-gray-900">{profile.fullName}</h3>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">{profile.fullName}</h3>
                   )}
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     Active
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                <p className="text-sm text-gray-500 flex items-center gap-1.5">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                   {profile.email}
                 </p>
               </div>
+              <div className="sm:ml-auto sm:max-w-[14rem] text-left">
+                <p className="text-xs font-bold text-gray-800">Profile picture</p>
+                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">JPEG or PNG, max 5MB. Click the camera badge on your avatar to upload.</p>
+                {avatarError && <p role="alert" className="text-xs font-semibold text-red-600 mt-1.5">{avatarError}</p>}
+                {avatarUrl && <button type="button" onClick={removeAvatar} className="text-xs font-semibold text-gray-500 hover:text-red-600 hover:underline mt-1.5">Remove photo</button>}
+              </div>
             </div>
 
             {/* Contact Details List */}
-            <div className="px-8 py-6">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Personal Details</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="px-8 sm:px-10 py-8">
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-5">Personal Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {/* Full Name */}
                 <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 flex items-start gap-3.5">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white border border-gray-200 text-gray-500">
@@ -135,21 +143,18 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                         className="text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded-lg px-2.5 py-1 w-full mt-1 focus:outline-none focus:border-blue-400"
                       />
                     ) : (
+                      profile.contactNumber ? (
                       <p className="text-sm font-semibold text-gray-800 mt-0.5">{profile.contactNumber}</p>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-0.5">
+                        Not added yet{" "}
+                        <button type="button" onClick={() => { setDraft(profile); setEditMode(true); }} className="font-semibold hover:underline" style={{ color: B }}>Add number</button>
+                      </p>
+                    )
                     )}
                   </div>
                 </div>
 
-                {/* Profile Picture Guidelines */}
-                <div className="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 flex items-start gap-3.5">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white border border-gray-200 text-gray-500">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Profile Picture</p>
-                    <p className="text-xs text-gray-600 mt-1">JPEG or PNG, max 5MB. Click camera badge on avatar to upload.</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

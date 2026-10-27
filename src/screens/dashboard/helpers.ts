@@ -1,3 +1,28 @@
+export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+export const avatarKey = (userId?: string) => `resync_avatar_${userId || "guest"}`;
+
+// Crops to a centred square and downsizes, so the saved picture stays small.
+export function resizeAvatar(file: File, size = 320): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const side = Math.min(img.width, img.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("canvas unavailable"));
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+      resolve(canvas.toDataURL("image/jpeg", 0.88));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("unreadable image")); };
+    img.src = url;
+  });
+}
+
 export function parseUserProfileMetadata(meta?: Record<string, any> | null, email?: string | null) {
   const rawFullName = meta?.full_name || email?.split('@')[0] || 'User';
   let firstName = meta?.first_name || '';
