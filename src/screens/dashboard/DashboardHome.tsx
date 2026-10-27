@@ -122,16 +122,16 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
               <div className="flex items-center gap-4 text-xs sm:text-sm text-blue-100/80 flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  AI-Powered Multi-Model Pipeline
+                  Logic gap &amp; contradiction detection
                 </span>
                 <span className="hidden sm:inline text-white/30">•</span>
-                <span className="hidden sm:inline">Quantitative & Qualitative Support</span>
+                <span className="hidden sm:inline">Section &amp; chapter alignment</span>
                 <span className="hidden sm:inline text-white/30">•</span>
-                <span className="hidden sm:inline">Automatic Citation Verifier</span>
+                <span className="hidden sm:inline">Public / private citation check</span>
               </div>
               <span className="text-xs sm:text-sm font-semibold text-blue-200 inline-flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-                <span>~2 min average scan</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
+                <span>Word (.doc/.docx) &amp; Google Docs</span>
               </span>
             </div>
           </div>

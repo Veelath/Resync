@@ -6,7 +6,7 @@ export function ResultsHeader({ onNavigate, isSample, displayTitle, setShowPairi
   return (
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 py-2 sm:py-0 sm:h-12 flex flex-wrap sm:flex-nowrap items-center gap-3">
-          <HomeButton onClick={() => onNavigate("home")} />
+          <HomeButton onClick={() => onNavigate(isSample ? "home" : "dashboard")} />
           <span className="text-xs text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
