@@ -101,7 +101,7 @@ export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => vo
             );
           })}
         </div>
-        <p className="text-center text-xs text-gray-400 mt-[clamp(0.5rem,2vh,1.25rem)]">2–3 minutes · do not close this tab</p>
+        <p className="text-center text-xs text-gray-400 mt-[clamp(0.5rem,2vh,1.25rem)]">Please do not close this tab</p>
       </div>
     </div>
   );
