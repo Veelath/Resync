@@ -412,6 +412,95 @@ function HomeButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+// ─── Notifications & completion sound ───────────────────────────────────
+type AppNotification = { id: string; kind: "success" | "error"; title: string; message: string; at: number; read: boolean };
+
+let sharedAudioCtx: AudioContext | null = null;
+
+// Browsers only allow audio after a user gesture, so this is called from the "Run scan" click.
+function unlockAudio() {
+  try {
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    if (!sharedAudioCtx) sharedAudioCtx = new Ctx();
+    if (sharedAudioCtx.state === "suspended") void sharedAudioCtx.resume();
+  } catch { /* audio unavailable */ }
+}
+
+// Returns false when the browser still blocks audio, so the caller can offer an "Enable sound" fallback.
+function playCompletionChime(): boolean {
+  try {
+    const ctx = sharedAudioCtx;
+    if (!ctx || ctx.state !== "running") return false;
+    [[659.25, 0, 0.5], [880, 0.14, 0.6]].forEach(([freq, delay, len]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const t0 = ctx.currentTime + delay;
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(0.18, t0 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + len);
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const NOTIFICATIONS_KEY = "resync_notifications";
+
+function loadNotifications(): AppNotification[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.slice(0, 20) : [];
+  } catch {
+    return [];
+  }
+}
+
+function timeAgo(at: number): string {
+  const mins = Math.round((Date.now() - at) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  return hrs < 24 ? `${hrs} h ago` : `${Math.round(hrs / 24)} d ago`;
+}
+
+function ToastBanner({ toast, soundBlocked, onView, onEnableSound, onClose }: {
+  toast: AppNotification | null; soundBlocked: boolean; onView?: () => void; onEnableSound: () => void; onClose: () => void;
+}) {
+  if (!toast) return null;
+  const ok = toast.kind === "success";
+  return (
+    <div role="status" aria-live="polite" className="fixed top-4 right-4 z-[100] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border bg-white p-4 shadow-xl animate-slide-in"
+      style={{ borderColor: ok ? "#bbf7d0" : "#fecaca" }}>
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: ok ? "#22c55e" : "#ef4444" }}>
+          {ok
+            ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-4 h-4" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+            : <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-4 h-4" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-gray-900">{toast.title}</p>
+          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{toast.message}</p>
+          <div className="flex flex-wrap items-center gap-2 mt-2.5">
+            {onView && <button type="button" onClick={onView} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: B }}>View report</button>}
+            {ok && soundBlocked && <button type="button" onClick={onEnableSound} className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 text-gray-700 hover:bg-gray-50">Enable sound</button>}
+          </div>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Dismiss notification" className="text-gray-400 hover:text-gray-700 shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BackToTop() {
   const endRef = useRef<HTMLDivElement>(null);
   const [atEnd, setAtEnd] = useState(false);
@@ -992,7 +1081,7 @@ let lastScanError: string | null = null;
 
 type DisplayScan = ScanResponse & { template_toc?: string[] };
 
-function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void }) {
+function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void; onScanStart?: () => void; onScanFailed?: (message: string) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
@@ -1135,6 +1224,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
 
   async function handleScan() {
     if (!session?.user) { onNavigate("login"); return; }
+    onScanStart?.();
     lastScanError = null;
     setScanError(null);
     setIsScanning(true);
@@ -1180,6 +1270,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
       lastScanError = errMsg;
       setScanError(errMsg);
       setIsScanning(false);
+      onScanFailed?.(errMsg);
       if (navigatedToProcessing) {
         onNavigate("upload");
       }
@@ -1788,33 +1879,35 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   }, []);
   const isFinalizing = done >= steps.length;
   const pct = isFinalizing ? 99 : Math.min(99, Math.round((done / steps.length) * 100));
-  const current = isFinalizing
-    ? { label: "Finalizing your report…", detail: "Synthesizing findings across chapters" }
-    : steps[done];
-  // The finalizing stage is a fifth row so the list never changes height mid-scan.
+  // The finalizing stage is the last row of the sequence.
   const rows = [...steps, { label: "Finalizing your report", detail: "Synthesizing findings across chapters", dur: 0 }];
+  // Active step is fully visible; the further a step is from the active one, the fainter it is.
+  const OPACITY_BY_DISTANCE = [1, 0.6, 0.4, 0.28, 0.2];
 
   return (
-    <div className="h-screen h-dvh w-full overflow-hidden bg-white flex flex-col lg:flex-row">
-      {/* Left: brand + current action */}
-      <div className="flex-1 lg:flex-none lg:w-[46%] min-h-0 flex flex-col items-center justify-center text-center px-6 sm:px-10 py-6" style={{ background: `linear-gradient(160deg, ${BL}, #ffffff)` }}>
-        <div className="relative mb-[clamp(0.75rem,3vh,2rem)]">
+    <div className="h-screen h-dvh w-full overflow-hidden flex flex-col items-center justify-center px-6 py-4" style={{ background: `linear-gradient(180deg, ${BL}, #ffffff 55%)` }}>
+      <div className="w-full max-w-lg flex flex-col items-center">
+        {/* logo pulse */}
+        <div className="relative mb-[clamp(0.5rem,2.5vh,1.5rem)]">
           <div className="absolute inset-0 rounded-full animate-ping opacity-15" style={{ background: B }} />
-          <div className="relative rounded-full flex items-center justify-center border-2 bg-white shadow-sm w-[clamp(7rem,22vh,11rem)] h-[clamp(7rem,22vh,11rem)]" style={{ borderColor: `${B}30` }}>
+          <div className="relative rounded-full flex items-center justify-center border-2 bg-white shadow-sm w-[clamp(6rem,20vh,10rem)] h-[clamp(6rem,20vh,10rem)]" style={{ borderColor: `${B}30` }}>
             <Logo className="w-[62%] h-[62%]" />
           </div>
         </div>
 
-        <h1 className="text-[clamp(1.5rem,4vh,2.25rem)] font-bold text-gray-900 tracking-tight">Analyzing your manuscript</h1>
-        <p className="text-sm text-gray-500 mt-1.5">Running {steps.length} coherence checks across all chapters</p>
+        <div className="text-center mb-[clamp(0.75rem,3vh,1.75rem)]">
+          <h1 className="text-[clamp(1.4rem,3.6vh,2rem)] font-bold text-gray-900 tracking-tight">Analyzing your manuscript</h1>
+          <p className="text-sm text-gray-500 mt-1">Running {steps.length} coherence checks across all chapters</p>
+        </div>
 
-        <div className="w-full max-w-sm mt-[clamp(1rem,4vh,2.25rem)]" aria-live="polite">
-          <div className="flex items-baseline justify-between mb-2 gap-3">
-            <span className="text-xs mono font-semibold flex items-center gap-1.5 min-w-0" style={{ color: B }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-ping shrink-0" style={{ background: B }} aria-hidden="true" />
-              <span className="truncate">{current.label}</span>
+        {/* progress */}
+        <div className="w-full mb-[clamp(0.75rem,3vh,1.75rem)]" aria-live="polite">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs mono font-semibold flex items-center gap-1.5" style={{ color: B }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: B }} aria-hidden="true" />
+              {isFinalizing ? "Finalizing your report…" : "Progress"}
             </span>
-            <span className="text-lg mono font-bold tabular-nums" style={{ color: B }}>{pct}%</span>
+            <span className="text-sm mono font-bold tabular-nums" style={{ color: B }}>{pct}%</span>
           </div>
           <div
             className="h-2 rounded-full bg-gray-200/70 overflow-hidden"
@@ -1826,46 +1919,44 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
           >
             <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${B}, ${BH})` }} />
           </div>
-          <p className="text-xs text-gray-400 mt-2.5">{current.detail}</p>
         </div>
-      </div>
 
-      {/* Right: stage checklist */}
-      <div className="flex-none lg:flex-1 min-h-0 flex flex-col items-center justify-center px-6 sm:px-10 py-4 lg:py-6">
-        <div className="w-full max-w-md">
-          <p className="hidden lg:block text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-3">
-            Step {Math.min(done + 1, rows.length)} of {rows.length}
-          </p>
-          <div className="space-y-[clamp(0.25rem,1vh,0.5rem)]">
-            {rows.map((step, i) => {
-              const isDone = done > i, isActive = done === i;
-              return (
-                <div key={i} className="flex items-center gap-3 sm:gap-4 px-4 py-[clamp(0.4rem,1.6vh,0.9rem)] rounded-2xl border transition-all duration-300"
-                  aria-current={isActive ? "step" : undefined}
-                  style={{
-                    background: isDone ? "#f0fdf4" : isActive ? BL : "#fafafa",
-                    borderColor: isDone ? "#bbf7d0" : isActive ? `${B}30` : "#f3f4f6",
-                    opacity: !isDone && !isActive ? 0.5 : 1,
-                  }}>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
-                    {isActive && <p className="text-xs text-gray-500 truncate hidden sm:block">{step.detail}</p>}
-                  </div>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: isDone ? "#22c55e" : isActive ? B : "#e5e7eb" }}>
-                    {isDone
-                      ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-                      : isActive
-                        ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
-                        : <span className="text-xs font-bold text-gray-400 mono tabular-nums">{i + 1}</span>
-                    }
+        {/* steps: finished rows fade out and collapse so the rest stay centred with no gap */}
+        <div className="w-full">
+          {rows.map((step, i) => {
+            const isDone = done > i, isActive = done === i;
+            const distance = Math.max(0, i - done);
+            return (
+              <div key={i} className="grid transition-all duration-700 ease-in-out"
+                style={{ gridTemplateRows: isDone ? "0fr" : "1fr", opacity: isDone ? 0 : OPACITY_BY_DISTANCE[Math.min(distance, OPACITY_BY_DISTANCE.length - 1)] }}
+                aria-hidden={isDone || undefined}>
+                <div className="overflow-hidden min-h-0">
+                  <div className="flex items-center gap-4 px-4 py-[clamp(0.45rem,1.6vh,0.9rem)] mb-[clamp(0.25rem,1vh,0.5rem)] rounded-2xl border transition-colors duration-500"
+                    aria-current={isActive ? "step" : undefined}
+                    style={{
+                      background: isDone ? "#f0fdf4" : isActive ? BL : "#fafafa",
+                      borderColor: isDone ? "#bbf7d0" : isActive ? `${B}30` : "#f3f4f6",
+                    }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#6b7280" }}>{step.label}</p>
+                      {isActive && <p className="text-xs text-gray-500 truncate">{step.detail}</p>}
+                    </div>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: isDone ? "#22c55e" : isActive ? B : "#e5e7eb" }}>
+                      {isDone
+                        ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+                        : isActive
+                          ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
+                          : <span className="text-xs font-bold text-gray-400 mono tabular-nums">{i + 1}</span>
+                      }
+                    </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          <p className="text-center text-xs text-gray-400 mt-[clamp(0.75rem,3vh,1.5rem)]">2–3 minutes · do not close this tab</p>
+              </div>
+            );
+          })}
         </div>
+        <p className="text-center text-xs text-gray-400 mt-[clamp(0.5rem,2vh,1.25rem)]">2–3 minutes · do not close this tab</p>
       </div>
     </div>
   );
@@ -1953,7 +2044,7 @@ function normalizeManuscriptPreview(text: string) {
   return text.replace(/^\uFEFF?(?:(?:[ \t]*\r?\n)*[ \t]*(?:\d+|[ivxlcdm]+)[ \t]*(?:\r?\n)+)/i, '');
 }
 
-function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen) => void; scan?: DisplayScan | null; isSample?: boolean }) {
+function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (s: Screen) => void; onBack: () => void; scan?: DisplayScan | null; isSample?: boolean }) {
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
@@ -2482,6 +2573,10 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       </div>
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 py-2 sm:py-0 sm:h-12 flex flex-wrap sm:flex-nowrap items-center gap-3">
+          <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium rounded-lg px-2 py-1 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+            Back
+          </button>
           <HomeButton onClick={() => onNavigate(isSample ? "home" : "dashboard")} />
           <span className="text-xs text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
@@ -3976,11 +4071,20 @@ const CREDIT_PACKAGES = [
 ] as const;
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void }) {
+function DashboardScreen({ onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: () => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const unreadCount = notifications.filter(n => !n.read).length;
+  useEffect(() => {
+    if (!notifOpen) return;
+    const close = (event: MouseEvent) => { if (!notifRef.current?.contains(event.target as Node)) setNotifOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [notifOpen]);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode] = useState(false);
   const initialResolved = parseUserProfileMetadata(session?.user?.user_metadata, session?.user?.email);
@@ -4269,13 +4373,12 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             <Logo header className={LOGO_HEADER_CLASS} />
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
-            {(["Dashboard", "Academic Profile"] as const).map(label => (
+            {(["Dashboard"] as const).map(label => (
               <button key={label} onClick={() => setActiveNav(label as typeof activeNav)}
                 aria-label={label}
                 className="flex items-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{ background: activeNav === label ? B : "transparent", color: activeNav === label ? "white" : "#6b7280", boxShadow: activeNav === label ? `0 2px 10px ${B}30` : "none" }}>
                 {label === "Dashboard" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>}
-                {label === "Academic Profile" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>}
                 <span className="hidden sm:block">{label}</span>
               </button>
             ))}
@@ -4287,10 +4390,41 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
               <span className="hidden sm:inline">Credits:</span> {creditsLoading ? "…" : creditBalance !== null ? creditBalance : "—"}
             </div>
             <div className="h-5 w-px bg-gray-100 hidden sm:block" />
-            <button aria-label="Notifications" className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white" />
-            </button>
+            <div ref={notifRef} className="relative">
+              <button
+                aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
+                aria-haspopup="true"
+                aria-expanded={notifOpen}
+                onClick={() => { setNotifOpen(open => !open); if (!notifOpen) onMarkNotificationsRead?.(); }}
+                className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
+                {unreadCount > 0 && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white" />}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-100 bg-white p-2 shadow-xl z-50 animate-slide-in">
+                  <p className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-400">Notifications</p>
+                  {notifications.length === 0 ? (
+                    <p className="px-3 py-6 text-center text-sm text-gray-400">No notifications yet.</p>
+                  ) : (
+                    <ul className="max-h-80 overflow-y-auto">
+                      {notifications.map(n => (
+                        <li key={n.id}>
+                          <button type="button" onClick={() => { setNotifOpen(false); if (n.kind === "success") onOpenReport?.(); }}
+                            className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors">
+                            <span className="mt-0.5 w-2 h-2 rounded-full shrink-0" style={{ background: n.kind === "success" ? "#22c55e" : "#ef4444" }} />
+                            <span className="min-w-0">
+                              <span className="block text-sm font-semibold text-gray-800">{n.title}</span>
+                              <span className="block text-xs text-gray-500 leading-relaxed">{n.message}</span>
+                              <span className="block text-[10px] text-gray-400 mt-0.5">{timeAgo(n.at)}</span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="h-5 w-px bg-gray-100 hidden sm:block" />
             <div ref={profileMenuRef} className="relative">
               <button
@@ -4314,6 +4448,11 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                       label: "Dashboard",
                       action: () => setActiveNav("Dashboard"),
                       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+                    },
+                    {
+                      label: "Academic Profile",
+                      action: () => setActiveNav("Academic Profile"),
+                      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>,
                     },
                     {
                       label: "Settings",
@@ -4830,7 +4969,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
 
               {STEPS.map((step, index) => (
                 <article key={step.num} className={`relative ${index % 2 === 1 ? "lg:mt-12" : ""}`}>
-                  <span aria-hidden="true" className="absolute -top-10 left-4 text-7xl font-bold leading-none text-gray-500 sm:text-8xl">
+                  <span aria-hidden="true" className="pointer-events-none absolute -top-10 left-3 z-20 text-7xl font-extrabold leading-none sm:text-8xl" style={{ color: B, opacity: 0.3 }}>
                     {String(step.num).padStart(2, "0")}
                   </span>
                   <div className="relative flex min-h-[220px] h-full flex-col items-center rounded-3xl border border-indigo-100 bg-white/95 p-6 text-center shadow-[0_14px_36px_rgba(26,31,204,0.08)]">
@@ -4876,7 +5015,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
             <div className="mb-8">
               <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1 text-primary">Guidance</p>
               <h2 className="text-xl font-bold text-foreground tracking-tight">Best Results With</h2>
-              <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed lg:whitespace-nowrap">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
               {BEST_PRACTICES.map(({ title, desc, x, y }) => (
@@ -4888,16 +5027,6 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
                   <p className="text-sm text-muted-foreground leading-relaxed mt-1">{desc}</p>
                 </div>
               ))}
-            </div>
-
-            {/* Advisory card */}
-            <div className="mt-8 p-4 rounded-2xl bg-muted border border-border flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shrink-0 text-primary">
-                <Info className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-sm leading-relaxed text-muted-foreground"><strong className="text-foreground">When inconsistencies may appear.</strong> Review flagged findings in the Findings tab.</p>
-              </div>
             </div>
           </section>
 
@@ -5281,6 +5410,12 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const sessionRef = useRef<Session | null>(null);
   const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
+  const [toast, setToast] = useState<AppNotification | null>(null);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanRunRef = useRef(0);
+  const scanSettledRef = useRef(true);
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -5346,7 +5481,7 @@ export default function App() {
       const target = destination?.screen ?? 'home';
       let next: Screen = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
       // A signed-in user pressing Back must stay signed in: skip the sign-in / sign-up pages.
-      if (sessionRef.current && (next === 'login' || next === 'signup')) next = 'dashboard';
+      if (sessionRef.current && (next === 'login' || next === 'signup' || (next === 'home' && !destination?.sample))) next = 'dashboard';
       screenRef.current = next;
       setScreen(next);
       setIsSampleMode(destination?.sample ?? false);
@@ -5358,7 +5493,7 @@ export default function App() {
 
   function navigate(s: Screen, asSample = false) {
     const target = s === 'dashboard' && !sessionRef.current ? 'login'
-      : sessionRef.current && (s === 'login' || s === 'signup') ? 'dashboard'
+      : sessionRef.current && (s === 'login' || s === 'signup' || (s === 'home' && !asSample)) ? 'dashboard'
       : s;
     const transient = ['processing', 'login', 'signup', 'reset-password'];
     const previous = window.history.state?.resync?.screen as Screen | undefined;
@@ -5385,6 +5520,54 @@ export default function App() {
       sessionStorage.setItem('resync_screen', fallback);
       window.history.replaceState({ resync: { index: 0, screen: fallback, sample: false } }, '');
     }
+  }
+
+  function pushNotification(kind: AppNotification["kind"], title: string, message: string) {
+    const item: AppNotification = { id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind, title, message, at: Date.now(), read: false };
+    setNotifications(prev => {
+      const next = [item, ...prev].slice(0, 20);
+      try { localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+    setToast(item);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 8000);
+  }
+
+  function markNotificationsRead() {
+    setNotifications(prev => {
+      const next = prev.map(n => ({ ...n, read: true }));
+      try { localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+  }
+
+  // Each scan run gets one outcome (success or failure) so the sound and toast can never fire twice.
+  function handleScanStart() {
+    scanRunRef.current += 1;
+    scanSettledRef.current = false;
+    setToast(null);
+    unlockAudio();
+  }
+
+  function handleScanCompleted() {
+    if (scanSettledRef.current) return;
+    scanSettledRef.current = true;
+    const played = playCompletionChime();
+    setSoundBlocked(!played);
+    pushNotification("success", "Scan complete", "Your coherence report is ready to review.");
+  }
+
+  function handleScanFailed(message: string) {
+    if (scanSettledRef.current) return;
+    scanSettledRef.current = true;
+    setSoundBlocked(false);
+    pushNotification("error", "Scan did not finish", message);
+  }
+
+  function enableSound() {
+    unlockAudio();
+    setTimeout(() => setSoundBlocked(!playCompletionChime()), 100);
   }
 
   function handleLoginSuccess() {
@@ -5416,14 +5599,21 @@ export default function App() {
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes slide-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}} .animate-slide-in{animation:slide-in .3s ease forwards}`}</style>
+      <ToastBanner
+        toast={toast}
+        soundBlocked={soundBlocked}
+        onView={scanResult && screen !== "results" ? () => { setToast(null); navigate("results"); } : undefined}
+        onEnableSound={enableSound}
+        onClose={() => setToast(null)}
+      />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
+      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result) => { setScanResult(result); handleScanCompleted(); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
-      {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}
+      {screen === "results" && <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult} isSample={isSampleMode} />}
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} />}
+      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} onOpenReport={() => scanResult && navigate("results")} />}
     </div>
   );
 }
