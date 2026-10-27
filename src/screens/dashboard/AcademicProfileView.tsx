@@ -159,26 +159,6 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
             </div>
           </div>
 
-          {/* Security / Change Password Notice Banner */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ boxShadow: "0 2px 16px rgba(26,31,204,.04)" }}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-600 border border-amber-200">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-900">Need to change your password?</p>
-                <p className="text-[11px] text-gray-400">Password and security options are managed under Settings.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setActiveNav("Settings")}
-              className="px-4 py-2 rounded-xl text-xs font-bold border transition-colors hover:bg-gray-50 self-start sm:self-auto"
-              style={{ borderColor: `${B}30`, color: B }}
-            >
-              Go to Settings →
-            </button>
-          </div>
-
           <div className="h-4" />
         </main>
   );
