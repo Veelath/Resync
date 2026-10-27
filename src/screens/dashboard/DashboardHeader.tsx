@@ -1,4 +1,4 @@
-import { Logo } from '../../components/AppPrimitives';
+import { Logo, LOGO_HEADER_CLASS } from '../../components/AppPrimitives';
 import { B, BH } from '../../lib/brand';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 
@@ -19,7 +19,7 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
         <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-2 md:gap-4" style={{ height: 64 }}>
           <div className="flex items-center shrink-0">
-            <Logo header className="h-7 sm:h-10" />
+            <Logo header className={LOGO_HEADER_CLASS} />
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard", "Academic Profile"] as const).map(label => (

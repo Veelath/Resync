@@ -81,7 +81,9 @@ export default function App() {
       const destination = event.state?.resync as { index: number; screen: Screen; sample: boolean } | undefined;
       historyIndex.current = destination?.index ?? 0;
       const target = destination?.screen ?? 'home';
-      const next = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
+      let next: Screen = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
+      // A signed-in user pressing Back must stay signed in: skip the sign-in / sign-up pages.
+      if (sessionRef.current && (next === 'login' || next === 'signup')) next = 'dashboard';
       screenRef.current = next;
       setScreen(next);
       setIsSampleMode(destination?.sample ?? false);
@@ -92,7 +94,9 @@ export default function App() {
   }, []);
 
   function navigate(s: Screen, asSample = false) {
-    const target = s === 'dashboard' && !sessionRef.current ? 'login' : s;
+    const target = s === 'dashboard' && !sessionRef.current ? 'login'
+      : sessionRef.current && (s === 'login' || s === 'signup') ? 'dashboard'
+      : s;
     const transient = ['processing', 'login', 'signup', 'reset-password'];
     const previous = window.history.state?.resync?.screen as Screen | undefined;
     const replacingTransient = transient.includes(screenRef.current) && !transient.includes(target);
@@ -110,11 +114,13 @@ export default function App() {
   function goBack() {
     if (historyIndex.current > 0) window.history.back();
     else {
-      screenRef.current = 'home';
-      setScreen('home');
+      // Nothing earlier in history: land on the dashboard when signed in, otherwise the home page.
+      const fallback: Screen = sessionRef.current ? 'dashboard' : 'home';
+      screenRef.current = fallback;
+      setScreen(fallback);
       setIsSampleMode(false);
-      sessionStorage.setItem('resync_screen', 'home');
-      window.history.replaceState({ resync: { index: 0, screen: 'home', sample: false } }, '');
+      sessionStorage.setItem('resync_screen', fallback);
+      window.history.replaceState({ resync: { index: 0, screen: fallback, sample: false } }, '');
     }
   }
 
@@ -147,7 +153,7 @@ export default function App() {
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes slide-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}} .animate-slide-in{animation:slide-in .3s ease forwards}`}</style>
-      {screen === "home" && <HomeScreen onNavigate={navigate} />}
+      {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
       {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
       {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}

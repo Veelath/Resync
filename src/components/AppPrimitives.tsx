@@ -7,6 +7,23 @@ export function Logo({ className = "", header = false }: { className?: string; h
   return <img src={resyncLogo} alt="ReSync" className={`object-contain ${className}`} />;
 }
 
+// One header-logo size for every screen (home, dashboard, auth).
+export const LOGO_HEADER_CLASS = "h-10 sm:h-12";
+
+export function HomeButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Home"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5" /></svg>
+      Home
+    </button>
+  );
+}
+
 export function BackToTop() {
   const endRef = useRef<HTMLDivElement>(null);
   const [atEnd, setAtEnd] = useState(false);

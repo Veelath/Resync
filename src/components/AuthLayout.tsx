@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { Screen } from '../lib/appTypes';
-import { Logo } from './AppPrimitives';
+import { Logo, LOGO_HEADER_CLASS } from './AppPrimitives';
 
 export function AuthLayout({ children, onNavigate, onBack }: { children: React.ReactNode; onNavigate: (s: Screen) => void; onBack: () => void; quote?: string }) {
   return (
@@ -13,7 +13,7 @@ export function AuthLayout({ children, onNavigate, onBack }: { children: React.R
       {/* Top navigation header */}
       <header className="relative z-10 w-full px-6 md:px-10 lg:px-16 xl:px-20 py-6 flex items-center justify-between">
         <button onClick={() => onNavigate("home")} className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-          <Logo className="h-9 w-auto" />
+          <Logo header className={LOGO_HEADER_CLASS} />
         </button>
         <button
           onClick={onBack}

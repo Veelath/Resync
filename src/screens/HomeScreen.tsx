@@ -1,6 +1,7 @@
-import { Logo, BackToTop } from '../components/AppPrimitives';
+import { Logo, BackToTop, LOGO_HEADER_CLASS } from '../components/AppPrimitives';
 import { ScoreRing } from '../components/AppScoreRing';
 import type { Screen } from '../lib/appTypes';
+import type { Session } from '@supabase/supabase-js';
 import { B, BH, BL } from '../lib/brand';
 import spacyLogo from "@/assets/technology/spacy.png";
 import geminiLogo from "@/assets/technology/gemini.svg";
@@ -70,7 +71,7 @@ function PreviewCard() {
   );
 }
 
-export function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean) => void }) {
+export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null }) {
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}`}</style>
@@ -78,7 +79,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: 
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
-          <Logo header className="h-8 sm:h-10" />
+          <Logo header className={LOGO_HEADER_CLASS} />
           <div className="hidden md:flex items-center gap-1">
             {[
               { label: "Overview", id: "section-overview" },
@@ -89,8 +90,14 @@ export function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: 
             ))}
           </div>
           <div className="flex items-center gap-2">
+            {session ? (
+            <button onClick={() => onNavigate("dashboard")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] shadow-sm" style={{ background: B }}>Go to Dashboard</button>
+            ) : (
+              <>
             <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98]">Log in</button>
             <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] shadow-sm" style={{ background: B }}>Sign up free</button>
+              </>
+            )}
           </div>
         </div>
       </nav>
