@@ -138,3 +138,8 @@ export function normalizeManuscriptPreview(text: string) {
   return text.replace(/^\uFEFF?(?:(?:[ \t]*\r?\n)*[ \t]*(?:\d+|[ivxlcdm]+)[ \t]*(?:\r?\n)+)/i, '');
 }
 
+
+export type EnrichedPair = RolePairScore & {
+    verification?: { alignment: string; note: string };
+    dismissalReason?: string;
+  };
