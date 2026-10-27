@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Logo } from '../components/AppPrimitives';
-import { ScoreRing } from '../components/AppScoreRing';
-import type { Screen, DisplayScan } from '../lib/appTypes';
-import { B } from '../lib/brand';
-import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from '../data/sampleReport';
-import type { AssessmentType, AssessmentItem, Citation } from '../data/sampleReport';
+import { Logo } from '../../components/AppPrimitives';
+import { ScoreRing } from '../../components/AppScoreRing';
+import type { Screen, DisplayScan } from '../../lib/appTypes';
+import { B } from '../../lib/brand';
+import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from '../../data/sampleReport';
+import type { AssessmentType, AssessmentItem, Citation } from '../../data/sampleReport';
 import type React from 'react';
-import type { CitedReference, RolePairScore, AITextIndicator, ScoreBreakdown } from '../types';
-import { type ScanResponse, API_BASE_URL, authHeaders, fetchManuscript } from '../services/api';
-import { formatRoleLabel, PAR_SCORE } from '../utils.js';
+import type { CitedReference, RolePairScore, AITextIndicator, ScoreBreakdown } from '../../types';
+import { type ScanResponse, API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
+import { formatRoleLabel, PAR_SCORE } from '../../utils.js';
 
 type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
