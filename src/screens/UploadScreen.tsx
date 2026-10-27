@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import type React from 'react';
-import { HomeButton } from '../components/AppPrimitives';
 import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
@@ -312,7 +311,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { 
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
               {step === 2 ? "Back to Step 1" : "Back"}
             </button>
-            <HomeButton onClick={() => onNavigate("home")} />
+
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
