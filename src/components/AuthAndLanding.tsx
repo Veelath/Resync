@@ -100,7 +100,7 @@ function PreviewCard({ onClick }: { onClick?: () => void }) {
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] font-semibold text-red-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            2 dead
+            2 private
           </div>
           <div className="ml-auto text-[10px] text-gray-400 mono self-center">~2 min scan</div>
         </div>
@@ -163,7 +163,7 @@ export function AuthLayout({ children, onNavigate, quote }: { children: React.Re
             start to finish.
           </h2>
           <p className="text-sm leading-relaxed max-w-xs mb-10" style={{ color:"rgba(199,210,254,.75)" }}>
-            Upload your manuscript and get a full coherence report — logic gaps, contradictions, redundancies, and dead citations — in minutes.
+            Upload your manuscript and get a full coherence report — logic gaps, contradictions, redundancies, and inaccessible citations — in minutes.
           </p>
           {/* features */}
           <div className="w-full max-w-xs space-y-2.5">

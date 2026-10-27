@@ -176,7 +176,7 @@ interface Citation {
   id: string;
   ref: string;
   url: string;
-  status: "live" | "restricted" | "neutral" | "dead";
+  status: "public" | "private";
   title?: string;
   authors?: string;
   year?: number | string;
@@ -189,20 +189,30 @@ function citationText(value: string = ""): string {
 }
 
 const CITATIONS: Citation[] = [
-  { id: "c1", ref: "Bandura, A. (1997). Self-efficacy: The exercise of control.", url: "https://doi.org/10.1002/rrq.121", status: "live" },
-  { id: "c2", ref: "Cruz, M. et al. (2023). Digital transformation in Philippine HEIs.", url: "https://journals.pup.edu.ph/index.php/jrm/article/view/1024", status: "dead" },
-  { id: "c3", ref: "Davis, F.D. (1989). Perceived Usefulness, Perceived Ease of Use.", url: "https://doi.org/10.2307/249008", status: "live" },
-  { id: "c4", ref: "Garcia, L. (2022). Capstone completion barriers in ASEAN universities.", url: "https://researchgate.net/publication/360421089", status: "dead" },
-  { id: "c5", ref: "Reyes, J.A. (2024). Coherence in multi-author research manuscripts.", url: "https://doi.org/10.1016/j.compedu.2024.104801", status: "live" },
-  { id: "c6", ref: "Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.", url: "https://philjol.info/index.php/JPAIR/article/view/7821", status: "live" },
+  { id: "c1", ref: "Bandura, A. (1997). Self-efficacy: The exercise of control.", url: "https://doi.org/10.1002/rrq.121", status: "public" },
+  { id: "c2", ref: "Cruz, M. et al. (2023). Digital transformation in Philippine HEIs.", url: "https://journals.pup.edu.ph/index.php/jrm/article/view/1024", status: "private" },
+  { id: "c3", ref: "Davis, F.D. (1989). Perceived Usefulness, Perceived Ease of Use.", url: "https://doi.org/10.2307/249008", status: "public" },
+  { id: "c4", ref: "Garcia, L. (2022). Capstone completion barriers in ASEAN universities.", url: "https://researchgate.net/publication/360421089", status: "private" },
+  { id: "c5", ref: "Reyes, J.A. (2024). Coherence in multi-author research manuscripts.", url: "https://doi.org/10.1016/j.compedu.2024.104801", status: "public" },
+  { id: "c6", ref: "Santos, K. & Lim, R. (2023). AI tools in thesis writing workflows.", url: "https://philjol.info/index.php/JPAIR/article/view/7821", status: "public" },
 ];
 
 const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
-  live:       { label: "Live",      badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
-  restricted: { label: "Restricted", badge: "bg-amber-100 text-amber-800",    row: "border-amber-200 bg-surface-warn" },
-  neutral:    { label: "Neutral",   badge: "bg-slate-200 text-slate-700",     row: "border-slate-200 bg-slate-50" },
-  dead:       { label: "Dead link", badge: "bg-red-100 text-red-700",         row: "border-rose-200 bg-surface-error" },
+  public:  { label: "Accessible (Public)",  badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
+  private: { label: "Inaccessible (Private)", badge: "bg-red-100 text-red-700",       row: "border-rose-200 bg-surface-error" },
 };
+
+// A citation is public only when its source could be reached without permission. Everything else
+// (paywalled, login/bot-walled, broken or unresolvable, or no link at all) is treated as private.
+function citationAccess(c: CitedReference): Citation["status"] {
+  if (c.citation_is_accessible === true) return "public";
+  if (c.citation_is_accessible === false) return "private";
+  const s = c.citation_status || "";
+  if (["verified_doi", "verified_url", "verified_metadata", "metadata_mismatch", "accessible"].includes(s) || c.status === "Accessible") {
+    return "public";
+  }
+  return "private";
+}
 
 const AI_TEXT_DISCLAIMER =
   'Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features and cannot verify authorship. Well-written human academic prose commonly scores 40-60 on this scale; this indicator must never be used to block a submission or as an integrity charge on its own.';
@@ -523,11 +533,11 @@ function PreviewCard() {
         <div className="px-5 pb-4 flex gap-2">
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-[10px] font-semibold text-green-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-            <span className="tabular-nums">4</span> live
+            <span className="tabular-nums">4</span> public
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] font-semibold text-red-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            <span className="tabular-nums">2</span> dead
+            <span className="tabular-nums">2</span> private
           </div>
           <div className="ml-auto text-[10px] text-gray-400 mono self-center tabular-nums">~2 min scan</div>
         </div>
@@ -619,7 +629,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
           {[
             ["6", "Coherence dimensions"],
             ["~2 min", "Per full thesis"],
-            [".docx + GDocs", "Accepted formats"],
+            [".doc/.docx + GDocs", "Accepted formats"],
             ["3 models", "Support the analysis"],
           ].map(([val, label]) => (
             <div key={label} className="flex items-center gap-3">
@@ -651,7 +661,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Upload</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
-                  Add a <span className="font-semibold text-gray-700">.docx file</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies the document's chapters and can compare them with an uploaded school template.
+                  Add a <span className="font-semibold text-gray-700">Word file (.doc/.docx)</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies the document's chapters and can compare them with an uploaded school template.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-6">
                   {["Chapter mapping", "Template support", "Chapter-aware matching"].map(t => (
@@ -673,7 +683,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7" style={{ color: B }} aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     </div>
                     <p className="text-sm font-bold text-gray-700 mb-1">Drop your thesis here</p>
-                    <p className="text-xs text-gray-400">.docx or Google Docs link · max 25&nbsp;MB</p>
+                    <p className="text-xs text-gray-400">.doc, .docx or Google Docs link · max 25&nbsp;MB</p>
                     <div className="mt-5 flex items-center justify-center gap-2">
                       <div className="flex-1 h-px bg-gray-100" />
                       <span className="text-xs text-gray-600 font-medium">or</span>
@@ -908,6 +918,20 @@ interface TemplateChapter {
   sections: string[];
 }
 
+const WORD_EXT_RE = /\.docx?$/i;
+const WORD_MIME_TYPES = [
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
+const WORD_ACCEPT = ".doc,.docx," + WORD_MIME_TYPES.join(",");
+
+// Word documents only (.doc / .docx): checks the extension and, when the browser reports one, the MIME type.
+function isWordFile(file: File): boolean {
+  if (!WORD_EXT_RE.test(file.name)) return false;
+  return !file.type || WORD_MIME_TYPES.includes(file.type);
+}
+
 async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
   const mammoth = await import('mammoth');
   const arrayBuffer = await file.arrayBuffer();
@@ -1041,27 +1065,15 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
   }
 
   async function handleTemplateFileChange(file: File) {
+    if (!isWordFile(file)) {
+      setCustomTemplateFile(null);
+      setTemplateChapters([]);
+      setTemplateParseError('Unsupported template file. Please upload a Word document (.doc or .docx).');
+      return;
+    }
     setCustomTemplateFile(file);
     setTemplateParseError(null);
     try {
-      if (file.name.endsWith('.txt') || file.type === 'text/plain') {
-        const text = await file.text();
-        const lines = text.split(/\r?\n/)
-          .map(l => l.trim())
-          .map(l => l.replace(/^["'\s]+|["',\s]+$/g, '').trim())
-          .filter(Boolean);
-        if (lines.length === 0) {
-          setTemplateParseError('No headings found in the template. No template will be sent.');
-          setTemplateChapters([]);
-        } else {
-          setTemplateChapters([{
-            id: "c1",
-            title: "Custom Template Sections",
-            sections: lines,
-          }]);
-        }
-        return;
-      }
       const parsed = await parseDocxTemplate(file);
       if (parsed.length === 0) {
         setTemplateParseError('No headings found in the template. No template will be sent.');
@@ -1073,6 +1085,22 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
       setTemplateParseError('Could not parse the template file. No template will be sent.');
       setTemplateChapters([]);
     }
+  }
+
+  function acceptManuscriptFile(file: File) {
+    lastScanError = null;
+    if (!isWordFile(file)) {
+      setUploadedFile(null);
+      setScanError("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+      return;
+    }
+    if (file.size > MAX_MANUSCRIPT_BYTES) {
+      setUploadedFile(null);
+      setScanError("This file is larger than 25 MB. Please upload a smaller Word document.");
+      return;
+    }
+    setScanError(null);
+    setUploadedFile(file);
   }
 
   function handleResetTemplate() {
@@ -1096,9 +1124,11 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
         if (uploadedFile.size === 0) {
           throw new Error("The uploaded document appears to be empty or contains no extractable text.");
         }
-        const lowerName = uploadedFile.name.toLowerCase();
-        if (!lowerName.endsWith(".docx") && !lowerName.endsWith(".pdf")) {
-          throw new Error("This does not look like a research manuscript. Please upload a .docx or .pdf file.");
+        if (!isWordFile(uploadedFile)) {
+          throw new Error("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+        }
+        if (uploadedFile.size > MAX_MANUSCRIPT_BYTES) {
+          throw new Error("This file is larger than 25 MB. Please upload a smaller Word document.");
         }
       } else if (mode === "link") {
         if (!link.trim() || !link.includes("docs.google.com")) {
@@ -1160,9 +1190,12 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
         setScanError("The uploaded document appears to be empty or contains no extractable text.");
         return;
       }
-      const lowerName = uploadedFile.name.toLowerCase();
-      if (!lowerName.endsWith(".docx") && !lowerName.endsWith(".pdf")) {
-        setScanError("This does not look like a research manuscript. Please upload a .docx or .pdf file.");
+      if (!isWordFile(uploadedFile)) {
+        setScanError("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+        return;
+      }
+      if (uploadedFile.size > MAX_MANUSCRIPT_BYTES) {
+        setScanError("This file is larger than 25 MB. Please upload a smaller Word document.");
         return;
       }
     } else if (mode === "link") {
@@ -1210,7 +1243,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold text-gray-900">1. Manuscript</p>
-              <p className="text-[11px] text-gray-400">Upload .docx or add Google Docs link</p>
+              <p className="text-[11px] text-gray-400">Upload .doc/.docx or add Google Docs link</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
@@ -1258,8 +1291,8 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
                       [
                         "file",
                         <svg key="file-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
-                        "Upload .docx",
-                        ".docx · max 25\u00A0MB"
+                        "Upload Word file",
+                        ".doc, .docx  max 25\u00A0MB"
                       ],
                       [
                         "link",
@@ -1288,11 +1321,11 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
                   {/* Input Dropzone */}
                   {mode === "file" ? (
                     <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) { setUploadedFile(f); lastScanError = null; setScanError(null); } }}
+                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) acceptManuscriptFile(f); }}
                       onClick={() => fileInputRef.current?.click()}
                       className="flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50"
                       style={{ borderColor: drag || uploadedFile ? B : "#e5e7eb", background: drag || uploadedFile ? BL : undefined }}>
-                      <input ref={fileInputRef} type="file" accept=".docx,.pdf" className="hidden" onChange={e => { setUploadedFile(e.target.files?.[0] ?? null); lastScanError = null; setScanError(null); }} />
+                      <input ref={fileInputRef} type="file" accept={WORD_ACCEPT} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) acceptManuscriptFile(f); e.target.value = ""; }} />
                       {uploadedFile ? (
                         <>
                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ background: BL, border: `1px solid ${B}20` }}>
@@ -1312,7 +1345,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-gray-700">Drop your .docx or .pdf file here</p>
+                            <p className="text-sm font-bold text-gray-700">Drop your .doc or .docx file here</p>
                             <p className="text-xs text-gray-400 mt-1">or click to browse from device · max 25 MB</p>
                           </div>
                         </>
@@ -1376,7 +1409,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
                   {
                     n: "2",
                     title: "Upload manuscript",
-                    body: ".docx under 25 MB, or Google Docs set to 'Anyone with the link can view'.",
+                    body: ".doc or .docx under 25 MB, or Google Docs set to 'Anyone with the link can view'.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>,
                   },
                   {
@@ -1590,8 +1623,8 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
                 {/* Optional institutional file override */}
                 <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
-                    <p className="font-semibold text-gray-800">Have an institutional .docx or .txt template file?</p>
-                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.docx or .txt).</p>
+                    <p className="font-semibold text-gray-800">Have an institutional Word template file?</p>
+                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.doc or .docx).</p>
                   </div>
                   <button
                     type="button"
@@ -1604,7 +1637,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
                         <span>{customTemplateFile.name}</span>
                       </>
-                    ) : "+ Attach template (.docx, .txt) (Optional)"}
+                    ) : "+ Attach template (.doc, .docx) (Optional)"}
                   </button>
                   {templateParseError && (
                     <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
@@ -1612,7 +1645,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
                   <input
                     ref={customTemplateInputRef}
                     type="file"
-                    accept=".docx,.txt"
+                    accept={WORD_ACCEPT}
                     className="hidden"
                     onChange={e => {
                       const f = e.target.files?.[0];
@@ -1715,10 +1748,10 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
 // ─── Processing ───────────────────────────────────────────────────────────────
 function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const steps = [
-    { label: "Reading your manuscript", dur: 1500 },
-    { label: "Checking section alignment", dur: 2500 },
-    { label: "Analyzing cross-chapter coherence", dur: 3000 },
-    { label: "Verifying citation links", dur: 2000 },
+    { label: "Reading your manuscript", detail: "Extracting chapters, sections and references", dur: 1500 },
+    { label: "Checking section alignment", detail: "Matching your headings to the expected structure", dur: 2500 },
+    { label: "Analyzing cross-chapter coherence", detail: "Comparing claims across chapters", dur: 3000 },
+    { label: "Verifying citation access", detail: "Checking which sources are public or private", dur: 2000 },
   ];
   const [done, setDone] = useState(0);
   useEffect(() => {
@@ -1734,91 +1767,84 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   }, []);
   const isFinalizing = done >= steps.length;
   const pct = isFinalizing ? 99 : Math.min(99, Math.round((done / steps.length) * 100));
+  const current = isFinalizing
+    ? { label: "Finalizing your report…", detail: "Synthesizing findings across chapters" }
+    : steps[done];
+  // The finalizing stage is a fifth row so the list never changes height mid-scan.
+  const rows = [...steps, { label: "Finalizing your report", detail: "Synthesizing findings across chapters", dur: 0 }];
 
   return (
-    <div className="min-h-full bg-white flex items-center justify-center px-6 py-20">
-      <div className="w-full max-w-lg">
-        {/* logo pulse */}
-        <div className="flex justify-center mb-10">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: B }} />
-            <div className="relative w-20 h-20 rounded-full flex items-center justify-center border-2" style={{ background: BL, borderColor: `${B}30` }}>
-              <Logo className="w-12 h-12" />
-            </div>
+    <div className="h-screen h-dvh w-full overflow-hidden bg-white flex flex-col lg:flex-row">
+      {/* Left: brand + current action */}
+      <div className="flex-1 lg:flex-none lg:w-[46%] min-h-0 flex flex-col items-center justify-center text-center px-6 sm:px-10 py-6" style={{ background: `linear-gradient(160deg, ${BL}, #ffffff)` }}>
+        <div className="relative mb-[clamp(0.75rem,3vh,2rem)]">
+          <div className="absolute inset-0 rounded-full animate-ping opacity-15" style={{ background: B }} />
+          <div className="relative rounded-full flex items-center justify-center border-2 bg-white shadow-sm w-[clamp(7rem,22vh,11rem)] h-[clamp(7rem,22vh,11rem)]" style={{ borderColor: `${B}30` }}>
+            <Logo className="w-[62%] h-[62%]" />
           </div>
         </div>
 
-        <div className="text-center mb-10">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-2">Analyzing your manuscript</h1>
-          <p className="text-sm text-gray-400">Running {steps.length} coherence checks across all chapters</p>
-        </div>
+        <h1 className="text-[clamp(1.5rem,4vh,2.25rem)] font-bold text-gray-900 tracking-tight">Analyzing your manuscript</h1>
+        <p className="text-sm text-gray-500 mt-1.5">Running {steps.length} coherence checks across all chapters</p>
 
-        {/* progress */}
-        <div className="flex justify-between items-center mb-2" aria-live="polite">
-          {pct === 99 ? (
-            <span className="text-xs mono font-semibold animate-pulse flex items-center gap-1.5" style={{ color: B }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ background: B }} aria-hidden="true" />
-              Finalizing your report…
+        <div className="w-full max-w-sm mt-[clamp(1rem,4vh,2.25rem)]" aria-live="polite">
+          <div className="flex items-baseline justify-between mb-2 gap-3">
+            <span className="text-xs mono font-semibold flex items-center gap-1.5 min-w-0" style={{ color: B }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-ping shrink-0" style={{ background: B }} aria-hidden="true" />
+              <span className="truncate">{current.label}</span>
             </span>
-          ) : (
-            <span className="text-xs mono text-gray-400">Progress</span>
-          )}
-          <span className="text-xs mono font-bold tabular-nums" style={{ color: B }}>{pct}%</span>
+            <span className="text-lg mono font-bold tabular-nums" style={{ color: B }}>{pct}%</span>
+          </div>
+          <div
+            className="h-2 rounded-full bg-gray-200/70 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Manuscript analysis progress"
+          >
+            <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${B}, ${BH})` }} />
+          </div>
+          <p className="text-xs text-gray-400 mt-2.5">{current.detail}</p>
         </div>
-        <div
-          className="h-1.5 rounded-full bg-gray-100 mb-8 overflow-hidden"
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Manuscript analysis progress"
-        >
-          <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${B}, ${BH})` }} />
-        </div>
+      </div>
 
-        <div className="space-y-2">
-          {steps.map((step, i) => {
-            const isDone = done > i, isActive = done === i;
-            return (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300"
-                aria-current={isActive ? "step" : undefined}
-                style={{
-                  background: isDone ? "#f0fdf4" : isActive ? BL : "#fafafa",
-                  borderColor: isDone ? "#bbf7d0" : isActive ? `${B}30` : "#f3f4f6",
-                  opacity: !isDone && !isActive ? 0.5 : 1,
-                }}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
+      {/* Right: stage checklist */}
+      <div className="flex-none lg:flex-1 min-h-0 flex flex-col items-center justify-center px-6 sm:px-10 py-4 lg:py-6">
+        <div className="w-full max-w-md">
+          <p className="hidden lg:block text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-3">
+            Step {Math.min(done + 1, rows.length)} of {rows.length}
+          </p>
+          <div className="space-y-[clamp(0.25rem,1vh,0.5rem)]">
+            {rows.map((step, i) => {
+              const isDone = done > i, isActive = done === i;
+              return (
+                <div key={i} className="flex items-center gap-3 sm:gap-4 px-4 py-[clamp(0.4rem,1.6vh,0.9rem)] rounded-2xl border transition-all duration-300"
+                  aria-current={isActive ? "step" : undefined}
+                  style={{
+                    background: isDone ? "#f0fdf4" : isActive ? BL : "#fafafa",
+                    borderColor: isDone ? "#bbf7d0" : isActive ? `${B}30` : "#f3f4f6",
+                    opacity: !isDone && !isActive ? 0.5 : 1,
+                  }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: isDone ? "#166534" : isActive ? "#111827" : "#9ca3af" }}>{step.label}</p>
+                    {isActive && <p className="text-xs text-gray-500 truncate hidden sm:block">{step.detail}</p>}
+                  </div>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: isDone ? "#22c55e" : isActive ? B : "#e5e7eb" }}>
+                    {isDone
+                      ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+                      : isActive
+                        ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
+                        : <span className="text-xs font-bold text-gray-400 mono tabular-nums">{i + 1}</span>
+                    }
+                  </div>
                 </div>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: isDone ? "#22c55e" : isActive ? B : "#e5e7eb" }}>
-                  {isDone
-                    ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-                    : isActive
-                      ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
-                      : <span className="text-xs font-bold text-gray-400 mono tabular-nums">{i + 1}</span>
-                  }
-                </div>
-              </div>
-            );
-          })}
-          {isFinalizing && (
-            <div className="flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 animate-pulse"
-              style={{
-                background: BL,
-                borderColor: `${B}30`,
-              }}>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900">Finalizing your report…</p>
-                <p className="text-xs text-gray-500">Synthesizing findings across chapters</p>
-              </div>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: B }}>
-                <div className="w-2 h-2 rounded-full bg-white animate-ping" />
-              </div>
-            </div>
-          )}
+              );
+            })}
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-[clamp(0.75rem,3vh,1.5rem)]">2–3 minutes · do not close this tab</p>
         </div>
-        <p className="text-center text-xs text-gray-400 mt-8">2–3 minutes · do not close this tab</p>
       </div>
     </div>
   );
@@ -2027,20 +2053,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
   const localCitations: Citation[] = isSample
     ? CITATIONS
     : rawCitationsList.map((c: CitedReference, i) => {
-        let status: Citation["status"] = "neutral";
-        const s = c.citation_status || "";
-        
-        if (["verified_doi", "verified_url", "verified_metadata", "accessible"].includes(s) || c.status === "Accessible") {
-          status = "live";
-        } else if (["metadata_mismatch", "restricted", "bot_wall"].includes(s)) {
-          status = "restricted";
-        } else if (["unverified", "unknown_error", "no_link"].includes(s)) {
-          status = "neutral";
-        } else if (s === "broken" || c.status === "Broken Link") {
-          status = "dead";
-        } else if (c.citation_is_accessible) {
-          status = "live";
-        }
+        const status = citationAccess(c);
 
         return {
           id: `cit-${i}`,
@@ -2140,7 +2153,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1);
     return { key, label, color, value: isSample ? SAMPLE_ADVISORY_DIMENSIONS[key] : values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null };
   });
-  const dead = localCitations.filter(c => c.status === "dead").length;
+  const privateCount = localCitations.filter(c => c.status === "private").length;
   type STEntry = { hl: string; pill: string; accentColor: string; label: string };
   const ST: Record<AssessmentType, STEntry> = {
     "overall-status": {
@@ -2579,42 +2592,27 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     <div className="flex items-center gap-3 mb-5">
                       <h2 className="text-xl font-bold text-gray-900">Bibliography</h2>
                       <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><span className="tabular-nums">{localCitations.length}</span> sources checked</span>
-                      {dead > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{dead}</span> inaccessible</span>}
+                      {privateCount > 0 && <span className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><span className="tabular-nums">{privateCount}</span> inaccessible</span>}
                     </div>
-                    {dead > 0 && (
+                    {privateCount > 0 && (
                       <div className="flex items-start gap-3 px-4 py-3 mb-4 rounded-xl border border-red-200 bg-red-50">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-red-500 shrink-0 mt-0.5" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                        <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{dead} reference URL{dead > 1 ? "s" : ""}</span> could not be reached. Try opening them in a browser — if broken, update to a working DOI before submission.</p>
+                        <p className="text-xs text-red-700 leading-relaxed"><span className="font-bold">{privateCount} reference{privateCount > 1 ? "s are" : " is"} private</span> or require{privateCount > 1 ? "" : "s"} permission to open. Readers and reviewers may not be able to check {privateCount > 1 ? "them" : "it"}, so consider citing a public version.</p>
                       </div>
                     )}
                     {localCitations.length > 0 ? (
                       <div className="space-y-2">
                         {localCitations.map((cite, ci) => (
-                          <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                            cite.status === "live" ? "border-gray-100 bg-gray-50 hover:bg-gray-100" 
-                            : cite.status === "restricted" ? "border-amber-100 bg-amber-50"
-                            : cite.status === "neutral" ? "border-slate-200 bg-slate-50"
-                            : "border-red-100 bg-red-50"
-                          }`}>
+                          <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border transition-colors ${CITE_BADGE[cite.status].row}`}>
                             <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-4 shrink-0 tabular-nums">{ci + 1}</span>
                             {renderCitation(cite)}
-                            
-                            {/* Status Badge */}
-                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                              cite.status === "live" ? "bg-emerald-100 text-emerald-700"
-                              : cite.status === "restricted" ? "bg-amber-100 text-amber-800"
-                              : cite.status === "neutral" ? "bg-slate-200 text-slate-700" 
-                              : "bg-red-100 text-red-700"
-                            }`}>
-                              {cite.status === "live" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>Live</>
-                              ) : cite.status === "restricted" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Restricted</>
-                              ) : cite.status === "neutral" ? (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Neutral</>
+                            <div className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
+                              {cite.status === "public" ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                               ) : (
-                                 <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>Dead link</>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
                               )}
+                              {CITE_BADGE[cite.status].label}
                             </div>
                           </div>
                         ))}
@@ -2937,8 +2935,8 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
             {activeTab === 'citations' && (
               <div className="space-y-4">
                 <p className="text-xs text-gray-500">Click any status card to filter the list. Click it again to clear.</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(['live', 'restricted', 'neutral', 'dead'] as Citation["status"][]).map(s => {
+                <div className="grid grid-cols-2 gap-3">
+                  {(['public', 'private'] as Citation["status"][]).map(s => {
                     const isSelected = citationFilter === s;
                     return (
                       <button
@@ -2965,7 +2963,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                   })}
                 </div>
 
-                <p className="text-xs text-gray-500">Restricted = paywalled · Neutral = couldn't verify.</p>
+                <p className="text-xs text-gray-500">Accessible (Public) = anyone can open the source · Inaccessible (Private) = private, or needs permission or a login.</p>
 
                 {citationFilter && (
                   <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
@@ -2989,7 +2987,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
                     </p>
                     <p className="text-xs text-gray-500 mb-3">
                       {citationFilter
-                        ? `No citations with status "${CITE_BADGE[citationFilter].label}" were found.`
+                        ? `No citations are marked "${CITE_BADGE[citationFilter].label}".`
                         : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
                     </p>
                     {citationFilter && (
@@ -4202,7 +4200,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
     {
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
       label: "Verified Reference List",
-      desc: "Live / dead status for every cited URL and DOI in your bibliography.",
+      desc: "Public or private access status for every cited URL and DOI in your bibliography.",
       color: "#d97706",
       bg: "#fffbeb",
     },
@@ -4212,7 +4210,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
     {
       num: 1,
       label: "Upload Manuscript",
-      desc: "Upload your .docx file or paste a Google Docs share link.",
+      desc: "Upload your Word file or paste a Google Docs share link.",
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
     },
     {
@@ -4224,7 +4222,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
     {
       num: 3,
       label: "Coherence Scan",
-      desc: "AI cross-checks logic gaps, contradictions, redundancies, and dead citations.",
+      desc: "AI cross-checks logic gaps, contradictions, redundancies, and inaccessible citations.",
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
     },
     {
