@@ -1981,7 +1981,7 @@ function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
             );
           })}
         </div>
-        <p className="text-center text-xs text-gray-400 mt-[clamp(0.5rem,2vh,1.25rem)]">2–3 minutes · do not close this tab</p>
+        <p className="text-center text-xs text-gray-400 mt-[clamp(0.5rem,2vh,1.25rem)]">Please do not close this tab</p>
       </div>
     </div>
   );
@@ -2598,11 +2598,14 @@ function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (s:
       </div>
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 py-2 sm:py-0 sm:h-12 flex flex-wrap sm:flex-nowrap items-center gap-3">
+          {isSample ? (
           <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium rounded-lg px-2 py-1 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
             Back
           </button>
-          {!isSample && <HomeButton onClick={() => onNavigate("dashboard")} />}
+          ) : (
+            <HomeButton onClick={() => onNavigate("dashboard")} />
+          )}
           <span className="text-xs text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
