@@ -395,6 +395,23 @@ function Logo({ className = "", header = false }: { className?: string; header?:
   return <img src={resyncLogo} alt="ReSync" className={`object-contain ${className}`} />;
 }
 
+// One header-logo size for every screen (home, dashboard, auth).
+const LOGO_HEADER_CLASS = "h-10 sm:h-12";
+
+function HomeButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Home"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5" /></svg>
+      Home
+    </button>
+  );
+}
+
 function BackToTop() {
   const endRef = useRef<HTMLDivElement>(null);
   const [atEnd, setAtEnd] = useState(false);
@@ -547,7 +564,7 @@ function PreviewCard() {
 }
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
-function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean) => void }) {
+function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null }) {
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}`}</style>
@@ -555,7 +572,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
-          <Logo header className="h-8 sm:h-10" />
+          <Logo header className={LOGO_HEADER_CLASS} />
           <div className="hidden md:flex items-center gap-1">
             {[
               { label: "Overview", id: "section-overview" },
@@ -566,8 +583,14 @@ function HomeScreen({ onNavigate }: { onNavigate: (s: Screen, asSample?: boolean
             ))}
           </div>
           <div className="flex items-center gap-2">
+            {session ? (
+            <button onClick={() => onNavigate("dashboard")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] shadow-sm" style={{ background: B }}>Go to Dashboard</button>
+            ) : (
+              <>
             <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98]">Log in</button>
             <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] shadow-sm" style={{ background: B }}>Sign up free</button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -1218,8 +1241,7 @@ function UploadScreen({ onNavigate, onBack, session, onScanComplete }: { onNavig
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
               {step === 2 ? "Back to Step 1" : "Back"}
             </button>
-            <div className="h-5 w-px bg-gray-100" />
-            <button onClick={() => onNavigate("home")} aria-label="ReSync Home" className="rounded-lg p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"><Logo className="h-8 w-auto" /></button>
+            <HomeButton onClick={() => onNavigate("home")} />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
@@ -2461,11 +2483,7 @@ function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: Screen)
       </div>
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 py-2 sm:py-0 sm:h-12 flex flex-wrap sm:flex-nowrap items-center gap-3">
-          <button onClick={() => onNavigate("home")} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors shrink-0 rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Home
-          </button>
-          <div className="h-4 w-px bg-gray-200 shrink-0" />
-          <Logo className="h-6 w-auto shrink-0" />
+          <HomeButton onClick={() => onNavigate("home")} />
           <span className="text-xs text-gray-400 truncate hidden md:block">
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
@@ -3259,7 +3277,7 @@ function AuthLayout({ children, onNavigate, onBack }: { children: React.ReactNod
       {/* Top navigation header */}
       <header className="relative z-10 w-full px-6 md:px-10 lg:px-16 xl:px-20 py-6 flex items-center justify-between">
         <button onClick={() => onNavigate("home")} className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-          <Logo className="h-9 w-auto" />
+          <Logo header className={LOGO_HEADER_CLASS} />
         </button>
         <button
           onClick={onBack}
@@ -4249,7 +4267,7 @@ function DashboardScreen({ onNavigate, session, onLogout }: { onNavigate: (s: Sc
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
         <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-2 md:gap-4" style={{ height: 64 }}>
           <div className="flex items-center shrink-0">
-            <Logo header className="h-7 sm:h-10" />
+            <Logo header className={LOGO_HEADER_CLASS} />
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard", "Academic Profile"] as const).map(label => (
@@ -5342,7 +5360,9 @@ export default function App() {
       const destination = event.state?.resync as { index: number; screen: Screen; sample: boolean } | undefined;
       historyIndex.current = destination?.index ?? 0;
       const target = destination?.screen ?? 'home';
-      const next = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
+      let next: Screen = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
+      // A signed-in user pressing Back must stay signed in: skip the sign-in / sign-up pages.
+      if (sessionRef.current && (next === 'login' || next === 'signup')) next = 'dashboard';
       screenRef.current = next;
       setScreen(next);
       setIsSampleMode(destination?.sample ?? false);
@@ -5353,7 +5373,9 @@ export default function App() {
   }, []);
 
   function navigate(s: Screen, asSample = false) {
-    const target = s === 'dashboard' && !sessionRef.current ? 'login' : s;
+    const target = s === 'dashboard' && !sessionRef.current ? 'login'
+      : sessionRef.current && (s === 'login' || s === 'signup') ? 'dashboard'
+      : s;
     const transient = ['processing', 'login', 'signup', 'reset-password'];
     const previous = window.history.state?.resync?.screen as Screen | undefined;
     const replacingTransient = transient.includes(screenRef.current) && !transient.includes(target);
@@ -5371,11 +5393,13 @@ export default function App() {
   function goBack() {
     if (historyIndex.current > 0) window.history.back();
     else {
-      screenRef.current = 'home';
-      setScreen('home');
+      // Nothing earlier in history: land on the dashboard when signed in, otherwise the home page.
+      const fallback: Screen = sessionRef.current ? 'dashboard' : 'home';
+      screenRef.current = fallback;
+      setScreen(fallback);
       setIsSampleMode(false);
-      sessionStorage.setItem('resync_screen', 'home');
-      window.history.replaceState({ resync: { index: 0, screen: 'home', sample: false } }, '');
+      sessionStorage.setItem('resync_screen', fallback);
+      window.history.replaceState({ resync: { index: 0, screen: fallback, sample: false } }, '');
     }
   }
 
@@ -5408,7 +5432,7 @@ export default function App() {
   return (
     <div className="min-h-full bg-white">
       <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}} @keyframes slide-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}} .animate-slide-in{animation:slide-in .3s ease forwards}`}</style>
-      {screen === "home" && <HomeScreen onNavigate={navigate} />}
+      {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
       {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanComplete={(result) => { setScanResult(result); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
       {screen === "results" && <ResultsScreen onNavigate={navigate} scan={scanResult} isSample={isSampleMode} />}
