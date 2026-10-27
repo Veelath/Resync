@@ -4,6 +4,7 @@ import { ResultsHeader } from './ResultsHeader';
 import { ManuscriptViewer } from './ManuscriptViewer';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CoherenceAnalysis } from './CoherenceAnalysis';
+import { OverviewTab } from './OverviewTab';
 import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from '../../data/sampleReport';
 import type { AssessmentType, AssessmentItem, Citation } from '../../data/sampleReport';
 import type React from 'react';
@@ -598,7 +599,7 @@ export function ResultsScreen({ onNavigate, scan, isSample }: { onNavigate: (s: 
             ))}
           </div>
                 <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
-                  {activeTab === 'overview' && <div className="space-y-2"><h3 className="text-sm font-bold text-slate-900">Report by section</h3>{reportSections.map(section => <button key={section.key} type="button" onClick={() => setActiveSectionRole(section.key)} className="w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-indigo-600"><span className="truncate text-gray-800">{section.name}</span><span className={`shrink-0 ${SECTION_STATUS[section.status].color}`}>{section.status === 'Unassessed' ? 'Not checked yet' : section.status}</span></button>)}</div>}
+                  {activeTab === 'overview' && <OverviewTab reportSections={reportSections} setActiveSectionRole={setActiveSectionRole} />}
             {activeTab === 'inconsistencies' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 px-1">
