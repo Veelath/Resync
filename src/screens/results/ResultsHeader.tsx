@@ -2,7 +2,7 @@ import { HomeButton } from '../../components/AppPrimitives';
 import type { Screen } from '../../lib/appTypes';
 import { B } from '../../lib/brand';
 
-export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle, setShowPairingModal }: { onNavigate: (s: Screen) => void; onBack: () => void; isSample?: boolean; displayTitle: string; setShowPairingModal: (value: boolean) => void }) {
+export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle }: { onNavigate: (s: Screen) => void; onBack: () => void; isSample?: boolean; displayTitle: string }) {
   return (
       <nav className="shrink-0 bg-white border-b border-gray-100 z-50 print:hidden">
         <div className="px-5 py-2 sm:py-0 sm:h-12 flex flex-wrap sm:flex-nowrap items-center gap-3">
@@ -18,14 +18,6 @@ export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle, setS
             {isSample ? "/ Predictors of Academic Burnout Among STEM Undergraduates" : `/ ${displayTitle}`}
           </span>
           <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowPairingModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              How Pairing Works
-            </button>
             {!isSample && (
               <>
                 <button

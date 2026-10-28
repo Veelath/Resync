@@ -65,7 +65,7 @@ export function ToastBanner({ toast, soundBlocked, onView, onEnableSound, onClos
   if (!toast) return null;
   const ok = toast.kind === "success";
   return (
-    <div role="status" aria-live="polite" className="fixed top-4 right-4 z-[100] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border bg-white p-4 shadow-xl animate-slide-in"
+    <div role="status" aria-live="polite" className="fixed top-4 right-4 z-[100] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border bg-white p-4 shadow-xl animate-slide-in print:hidden"
       style={{ borderColor: ok ? "#bbf7d0" : "#fecaca" }}>
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: ok ? "#22c55e" : "#ef4444" }}>
