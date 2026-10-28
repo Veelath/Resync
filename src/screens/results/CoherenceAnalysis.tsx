@@ -3,7 +3,7 @@ import type React from 'react';
 export function CoherenceAnalysis({ analysisExpanded, setAnalysisExpanded, analysisTab, setAnalysisTab, recommendations, synthesis, strongestAlignment, needsAttention, children }: {
   analysisExpanded: boolean; setAnalysisExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   analysisTab: 'synthesis' | 'recommendations'; setAnalysisTab: (value: 'synthesis' | 'recommendations') => void;
-  recommendations: Array<{ id: string; quote: string; revision?: string }>; synthesis?: string | null;
+  recommendations: Array<{ id: string; section?: string; quote: string | null; revision?: string }>; synthesis?: string | null;
   strongestAlignment?: { title: string }; needsAttention?: { title: string }; children: React.ReactNode;
 }) {
   return (
@@ -53,11 +53,12 @@ export function CoherenceAnalysis({ analysisExpanded, setAnalysisExpanded, analy
                     <div key={recommendation.id} className="flex items-start gap-3">
                       <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
                       <div className="min-w-0 flex-1 rounded-xl bg-gray-50 p-3 space-y-2">
-                        <div className="rounded-lg bg-gray-100 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Original sentence</p><p className="text-xs text-gray-700 leading-relaxed">“{recommendation.quote}”</p></div>
+                        {recommendation.section && <p className="text-xs font-semibold text-gray-600">{recommendation.section}</p>}
+                        <div className="rounded-lg bg-gray-100 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Original sentence</p><p className="text-xs text-gray-700 leading-relaxed">“{recommendation.quote || 'Verified source sentence unavailable'}”</p></div>
                         <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 mb-1">Recommended revision</p><p className="text-xs text-gray-700 leading-relaxed">{recommendation.revision}</p></div>
                       </div>
                     </div>
-                  )) : <p className="text-sm text-gray-500">No findings have both a manuscript quote and a suggested fix.</p>}
+                  )) : <p className="text-sm text-gray-500">No recommendations for this scan.</p>}
                 </div>}
               </div>
               <div className="border-t border-gray-100">

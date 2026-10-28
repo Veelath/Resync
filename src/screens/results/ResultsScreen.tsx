@@ -7,13 +7,14 @@ import { ResultsScorePanel } from './ResultsScorePanel';
 import { CoherenceAnalysis } from './CoherenceAnalysis';
 import { OverviewTab } from './OverviewTab';
 import { FindingsTab } from './FindingsTab';
-import { CoherencePairsTab } from './CoherencePairsTab';
+import { CoherencePairsTab, PairScores } from './CoherencePairsTab';
 import { CitationsTab } from './CitationsTab';
 import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from '../../data/sampleReport';
 import type { AssessmentType, AssessmentItem, Citation } from '../../data/sampleReport';
 import type React from 'react';
 import type { CitedReference, RolePairScore, AITextIndicator } from '../../types';
 import type { V7ScanResponse } from '../../services/v7Result';
+import { verifiedQuoteRanges } from './highlights';
 import { API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
 import { formatRoleLabel, PAR_SCORE } from '../../utils.js';
 
@@ -88,48 +89,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
         "Document Coherence Scan"
       );
 
-  const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : [
-    ...(scan?.inconsistencies?.map((inc, i) => {
-      const isMissingSection = !inc.section_b;
-      return {
-        id: inc.inconsistency_id || `inc-${i}`,
-        type: (inc.finding_status === 'key_strength' ? "key-strength" : inc.finding_status === 'material_issue' ? "major-issue" : "affected-section") as AssessmentType,
-        title: isMissingSection
-          ? `Required section "${formatRoleLabel(inc.section_a)}"`
-          : (inc.explanation_what ?? "").trim().replace(/\.$/, "") || "Finding",
-        section: isMissingSection
-          ? "Missing Section"
-          : `${inc.section_a} ↔ ${inc.section_b}`,
-        targetSectionIndex: 0,
-        questionOrSubtitle: inc.finding_status === 'key_strength' ? "What the manuscript does consistently" : isMissingSection ? "Missing section" : (inc.section_b ? `Conflicts with: ${inc.section_b}` : "Finding"),
-        description: inc.explanation_why || inc.explanation_what,
-        significance: inc.finding_status === 'key_strength' ? "Supported cross-section alignment" : isMissingSection ? "Structural requirement" : "Requires attention",
-        section_a: inc.section_a,
-        explanation_what: inc.explanation_what,
-        evidence: inc.evidence_a,
-        evidence_verified: inc.evidence_verified,
-        conflictsWith: isMissingSection ? undefined : inc.section_b,
-        conflictQuote: isMissingSection ? undefined : inc.evidence_b,
-        objectives_unaddressed: inc.objectives_unaddressed,
-        recommendation: inc.suggested_fix,
-        isMissingSection
-      };
-    }) || []),
-    ...(scan?.verifications?.map((v, i) => ({
-      id: `ver-${i}`,
-      type: "strength" as AssessmentType,
-      title: (v.note ?? "").slice(0, 50) || "Verified alignment",
-      section: `${v.role_a} ↔ ${v.role_b}`,
-      targetSectionIndex: 0,
-      questionOrSubtitle: "Verified finding",
-      description: v.note ?? "This section pair shows substantive alignment.",
-      significance: "Strengthens the manuscript's overall coherence.",
-      evidence: "",
-      conflictsWith: "",
-      conflictQuote: "",
-      recommendation: "Preserve this coherent correspondence during panel presentation."
-    })) || [])
-  ];
+  const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : (v7?.inconsistencies ?? []).map(inc => ({
+    id: inc.inconsistency_id, type: 'major-issue', title: inc.explanation_what || 'Finding',
+    section: `${inc.section_a} ? ${inc.section_b}`, targetSectionIndex: inc.pair_order,
+    questionOrSubtitle: `Pair ${inc.pair_order}`, description: inc.explanation_why,
+    significance: 'Requires attention', section_a: inc.section_a,
+    explanation_what: inc.explanation_what, evidence: inc.evidence_a,
+    evidence_verified: inc.evidence_verified, conflictsWith: inc.section_b,
+    conflictQuote: inc.evidence_b, recommendation: inc.suggested_fix,
+  }));
 
   const scanWithRefs = scan as (LegacyScanResponse & { references?: CitedReference[] }) | undefined;
   const rawCitationsList = (scan?.citations && scan.citations.length > 0)
@@ -154,37 +122,20 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
         };
       });
 
-  const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : (scan?.inconsistencies ?? []).flatMap((inc, i) => {
-     const itemId = inc.inconsistency_id || `inc-${i}`;
-     const t = (inc.finding_status === 'key_strength' ? "key-strength" : (inc.coherence_score || 0) < 60 ? "major-issue" : "affected-section") as AssessmentType;
-     const p: typeof PARAGRAPHS = [];
-     if (inc.section_a) p.push({
-       type: "section", chapter: "", heading: inc.section_a, text: inc.evidence_a || inc.explanation_what,
-       assessments: [{ itemId, type: t, phrase: inc.evidence_a || inc.explanation_what }]
-     });
-     if (inc.section_b) p.push({
-       type: "section", chapter: "", heading: inc.section_b, text: inc.evidence_b || inc.explanation_why,
-       assessments: [{ itemId, type: t, phrase: inc.evidence_b || inc.explanation_why }]
-     });
-     return p;
-  });
-
-  const findingsCount = isSample ? localItems.length : (scan?.inconsistencies?.length ?? 0);
-  const sectionsCount = isSample
-    ? new Set(localParagraphs.filter(para => para.assessments.length > 0).map(para => para.heading)).size
-    : new Set((scan?.inconsistencies ?? []).flatMap(inc => [inc.section_a, inc.section_b]).filter(Boolean).map(section => section.trim().toLowerCase())).size;
+  const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : (v7?.inconsistencies ?? []).flatMap(inc => inc.evidence_verified ? inc.evidence_quotes.map(quote => ({
+    type: 'section', chapter: '', heading: quote.section, text: quote.text,
+    assessments: [{ itemId: inc.inconsistency_id, type: 'major-issue' as AssessmentType, phrase: quote.text }],
+  })) : []);
+  const findingsCount = localItems.length;
+  const sectionsCount = new Set((v7?.inconsistencies ?? []).flatMap(inc => [inc.section_a, inc.section_b])).size;
   const recommendations = isSample
-    ? localItems.filter(item => item.evidence?.trim() && item.recommendation?.trim())
-        .map(item => ({ id: item.id, quote: item.evidence!, revision: item.recommendation }))
-    : (scan?.inconsistencies ?? []).flatMap((inc, index) => {
-        const quote = inc.evidence_a?.trim() || inc.evidence_b?.trim();
-        return quote && inc.suggested_fix?.trim() ? [{ id: inc.inconsistency_id || `inc-${index}`, quote, revision: inc.suggested_fix.trim() }] : [];
-      });
+    ? localItems.filter(item => item.evidence?.trim() && item.recommendation?.trim()).map(item => ({ id: item.id, quote: item.evidence!, revision: item.recommendation }))
+    : (v7?.recommendations ?? []).map(rec => ({ id: rec.recommendation_id, section: rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
 
   const reportSections = useMemo(() => isSample
     ? PARAGRAPHS.map((para, index): ReportSection => ({ key: `${index}:${sectionRole(para.heading)}`, name: para.heading,
         role: sectionRole(para.heading), text: para.text, status: para.text.split(/\s+/).length >= 40 ? 'Present' : 'Stub' }))
-    : buildReportSections(scan?.template_toc || [], scan?.sections_analyzed || [], scan?.missing_sections || [], manuscriptText),
+    : buildReportSections([], v7?.sections_analyzed || [], [], manuscriptText),
     [isSample, scan, manuscriptText]);
   const activeSection = reportSections.find(section => section.key === activeSectionRole);
 
@@ -197,32 +148,21 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
       const para = PARAGRAPHS.find(p => sectionRole(p.heading) === section.role);
       return localItems.filter(item => para?.assessments.some(assessment => assessment.itemId === item.id));
     }
-    return localItems.filter(item => scan?.inconsistencies.some((inc, index) =>
-      (inc.inconsistency_id || `inc-${index}`) === item.id &&
-      (sectionRole(inc.section_a) === section.role || sectionRole(inc.section_b || '') === section.role)) ||
-      scan?.verifications?.some((v, index) => item.id === `ver-${index}` &&
-        (sectionRole(v.role_a) === section.role || sectionRole(v.role_b) === section.role)));
+    return localItems.filter(item => sectionRole(item.section_a || '') === section.role || sectionRole(item.conflictsWith || '') === section.role);
   }
 
   function renderSectionText(section: ReportSection) {
-    const matches = section.key === 'full-manuscript'
-      ? localItems.flatMap(item => [item.evidence, item.conflictQuote]
-          .filter((phrase): phrase is string => !!phrase?.trim())
-          .map(phrase => ({ phrase, type: item.type })))
-      : isSample
-      ? (PARAGRAPHS.find(p => sectionRole(p.heading) === section.role)?.assessments || [])
-      : sectionFindings(section).flatMap(item => [item.evidence, item.conflictQuote]
-          .filter((phrase): phrase is string => !!phrase?.trim())
-          .map(phrase => ({ phrase, type: item.type })));
-    const ordered = matches.map(match => ({ ...match, index: section.text.indexOf(match.phrase) }))
-      .filter(match => match.index >= 0).sort((a, b) => a.index - b.index);
+    const quotes = (v7?.inconsistencies ?? []).filter(inc => inc.evidence_verified)
+      .flatMap(inc => inc.evidence_quotes)
+      .filter(quote => section.key === 'full-manuscript' || sectionRole(quote.section) === section.role)
+      .map(quote => quote.text);
+    const ranges = verifiedQuoteRanges(section.text, quotes);
     const nodes: React.ReactNode[] = [];
     let cursor = 0;
-    ordered.forEach((match, index) => {
-      if (match.index < cursor) return;
-      nodes.push(section.text.slice(cursor, match.index));
-      nodes.push(<mark key={index} className={ST[match.type].hl}>{match.phrase}</mark>);
-      cursor = match.index + match.phrase.length;
+    ranges.forEach(({ start, end }, index) => {
+      nodes.push(section.text.slice(cursor, start));
+      nodes.push(<mark key={index} className="bg-rose-200 rounded px-0.5">{section.text.slice(start, end)}</mark>);
+      cursor = end;
     });
     nodes.push(section.text.slice(cursor));
     return nodes;
@@ -311,44 +251,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   };
 
 
-  const SAMPLE_VERIFICATIONS: Record<string, { alignment: 'substantive' | 'superficial'; note: string }> = {
-    "introduction|objectives": {
-      alignment: "substantive",
-      note: "Research gap identified in the introduction directly motivates each specific research objective."
-    },
-    "objectives|methodology": {
-      alignment: "substantive",
-      note: "Methodology directly addresses all specific objectives with appropriate instruments and analytical procedures."
-    },
-    "methodology|results": {
-      alignment: "substantive",
-      note: "All statistical tests specified in Chapter 3 are executed and reported in Chapter 4."
-    }
-  };
-
-  const verificationByPair = new Map(
-    (scan?.verifications ?? []).map(v => [`${v.role_a}|${v.role_b}`, v] as const)
-  );
-  const dismissalByPair = new Map<string, string>(
-    (isSample ? SAMPLE_DISMISSED_PAIRS : scan?.score_breakdown?.coherence_detail?.dismissed_pairs ?? [])
-      .map(p => [`${p.role_a}|${p.role_b}`, p.reason] as const)
-  );
-  const allPairs: EnrichedPair[] = (
-    isSample
-      ? (SAMPLE_PAIRS as EnrichedPair[])
-      : ((scan?.score_breakdown?.coherence_detail?.pair_scores ?? []) as RolePairScore[])
-  )
-    .map(p => ({
-      ...p,
-      verification: isSample
-        ? SAMPLE_VERIFICATIONS[`${p.role_a}|${p.role_b}`]
-        : verificationByPair.get(`${p.role_a}|${p.role_b}`),
-      dismissalReason: dismissalByPair.get(`${p.role_a}|${p.role_b}`)
-    }))
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const visiblePairs = allPairs;
+  const allPairs = isSample ? [] : (v7?.manuscript_flow ?? []);
   const pairsCount = allPairs.length;
-  const activePair = activePairKey ? allPairs.find(p => `${p.role_a}__${p.role_b}` === activePairKey) ?? null : null;
+  const activePair = activePairKey ? allPairs.find(pair => String(pair.order) === activePairKey) ?? null : null;
 
   const citationsCount = localCitations.length;
   const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
@@ -590,7 +495,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
 
             {/* ── Coherence Pairs tab ── */}
             {activeTab === 'strong_coherence' && (
-              <CoherencePairsTab visiblePairs={visiblePairs} pairsCount={pairsCount} activePairKey={activePairKey} setActivePairKey={setActivePairKey} setActiveSectionRole={setActiveSectionRole} setMobilePane={setMobilePane} setShowPairingModal={setShowPairingModal} isDesktop={isDesktop} isSample={isSample} scan={scan} />
+              <CoherencePairsTab pairs={allPairs} activePairKey={activePairKey} onExplain={() => setShowPairingModal(true)}
+                onSelect={order => { setActivePairKey(current => current === order ? null : order); setActiveSectionRole(null); if (!isDesktop()) setMobilePane('xai'); }} />
             )}
 
             {/* ── Citations tab ── */}
@@ -627,115 +533,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
                 })}
                 {!sectionFindings(activeSection).length && <p className="text-sm text-gray-600">No findings were returned for this section.</p>}
               </div>
-            ) : activePair ? (() => {
-              const score = activePair.score ?? 0;
-              const strong = score >= PAR_SCORE;
-              const isIncluded = activePair.included !== false;
-              const sectionMissing = !isSample && pairHasMissingSection(activePair, scan?.sections_analyzed || []);
-              return (
-                <div className="px-6 py-6 space-y-5">
-                  {/* Pair header */}
-                  <div className="rounded-2xl p-5 border-2 border-indigo-200 bg-indigo-50/40">
-                    <div className="flex items-start justify-between mb-2.5">
-                      <span className="text-[10px] mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
-                        Role Pair Analysis
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActivePairKey(null)}
-                        aria-label="Close pair details"
-                        className="text-gray-400 hover:text-gray-700 transition-colors -mt-0.5 p-1 rounded-lg hover:bg-black/5 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true">
-                          <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug mb-1">
-                      {formatRoleLabel(activePair.role_a)} ↔ {formatRoleLabel(activePair.role_b)}
-                    </h3>
-                    <p className="text-xs text-indigo-700 font-medium">
-                      Counts for <span className="tabular-nums">{Math.round(activePair.weight * 100)}%</span> of the overall score
-                    </p>
-                  </div>
-
-                  {/* Score block */}
-                  {!sectionMissing && isIncluded && activePair.score != null && <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs mono font-bold uppercase tracking-wider text-gray-500">
-                        Pair Coherence Score
-                      </span>
-                      <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                        strong ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {sectionMissing ? "Can't compare — section missing" : strong ? 'Strong' : 'Needs work'}
-                      </span>
-                    </div>
-                    <p className="text-2xl font-bold mono text-gray-900 tabular-nums">
-                      {Math.round(score)} <span className="text-sm font-normal text-gray-400">/ 100</span>
-                    </p>
-                    <div
-                      className="h-2 rounded-full bg-gray-200 overflow-hidden"
-                      role="progressbar"
-                      aria-valuenow={Math.round(score)}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label="Pair coherence score"
-                    >
-                      <div
-                        className={`h-full rounded-full transition-all ${strong ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                        style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
-                      />
-                    </div>
-                  </div>}
-
-                  {/* Missing section check / Verification Note */}
-                  {sectionMissing || !isIncluded ? (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 font-medium leading-relaxed">
-                      This pair could not be evaluated — one or both sections are missing.
-                    </div>
-                  ) : activePair.dismissalReason ? (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900 leading-relaxed">
-                      <p className="font-bold mb-1">No material inconsistency found</p>
-                      <p>{activePair.dismissalReason.replaceAll('embedding-similarity score', 'text-similarity score')}</p>
-                    </div>
-                  ) : activePair.verification ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
-                          activePair.verification.alignment === 'superficial'
-                            ? 'bg-amber-50 border-amber-200 text-amber-900'
-                            : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                        }`}>
-                          {activePair.verification.alignment === 'substantive' ? 'Substantive Alignment' : 'Superficial Alignment'}
-                        </span>
-                      </div>
-                      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-2xs">
-                        <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed">
-                          {activePair.verification.note.replaceAll('embedding-similarity score', 'text-similarity score')}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
-                        No detailed alignment note available for this pair.
-                      </div>
-                      {activePair.reason && (
-                        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1 shadow-2xs">
-                          <p className="text-[10px] mono font-bold uppercase tracking-wider text-gray-400">
-                            Assessment Rationale
-                          </p>
-                          <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed">
-                            {activePair.reason}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+            ) : activePair ? (
+              <div className="px-6 py-6 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-base font-bold">{activePair.section_a} ? {activePair.section_b}</h2>
+                  <button type="button" onClick={() => setActivePairKey(null)} aria-label="Close pair details" className="text-gray-500">Close</button>
                 </div>
-              );
-                        })() : null}
+                <PairScores pair={activePair} />
+              </div>
+            ) : null}
           </div>
         </div>
 
