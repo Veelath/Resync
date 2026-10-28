@@ -1,4 +1,5 @@
 import type React from 'react';
+import { plainText } from './helpers';
 
 export function CoherenceAnalysis({ analysisExpanded, setAnalysisExpanded, analysisTab, setAnalysisTab, recommendations, synthesis, strongestAlignment, needsAttention, children }: {
   analysisExpanded: boolean; setAnalysisExpanded: React.Dispatch<React.SetStateAction<boolean>>;
@@ -29,20 +30,20 @@ export function CoherenceAnalysis({ analysisExpanded, setAnalysisExpanded, analy
               <div role="tabpanel" id="analysis-tab-panel" aria-labelledby={`analysis-tab-${analysisTab}`} className="px-5 py-6">
                 {analysisTab === 'synthesis' && <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-900">Summary</h3>
-                  <p className="text-sm leading-relaxed text-gray-600">{synthesis || 'Summary unavailable for this scan'}</p>
+                  <p className="text-sm leading-relaxed text-gray-600">{plainText(synthesis) || 'Summary unavailable for this scan'}</p>
           <div className="px-4 py-3 border-b border-gray-100 grid grid-cols-1 gap-2">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2.5">
               <span className="text-emerald-700 text-base leading-none" aria-hidden="true">✓</span>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-emerald-900">Strongest pair</h4>
-                <p className="text-xs text-emerald-800 truncate" title={strongestAlignment?.title}>{strongestAlignment?.title || "No scored pair"}</p>
+                <p className="text-xs text-emerald-800 truncate" title={plainText(strongestAlignment?.title)}>{plainText(strongestAlignment?.title) || "No scored pair"}</p>
               </div>
             </div>
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex items-start gap-2.5">
               <span className="text-rose-700 text-base leading-none" aria-hidden="true">!</span>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-rose-900">Weakest pair</h4>
-                <p className="text-xs text-rose-800 truncate" title={needsAttention?.title}>{needsAttention?.title || "No scored pair"}</p>
+                <p className="text-xs text-rose-800 truncate" title={plainText(needsAttention?.title)}>{plainText(needsAttention?.title) || "No scored pair"}</p>
               </div>
             </div>
           </div>
@@ -54,8 +55,8 @@ export function CoherenceAnalysis({ analysisExpanded, setAnalysisExpanded, analy
                       <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
                       <div className="min-w-0 flex-1 rounded-xl bg-gray-50 p-3 space-y-2">
                         {recommendation.section && <p className="text-xs font-semibold text-gray-600">{recommendation.section}</p>}
-                        <div className="rounded-lg bg-gray-100 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Original sentence</p><p className="text-xs text-gray-700 leading-relaxed">“{recommendation.quote || 'Verified source sentence unavailable'}”</p></div>
-                        <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 mb-1">Recommended revision</p><p className="text-xs text-gray-700 leading-relaxed">{recommendation.revision}</p></div>
+                        {recommendation.quote && <div className="rounded-lg bg-gray-100 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Original sentence</p><p className="text-xs text-gray-700 leading-relaxed">“{plainText(recommendation.quote)}”</p></div>}
+                        <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 mb-1">Recommended revision</p><p className="text-xs text-gray-700 leading-relaxed">{plainText(recommendation.revision)}</p></div>
                       </div>
                     </div>
                   )) : <p className="text-sm text-gray-500">No recommendations for this scan.</p>}

@@ -11,8 +11,8 @@ import { OverviewTab } from './OverviewTab';
 import { FindingsTab } from './FindingsTab';
 import { CoherencePairsTab } from './CoherencePairsTab';
 import { CitationsTab } from './CitationsTab';
-import { ManuscriptViewer } from './ManuscriptViewer';
-import { buildReportSections, citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview } from './helpers';
+import { ManuscriptViewer, PreviewLegend } from './ManuscriptViewer';
+import { buildReportSections, citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText } from './helpers';
 import { verifiedQuoteRanges } from './highlights';
 
 type Tab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
@@ -21,6 +21,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const result = isSample ? SAMPLE_REPORT : scan;
   const [manuscriptText, setManuscriptText] = useState<string | null>(isSample ? SAMPLE_MANUSCRIPT : null);
   const [manuscriptLoading, setManuscriptLoading] = useState(!isSample);
+  const [manuscriptReason, setManuscriptReason] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [analysisTab, setAnalysisTab] = useState<'synthesis' | 'recommendations'>('synthesis');
   const [analysisExpanded, setAnalysisExpanded] = useState(true);
@@ -38,9 +39,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     let cancelled = false;
     setManuscriptLoading(true);
     setManuscriptText(null);
+    setManuscriptReason(undefined);
     fetchManuscript(result.analysis_run_id).then(response => {
       if (cancelled) return;
       setManuscriptText(response.available && response.text ? normalizeManuscriptPreview(response.text) : null);
+      setManuscriptReason(response.reason);
     }).catch(() => { if (!cancelled) setManuscriptText(null); })
       .finally(() => { if (!cancelled) setManuscriptLoading(false); });
     return () => { cancelled = true; };
@@ -49,8 +52,24 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   if (!result) return null;
 
   const findings = result.inconsistencies.slice().sort((a, b) => a.pair_order - b.pair_order);
-  const displayTitle = isSample ? 'Guided Reading Outcomes' : extractDisplayTitle(manuscriptText) || result.doc_url.replace(/\.(docx|pdf|doc)$/i, '') || 'Document Coherence Scan';
+  const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result.doc_url);
+  const suppliedTitle = result.manuscript_title?.trim();
+  const loadedTitle = extractDisplayTitle(manuscriptText);
+  const displayTitle = isSample ? 'Guided Reading Outcomes' : (suppliedTitle && !/^https?:\/\/docs\.google\.com\//i.test(suppliedTitle) ? suppliedTitle : null)
+    || (loadedTitle && !/^https?:\/\/docs\.google\.com\//i.test(loadedTitle) ? loadedTitle : null)
+    || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const sections = buildReportSections(result.sections_analyzed, manuscriptText);
+  const flaggedPassages = Object.fromEntries(result.sections_analyzed.map(name => {
+    const passages = [
+      ...result.inconsistencies.filter(item => item.evidence_verified).flatMap(item => item.evidence_quotes.filter(quote => quote.section === name).map(quote => quote.text)),
+      ...result.manuscript_flow.flatMap(pair => [
+        ...(pair.section_a === name ? pair.culprit_sentences.section_a.map(item => item.sentence) : []),
+        ...(pair.section_b === name ? pair.culprit_sentences.section_b.map(item => item.sentence) : []),
+      ]),
+      ...result.recommendations.filter(item => item.section_b === name).map(item => item.original_sentence),
+    ];
+    return [name, new Set(passages.filter((passage): passage is string => !!passage?.trim())).size];
+  }));
   const activeSection = sections.find(section => section.key === activeSectionKey);
   const recommendations = result.recommendations.map(rec => ({ id: rec.recommendation_id, section: rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
   const citations: Citation[] = result.citations.map((citation, index) => ({
@@ -129,11 +148,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     <div className="hidden print:block p-8 bg-white space-y-4">
       <h1 className="text-2xl font-bold">ReSync Manuscript Coherence Report</h1>
       <p>{displayTitle} · {Math.round(result.overall_coherence_score)}/100 · {result.score_breakdown.band}</p>
-      <h2 className="font-bold">Summary</h2><p>{result.ai_synthesis.summary || 'Summary unavailable for this scan'}</p>
+      <h2 className="font-bold">Summary</h2><p>{plainText(result.ai_synthesis.summary) || 'Summary unavailable for this scan'}</p>
       <h2 className="font-bold">Findings</h2>
-      {findings.map(item => <section key={item.inconsistency_id}><h3 className="font-semibold">{item.section_a} → {item.section_b}</h3><p>{item.explanation_what}</p><p>{item.explanation_why}</p><p>{item.suggested_fix}</p></section>)}
+      {findings.map(item => <section key={item.inconsistency_id}><h3 className="font-semibold">{item.section_a} → {item.section_b}</h3><p>{plainText(item.explanation_what)}</p><p>{plainText(item.explanation_why)}</p><p>{plainText(item.suggested_fix)}</p></section>)}
       <h2 className="font-bold">Recommendations</h2>
-      {result.recommendations.map(item => <p key={item.recommendation_id}>{item.original_sentence || 'Verified source sentence unavailable'} → {item.recommended_revision}</p>)}
+      {result.recommendations.map(item => <p key={item.recommendation_id}>{item.original_sentence && `${plainText(item.original_sentence)} → `}{plainText(item.recommended_revision)}</p>)}
       <h2 className="font-bold">Citations</h2>
       {citations.map(citation => <p key={citation.id}>{citation.ref} {citation.url}</p>)}
     </div>
@@ -145,10 +164,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900" style={{ fontFamily: 'Georgia, serif' }}>{displayTitle}</h1>
             <p className="text-xs text-gray-500 mt-4">Overall assessment <strong>{result.score_breakdown.band}</strong> · {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
           </header>
+          <div className="mb-6"><PreviewLegend /></div>
           {manuscriptLoading && <p className="text-sm text-gray-600">Loading manuscript text…</p>}
           {!manuscriptLoading && (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
-            : <ManuscriptViewer result={result} />)}
+            : <ManuscriptViewer result={result} reason={manuscriptReason} />)}
         </div>
       </div>
       <div className={`${mobilePane === 'xai' ? 'flex w-full' : 'hidden'} lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100 print:flex print:w-full print:overflow-visible`}>
@@ -169,7 +189,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
                 }} className={`px-3 py-3 text-xs font-bold border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}>{tab.label}</button>)}
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
-              {activeTab === 'overview' && <OverviewTab reportSections={sections} setActiveSectionRole={setActiveSectionKey} />}
+              {activeTab === 'overview' && <OverviewTab reportSections={sections} flaggedPassages={flaggedPassages} textLoaded={!!manuscriptText} setActiveSectionRole={setActiveSectionKey} />}
               {activeTab === 'inconsistencies' && <FindingsTab findings={findings} expandedIssueIds={expandedIssueIds}
                 toggleIssueExpanded={id => setExpandedIssueIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next; })}
                 allExpanded={allExpanded} toggleAllExpanded={() => setExpandedIssueIds(allExpanded ? new Set() : new Set(result.inconsistencies.map(item => item.inconsistency_id)))} renderFeedback={renderFeedback} />}
@@ -180,9 +200,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
           </CoherenceAnalysis>
           {activeSection && <div className="p-6 space-y-4"><button type="button" onClick={() => setActiveSectionKey(null)} className="text-xs text-indigo-600">Close section</button>
             <h2 className="font-bold text-gray-900">{activeSection.name}</h2>
-            <p className="whitespace-pre-wrap text-sm text-gray-700">{activeSection.text ? highlighted(activeSection.text, activeSection.name) : 'Section text unavailable in this preview.'}</p>
+            <p className="whitespace-pre-wrap text-sm text-gray-700">{activeSection.text ? highlighted(plainText(activeSection.text), activeSection.name) : 'Section text unavailable in this preview.'}</p>
           </div>}
-          {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'} · {result.ai_text_indicator.disclaimer}</div>}
+          {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'} · A rough hint only, not proof that AI wrote the text. Well-written academic prose can score 40-60 on its own. Never use it alone to judge a submission.
+            <details className="mt-2"><summary className="cursor-pointer font-semibold text-indigo-700">More about this indicator</summary><p className="mt-2">{plainText(result.ai_text_indicator.disclaimer)}</p></details>
+          </div>}
         </div>
       </div>
     </main>

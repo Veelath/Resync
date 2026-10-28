@@ -1,6 +1,10 @@
 import type { V7ScanResponse } from '../../services/v7Result';
 
-export function ManuscriptViewer({ result }: { result: V7ScanResponse }) {
+export function PreviewLegend() {
+  return <p className="flex items-start gap-2 text-xs text-gray-600"><span className="mt-0.5 size-3 shrink-0 rounded-sm bg-rose-200" aria-hidden="true" />Highlighted passages: a sentence the analysis flagged in a weak section connection or tied to a finding.</p>;
+}
+
+export function ManuscriptViewer({ result, reason }: { result: V7ScanResponse; reason?: string }) {
   const passages = [
     ...result.inconsistencies.filter(finding => finding.evidence_verified).flatMap(finding =>
       finding.evidence_quotes.map(quote => ({
@@ -16,7 +20,10 @@ export function ManuscriptViewer({ result }: { result: V7ScanResponse }) {
     .filter(section => section.passages.length);
 
   return <div className="space-y-6">
-    <p className="text-sm text-gray-600">The full text of uploaded files isn't kept, so only the passages the analysis refers to are shown.</p>
+    <p className="text-sm text-gray-600">{/^https?:\/\/docs\.google\.com\//i.test(result.doc_url)
+      ? reason === 'private' ? "The document is not shared with 'Anyone with the link can view', so only the passages the analysis refers to are shown."
+        : "We couldn't load the document text right now, so only the passages the analysis refers to are shown."
+      : "The full text of uploaded files isn't kept, so only the passages the analysis refers to are shown."}</p>
     {sections.length ? sections.map(section => <section key={section.name} className="border-t border-gray-100 pt-5 space-y-4">
       <h2 className="font-bold text-gray-900">{section.name}</h2>
       {section.passages.map((passage, index) => <div key={index} className="space-y-1">
