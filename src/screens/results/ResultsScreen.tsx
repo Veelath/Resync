@@ -53,6 +53,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
 
   if (!result) return null;
 
+  const findings = result.inconsistencies.slice().sort((a, b) => a.pair_order - b.pair_order);
   const displayTitle = isSample ? 'Guided Reading Outcomes' : extractDisplayTitle(manuscriptText) || result.doc_url.replace(/\.(docx|pdf|doc)$/i, '') || 'Document Coherence Scan';
   const sections = buildReportSections(result.sections_analyzed, manuscriptText);
   const activeSection = sections.find(section => section.key === activeSectionKey);
@@ -142,9 +143,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
       <p>{displayTitle} · {result.overall_coherence_score}/100 · {result.score_breakdown.band}</p>
       <h2 className="font-bold">Summary</h2><p>{result.ai_synthesis.summary || 'Summary unavailable for this scan'}</p>
       <h2 className="font-bold">Findings</h2>
-      {result.inconsistencies.map(item => <section key={item.inconsistency_id}><h3 className="font-semibold">{item.section_a} → {item.section_b}</h3><p>{item.explanation_what}</p><p>{item.explanation_why}</p><p>{item.suggested_fix}</p></section>)}
+      {findings.map(item => <section key={item.inconsistency_id}><h3 className="font-semibold">{item.section_a} → {item.section_b}</h3><p>{item.explanation_what}</p><p>{item.explanation_why}</p><p>{item.suggested_fix}</p></section>)}
       <h2 className="font-bold">Recommendations</h2>
       {result.recommendations.map(item => <p key={item.recommendation_id}>{item.original_sentence || 'Verified source sentence unavailable'} → {item.recommended_revision}</p>)}
+      <h2 className="font-bold">Citations</h2>
+      {citations.map(citation => <p key={citation.id}>{citation.ref} {citation.url}</p>)}
     </div>
     <main className="flex-1 flex overflow-hidden print:block print:overflow-visible">
       <div className={`${mobilePane === 'report' ? 'flex' : 'hidden'} lg:flex flex-1 min-w-0 overflow-y-auto bg-white flex-col print:flex print:overflow-visible`}>
@@ -180,7 +183,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'overview' && <OverviewTab reportSections={sections} setActiveSectionRole={key => { setActiveSectionKey(key); setActivePairKey(null); }} />}
-              {activeTab === 'inconsistencies' && <FindingsTab findings={result.inconsistencies} expandedIssueIds={expandedIssueIds}
+              {activeTab === 'inconsistencies' && <FindingsTab findings={findings} expandedIssueIds={expandedIssueIds}
                 toggleIssueExpanded={id => setExpandedIssueIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next; })}
                 allExpanded={allExpanded} toggleAllExpanded={() => setExpandedIssueIds(allExpanded ? new Set() : new Set(result.inconsistencies.map(item => item.inconsistency_id)))} renderFeedback={renderFeedback} />}
               {activeTab === 'strong_coherence' && <CoherencePairsTab pairs={result.manuscript_flow} activePairKey={activePairKey} onExplain={() => setShowPairingModal(true)}

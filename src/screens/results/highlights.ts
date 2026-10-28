@@ -8,8 +8,8 @@ export function verifiedQuoteRanges(text: string, quotes: string[]): { start: nu
     const char = text[i];
     const next = /\s/.test(char) ? i + (text.slice(i).match(/^\s+/)?.[0].length ?? 1) : i + 1;
     const clean = normalize(text.slice(i, next));
-    for (const letter of clean) {
-      normalized += letter;
+    for (let unit = 0; unit < clean.length; unit++) {
+      normalized += clean[unit];
       starts.push(i);
       ends.push(next);
     }
