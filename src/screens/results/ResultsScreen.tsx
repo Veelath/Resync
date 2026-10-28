@@ -54,12 +54,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const sections = buildReportSections(result.sections_analyzed, manuscriptText);
   const activeSection = sections.find(section => section.key === activeSectionKey);
   const activePair = result.manuscript_flow.find(pair => String(pair.order) === activePairKey);
-  const dimensions = ([
-    ['objectives_alignment', 'Objectives alignment', 'bg-amber-500'],
-    ['methodology_fit', 'Methodology fit', 'bg-emerald-500'],
-    ['numeric_consistency', 'Numeric consistency', 'bg-rose-500'],
-    ['claim_support', 'Claim support', 'bg-blue-500'],
-  ] as const).map(([key, label, color]) => ({ key, label, color, value: result.score_breakdown.dimensions[key] }));
   const recommendations = result.recommendations.map(rec => ({ id: rec.recommendation_id, section: rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
   const citations: Citation[] = result.citations.map((citation, index) => ({
     id: `cit-${index}`, ref: citationText(citation.citation_raw_reference_text), url: citation.citation_primary_link || '',
@@ -161,7 +155,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
       </div>
       <div className={`${mobilePane === 'xai' ? 'flex w-full' : 'hidden'} lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100 print:flex print:w-full print:overflow-visible`}>
         <div className="flex-1 overflow-y-auto print:overflow-visible">
-          <ResultsScorePanel score={result.overall_coherence_score} displayBand={result.score_breakdown.band} advisoryDimensions={dimensions} />
+          <ResultsScorePanel result={result} />
           <CoherenceAnalysis analysisExpanded={analysisExpanded} setAnalysisExpanded={setAnalysisExpanded} analysisTab={analysisTab} setAnalysisTab={setAnalysisTab}
             recommendations={recommendations} synthesis={result.ai_synthesis.summary}
             strongestAlignment={result.ai_synthesis.strongest_pair ? { title: `${result.ai_synthesis.strongest_pair.section_a} → ${result.ai_synthesis.strongest_pair.section_b} · ${result.ai_synthesis.strongest_pair.score}/100` } : undefined}
