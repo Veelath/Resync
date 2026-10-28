@@ -9,7 +9,7 @@ export function ScoreRing({ score, size = 112, band, showLabel = true, solidArc 
   const r = 38; const circ = 2 * Math.PI * r;
   const tone = scoreBandTone(score, band);
   const label = band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
-  const displayedScore = Number(score.toFixed(2));
+  const displayedScore = Math.round(score);
   return (
     <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${displayedScore} out of 100, ${label}`}>
       <div className="relative" style={{ width: size, height: size }}>

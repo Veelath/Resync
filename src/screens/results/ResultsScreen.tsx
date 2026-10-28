@@ -130,7 +130,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} setShowPairingModal={setShowPairingModal} />
     <div className="hidden print:block p-8 bg-white space-y-4">
       <h1 className="text-2xl font-bold">ReSync Manuscript Coherence Report</h1>
-      <p>{displayTitle} · {result.overall_coherence_score}/100 · {result.score_breakdown.band}</p>
+      <p>{displayTitle} · {Math.round(result.overall_coherence_score)}/100 · {result.score_breakdown.band}</p>
       <h2 className="font-bold">Summary</h2><p>{result.ai_synthesis.summary || 'Summary unavailable for this scan'}</p>
       <h2 className="font-bold">Findings</h2>
       {findings.map(item => <section key={item.inconsistency_id}><h3 className="font-semibold">{item.section_a} → {item.section_b}</h3><p>{item.explanation_what}</p><p>{item.explanation_why}</p><p>{item.suggested_fix}</p></section>)}
