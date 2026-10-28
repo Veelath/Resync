@@ -10,7 +10,7 @@ import { ProcessingScreen } from './screens/ProcessingScreen';
 import { UploadScreen } from './screens/UploadScreen';
 import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
-import type { LegacyScanResponse } from './services/api';
+import type { V7ScanResponse } from './services/v7Result';
 import { ToastBanner, loadNotifications, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification } from './components/ScanNotifications';
 
 export default function App() {
@@ -220,9 +220,9 @@ export default function App() {
       {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result) => { setScanResult(result); handleScanCompleted(); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
       {screen === "results" && (isSampleMode || scanResult?.result_version === 'v7'
-        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as LegacyScanResponse & { template_toc?: string[] }} isSample={isSampleMode} />
+        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
-            <p>This scan was made with an older version of ReSync. Please run a new scan.</p>
+            <p>{scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.'}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>
           </div>)}
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}

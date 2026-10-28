@@ -35,29 +35,6 @@ export interface ScanRequest {
   style_reference_url?: string;
 }
 
-export interface InconsistencyReport {
-  section_a: string;
-  section_b: string;
-  coherence_score: number | null;
-  explanation_what: string;
-  explanation_why: string;
-  suggested_fix: string;
-  inconsistency_id?: string;
-  evidence_a?: string;
-  evidence_b?: string;
-  evidence_verified?: boolean;
-  objectives_unaddressed?: string[];
-  finding_status?: string;
-}
-
-export interface VerificationReport {
-  role_a: string;
-  role_b: string;
-  score: number;
-  alignment: string;
-  note: string;
-}
-
 export interface CitationReport {
   citation_raw_reference_text: string;
   citation_is_accessible: boolean;
@@ -70,48 +47,11 @@ export interface CitationReport {
   citation_is_cited_in_text?: boolean;
 }
 
-export interface ScoreBreakdownResponse {
-  overall_score: number;
-  band: string;
-  structural_completeness_score?: number | null;
-  cross_chapter_coherence_score?: number | null;
-  citation_integrity_score?: number | null;
-  biggest_lever?: { criterion: string; current_score: number; potential_point_gain: number; reason: string } | null;
-  structural_detail?: Record<string, any>;
-  coherence_detail?: Record<string, any>;
-  citation_detail?: Record<string, any>;
-}
-
 export interface AITextIndicatorResponse {
   overall_score?: number | null;
   section_scores?: Record<string, number | null>;
   flagged_sections?: string[];
   disclaimer?: string;
-}
-
-export interface LegacyScanResponse {
-  status: string;
-  analysis_run_id: string;
-  user_id: string;
-  manuscript_id: string;
-  doc_url: string;
-  overall_coherence_score: number;
-  sections_analyzed: string[];
-  missing_sections: string[];
-  has_all_required_sections: boolean;
-  auto_detected?: boolean;
-  detection_confidence?: number;
-  section_scores: Array<Record<string, any>>;
-  inconsistencies_found: number;
-  inconsistencies: InconsistencyReport[];
-  verifications?: VerificationReport[];
-  citations_audited: number;
-  citations: CitationReport[];
-  score_breakdown?: ScoreBreakdownResponse;
-  ai_text_indicator?: AITextIndicatorResponse;
-  db_save_status: string;
-  notification_dispatched: boolean;
-  credits_remaining?: number;
 }
 
 export interface ScanOptions {

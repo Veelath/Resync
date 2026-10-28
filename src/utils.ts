@@ -46,20 +46,3 @@ export function getScoreTier(band?: string): ScoreTier {
     };
   }
 }
-
-// Mirrors services/scoring.py PAR_SCORE (scoring.py:131) -- the calibrated
-// role-pair score threshold above which a coherence link counts as
-// "strong" rather than needing attention.
-export const PAR_SCORE = 80;
-
-/**
- * Turns a backend role/section key into readable label text, e.g.
- * "cross_chapter_coherence" -> "Cross Chapter Coherence",
- * "__document__" -> "Document".
- */
-export function formatRoleLabel(role: string): string {
-  return role
-    .replace(/^__+|__+$/g, '')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}

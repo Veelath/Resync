@@ -1,19 +1,18 @@
 import type { Citation } from '../../data/sampleReport';
-import type { RolePairScore, CitedReference } from '../../types';
+import type { CitationReport } from '../../services/api';
 
 // A citation is public only when its source could be reached without permission. Everything else
 // (paywalled, login/bot-walled, broken or unresolvable, or no link at all) is treated as private.
-export function citationAccess(c: CitedReference): Citation["status"] {
+export function citationAccess(c: CitationReport): Citation["status"] {
   if (c.citation_is_accessible === true) return "public";
   if (c.citation_is_accessible === false) return "private";
   const s = c.citation_status || "";
-  if (["verified_doi", "verified_url", "verified_metadata", "metadata_mismatch", "accessible"].includes(s) || c.status === "Accessible") {
+  if (["verified_doi", "verified_url", "verified_metadata", "metadata_mismatch", "accessible"].includes(s)) {
     return "public";
   }
   return "private";
 }
 
-export type ActiveResultsTab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
 
 
@@ -68,12 +67,10 @@ export const CITE_BADGE: Record<Citation["status"], { label: string; badge: stri
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 // ─── Results ──────────────────────────────────────────────────────────────────
-export type MobileResultsPane = "findings" | "report" | "xai";
 
 export const SECTION_STATUS = {
   Present: { icon: '✓', color: 'text-emerald-700' },
   Stub: { icon: '⚠', color: 'text-amber-800' },
-  Missing: { icon: '✗', color: 'text-rose-700' },
   Unassessed: { icon: '—', color: 'text-gray-600' },
 };
 export type ReportSection = { key: string; name: string; role: string; text: string; status: keyof typeof SECTION_STATUS };
@@ -90,18 +87,14 @@ export function sectionRole(name: string): string {
   return aliases[heading] || heading;
 }
 
-export function buildReportSections(topics: string[], detected: string[], missing: string[], text: string | null): ReportSection[] {
-  const sectionNames = topics.length ? topics : [...new Set([...detected, ...missing])];
+export function buildReportSections(detected: string[], text: string | null): ReportSection[] {
   const lines = (text || '').split(/\r?\n/);
-  const roles = new Set([...topics, ...detected, ...missing].map(sectionRole));
-  const tocHeadings = lines.filter(line => /\s{2,}(?:\d+|[ivxlcdm]+)\s*$/i.test(line))
-    .map(line => sectionRole(line.replace(/\s{2,}(?:\d+|[ivxlcdm]+)\s*$/i, '')));
-  const boundaries = new Set([...roles, ...tocHeadings]);
+  const roles = new Set(detected.map(sectionRole));
   const headings = lines.flatMap((line, index) => {
     const role = sectionRole(line);
-    return line.trim() && boundaries.has(role) ? [{ role, index }] : [];
+    return line.trim() && roles.has(role) ? [{ role, index }] : [];
   });
-  return sectionNames.map((name, index) => {
+  return detected.map((name, index) => {
     const role = sectionRole(name);
     const matching = headings.filter(heading => heading.role === role);
     const content = matching.map(heading => {
@@ -110,16 +103,9 @@ export function buildReportSections(topics: string[], detected: string[], missin
     }).join('\n\n');
     const wordCount = content ? content.split(/\s+/).length : 0;
     // shortcut: only explicit heading matches supply text; upgrade when the API returns section spans.
-    const status = missing.some(section => sectionRole(section) === role) ? 'Missing'
-      : !detected.some(section => sectionRole(section) === role) ? 'Unassessed'
-      : matching.length && wordCount >= 40 ? 'Present'
-      : matching.length && wordCount > 0 ? 'Stub' : 'Unassessed';
+    const status = wordCount >= 40 ? 'Present' : wordCount > 0 ? 'Stub' : 'Unassessed';
     return { key: `${index}:${role}`, name, role, text: content, status };
   });
-}
-
-export function pairHasMissingSection(pair: Pick<RolePairScore, 'role_a' | 'role_b'>, detected: string[]) {
-  return [pair.role_a, pair.role_b].some(role => !detected.some(name => sectionRole(name) === sectionRole(role)));
 }
 
 export function citationContains(reference: string, value: string | number | undefined) {
@@ -147,9 +133,3 @@ export function normalizeManuscriptPreview(text: string) {
   // Google Docs plain-text exports can start with a Roman-numeral page marker.
   return text.replace(/^\uFEFF?(?:(?:[ \t]*\r?\n)*[ \t]*(?:\d+|[ivxlcdm]+)[ \t]*(?:\r?\n)+)/i, '');
 }
-
-
-export type EnrichedPair = RolePairScore & {
-    verification?: { alignment: string; note: string };
-    dismissalReason?: string;
-  };

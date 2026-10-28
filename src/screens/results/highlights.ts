@@ -1,6 +1,6 @@
 // Match the backend's verified quotes across whitespace and smart/straight quote differences.
 export function verifiedQuoteRanges(text: string, quotes: string[]): { start: number; end: number }[] {
-  const normalize = (value: string) => value.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').toLowerCase();
+  const normalize = (value: string) => value.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ');
   let normalized = '';
   const starts: number[] = [];
   const ends: number[] = [];
@@ -15,10 +15,13 @@ export function verifiedQuoteRanges(text: string, quotes: string[]): { start: nu
     }
     i = next;
   }
-  return quotes.flatMap(quote => {
+  const matches = quotes.flatMap(quote => {
     const needle = normalize(quote.trim());
     if (!needle) return [];
     const at = normalized.indexOf(needle);
     return at < 0 ? [] : [{ start: starts[at], end: ends[at + needle.length - 1] }];
-  }).sort((a, b) => a.start - b.start).filter((range, index, all) => index === 0 || range.start >= all[index - 1].end);
+  }).sort((a, b) => a.start - b.start);
+  const ranges: { start: number; end: number }[] = [];
+  for (const match of matches) if (!ranges.length || match.start >= ranges[ranges.length - 1].end) ranges.push(match);
+  return ranges;
 }

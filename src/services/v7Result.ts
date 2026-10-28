@@ -15,7 +15,7 @@ export interface ManuscriptFlowPair {
     coherence_scores: { overall: number; objectives: number; methodology: number; numeric: number; claims: number };
     highlighted_inconsistencies: { section: string; quote: string; what: string; why: string }[];
     recommendations: { section: string; original_sentence: string | null; recommended_revision: string }[];
-    reference_list: { section: string; quote: string }[];
+    reference_list: { section: string; sentence: string }[];
   } | null;
 }
 

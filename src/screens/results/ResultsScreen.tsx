@@ -1,634 +1,215 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+﻿import { useEffect, useState } from 'react';
+import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
-import type { LegacyScanResponse } from '../../services/api';
+import type { V7ScanResponse, V7Inconsistency } from '../../services/v7Result';
+import { API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
+import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
-import { ManuscriptViewer } from './ManuscriptViewer';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CoherenceAnalysis } from './CoherenceAnalysis';
 import { OverviewTab } from './OverviewTab';
 import { FindingsTab } from './FindingsTab';
 import { CoherencePairsTab, PairScores } from './CoherencePairsTab';
 import { CitationsTab } from './CitationsTab';
-import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from '../../data/sampleReport';
-import type { AssessmentType, AssessmentItem, Citation } from '../../data/sampleReport';
-import type React from 'react';
-import type { CitedReference, RolePairScore, AITextIndicator } from '../../types';
-import type { V7ScanResponse } from '../../services/v7Result';
+import { buildReportSections, citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview } from './helpers';
 import { verifiedQuoteRanges } from './highlights';
-import { API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
-import { formatRoleLabel, PAR_SCORE } from '../../utils.js';
 
-import { type EnrichedPair, type ActiveResultsTab, type MobileResultsPane, type ReportSection, citationText, SECTION_STATUS, sectionRole, buildReportSections, pairHasMissingSection, citationContains, extractDisplayTitle, normalizeManuscriptPreview, citationAccess } from './helpers';
+type Tab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 
-export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (s: Screen) => void; onBack: () => void; scan?: (LegacyScanResponse & { template_toc?: string[] }) | null; isSample?: boolean }) {
-  const v7 = scan as unknown as V7ScanResponse | null | undefined;
-  const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
-  const [activePairKey, setActivePairKey] = useState<string | null>(null);
-  const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
-  const [activeTab, setActiveTab] = useState<ActiveResultsTab>('overview');
+export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean }) {
+  const result = isSample ? SAMPLE_REPORT : scan;
+  const [manuscriptText, setManuscriptText] = useState<string | null>(isSample ? SAMPLE_MANUSCRIPT : null);
+  const [manuscriptError, setManuscriptError] = useState<string | null>(null);
+  const [manuscriptLoading, setManuscriptLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [analysisTab, setAnalysisTab] = useState<'synthesis' | 'recommendations'>('synthesis');
   const [analysisExpanded, setAnalysisExpanded] = useState(true);
+  const [mobilePane, setMobilePane] = useState<'report' | 'xai'>('report');
+  const [activeSectionKey, setActiveSectionKey] = useState<string | null>(null);
+  const [activePairKey, setActivePairKey] = useState<string | null>(null);
+  const [showPairingModal, setShowPairingModal] = useState(false);
+  const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
+  const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
   const [feedbackMap, setFeedbackMap] = useState<Record<string, 'up' | 'down'>>({});
   const [feedbackPending, setFeedbackPending] = useState<Record<string, boolean>>({});
   const [feedbackError, setFeedbackError] = useState<Record<string, string>>({});
-  const sectionPaneRef = useRef<HTMLDivElement>(null);
-  const sectionReadingPositions = useRef<Record<string, number>>({});
-  const [manuscriptText, setManuscriptText] = useState<string | null>(null);
-  const [manuscriptLoading, setManuscriptLoading] = useState(false);
-  const [manuscriptError, setManuscriptError] = useState<string | null>(null);
-  const [showPairingModal, setShowPairingModal] = useState(false);
-  const [citationFilter, setCitationFilter] = useState<Citation["status"] | null>(null);
-  const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
-
-  const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
 
   useEffect(() => {
-    if (!isSample && scan?.analysis_run_id && manuscriptText === null && !manuscriptError) {
-      setManuscriptLoading(true);
-      setManuscriptError(null);
-      fetchManuscript(scan.analysis_run_id)
-        .then(res => {
-          if (res.available && res.text) setManuscriptText(normalizeManuscriptPreview(res.text));
-          else if (res.reason === 'private') setManuscriptError("Document is no longer accessible");
-          else if (res.reason === 'non_gdocs') setManuscriptError("Preview is only available for Google Docs");
-          else if (res.reason === 'timeout') setManuscriptError("Manuscript preview timed out. Please try again.");
-          else if (res.status) setManuscriptError(`Manuscript preview unavailable (HTTP ${res.status})`);
-          else setManuscriptError("Manuscript preview unavailable");
-        })
-        .catch(() => setManuscriptError("Manuscript preview unavailable"))
-        .finally(() => setManuscriptLoading(false));
-    }
-  }, [isSample, scan?.analysis_run_id, manuscriptText, manuscriptError]);
+    if (isSample || !result?.analysis_run_id) return;
+    let cancelled = false;
+    setManuscriptLoading(true);
+    fetchManuscript(result.analysis_run_id).then(response => {
+      if (cancelled) return;
+      if (response.available && response.text) setManuscriptText(normalizeManuscriptPreview(response.text));
+      else if (response.reason === 'private') setManuscriptError('Document is no longer accessible');
+      else if (response.reason === 'non_gdocs') setManuscriptError('Preview is only available for Google Docs');
+      else if (response.reason === 'timeout') setManuscriptError('Manuscript preview timed out. Please try again.');
+      else if (response.status) setManuscriptError(`Manuscript preview unavailable (HTTP ${response.status})`);
+      else setManuscriptError('Manuscript preview unavailable');
+    }).catch(() => { if (!cancelled) setManuscriptError('Manuscript preview unavailable'); })
+      .finally(() => { if (!cancelled) setManuscriptLoading(false); });
+    return () => { cancelled = true; };
+  }, [isSample, result?.analysis_run_id]);
 
-  const cleanedTitle = useMemo(() => extractDisplayTitle(manuscriptText), [manuscriptText]);
+  if (!result) return null;
 
-  const cleanedFilename = scan?.doc_url
-    ? (scan.doc_url.startsWith('http')
-        ? (() => {
-            try {
-              const url = new URL(scan.doc_url);
-              if (url.hostname.toLowerCase() === 'docs.google.com' && /^\/document\/d\//i.test(url.pathname)) {
-                return 'Google Docs manuscript';
-              }
-              return decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || '')
-                .replace(/\.(docx|pdf|doc)$/i, '') || null;
-            } catch {
-              return null;
-            }
-          })()
-        : scan.doc_url.replace(/\.(docx|pdf|doc)$/i, ''))
-    : null;
-
-  const displayTitle = isSample
-    ? "Predictors of Academic Burnout Among STEM Undergraduates in Philippine Universities"
-    : (
-        (scan as any)?.manuscript_title ||
-        (scan as any)?.title ||
-        cleanedTitle ||
-        cleanedFilename ||
-        "Document Coherence Scan"
-      );
-
-  const localItems: AssessmentItem[] = isSample ? ASSESSMENT_ITEMS : (v7?.inconsistencies ?? []).map(inc => ({
-    id: inc.inconsistency_id, type: 'major-issue', title: inc.explanation_what || 'Finding',
-    section: `${inc.section_a} ? ${inc.section_b}`, targetSectionIndex: inc.pair_order,
-    questionOrSubtitle: `Pair ${inc.pair_order}`, description: inc.explanation_why,
-    significance: 'Requires attention', section_a: inc.section_a,
-    explanation_what: inc.explanation_what, evidence: inc.evidence_a,
-    evidence_verified: inc.evidence_verified, conflictsWith: inc.section_b,
-    conflictQuote: inc.evidence_b, recommendation: inc.suggested_fix,
-  }));
-
-  const scanWithRefs = scan as (LegacyScanResponse & { references?: CitedReference[] }) | undefined;
-  const rawCitationsList = (scan?.citations && scan.citations.length > 0)
-    ? (scan.citations as CitedReference[])
-    : (scanWithRefs?.references && scanWithRefs.references.length > 0)
-      ? scanWithRefs.references
-      : [];
-
-  const localCitations: Citation[] = isSample
-    ? CITATIONS
-    : rawCitationsList.map((c: CitedReference, i) => {
-        const status = citationAccess(c);
-
-        return {
-          id: `cit-${i}`,
-          ref: citationText(c.citation_raw_reference_text || c.citation || ""),
-          url: c.citation_primary_link || "",
-          status,
-          title: citationText(c.citation_crossref_title),
-          authors: citationText(c.citation_authors_parsed),
-          year: c.citation_year_parsed
-        };
-      });
-
-  const localParagraphs: typeof PARAGRAPHS = isSample ? PARAGRAPHS : (v7?.inconsistencies ?? []).flatMap(inc => inc.evidence_verified ? inc.evidence_quotes.map(quote => ({
-    type: 'section', chapter: '', heading: quote.section, text: quote.text,
-    assessments: [{ itemId: inc.inconsistency_id, type: 'major-issue' as AssessmentType, phrase: quote.text }],
-  })) : []);
-  const findingsCount = localItems.length;
-  const sectionsCount = new Set((v7?.inconsistencies ?? []).flatMap(inc => [inc.section_a, inc.section_b])).size;
-  const recommendations = isSample
-    ? localItems.filter(item => item.evidence?.trim() && item.recommendation?.trim()).map(item => ({ id: item.id, quote: item.evidence!, revision: item.recommendation }))
-    : (v7?.recommendations ?? []).map(rec => ({ id: rec.recommendation_id, section: rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
-
-  const reportSections = useMemo(() => isSample
-    ? PARAGRAPHS.map((para, index): ReportSection => ({ key: `${index}:${sectionRole(para.heading)}`, name: para.heading,
-        role: sectionRole(para.heading), text: para.text, status: para.text.split(/\s+/).length >= 40 ? 'Present' : 'Stub' }))
-    : buildReportSections([], v7?.sections_analyzed || [], [], manuscriptText),
-    [isSample, scan, manuscriptText]);
-  const activeSection = reportSections.find(section => section.key === activeSectionRole);
-
-  useEffect(() => {
-    if (activeSectionRole && sectionPaneRef.current && (mobilePane === 'xai' || isDesktop())) sectionPaneRef.current.scrollTop = sectionReadingPositions.current[activeSectionRole] || 0;
-  }, [activeSectionRole, mobilePane]);
-
-  function sectionFindings(section: ReportSection) {
-    if (isSample) {
-      const para = PARAGRAPHS.find(p => sectionRole(p.heading) === section.role);
-      return localItems.filter(item => para?.assessments.some(assessment => assessment.itemId === item.id));
-    }
-    return localItems.filter(item => sectionRole(item.section_a || '') === section.role || sectionRole(item.conflictsWith || '') === section.role);
-  }
-
-  function renderSectionText(section: ReportSection) {
-    const quotes = (v7?.inconsistencies ?? []).filter(inc => inc.evidence_verified)
-      .flatMap(inc => inc.evidence_quotes)
-      .filter(quote => section.key === 'full-manuscript' || sectionRole(quote.section) === section.role)
-      .map(quote => quote.text);
-    const ranges = verifiedQuoteRanges(section.text, quotes);
-    const nodes: React.ReactNode[] = [];
-    let cursor = 0;
-    ranges.forEach(({ start, end }, index) => {
-      nodes.push(section.text.slice(cursor, start));
-      nodes.push(<mark key={index} className="bg-rose-200 rounded px-0.5">{section.text.slice(start, end)}</mark>);
-      cursor = end;
-    });
-    nodes.push(section.text.slice(cursor));
-    return nodes;
-  }
-
-  const score = isSample ? 74 : v7?.overall_coherence_score ?? 0;
-  const displayBand = isSample ? "Solid" : v7?.score_breakdown?.band;
-  const advisoryDimensions = ([
+  const displayTitle = isSample ? 'Guided Reading Outcomes' : extractDisplayTitle(manuscriptText) || result.doc_url.replace(/\.(docx|pdf|doc)$/i, '') || 'Document Coherence Scan';
+  const sections = buildReportSections(result.sections_analyzed, manuscriptText);
+  const activeSection = sections.find(section => section.key === activeSectionKey);
+  const activePair = result.manuscript_flow.find(pair => String(pair.order) === activePairKey);
+  const dimensions = ([
     ['objectives_alignment', 'Objectives alignment', 'bg-amber-500'],
     ['methodology_fit', 'Methodology fit', 'bg-emerald-500'],
     ['numeric_consistency', 'Numeric consistency', 'bg-rose-500'],
     ['claim_support', 'Claim support', 'bg-blue-500'],
-  ] as const).map(([key, label, color]) => ({ key, label, color, value: isSample ? SAMPLE_ADVISORY_DIMENSIONS[key] : v7?.score_breakdown?.dimensions[key] ?? null }));
-  const privateCount = localCitations.filter(c => c.status === "private").length;
-  type STEntry = { hl: string; pill: string; accentColor: string; label: string };
-  const ST: Record<AssessmentType, STEntry> = {
-    "overall-status": {
-      hl: "bg-amber-200 rounded px-0.5",
-      pill: "bg-surface-warn border border-amber-200 text-amber-800",
-      accentColor: "#d97706", label: "Overall Status",
-    },
-    strength: {
-      hl: "bg-emerald-200 rounded px-0.5",
-      pill: "bg-surface-success border border-emerald-200 text-emerald-800",
-      accentColor: "#059669", label: "Verified Alignment",
-    },
-    "key-strength": {
-      hl: "bg-emerald-200 rounded px-0.5",
-      pill: "bg-surface-success border border-emerald-200 text-emerald-800",
-      accentColor: "#059669", label: "Key Strength",
-    },
-    "major-issue": {
-      hl: "bg-rose-200 rounded px-0.5",
-      pill: "bg-surface-error border border-rose-200 text-rose-800",
-      accentColor: "#e11d48", label: "Major Issue",
-    },
-    "affected-section": {
-      hl: "bg-blue-200 rounded px-0.5",
-      pill: "bg-surface-info border border-blue-200 text-blue-800",
-      accentColor: "#2563eb", label: "Affected Section",
-    },
-  };
-
-  const strongestAlignment = isSample ? localItems.find(i => i.type === "key-strength" || i.type === "strength") : v7?.ai_synthesis.strongest_pair ? { title: `${v7.ai_synthesis.strongest_pair.section_a} → ${v7.ai_synthesis.strongest_pair.section_b} · ${v7.ai_synthesis.strongest_pair.score}/100` } : undefined;
-  const needsAttention = isSample ? localItems.find(i => i.type === "major-issue") : v7?.ai_synthesis.weakest_pair ? { title: `${v7.ai_synthesis.weakest_pair.section_a} → ${v7.ai_synthesis.weakest_pair.section_b} · ${v7.ai_synthesis.weakest_pair.score}/100` } : undefined;
-  const synthesis = isSample ? OVERALL_ASSESSMENT.statusDescription : v7?.ai_synthesis.summary;
-
-  function renderPara(para: typeof localParagraphs[0]) {
-    if (!para.assessments.length) return <>{para.text}</>;
-    let txt = para.text;
-    const parts: React.ReactNode[] = [];
-    para.assessments.forEach(({ phrase, type, itemId }) => {
-      const idx = txt.indexOf(phrase);
-      if (idx === -1) return;
-      parts.push(txt.slice(0, idx));
-      parts.push(
-        <mark key={itemId + phrase}
-          className={ST[type].hl}>
-          {phrase}
-        </mark>
-      );
-      txt = txt.slice(idx + phrase.length);
-    });
-    parts.push(txt);
-    return <>{parts}</>;
-  }
-
-  // ── Tab data ──
-  const inconsistencyItems = localItems.filter(i => i.type === "key-strength" || i.type === "major-issue" || i.type === "affected-section");
-  const visibleInconsistencies = inconsistencyItems;
-  const inconsistenciesCount = inconsistencyItems.length;
-
-  const toggleIssueExpanded = (id: string) => {
-    setExpandedIssueIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const allExpanded = visibleInconsistencies.length > 0 && visibleInconsistencies.every(item => expandedIssueIds.has(item.id));
-  const toggleAllExpanded = () => {
-    if (allExpanded) setExpandedIssueIds(new Set());
-    else setExpandedIssueIds(new Set(visibleInconsistencies.map(i => i.id)));
-  };
-
-
-  const allPairs = isSample ? [] : (v7?.manuscript_flow ?? []);
-  const pairsCount = allPairs.length;
-  const activePair = activePairKey ? allPairs.find(pair => String(pair.order) === activePairKey) ?? null : null;
-
-  const citationsCount = localCitations.length;
-  const citeCount = (s: Citation["status"]) => localCitations.filter(c => c.status === s).length;
-  const displayedCitations = citationFilter ? localCitations.filter(c => c.status === citationFilter) : localCitations;
-
-  function renderCitation(cite: Citation) {
-    const link = /^https?:\/\//i.test(cite.url)
-      ? <a href={cite.url} target="_blank" rel="noopener noreferrer" className="citation-text text-indigo-700 hover:underline">{cite.url}</a>
-      : <span>{cite.url}</span>;
-    const parts = cite.url ? cite.ref.split(cite.url) : [cite.ref];
-    return (
-      <div className="flex-1 min-w-0 citation-text text-[13px] text-gray-800 leading-relaxed">
-        {cite.title && !citationContains(cite.ref, cite.title) && <p className="font-bold">{cite.title}</p>}
-        {cite.authors && !citationContains(cite.ref, cite.authors) && <p>{cite.authors}</p>}
-        {cite.year && !citationContains(cite.ref, cite.year) && <p>{cite.year}</p>}
-        <p>{parts[0]}{parts.length > 1 && link}{parts.slice(1).join('')}</p>
-        {cite.url && parts.length === 1 && <p className="mt-1">{link}</p>}
-      </div>
-    );
-  }
-
-  const aiText: AITextIndicator | null = isSample ? SAMPLE_AI_TEXT : (scan?.ai_text_indicator ?? null);
-
-  const tabList: Array<{ id: ActiveResultsTab; label: string }> = [
-    { id: 'overview',         label: 'Overview' },
-    { id: 'inconsistencies',  label: `Findings (${inconsistenciesCount})` },
-    { id: 'strong_coherence', label: `Coherence Pairs (${pairsCount})` },
-    { id: 'citations',        label: `Citations (${citationsCount})` },
+  ] as const).map(([key, label, color]) => ({ key, label, color, value: result.score_breakdown.dimensions[key] }));
+  const recommendations = result.recommendations.map(rec => ({ id: rec.recommendation_id, section: rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
+  const citations: Citation[] = result.citations.map((citation, index) => ({
+    id: `cit-${index}`, ref: citationText(citation.citation_raw_reference_text), url: citation.citation_primary_link || '',
+    status: citationAccess(citation), title: citationText(citation.citation_crossref_title),
+    authors: citationText(citation.citation_authors_parsed), year: citation.citation_year_parsed,
+  }));
+  const displayedCitations = citationFilter ? citations.filter(citation => citation.status === citationFilter) : citations;
+  const citeCount = (status: Citation['status']) => citations.filter(citation => citation.status === status).length;
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'inconsistencies', label: `Findings (${result.inconsistencies.length})` },
+    { id: 'strong_coherence', label: `Coherence Pairs (${result.manuscript_flow.length})` },
+    { id: 'citations', label: `Citations (${citations.length})` },
   ];
+  const allExpanded = result.inconsistencies.length > 0 && result.inconsistencies.every(item => expandedIssueIds.has(item.inconsistency_id));
 
-  // Feedback is only valid for inconsistency findings that exist in the DB.
-  // Strengths ("ver-N") and the sample overall-status card are excluded.
-  const canGiveFeedback = (it: AssessmentItem | null): it is AssessmentItem =>
-    !!it &&
-    (it.type === "key-strength" || it.type === "major-issue" || it.type === "affected-section") &&
-    (isSample || !!scan?.inconsistencies?.some(i => i.inconsistency_id === it.id));
+  function highlighted(text: string, section?: string): React.ReactNode[] {
+    const quotes = result!.inconsistencies.filter(item => item.evidence_verified)
+      .flatMap(item => item.evidence_quotes)
+      .filter(quote => !section || quote.section === section)
+      .map(quote => quote.text);
+    const ranges = verifiedQuoteRanges(text, quotes);
+    const nodes: React.ReactNode[] = [];
+    let cursor = 0;
+    ranges.forEach(({ start, end }, index) => {
+      nodes.push(text.slice(cursor, start));
+      nodes.push(<mark key={index} className="bg-rose-200 rounded px-0.5">{text.slice(start, end)}</mark>);
+      cursor = end;
+    });
+    nodes.push(text.slice(cursor));
+    return nodes;
+  }
 
-  async function handleFeedback(item: AssessmentItem, helpful: boolean) {
-    if (feedbackMap[item.id] || feedbackPending[item.id]) return;          // one vote per finding
-    if (!canGiveFeedback(item)) return;
-    if (isSample) {                                                         // sample: local only, no network
-      setFeedbackMap(p => ({ ...p, [item.id]: helpful ? 'up' : 'down' }));
-      return;
-    }
-    const userId = scan?.user_id;
-    if (!userId) return;
-
-    setFeedbackPending(p => ({ ...p, [item.id]: true }));
-    setFeedbackError(p => { const n = { ...p }; delete n[item.id]; return n; });
+  async function handleFeedback(item: V7Inconsistency, helpful: boolean) {
+    const id = item.inconsistency_id;
+    if (feedbackMap[id] || feedbackPending[id]) return;
+    if (isSample) { setFeedbackMap(previous => ({ ...previous, [id]: helpful ? 'up' : 'down' })); return; }
+    setFeedbackPending(previous => ({ ...previous, [id]: true }));
+    setFeedbackError(previous => ({ ...previous, [id]: '' }));
     try {
-      const res = await fetch(`${API_BASE_URL}/api/issues/${encodeURIComponent(item.id)}/feedback`, {
-        method: 'POST',
-        headers: await authHeaders({ 'Content-Type': 'application/json', 'X-User-Id': userId }),
+      const response = await fetch(`${API_BASE_URL}/api/issues/${encodeURIComponent(id)}/feedback`, {
+        method: 'POST', headers: await authHeaders({ 'Content-Type': 'application/json', 'X-User-Id': result!.user_id }),
         body: JSON.stringify({ helpful }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);                   // fetch does not throw on 4xx/5xx
-      setFeedbackMap(p => ({ ...p, [item.id]: helpful ? 'up' : 'down' }));
-    } catch (err) {
-      console.error('Failed to submit issue feedback:', err);
-      setFeedbackError(p => ({ ...p, [item.id]: 'Could not save feedback. Please try again.' }));
-    } finally {
-      setFeedbackPending(p => ({ ...p, [item.id]: false }));
-    }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setFeedbackMap(previous => ({ ...previous, [id]: helpful ? 'up' : 'down' }));
+    } catch (error) {
+      console.error('Failed to submit issue feedback:', error);
+      setFeedbackError(previous => ({ ...previous, [id]: 'Could not save feedback. Please try again.' }));
+    } finally { setFeedbackPending(previous => ({ ...previous, [id]: false })); }
   }
 
-  // Single feedback widget used by BOTH the Inconsistencies cards and the right-pane XAI card.
-  function renderFeedback(item: AssessmentItem) {
-    if (!canGiveFeedback(item)) return null;
-    const vote = feedbackMap[item.id];
-    const locked = !!vote || !!feedbackPending[item.id];
-    const btn = (kind: 'up' | 'down', helpful: boolean, icon: React.ReactNode, label: string, activeCls: string) => (
-      <button
-        type="button"
-        disabled={locked}
-        aria-pressed={vote === kind}
-        aria-label={label}
-        title={label}
-        onClick={e => { e.stopPropagation(); handleFeedback(item, helpful); }}
-        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${
-          vote === kind ? activeCls : 'bg-white border-gray-200 text-gray-600'
-        } ${locked ? `cursor-not-allowed ${vote === kind ? '' : 'opacity-40'}` : 'cursor-pointer hover:bg-gray-50 hover:border-gray-300'}`}>
-        <span>{icon}</span><span>{label}</span>
-      </button>
-    );
-    const thumbUpIcon = (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true">
-        <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
-      </svg>
-    );
-    const thumbDownIcon = (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true">
-        <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h3a2 2 0 012 2v7a2 2 0 01-2 2h-3" />
-      </svg>
-    );
-    return (
-      <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap" onClick={e => e.stopPropagation()} aria-live="polite">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">Was this finding helpful?</span>
-          {vote && <span className="text-[11px] text-emerald-700">Thanks — feedback recorded.</span>}
-          {feedbackError[item.id] && <span className="text-[11px] text-rose-600">{feedbackError[item.id]}</span>}
-        </div>
-        <div className="flex items-center gap-2">
-          {btn('up', true, thumbUpIcon, 'Helpful', 'bg-emerald-50 border-emerald-300 text-emerald-700')}
-          {btn('down', false, thumbDownIcon, 'Not helpful', 'bg-rose-50 border-rose-300 text-rose-700')}
-        </div>
-      </div>
-    );
+  function renderFeedback(item: V7Inconsistency) {
+    const id = item.inconsistency_id;
+    return <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap" aria-live="polite">
+      <span className="text-xs text-gray-500">{feedbackMap[id] ? 'Thanks — feedback recorded.' : feedbackError[id] || 'Was this finding helpful?'}</span>
+      <div className="flex gap-2">{([['up', 'Helpful', true], ['down', 'Not helpful', false]] as const).map(([kind, label, helpful]) =>
+        <button key={kind} type="button" disabled={!!feedbackMap[id] || !!feedbackPending[id]} aria-pressed={feedbackMap[id] === kind}
+          onClick={() => handleFeedback(item, helpful)} className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 hover:bg-gray-50 disabled:opacity-50">{label}</button>)}</div>
+    </div>;
   }
 
-  return (
-    <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50 print:h-auto print:overflow-visible font-sans">
+  function renderCitation(citation: Citation) {
+    return <div className="flex-1 min-w-0 citation-text text-[13px] text-gray-800 leading-relaxed">
+      {citation.title && !citationContains(citation.ref, citation.title) && <p className="font-bold">{citation.title}</p>}
+      {citation.authors && !citationContains(citation.ref, citation.authors) && <p>{citation.authors}</p>}
+      {citation.year && !citationContains(citation.ref, citation.year) && <p>{citation.year}</p>}
+      <p>{citation.ref}</p>
+      {/^https?:\/\//i.test(citation.url) && <a href={citation.url} target="_blank" rel="noopener noreferrer" className="text-indigo-700 hover:underline">{citation.url}</a>}
+    </div>;
+  }
 
-      {/* ── Print-only summary block ── */}
-      <div className="hidden print:block p-8 border-b-2 border-gray-900 bg-white mb-6 break-inside-avoid-page">
-        <div className="flex justify-between items-start border-b border-gray-200 pb-4 mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Resync Manuscript Coherence Report</h1>
-            <h2 className="text-lg text-gray-700 font-medium mt-1">{displayTitle}</h2>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-indigo-700">{Math.round(score)} / 100</div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-              Band: {displayBand || "Pending"}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">{new Date().toLocaleString()}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-6 mt-4">
-          <div>
-            <h3 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2">Key Strengths</h3>
-            {isSample ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
-                {OVERALL_ASSESSMENT.strengths.map((str, idx) => (
-                  <li key={idx}>{str}</li>
-                ))}
-              </ul>
-            ) : (scan?.inconsistencies?.some(i => i.finding_status === 'key_strength') || (scan?.verifications && scan.verifications.length > 0)) ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
-                {scan?.inconsistencies?.filter(i => i.finding_status === 'key_strength').map((inc, idx) => (
-                  <li key={`strength-${idx}`}><strong>{inc.section_a} ↔ {inc.section_b}:</strong> {inc.explanation_what || inc.explanation_why}</li>
-                ))}
-                {scan?.verifications?.map((v, idx) => (
-                  <li key={idx}><strong>{v.role_a} ↔ {v.role_b}:</strong> {v.note || "Aligned"}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-gray-500 italic">
-                Strengths can only be verified when the manuscript contains both sections in a comparable pair. Missing from this manuscript: {(scan?.missing_sections && scan.missing_sections.length > 0) ? scan.missing_sections.join(', ') : 'None (no comparable pairs met verification threshold)'}.
-              </p>
-            )}
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-rose-800 uppercase tracking-wider mb-2">Major Issues</h3>
-            {isSample ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
-                {OVERALL_ASSESSMENT.majorIssues.map((iss, idx) => (
-                  <li key={idx}>{iss}</li>
-                ))}
-              </ul>
-            ) : (scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').length ?? 0) > 0 ? (
-              <ul className="text-xs text-gray-700 space-y-1.5 list-disc pl-4">
-                {scan?.inconsistencies?.filter(i => i.finding_status === 'material_issue').map((inc, idx) => (
-                  <li key={idx}>
-                    <strong>{inc.section_a} ↔ {inc.section_b}:</strong> {inc.explanation_what || inc.explanation_why}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-gray-500 italic">No major issues detected.</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Navbar ── */}
-      <div className="hidden print:block p-8 space-y-6">
-        <h2 className="text-lg font-bold">All findings and recommendations</h2>
-        {localItems.map(item => (
-          <section key={item.id} className="space-y-2">
-            <h3 className="font-bold">{item.title}</h3>
-            <p>{item.section}</p><p>{item.description}</p><p>{item.significance}</p>
-            {item.evidence && <p>{item.evidence}</p>}
-            {item.conflictQuote && <p>{item.conflictQuote}</p>}
-            <p>{item.recommendation}</p>
-          </section>
-        ))}
-      </div>
-      <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} setShowPairingModal={setShowPairingModal} />
-
-      {/* ── Results body ── */}
-      <main className="flex-1 flex overflow-hidden print:h-auto print:overflow-visible print:block relative">
-
-        {/* Manuscript stays visible independently of the analysis tabs. */}
-        <ManuscriptViewer mobilePane={mobilePane} isSample={isSample} displayTitle={displayTitle} displayBand={displayBand} findingsCount={findingsCount} sectionsCount={sectionsCount} manuscriptLoading={manuscriptLoading} manuscriptText={manuscriptText} manuscriptError={manuscriptError} localParagraphs={localParagraphs} localCitations={localCitations} privateCount={privateCount} ST={ST} renderPara={renderPara} renderSectionText={renderSectionText} renderCitation={renderCitation} scan={scan} />
-
-        {/* ══ RIGHT: Explainable AI & Recommendations Panel ══ */}
-        <div className={`${mobilePane === "xai" ? "flex w-full" : "hidden"} print-force-visible print:block print:w-full print:h-auto print:overflow-visible print:border-none print:static lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100`}>
-          <div ref={sectionPaneRef} className="flex-1 overflow-y-auto"
-            onScroll={e => { if (activeSectionRole && e.currentTarget.clientHeight > 0) sectionReadingPositions.current[activeSectionRole] = e.currentTarget.scrollTop; }}>
-          {/* Score ring */}
-           <ResultsScorePanel score={score} displayBand={displayBand} advisoryDimensions={advisoryDimensions} />
-
-          <CoherenceAnalysis analysisExpanded={analysisExpanded} setAnalysisExpanded={setAnalysisExpanded} analysisTab={analysisTab} setAnalysisTab={setAnalysisTab} recommendations={recommendations} synthesis={synthesis} strongestAlignment={strongestAlignment} needsAttention={needsAttention}>
-          <div className="bg-white border-b border-gray-200 px-3 flex items-center gap-1 overflow-x-auto xl:overflow-visible shadow-2xs shrink-0 print:hidden" role="tablist" aria-label="Results tabs">
-            {tabList.map(tab => (
-              <button
-                key={tab.id}
-                id={`results-tab-${tab.id}`}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls="results-tab-panel"
-                tabIndex={activeTab === tab.id ? 0 : -1}
-                onClick={() => setActiveTab(tab.id)}
-                onKeyDown={e => {
-                  const index = tabList.findIndex(item => item.id === tab.id);
-                  const next = e.key === 'ArrowRight' ? (index + 1) % tabList.length
-                    : e.key === 'ArrowLeft' ? (index - 1 + tabList.length) % tabList.length
-                    : e.key === 'Home' ? 0 : e.key === 'End' ? tabList.length - 1 : -1;
-                  if (next < 0) return;
-                  e.preventDefault();
-                  setActiveTab(tabList[next].id);
-                  document.getElementById(`results-tab-${tabList[next].id}`)?.focus();
-                }}
-                className={`px-3.5 py-3 text-xs font-bold border-b-2 -mb-px transition-colors duration-150 cursor-pointer whitespace-nowrap tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1 ${
-                  activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'
-                }`}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-                <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
-                  {activeTab === 'overview' && <OverviewTab reportSections={reportSections} setActiveSectionRole={setActiveSectionRole} />}
-            {activeTab === 'inconsistencies' && (
-              <FindingsTab visibleInconsistencies={visibleInconsistencies} toggleAllExpanded={toggleAllExpanded} allExpanded={allExpanded} inconsistenciesCount={inconsistenciesCount} expandedIssueIds={expandedIssueIds} toggleIssueExpanded={toggleIssueExpanded} ST={ST} renderFeedback={renderFeedback} />
-            )}
-
-            {/* ── Coherence Pairs tab ── */}
-            {activeTab === 'strong_coherence' && (
-              <CoherencePairsTab pairs={allPairs} activePairKey={activePairKey} onExplain={() => setShowPairingModal(true)}
-                onSelect={order => { setActivePairKey(current => current === order ? null : order); setActiveSectionRole(null); if (!isDesktop()) setMobilePane('xai'); }} />
-            )}
-
-            {/* ── Citations tab ── */}
-            {activeTab === 'citations' && (
-              <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations} citationsCount={citationsCount} citeCount={citeCount} renderCitation={renderCitation} scan={scan} />
-            )}
-
-                </div>
-          </CoherenceAnalysis>
-
-            {activeSection ? (
-              <div className="p-6 space-y-5">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">{activeSection.name}</h2>
-                  <span className={`text-sm font-semibold ${SECTION_STATUS[activeSection.status].color}`}>{activeSection.status === 'Unassessed' ? 'Not checked yet' : activeSection.status}</span>
-                </div>
-                {activeSection.status === 'Missing' || activeSection.status === 'Unassessed' ? (
-                  <p className="text-sm text-gray-700">This section was not detected in the manuscript.</p>
-                ) : (
-                  <div className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed break-words">{renderSectionText(activeSection)}</div>
-                )}
-                <h3 className="text-sm font-bold text-gray-900">Findings on this section</h3>
-                {sectionFindings(activeSection).map(item => {
-                  const finding = scan?.inconsistencies.find(inc => inc.inconsistency_id === item.id || `inc-${scan.inconsistencies.indexOf(inc)}` === item.id);
-                  return (
-                    <div key={item.id} className="rounded-xl border border-gray-200 p-4 space-y-3 text-sm text-gray-700">
-                      <h4 className="font-bold text-indigo-700">{item.title}</h4>
-                      <p>{finding?.explanation_what || item.questionOrSubtitle}</p>
-                      <p>{finding?.explanation_why || item.description}</p>
-                      {item.recommendation && <p><strong>Suggested fix: </strong>{item.recommendation}</p>}
-                      {renderFeedback(item)}
-                    </div>
-                  );
-                })}
-                {!sectionFindings(activeSection).length && <p className="text-sm text-gray-600">No findings were returned for this section.</p>}
-              </div>
-            ) : activePair ? (
-              <div className="px-6 py-6 space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-bold">{activePair.section_a} ? {activePair.section_b}</h2>
-                  <button type="button" onClick={() => setActivePairKey(null)} aria-label="Close pair details" className="text-gray-500">Close</button>
-                </div>
-                <PairScores pair={activePair} />
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-      </main>
-
-      {/* ── Mobile bottom navigation bar ── */}
-      <nav className="lg:hidden shrink-0 grid grid-cols-2 border-t border-gray-200 bg-white print:hidden z-30" aria-label="Mobile report panes">
-        {([
-          { id: "report" as const, label: "Manuscript" },
-          { id: "xai" as const, label: "Analysis" },
-        ]).map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setMobilePane(id)}
-            aria-current={mobilePane === id ? "page" : undefined}
-            className={`py-3 text-xs font-bold transition-colors ${
-              mobilePane === id
-                ? "text-indigo-600 border-t-2 border-indigo-600 -mt-px bg-indigo-50/30"
-                : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {/* ── Pairing Modal ── */}
-      {showPairingModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowPairingModal(false)}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <div>
-                <h3 className="text-base font-bold text-gray-900">How Section Pairing Works</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Resync evaluates cross-chapter alignment across 7 weighted academic role pairs calibrated to standard defense criteria.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPairingModal(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer shrink-0 ml-3"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
-              {[
-                { pair: "Objectives ↔ Methodology", weight: "22%", desc: "checks methodological alignment" },
-                { pair: "Methodology ↔ Results", weight: "20%", desc: "verifies data matches procedures" },
-                { pair: "Results ↔ Discussion", weight: "16%", desc: "ensures claims grounded in findings" },
-                { pair: "Objectives ↔ Conclusion", weight: "16%", desc: "confirms research questions are resolved" },
-                { pair: "Introduction ↔ Objectives", weight: "12%", desc: "validates research gap" },
-                { pair: "Abstract ↔ Conclusion", weight: "8%", desc: "executive summary coverage" },
-                { pair: "Discussion ↔ Conclusion", weight: "6%", desc: "logical progression" },
-              ].map(({ pair, weight, desc }) => (
-                <div key={pair} className="flex items-start justify-between gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/60">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-gray-900">{pair}</p>
-                    <p className="text-[11px] text-gray-600">{desc}</p>
-                  </div>
-                  <span className="shrink-0 px-2.5 py-1 rounded-full text-xs font-black mono bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    {weight}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowPairingModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-gray-900 text-white hover:bg-gray-800 transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  return <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50 print:h-auto print:overflow-visible font-sans">
+    <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} setShowPairingModal={setShowPairingModal} />
+    <div className="hidden print:block p-8 bg-white space-y-4">
+      <h1 className="text-2xl font-bold">ReSync Manuscript Coherence Report</h1>
+      <p>{displayTitle} · {result.overall_coherence_score}/100 · {result.score_breakdown.band}</p>
+      <h2 className="font-bold">Summary</h2><p>{result.ai_synthesis.summary || 'Summary unavailable for this scan'}</p>
+      <h2 className="font-bold">Findings</h2>
+      {result.inconsistencies.map(item => <section key={item.inconsistency_id}><h3 className="font-semibold">{item.section_a} → {item.section_b}</h3><p>{item.explanation_what}</p><p>{item.explanation_why}</p><p>{item.suggested_fix}</p></section>)}
+      <h2 className="font-bold">Recommendations</h2>
+      {result.recommendations.map(item => <p key={item.recommendation_id}>{item.original_sentence || 'Verified source sentence unavailable'} → {item.recommended_revision}</p>)}
     </div>
-  );
+    <main className="flex-1 flex overflow-hidden print:block print:overflow-visible">
+      <div className={`${mobilePane === 'report' ? 'flex' : 'hidden'} lg:flex flex-1 min-w-0 overflow-y-auto bg-white flex-col print:flex print:overflow-visible`}>
+        <div className="sticky top-0 z-20 px-6 py-3 bg-white border-b border-gray-100 text-xs font-semibold text-gray-500 print:hidden">Manuscript preview</div>
+        <div className="w-full max-w-5xl mx-auto px-6 lg:px-10 py-10">
+          <header className="mb-7"><p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 mb-5">{isSample ? 'Sample manuscript report' : 'Manuscript report'}</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900" style={{ fontFamily: 'Georgia, serif' }}>{displayTitle}</h1>
+            <p className="text-xs text-gray-500 mt-4">Overall assessment <strong>{result.score_breakdown.band}</strong> · {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
+          </header>
+          {manuscriptLoading && <p className="text-sm text-gray-600">Loading manuscript text…</p>}
+          {manuscriptText ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
+            : !manuscriptLoading && <div className="space-y-4"><p role={manuscriptError ? 'alert' : undefined} className="text-sm text-gray-600">{manuscriptError || 'Manuscript preview unavailable'} · Showing verified evidence excerpts.</p>
+              {result.inconsistencies.filter(item => item.evidence_verified).flatMap(item => item.evidence_quotes).map((quote, index) => <section key={index} className="border-t border-gray-100 pt-4"><h2 className="font-bold text-gray-900">{quote.section}</h2><p className="text-sm text-gray-700">{highlighted(quote.text, quote.section)}</p></section>)}
+            </div>}
+        </div>
+      </div>
+      <div className={`${mobilePane === 'xai' ? 'flex w-full' : 'hidden'} lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100 print:flex print:w-full print:overflow-visible`}>
+        <div className="flex-1 overflow-y-auto print:overflow-visible">
+          <ResultsScorePanel score={result.overall_coherence_score} displayBand={result.score_breakdown.band} advisoryDimensions={dimensions} />
+          <CoherenceAnalysis analysisExpanded={analysisExpanded} setAnalysisExpanded={setAnalysisExpanded} analysisTab={analysisTab} setAnalysisTab={setAnalysisTab}
+            recommendations={recommendations} synthesis={result.ai_synthesis.summary}
+            strongestAlignment={result.ai_synthesis.strongest_pair ? { title: `${result.ai_synthesis.strongest_pair.section_a} → ${result.ai_synthesis.strongest_pair.section_b} · ${result.ai_synthesis.strongest_pair.score}/100` } : undefined}
+            needsAttention={result.ai_synthesis.weakest_pair ? { title: `${result.ai_synthesis.weakest_pair.section_a} → ${result.ai_synthesis.weakest_pair.section_b} · ${result.ai_synthesis.weakest_pair.score}/100` } : undefined}>
+            <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-3 print:hidden" role="tablist" aria-label="Results tabs">
+              {tabs.map((tab, index) => <button key={tab.id} type="button" role="tab" id={`results-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls="results-tab-panel" tabIndex={activeTab === tab.id ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)} onKeyDown={event => {
+                  const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+                  if (next < 0) return;
+                  event.preventDefault();
+                  setActiveTab(tabs[next].id);
+                  document.getElementById(`results-tab-${tabs[next].id}`)?.focus();
+                }} className={`px-3 py-3 text-xs font-bold border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}>{tab.label}</button>)}
+            </div>
+            <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
+              {activeTab === 'overview' && <OverviewTab reportSections={sections} setActiveSectionRole={key => { setActiveSectionKey(key); setActivePairKey(null); }} />}
+              {activeTab === 'inconsistencies' && <FindingsTab findings={result.inconsistencies} expandedIssueIds={expandedIssueIds}
+                toggleIssueExpanded={id => setExpandedIssueIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next; })}
+                allExpanded={allExpanded} toggleAllExpanded={() => setExpandedIssueIds(allExpanded ? new Set() : new Set(result.inconsistencies.map(item => item.inconsistency_id)))} renderFeedback={renderFeedback} />}
+              {activeTab === 'strong_coherence' && <CoherencePairsTab pairs={result.manuscript_flow} activePairKey={activePairKey} onExplain={() => setShowPairingModal(true)}
+                onSelect={order => { setActivePairKey(current => current === order ? null : order); setActiveSectionKey(null); if (!window.matchMedia('(min-width: 1024px)').matches) setMobilePane('xai'); }} />}
+              {activeTab === 'citations' && <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
+                citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />}
+            </div>
+          </CoherenceAnalysis>
+          {activeSection && <div className="p-6 space-y-4"><button type="button" onClick={() => setActiveSectionKey(null)} className="text-xs text-indigo-600">Close section</button>
+            <h2 className="font-bold text-gray-900">{activeSection.name}</h2>
+            <p className="whitespace-pre-wrap text-sm text-gray-700">{activeSection.text ? highlighted(activeSection.text, activeSection.name) : 'Section text unavailable in this preview.'}</p>
+          </div>}
+          {activePair && <div className="p-6 space-y-4"><button type="button" onClick={() => setActivePairKey(null)} className="text-xs text-indigo-600">Close pair</button>
+            <h2 className="font-bold text-gray-900">{activePair.section_a} → {activePair.section_b}</h2><PairScores pair={activePair} />
+          </div>}
+          {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'} · {result.ai_text_indicator.disclaimer}</div>}
+        </div>
+      </div>
+    </main>
+    <nav className="lg:hidden shrink-0 grid grid-cols-2 border-t border-gray-200 bg-white print:hidden" aria-label="Mobile report panes">
+      <button type="button" onClick={() => setMobilePane('report')} className={`py-3 text-xs font-bold ${mobilePane === 'report' ? 'text-indigo-600' : 'text-gray-500'}`}>Manuscript</button>
+      <button type="button" onClick={() => setMobilePane('xai')} className={`py-3 text-xs font-bold ${mobilePane === 'xai' ? 'text-indigo-600' : 'text-gray-500'}`}>Analysis</button>
+    </nav>
+    {showPairingModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowPairingModal(false)}>
+      <div role="dialog" aria-modal="true" aria-label="How section pairing works" className="bg-white rounded-2xl p-6 max-w-lg w-full space-y-4" onClick={event => event.stopPropagation()}>
+        <h2 className="font-bold text-gray-900">How Section Pairing Works</h2>
+        <p className="text-sm text-gray-700">ReSync compares each section with its next section in manuscript order. Skipped pairs remain listed with their reason. Scored pairs contribute according to their pair weight.</p>
+        <button type="button" onClick={() => setShowPairingModal(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold">Close</button>
+      </div>
+    </div>}
+  </div>;
 }
