@@ -21,7 +21,8 @@ export function CoherencePairsTab({ pairs, onExplain }: {
     </div>
     {pairs.length === 0 && <p className="text-sm text-gray-500">No neighboring section pairs to show.</p>}
     {pairs.map(pair => {
-      const score = pair.scores.overall_coherence == null ? null : pair.scores.overall_coherence * 100;
+      const pairScore = pair.pair_score ?? pair.scores.overall_coherence;
+      const score = pairScore == null ? null : pairScore * 100;
       const verdict = score == null ? null : score >= STRENGTH_THRESHOLD ? 'Strong connection' : score >= FAIR_THRESHOLD ? 'Fair connection' : 'Weak connection';
       const explanation = pair.explanation?.highlighted_inconsistencies.find(item => item.what)?.what
         || pair.explanation?.highlighted_inconsistencies.find(item => item.why)?.why;

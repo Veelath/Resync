@@ -8,6 +8,8 @@ export interface ManuscriptFlowPair {
   section_a: string;
   section_b: string;
   pair_weight: number | null;
+  pair_score?: number | null;
+  numeric_applicable?: boolean;
   scores: PairScores;
   skipped_reason: string | null;
   culprit_sentences: { section_a: { sentence: string; delta: number }[]; section_b: { sentence: string; delta: number }[] };
@@ -77,6 +79,7 @@ export interface V7ScanResponse {
     cross_chapter_coherence_score: number;
     citation_integrity_score: number | null;
     dimensions: Record<DimensionKey, number | null>;
+    dimension_weights?: Partial<Record<DimensionKey, number>> | null;
     citation_detail: { well_formed_ratio: number; link_resolution_rate: number; cross_match_score: number; total_entries: number };
   };
   ai_text_indicator: AITextIndicatorResponse | null;
