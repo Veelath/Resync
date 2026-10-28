@@ -11,6 +11,7 @@ import { OverviewTab } from './OverviewTab';
 import { FindingsTab } from './FindingsTab';
 import { CoherencePairsTab, PairScores } from './CoherencePairsTab';
 import { CitationsTab } from './CitationsTab';
+import { ManuscriptViewer } from './ManuscriptViewer';
 import { buildReportSections, citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview } from './helpers';
 import { verifiedQuoteRanges } from './highlights';
 
@@ -19,8 +20,7 @@ type Tab = 'overview' | 'inconsistencies' | 'strong_coherence' | 'citations';
 export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean }) {
   const result = isSample ? SAMPLE_REPORT : scan;
   const [manuscriptText, setManuscriptText] = useState<string | null>(isSample ? SAMPLE_MANUSCRIPT : null);
-  const [manuscriptError, setManuscriptError] = useState<string | null>(null);
-  const [manuscriptLoading, setManuscriptLoading] = useState(false);
+  const [manuscriptLoading, setManuscriptLoading] = useState(!isSample);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [analysisTab, setAnalysisTab] = useState<'synthesis' | 'recommendations'>('synthesis');
   const [analysisExpanded, setAnalysisExpanded] = useState(true);
@@ -38,15 +38,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     if (isSample || !result?.analysis_run_id) return;
     let cancelled = false;
     setManuscriptLoading(true);
+    setManuscriptText(null);
     fetchManuscript(result.analysis_run_id).then(response => {
       if (cancelled) return;
-      if (response.available && response.text) setManuscriptText(normalizeManuscriptPreview(response.text));
-      else if (response.reason === 'private') setManuscriptError('Document is no longer accessible');
-      else if (response.reason === 'non_gdocs') setManuscriptError('Preview is only available for Google Docs');
-      else if (response.reason === 'timeout') setManuscriptError('Manuscript preview timed out. Please try again.');
-      else if (response.status) setManuscriptError(`Manuscript preview unavailable (HTTP ${response.status})`);
-      else setManuscriptError('Manuscript preview unavailable');
-    }).catch(() => { if (!cancelled) setManuscriptError('Manuscript preview unavailable'); })
+      setManuscriptText(response.available && response.text ? normalizeManuscriptPreview(response.text) : null);
+    }).catch(() => { if (!cancelled) setManuscriptText(null); })
       .finally(() => { if (!cancelled) setManuscriptLoading(false); });
     return () => { cancelled = true; };
   }, [isSample, result?.analysis_run_id]);
@@ -158,10 +154,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             <p className="text-xs text-gray-500 mt-4">Overall assessment <strong>{result.score_breakdown.band}</strong> · {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
           </header>
           {manuscriptLoading && <p className="text-sm text-gray-600">Loading manuscript text…</p>}
-          {manuscriptText ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
-            : !manuscriptLoading && <div className="space-y-4"><p role={manuscriptError ? 'alert' : undefined} className="text-sm text-gray-600">{manuscriptError || 'Manuscript preview unavailable'} · Showing verified evidence excerpts.</p>
-              {result.inconsistencies.filter(item => item.evidence_verified).flatMap(item => item.evidence_quotes).map((quote, index) => <section key={index} className="border-t border-gray-100 pt-4"><h2 className="font-bold text-gray-900">{quote.section}</h2><p className="text-sm text-gray-700">{highlighted(quote.text, quote.section)}</p></section>)}
-            </div>}
+          {!manuscriptLoading && (manuscriptText
+            ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
+            : <ManuscriptViewer result={result} />)}
         </div>
       </div>
       <div className={`${mobilePane === 'xai' ? 'flex w-full' : 'hidden'} lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100 print:flex print:w-full print:overflow-visible`}>
