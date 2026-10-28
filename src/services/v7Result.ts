@@ -60,6 +60,7 @@ export interface V7ScanResponse {
   user_id: string;
   manuscript_id: string;
   doc_url: string;
+  manuscript_title?: string | null;
   result_version: 'v7';
   overall_coherence_score: number;
   sections_analyzed: string[];

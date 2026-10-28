@@ -1,7 +1,7 @@
 import { ScoreRing } from '../../components/AppScoreRing';
 import type { V7ScanResponse } from '../../services/v7Result';
+import { STRENGTH_THRESHOLD } from './helpers';
 
-const STRENGTH_THRESHOLD = 70;
 const baseHeading = (heading: string) => heading.replace(/\s*\(\d+\)$/, '').trim();
 
 export function ResultsScorePanel({ result }: { result: V7ScanResponse }) {

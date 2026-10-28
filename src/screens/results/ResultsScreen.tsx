@@ -9,7 +9,7 @@ import { ResultsScorePanel } from './ResultsScorePanel';
 import { CoherenceAnalysis } from './CoherenceAnalysis';
 import { OverviewTab } from './OverviewTab';
 import { FindingsTab } from './FindingsTab';
-import { CoherencePairsTab, PairScores } from './CoherencePairsTab';
+import { CoherencePairsTab } from './CoherencePairsTab';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptViewer } from './ManuscriptViewer';
 import { buildReportSections, citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview } from './helpers';
@@ -26,7 +26,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const [analysisExpanded, setAnalysisExpanded] = useState(true);
   const [mobilePane, setMobilePane] = useState<'report' | 'xai'>('report');
   const [activeSectionKey, setActiveSectionKey] = useState<string | null>(null);
-  const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(new Set());
@@ -53,7 +52,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const displayTitle = isSample ? 'Guided Reading Outcomes' : extractDisplayTitle(manuscriptText) || result.doc_url.replace(/\.(docx|pdf|doc)$/i, '') || 'Document Coherence Scan';
   const sections = buildReportSections(result.sections_analyzed, manuscriptText);
   const activeSection = sections.find(section => section.key === activeSectionKey);
-  const activePair = result.manuscript_flow.find(pair => String(pair.order) === activePairKey);
   const recommendations = result.recommendations.map(rec => ({ id: rec.recommendation_id, section: rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
   const citations: Citation[] = result.citations.map((citation, index) => ({
     id: `cit-${index}`, ref: citationText(citation.citation_raw_reference_text), url: citation.citation_primary_link || '',
@@ -171,12 +169,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
                 }} className={`px-3 py-3 text-xs font-bold border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}>{tab.label}</button>)}
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
-              {activeTab === 'overview' && <OverviewTab reportSections={sections} setActiveSectionRole={key => { setActiveSectionKey(key); setActivePairKey(null); }} />}
+              {activeTab === 'overview' && <OverviewTab reportSections={sections} setActiveSectionRole={setActiveSectionKey} />}
               {activeTab === 'inconsistencies' && <FindingsTab findings={findings} expandedIssueIds={expandedIssueIds}
                 toggleIssueExpanded={id => setExpandedIssueIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next; })}
                 allExpanded={allExpanded} toggleAllExpanded={() => setExpandedIssueIds(allExpanded ? new Set() : new Set(result.inconsistencies.map(item => item.inconsistency_id)))} renderFeedback={renderFeedback} />}
-              {activeTab === 'strong_coherence' && <CoherencePairsTab pairs={result.manuscript_flow} activePairKey={activePairKey} onExplain={() => setShowPairingModal(true)}
-                onSelect={order => { setActivePairKey(current => current === order ? null : order); setActiveSectionKey(null); if (!window.matchMedia('(min-width: 1024px)').matches) setMobilePane('xai'); }} />}
+              {activeTab === 'strong_coherence' && <CoherencePairsTab pairs={result.manuscript_flow} onExplain={() => setShowPairingModal(true)} />}
               {activeTab === 'citations' && <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />}
             </div>
@@ -184,9 +181,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
           {activeSection && <div className="p-6 space-y-4"><button type="button" onClick={() => setActiveSectionKey(null)} className="text-xs text-indigo-600">Close section</button>
             <h2 className="font-bold text-gray-900">{activeSection.name}</h2>
             <p className="whitespace-pre-wrap text-sm text-gray-700">{activeSection.text ? highlighted(activeSection.text, activeSection.name) : 'Section text unavailable in this preview.'}</p>
-          </div>}
-          {activePair && <div className="p-6 space-y-4"><button type="button" onClick={() => setActivePairKey(null)} className="text-xs text-indigo-600">Close pair</button>
-            <h2 className="font-bold text-gray-900">{activePair.section_a} → {activePair.section_b}</h2><PairScores pair={activePair} />
           </div>}
           {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'} · {result.ai_text_indicator.disclaimer}</div>}
         </div>
@@ -199,7 +193,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     {showPairingModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowPairingModal(false)}>
       <div role="dialog" aria-modal="true" aria-label="How section pairing works" className="bg-white rounded-2xl p-6 max-w-lg w-full space-y-4" onClick={event => event.stopPropagation()}>
         <h2 className="font-bold text-gray-900">How Section Pairing Works</h2>
-        <p className="text-sm text-gray-700">ReSync compares each section with its next section in manuscript order. Skipped pairs remain listed with their reason. Scored pairs contribute according to their pair weight.</p>
+        <p className="text-sm text-gray-700">ReSync compares each section with the next one in manuscript order. Each connection is marked strong, fair, or weak. Skipped pairs remain listed with their reason. Show details explains how much a pair counts toward the overall score.</p>
         <button type="button" onClick={() => setShowPairingModal(false)} className="px-4 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold">Close</button>
       </div>
     </div>}

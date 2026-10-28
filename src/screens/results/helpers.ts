@@ -73,6 +73,23 @@ export const SECTION_STATUS = {
   Stub: { icon: '⚠', color: 'text-amber-800' },
   Unassessed: { icon: '—', color: 'text-gray-600' },
 };
+export const STRENGTH_THRESHOLD = 70;
+export const FAIR_THRESHOLD = 50;
+export const DIMENSION_LABELS = {
+  objectives_alignment: 'Matches the objectives',
+  methodology_fit: 'Fits the method',
+  numeric_consistency: 'Numbers agree',
+  claim_support: 'Claims are supported',
+} as const;
+
+export function plainText(value: string | null | undefined): string {
+  return (value || '').replace(/\b(objectives_alignment|methodology_fit|numeric_consistency|claim_support)\b/g,
+    key => DIMENSION_LABELS[key as keyof typeof DIMENSION_LABELS])
+    .replace(/\*\*|`|\*/g, '')
+    .replace(/^\s*#{1,6}\s*/gm, '')
+    .replace(/^\s*(?:[-+]\s+|\d+[.)]\s+)/gm, '')
+    .replace(/\s+/g, ' ').trim();
+}
 export type ReportSection = { key: string; name: string; role: string; text: string; status: keyof typeof SECTION_STATUS };
 
 export function sectionRole(name: string): string {
