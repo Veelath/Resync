@@ -6,8 +6,8 @@ import { B, BH, BL } from '../lib/brand';
 export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const steps = [
     { label: "Reading your manuscript", detail: "Extracting chapters, sections and references", dur: 1500 },
-    { label: "Checking section alignment", detail: "Matching your headings to the expected structure", dur: 2500 },
-    { label: "Analyzing cross-chapter coherence", detail: "Comparing claims across chapters", dur: 3000 },
+    { label: "Checking section flow", detail: "Comparing each section with the next", dur: 2500 },
+    { label: "Analyzing logical coherence", detail: "Reviewing connections between sections", dur: 3000 },
     { label: "Verifying citation access", detail: "Checking which sources are public or private", dur: 2000 },
   ];
   const [done, setDone] = useState(0);
@@ -25,7 +25,7 @@ export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => vo
   const isFinalizing = done >= steps.length;
   const pct = isFinalizing ? 99 : Math.min(99, Math.round((done / steps.length) * 100));
   // The finalizing stage is the last row of the sequence.
-  const rows = [...steps, { label: "Finalizing your report", detail: "Synthesizing findings across chapters", dur: 0 }];
+  const rows = [...steps, { label: "Finalizing your report", detail: "Summarizing section links and citations", dur: 0 }];
   // Active step is fully visible; the further a step is from the active one, the fainter it is.
   const OPACITY_BY_DISTANCE = [1, 0.6, 0.4, 0.28, 0.2];
 
@@ -42,7 +42,7 @@ export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => vo
 
         <div className="text-center mb-[clamp(0.75rem,3vh,1.75rem)]">
           <h1 className="text-[clamp(1.4rem,3.6vh,2rem)] font-bold text-gray-900 tracking-tight">Analyzing your manuscript</h1>
-          <p className="text-sm text-gray-500 mt-1">Running {steps.length} coherence checks across all chapters</p>
+          <p className="text-sm text-gray-500 mt-1">Running {steps.length} checks across consecutive sections</p>
         </div>
 
         {/* progress */}

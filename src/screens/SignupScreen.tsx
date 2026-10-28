@@ -208,11 +208,11 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">1. Academic Integrity & Intellectual Property</h4>
                     <p>
-                      You retain all ownership, copyright, and intellectual property rights in and to your uploaded manuscripts and research materials. Resync does not claim any ownership over your manuscripts. You represent that you have all necessary rights to submit manuscripts for structural and coherence analysis.
+                      You retain all ownership, copyright, and intellectual property rights in and to your uploaded manuscripts and research materials. Resync does not claim any ownership over your manuscripts. You represent that you have all necessary rights to submit manuscripts for coherence and citation analysis.
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">2. Use of Analysis Tools</h4>
                     <p>
-                      Resync provides automated section alignment, cross-chapter coherence checks, and citation accessibility scanning. Analysis results and recommendations are advisory tools intended to assist scholarly writing and revision, and should be evaluated in accordance with your institution's academic guidelines.
+                      Resync provides consecutive-section coherence checks, citation accessibility scanning, and an AI-text indicator. Analysis results and recommendations are advisory tools intended to assist scholarly writing and revision, and should be evaluated in accordance with your institution's academic guidelines.
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">3. Account Security</h4>
                     <p>
@@ -226,7 +226,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">1. Information We Collect</h4>
                     <p>
-                      We collect account information (such as your name and email address) and document content that you submit solely to perform manuscript structural and coherence analysis.
+                      We collect account information (such as your name and email address) and document content that you submit solely to perform manuscript coherence and citation analysis.
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">2. Manuscript Confidentiality & Data Protection</h4>
                     <p>

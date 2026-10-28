@@ -122,7 +122,7 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
                 <span style={{ color: B }}>for coherence.</span>
               </h1>
               <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-lg">
-                Resync reviews research papers for logic gaps, contradictions, repeated content, and inaccessible citations. Receive a clear report that helps you focus your revisions.
+                Resync reviews consecutive section links, citations, and the AI-text indicator. Receive a clear report that helps you focus your revisions.
               </p>
               <div className="flex flex-wrap gap-3 mb-8">
                 <button onClick={() => onNavigate("signup")}
@@ -157,7 +157,7 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
       <div className="border-y border-gray-100 bg-gray-50/60">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-5 flex flex-wrap justify-center md:justify-between gap-6">
           {[
-            ["6", "Coherence dimensions"],
+            ["4", "Coherence dimensions"],
             ["~2 min", "Per full thesis"],
             [".doc/.docx + GDocs", "Accepted formats"],
             ["3 models", "Support the analysis"],
@@ -191,10 +191,10 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Upload</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
-                  Add a <span className="font-semibold text-gray-700">Word file (.doc/.docx)</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies the document's chapters and can compare them with an uploaded school template.
+                  Add a <span className="font-semibold text-gray-700">Word file (.doc/.docx)</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies sections and checks how each connects to the next.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-6">
-                  {["Chapter mapping", "Template support", "Chapter-aware matching"].map(t => (
+                  {["Section detection", "Citation checks", "AI-text indicator"].map(t => (
                     <span key={t} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500 shrink-0"><path d="M5 12l5 5L20 7" /></svg>
                       {t}
@@ -261,7 +261,7 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
                   </div>
                   {/* Para B */}
                   <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 3 — Methodology</p>
+                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 2 — Methodology</p>
                     <p className="text-xs text-gray-600 leading-relaxed">Data were collected using the <span className="font-semibold text-gray-800">Maslach Burnout Inventory</span> and the AWS survey instrument only.</p>
                   </div>
                   {/* Warning badge */}
@@ -279,14 +279,14 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
 
               <div className="order-1 lg:order-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Analysis</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review connections across chapters</h3>
+                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review connections between sections</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
-                  Resync compares claims, objectives, methods, findings, and conclusions to identify gaps or conflicting information across the manuscript.
+                  Resync compares consecutive sections to identify weak logical links or conflicting information in your manuscript.
                 </p>
                 <div className="mt-7 space-y-3">
                   {[
-                    "Maps document structure and chapter boundaries",
-                    "Compares related passages across the manuscript",
+                    "Checks how each section relates to the next",
+                    "Reviews citations and the AI-text indicator",
                     "Flags findings that need the author's review",
                   ].map(item => (
                     <div key={item} className="flex items-start gap-3">
@@ -365,7 +365,7 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
               <p className="text-xs mono font-bold uppercase tracking-widest mb-3" style={{ color: B }}>AI technologies used</p>
               <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-3">Models that support the review</h2>
               <p className="text-sm text-gray-500 leading-relaxed max-w-lg">
-                Resync uses AI models to analyze manuscript structure and meaning, then generate findings and revision recommendations. The output is AI-generated and is not fully human-verified. Review each suggestion with your adviser before making changes.
+                Resync uses AI models to assess links between consecutive sections, then generate findings and revision recommendations. The output is AI-generated and is not fully human-verified. Review each suggestion with your adviser before making changes.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -397,12 +397,12 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
             {[
-              ["01", "Title ↔ Objectives", "Does the title accurately represent what the objectives promise?"],
-              ["02", "Objectives ↔ Methodology", "Every objective must map to a concrete data collection method."],
-              ["03", "Framework ↔ Findings", "Findings must be grounded in the RRL's theoretical framework."],
-              ["04", "Findings ↔ Conclusions", "Conclusions must logically follow from the data shown."],
-              ["05", "Terminology Consistency", "Key terms must be defined once and used uniformly across chapters."],
-              ["06", "Citation Accessibility", "Every cited URL and DOI is pinged to confirm public reachability."],
+              ["01", "Section Flow", "Does each section logically connect with the one before it?"],
+              ["02", "Objectives Alignment", "Do neighboring sections support the stated objectives?"],
+              ["03", "Methodology Fit", "Does the next section follow from the methods described?"],
+              ["04", "Claim Support", "Do claims follow from the evidence in neighboring sections?"],
+              ["05", "Citation Accessibility", "Check cited URLs and DOIs for public reachability."],
+              ["06", "AI-Text Indicator", "Review a signal for possible AI-generated text."],
             ].map(([num, label, desc]) => (
               <div key={num} className="group flex items-start gap-4 p-5 rounded-2xl border border-transparent hover:border-gray-200 hover:bg-white transition-colors duration-200 cursor-default">
                 <span className="text-2xl font-black mono text-gray-100 group-hover:text-blue-100 transition-colors select-none shrink-0 w-9 leading-none mt-0.5">{num}</span>

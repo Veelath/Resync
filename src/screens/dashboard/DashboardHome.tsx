@@ -7,21 +7,21 @@ const WHAT_GET = [
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>,
     label: "Coherence Score",
-    desc: "A 0–100 integrity score with three sub-scores: logic, consistency, and citations.",
+    desc: "A 0–100 coherence score for logical links between consecutive manuscript sections.",
     color: B,
     bg: BL,
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 12h6M9 16h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>,
     label: "Annotated Manuscript",
-    desc: "Full text with every flagged passage highlighted inline by issue type.",
+    desc: "Manuscript text with verified passages highlighted inline for review.",
     color: "#7c3aed",
     bg: "#f5f3ff",
   },
   {
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-5 h-5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 000 4h6a2 2 0 000-4M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
     label: "Fix Recommendations",
-    desc: "Concrete, actionable rewrites for each flagged issue, ready to apply.",
+    desc: "Suggested revisions for flagged section links, ready to review.",
     color: "#059669",
     bg: "#f0fdf4",
   },
@@ -43,14 +43,14 @@ const STEPS = [
   },
   {
     num: 2,
-    label: "Set Type & Template",
-    desc: "Upload a manuscript and optionally attach a chapter template.",
+    label: "Review Sections",
+    desc: "Upload a manuscript and review its detected sections.",
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M3 9h18M9 21V9" /></svg>,
   },
   {
     num: 3,
     label: "Coherence Scan",
-    desc: "AI cross-checks logic gaps, contradictions, redundancies, and inaccessible citations.",
+    desc: "AI checks consecutive section links, citations, and the AI-text indicator.",
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-7 h-7"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
   },
   {
@@ -63,11 +63,11 @@ const STEPS = [
 
 const BEST_PRACTICES = [
   { title: "Digital Manuscripts", desc: "DOCX, PDF, Google Docs", x: 200, y: 228 },
-  { title: "Standard Structure", desc: "Chapter 1–5 & IMRaD", x: 690, y: 228 },
+  { title: "Section Flow", desc: "Consecutive section links", x: 690, y: 228 },
   { title: "Single-Column Flow", desc: "Sequential reading order", x: 1190, y: 228 },
   { title: "Direct Prose", desc: "Claims and conclusions", x: 220, y: 520 },
   { title: "Open References", desc: "Citations and DOI checks", x: 700, y: 520 },
-  { title: "Method Focus", desc: "Qualitative or quantitative fit", x: 1190, y: 520 },
+  { title: "AI-Text Indicator", desc: "Review the text signal", x: 1190, y: 520 },
 ];
 
 export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: "Good morning" | "Good afternoon" | "Good evening" }) {
@@ -96,7 +96,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
                   Your manuscript, <span className="text-indigo-200">checked end-to-end.</span>
                 </h1>
                 <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed font-normal">
-                  Detect logic gaps, cross-chapter contradictions, terminology drift, and inaccessible citations — all in under 2 minutes.
+                  Check logical links between consecutive sections, citations, and the AI-text indicator in one report.
                 </p>
               </div>
 
@@ -121,12 +121,12 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
               <div className="flex items-center gap-4 text-xs sm:text-sm text-blue-100/80 flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Logic gap &amp; contradiction detection
+                  Consecutive section coherence
                 </span>
                 <span className="hidden sm:inline text-white/30">•</span>
-                <span className="hidden sm:inline">Section &amp; chapter alignment</span>
+                <span className="hidden sm:inline">Citation accessibility checks</span>
                 <span className="hidden sm:inline text-white/30">•</span>
-                <span className="hidden sm:inline">Public / private citation check</span>
+                <span className="hidden sm:inline">AI-text indicator</span>
               </div>
               <span className="text-xs sm:text-sm font-semibold text-blue-200 inline-flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
@@ -213,7 +213,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
             <div className="mb-8">
               <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1 text-primary">Guidance</p>
               <h2 className="text-xl font-bold text-foreground tracking-tight">Best Results With</h2>
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed lg:whitespace-nowrap">ReSync delivers the most accurate cross-chapter analysis when manuscripts align with these recommended standards.</p>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed lg:whitespace-nowrap">Clear sections help ReSync assess how each part of your manuscript connects to the next.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
               {BEST_PRACTICES.map(({ title, desc, x, y }) => (

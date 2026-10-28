@@ -826,7 +826,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-xs text-amber-800 leading-relaxed">
                   <p className="font-bold text-amber-900 mb-1">Template Customization Tip</p>
                   {templateChapters.length
-                    ? "Click a heading pill to rename it. ReSync will use this structure to check sections."
+                    ? "Click a heading pill to rename it. ReSync will compare consecutive sections."
                     : "No template selected. ReSync will detect sections from the manuscript."}
                 </div>
               </div>
