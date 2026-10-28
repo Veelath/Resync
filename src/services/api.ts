@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../lib/supabase.js';
+import { adaptScanResult, type ScanResult } from './v7Result';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
@@ -88,7 +89,7 @@ export interface AITextIndicatorResponse {
   disclaimer?: string;
 }
 
-export interface ScanResponse {
+export interface LegacyScanResponse {
   status: string;
   analysis_run_id: string;
   user_id: string;
@@ -208,7 +209,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 export async function executeManuscriptScan(
   payload: ScanRequest,
   options?: ScanOptions
-): Promise<ScanResponse> {
+): Promise<ScanResult> {
   const timeoutMs = options?.timeoutMs ?? 900000; // 15 min ceiling for the whole job
   const deadline = Date.now() + timeoutMs;
   const signal = options?.signal;
@@ -334,7 +335,7 @@ export async function executeManuscriptScan(
     const job = await statusResponse.json();
 
     if (job.status === 'completed' && job.result) {
-      return job.result as ScanResponse;
+      return adaptScanResult(job.result);
     }
     if (job.status === 'failed') {
       throw new Error(job.error || 'The scan failed on the server.');

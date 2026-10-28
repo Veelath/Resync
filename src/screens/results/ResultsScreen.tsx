@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import type { Screen, DisplayScan } from '../../lib/appTypes';
+import type { Screen } from '../../lib/appTypes';
+import type { LegacyScanResponse } from '../../services/api';
 import { ResultsHeader } from './ResultsHeader';
 import { ManuscriptViewer } from './ManuscriptViewer';
 import { ResultsScorePanel } from './ResultsScorePanel';
@@ -12,12 +13,12 @@ import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMP
 import type { AssessmentType, AssessmentItem, Citation } from '../../data/sampleReport';
 import type React from 'react';
 import type { CitedReference, RolePairScore, AITextIndicator, ScoreBreakdown } from '../../types';
-import { type ScanResponse, API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
+import { API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
 import { formatRoleLabel, PAR_SCORE } from '../../utils.js';
 
 import { type EnrichedPair, type ActiveResultsTab, type MobileResultsPane, type ReportSection, citationText, SECTION_STATUS, sectionRole, buildReportSections, pairHasMissingSection, citationContains, extractDisplayTitle, normalizeManuscriptPreview, citationAccess } from './helpers';
 
-export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (s: Screen) => void; onBack: () => void; scan?: DisplayScan | null; isSample?: boolean }) {
+export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (s: Screen) => void; onBack: () => void; scan?: (LegacyScanResponse & { template_toc?: string[] }) | null; isSample?: boolean }) {
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
@@ -128,7 +129,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     })) || [])
   ];
 
-  const scanWithRefs = scan as (ScanResponse & { references?: CitedReference[] }) | undefined;
+  const scanWithRefs = scan as (LegacyScanResponse & { references?: CitedReference[] }) | undefined;
   const rawCitationsList = (scan?.citations && scan.citations.length > 0)
     ? (scan.citations as CitedReference[])
     : (scanWithRefs?.references && scanWithRefs.references.length > 0)
