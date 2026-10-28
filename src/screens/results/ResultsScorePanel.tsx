@@ -5,8 +5,7 @@ export function ResultsScorePanel({ score, displayBand, advisoryDimensions }: { 
           <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
             <ScoreRing score={score} size={88} band={displayBand} solidArc />
             <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence Score</p>
-            {advisoryDimensions.some(dimension => dimension.value !== null) && (
-              <div className="w-full mt-2 space-y-2" aria-label="Advisory coherence dimensions">
+              <div className="w-full mt-2 space-y-2" aria-label="Coherence dimensions">
                 <div className="grid grid-cols-2 gap-2">
                 {advisoryDimensions.map(({ key, label, color, value }) => (
                   <div key={key} className="min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3">
@@ -22,7 +21,6 @@ export function ResultsScorePanel({ score, displayBand, advisoryDimensions }: { 
                 ))}
                 </div>
               </div>
-            )}
           </div>
   );
 }

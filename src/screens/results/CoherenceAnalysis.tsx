@@ -3,7 +3,7 @@ import type React from 'react';
 export function CoherenceAnalysis({ analysisExpanded, setAnalysisExpanded, analysisTab, setAnalysisTab, recommendations, synthesis, strongestAlignment, needsAttention, children }: {
   analysisExpanded: boolean; setAnalysisExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   analysisTab: 'synthesis' | 'recommendations'; setAnalysisTab: (value: 'synthesis' | 'recommendations') => void;
-  recommendations: Array<{ id: string; quote: string; revision?: string }>; synthesis?: string;
+  recommendations: Array<{ id: string; quote: string; revision?: string }>; synthesis?: string | null;
   strongestAlignment?: { title: string }; needsAttention?: { title: string }; children: React.ReactNode;
 }) {
   return (
@@ -29,20 +29,20 @@ export function CoherenceAnalysis({ analysisExpanded, setAnalysisExpanded, analy
               <div role="tabpanel" id="analysis-tab-panel" aria-labelledby={`analysis-tab-${analysisTab}`} className="px-5 py-6">
                 {analysisTab === 'synthesis' && <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-900">Summary</h3>
-                  <p className="text-sm leading-relaxed text-gray-600">{synthesis || 'No synthesis summary is available for this scan.'}</p>
+                  <p className="text-sm leading-relaxed text-gray-600">{synthesis || 'Summary unavailable for this scan'}</p>
           <div className="px-4 py-3 border-b border-gray-100 grid grid-cols-1 gap-2">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2.5">
               <span className="text-emerald-700 text-base leading-none" aria-hidden="true">✓</span>
               <div className="min-w-0">
-                <h4 className="text-xs font-bold text-emerald-900">Strongest Alignment</h4>
-                <p className="text-xs text-emerald-800 truncate" title={strongestAlignment?.title}>{strongestAlignment?.title || "No verified alignment yet"}</p>
+                <h4 className="text-xs font-bold text-emerald-900">Strongest pair</h4>
+                <p className="text-xs text-emerald-800 truncate" title={strongestAlignment?.title}>{strongestAlignment?.title || "No scored pair"}</p>
               </div>
             </div>
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex items-start gap-2.5">
               <span className="text-rose-700 text-base leading-none" aria-hidden="true">!</span>
               <div className="min-w-0">
-                <h4 className="text-xs font-bold text-rose-900">Needs Attention</h4>
-                <p className="text-xs text-rose-800 truncate" title={needsAttention?.title}>{needsAttention?.title || "No major issue found"}</p>
+                <h4 className="text-xs font-bold text-rose-900">Weakest pair</h4>
+                <p className="text-xs text-rose-800 truncate" title={needsAttention?.title}>{needsAttention?.title || "No scored pair"}</p>
               </div>
             </div>
           </div>

@@ -12,13 +12,15 @@ import { CitationsTab } from './CitationsTab';
 import { ASSESSMENT_ITEMS, CITATIONS, SAMPLE_PAIRS, SAMPLE_DISMISSED_PAIRS, SAMPLE_AI_TEXT, OVERALL_ASSESSMENT, SAMPLE_ADVISORY_DIMENSIONS, PARAGRAPHS } from '../../data/sampleReport';
 import type { AssessmentType, AssessmentItem, Citation } from '../../data/sampleReport';
 import type React from 'react';
-import type { CitedReference, RolePairScore, AITextIndicator, ScoreBreakdown } from '../../types';
+import type { CitedReference, RolePairScore, AITextIndicator } from '../../types';
+import type { V7ScanResponse } from '../../services/v7Result';
 import { API_BASE_URL, authHeaders, fetchManuscript } from '../../services/api';
 import { formatRoleLabel, PAR_SCORE } from '../../utils.js';
 
 import { type EnrichedPair, type ActiveResultsTab, type MobileResultsPane, type ReportSection, citationText, SECTION_STATUS, sectionRole, buildReportSections, pairHasMissingSection, citationContains, extractDisplayTitle, normalizeManuscriptPreview, citationAccess } from './helpers';
 
 export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (s: Screen) => void; onBack: () => void; scan?: (LegacyScanResponse & { template_toc?: string[] }) | null; isSample?: boolean }) {
+  const v7 = scan as unknown as V7ScanResponse | null | undefined;
   const [activeSectionRole, setActiveSectionRole] = useState<string | null>(null);
   const [activePairKey, setActivePairKey] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobileResultsPane>("report");
@@ -226,19 +228,14 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     return nodes;
   }
 
-  const score = isSample ? 74 : scan?.overall_coherence_score || 0;
-  const displayBand = isSample ? "Moderate Coherence" : scan?.score_breakdown?.band;
-  const v6Dimensions = (scan?.score_breakdown as ScoreBreakdown | undefined)?.v6_dimensions;
+  const score = isSample ? 74 : v7?.overall_coherence_score ?? 0;
+  const displayBand = isSample ? "Solid" : v7?.score_breakdown?.band;
   const advisoryDimensions = ([
     ['objectives_alignment', 'Objectives alignment', 'bg-amber-500'],
     ['methodology_fit', 'Methodology fit', 'bg-emerald-500'],
     ['numeric_consistency', 'Numeric consistency', 'bg-rose-500'],
     ['claim_support', 'Claim support', 'bg-blue-500'],
-  ] as const).map(([key, label, color]) => {
-    const values = Object.values(v6Dimensions ?? {}).map(pair => pair?.[key])
-      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1);
-    return { key, label, color, value: isSample ? SAMPLE_ADVISORY_DIMENSIONS[key] : values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null };
-  });
+  ] as const).map(([key, label, color]) => ({ key, label, color, value: isSample ? SAMPLE_ADVISORY_DIMENSIONS[key] : v7?.score_breakdown?.dimensions[key] ?? null }));
   const privateCount = localCitations.filter(c => c.status === "private").length;
   type STEntry = { hl: string; pill: string; accentColor: string; label: string };
   const ST: Record<AssessmentType, STEntry> = {
@@ -269,9 +266,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     },
   };
 
-  const strongestAlignment = localItems.find(i => i.type === "key-strength" || i.type === "strength");
-  const needsAttention = localItems.find(i => i.type === "major-issue");
-  const synthesis = isSample ? OVERALL_ASSESSMENT.statusDescription : scan?.score_breakdown?.biggest_lever?.reason;
+  const strongestAlignment = isSample ? localItems.find(i => i.type === "key-strength" || i.type === "strength") : v7?.ai_synthesis.strongest_pair ? { title: `${v7.ai_synthesis.strongest_pair.section_a} → ${v7.ai_synthesis.strongest_pair.section_b} · ${v7.ai_synthesis.strongest_pair.score}/100` } : undefined;
+  const needsAttention = isSample ? localItems.find(i => i.type === "major-issue") : v7?.ai_synthesis.weakest_pair ? { title: `${v7.ai_synthesis.weakest_pair.section_a} → ${v7.ai_synthesis.weakest_pair.section_b} · ${v7.ai_synthesis.weakest_pair.score}/100` } : undefined;
+  const synthesis = isSample ? OVERALL_ASSESSMENT.statusDescription : v7?.ai_synthesis.summary;
 
   function renderPara(para: typeof localParagraphs[0]) {
     if (!para.assessments.length) return <>{para.text}</>;
@@ -474,7 +471,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
           <div className="text-right">
             <div className="text-2xl font-bold text-indigo-700">{Math.round(score)} / 100</div>
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-              Band: {isSample ? "Moderate Coherence" : (scan?.score_breakdown?.band || "Pending")}
+              Band: {displayBand || "Pending"}
             </div>
             <div className="text-xs text-gray-500 mt-1">{new Date().toLocaleString()}</div>
           </div>
