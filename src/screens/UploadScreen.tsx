@@ -371,7 +371,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             <div className="mb-8">
               <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 1 · Manuscript Intake</p>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Upload manuscript</h1>
-              <p className="text-gray-500 text-sm">ReSync detects the research type from your manuscript. A chapter template is optional in Step 2.</p>
+              <p className="text-gray-500 text-sm">ReSync detects section headings from your manuscript. A chapter template is optional in Step 2.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
@@ -497,7 +497,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   {
                     n: "1",
                     title: "Prepare chapter headings",
-                    body: "ReSync detects the research type and section structure from your manuscript.",
+                    body: "ReSync detects section headings from your manuscript.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
                   },
                   {
@@ -542,7 +542,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <span className="text-xs mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 2 · Chapter Template</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Optional chapter template</h1>
-                <p className="text-gray-500 text-sm mt-1">Skip this step to let ReSync detect sections and research type. Attach or load a template only if your school requires specific headings.</p>
+                <p className="text-gray-500 text-sm mt-1">Skip this step to let ReSync detect sections. Attach or load a template only if your school requires specific headings.</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {templateNotification && (
@@ -827,7 +827,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <p className="font-bold text-amber-900 mb-1">Template Customization Tip</p>
                   {templateChapters.length
                     ? "Click a heading pill to rename it. ReSync will use this structure to check sections."
-                    : "No template selected. ReSync will detect sections and research type from the manuscript."}
+                    : "No template selected. ReSync will detect sections from the manuscript."}
                 </div>
               </div>
             </div>
