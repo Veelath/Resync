@@ -2,42 +2,56 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import type React from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { matchedRecommendations, recommendationRanges } from './highlights';
+import { categoryColors, neutralHighlight } from './categoryColors';
+import './manuscript.css';
 
 export function PreviewLegend() {
-  return <p className="flex items-start gap-2 text-sm text-[#4b5563]"><span className="mt-1 size-3 shrink-0 rounded-sm bg-[#fde2e4]" aria-hidden="true" />Highlighted: a sentence with a suggested revision.</p>;
+  return <div className="text-sm text-[#4b5563]"><ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+    {Object.entries(categoryColors).map(([key, value]) => <li key={key} className="flex items-start gap-2"><span className="mt-1 size-3 shrink-0 rounded-sm" style={{ backgroundColor: value.color }} aria-hidden="true" /><span><strong>{value.label}:</strong> {value.description.toLowerCase()}.</span></li>)}
+  </ul><p className="mt-2">Click a highlight to see its suggested revision.</p></div>;
+}
+
+function PaperHeading({ name }: { name: string }) {
+  const chapter = name.match(/^(chapter\s+(?:[ivxlcdm]+|\d+))\b[\s:.-]*(.*)$/i);
+  return <h2 className="manuscript-heading">{chapter ? <><span className="block">{chapter[1]}</span>{chapter[2] && <span className="block">{chapter[2]}</span>}</> : name}</h2>;
 }
 
 export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean }) {
   const linked = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const withheld = result.manuscript_sections?.slice(1) ?? [];
   const fallback = { heading: 'The manuscript continues', paragraphs: Array(3).fill('Quiet lines continue across the page. Soft words fill this space while the full report waits to be opened. '.repeat(4)) };
-  return <div className="space-y-9">
+  return <div className="manuscript-body">
     {result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
       const text = section.text ?? '';
       const ranges = recommendationRanges(section, linked);
-      const pieces: React.ReactNode[] = [];
-      let cursor = 0;
-      for (const range of ranges) {
-        pieces.push(text.slice(cursor, range.start));
-        pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
-          aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
-          className="rounded-sm bg-[#fde2e4] text-[#9f1239] underline decoration-[#be123c] underline-offset-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">{text.slice(range.start, range.end)}</button>);
-        cursor = range.end;
-      }
-      pieces.push(text.slice(cursor));
       return <section key={`${index}-${section.name}`} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
-        <h2 className="mb-4 flex gap-3 text-lg font-semibold text-[#0b0f3d]"><span className="text-[#6b7280] tabular-nums">{index + 1}</span>{section.name}</h2>
-        {section.text != null && <div className="whitespace-pre-wrap break-words font-serif text-[17px] leading-[1.7] text-[#303746]">{pieces}</div>}
+        <PaperHeading name={section.name} />
+        {section.text != null && [...text.matchAll(/[^\r\n]+/g)].map((match, paragraphIndex) => {
+          const start = match.index;
+          const end = start + match[0].length;
+          const pieces: React.ReactNode[] = [];
+          let cursor = start;
+          for (const range of ranges.filter(item => item.start >= start && item.end <= end)) {
+            const tone = range.category ? categoryColors[range.category] : neutralHighlight;
+            pieces.push(text.slice(cursor, range.start));
+            pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
+              aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
+              className="manuscript-highlight" style={{ backgroundColor: tone.tint, color: tone.ink, textDecorationColor: tone.color }}>{text.slice(range.start, range.end)}</button>);
+            cursor = range.end;
+          }
+          pieces.push(text.slice(cursor, end));
+          return <p key={paragraphIndex}>{pieces}</p>;
+        })}
       </section>;
     })}
     {locked && <div className="locked-manuscript relative -mx-5 overflow-clip px-5 sm:mx-0 sm:px-0">
       <p className="sr-only">The rest of the manuscript is locked. Unlock the full report to read it.</p>
-      <div className="locked-manuscript-copy space-y-9" aria-hidden="true">
+      <div className="locked-manuscript-copy" aria-hidden="true">
         {(withheld.length ? withheld : [{ name: '', text: null }]).map((section, index) => {
           const placeholder = section.placeholder ?? fallback;
           return <section key={index}>
-            <h2 className="mb-4 flex gap-3 text-lg font-semibold text-[#0b0f3d]"><span className="text-[#6b7280] tabular-nums">{index + 2}</span>{placeholder.heading}</h2>
-            <div className="space-y-5 font-serif text-[17px] leading-[1.7] text-[#303746]">{placeholder.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} className="break-words">{paragraph}</p>)}</div>
+            <PaperHeading name={placeholder.heading} />
+            <div>{placeholder.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex}>{paragraph}</p>)}</div>
           </section>;
         })}
       </div>
