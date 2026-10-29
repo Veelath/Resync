@@ -1,9 +1,8 @@
 import { useState } from "react";
 import type React from 'react';
 import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
-import { AuthLayout } from '../components/AuthLayout';
+import { AuthShell } from '../components/AuthShell';
 import type { Screen } from '../lib/appTypes';
-import { B, BH, BL } from '../lib/brand';
 import { supabase } from '../lib/supabase';
 
 export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate: (s: Screen) => void; onBack: () => void; onLoginSuccess?: () => void }) {
@@ -52,38 +51,39 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
   }
 
   return (
-    <AuthLayout onNavigate={onNavigate} onBack={onBack}>
+    <AuthShell onNavigate={onNavigate} onBack={onBack}>
       <div>
         {/* Header */}
-        <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
+        <div className="auth-rise mb-7">
+          <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase mb-3" style={{ background: "#eef0ff", color: "#1a1fcc" }}>
             Academic Portal
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Welcome back</h1>
-          <p className="text-xs text-gray-500 leading-relaxed">Sign in to review your research manuscript and coherence reports.</p>
+          </span>
+          <h1 className="text-4xl lg:text-[46px] font-extrabold text-[#0b0f3d] tracking-[-0.035em] leading-[1.05] mb-3">Welcome back</h1>
+          <p className="text-[15px] text-[#4b5275] leading-relaxed">Sign in to review your research manuscript and coherence reports.</p>
         </div>
 
         {/* Google SSO */}
         <button
           type="button"
           onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
-          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-150 mb-5 shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+          className="auth-google auth-focus auth-rise mb-6"
         >
           <GIcon /> Continue with Google
         </button>
 
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-gray-100" />
-          <span className="text-[10px] text-gray-400 font-bold tracking-wider">OR SIGN IN WITH EMAIL</span>
-          <div className="flex-1 h-px bg-gray-100" />
+        <div className="auth-or auth-rise mb-6">
+          <span>or sign in with email</span>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100" role="alert">{error}</div>}
 
-        <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label htmlFor="email-input" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
-            <div className="relative">
+        <form onSubmit={submit} className="space-y-5">
+          <div className="space-y-2">
+            <label htmlFor="email-input" className="auth-label">Email address</label>
+            <div className="auth-field">
+              <span className="auth-field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[18px] h-[18px]"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3.5 7l8.5 6 8.5-6" /></svg>
+              </span>
               <input
                 id="email-input"
                 type="email"
@@ -91,20 +91,15 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                 onChange={e => setEmail(e.target.value)}
                 placeholder="maria.santos@dlsu.edu.ph"
                 required
-                className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
-                style={{ borderColor: "#e5e7eb" }}
-                onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
-                onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                autoComplete="email"
+                className="auth-input auth-input--icon"
               />
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-              </div>
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="password-input" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
+              <label htmlFor="password-input" className="auth-label">Password</label>
               <button
                 type="button"
                 onClick={() => {
@@ -113,13 +108,15 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                   setForgotError("");
                   setForgotModal(true);
                 }}
-                className="text-xs font-semibold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-                style={{ color: B }}
+                className="auth-link auth-focus text-sm px-1"
               >
                 Forgot password?
               </button>
             </div>
-            <div className="relative">
+            <div className="auth-field">
+              <span className="auth-field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[18px] h-[18px]"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
+              </span>
               <input
                 id="password-input"
                 type={showPw ? "text" : "password"}
@@ -127,61 +124,49 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                 onChange={e => setPw(e.target.value)}
                 placeholder="Enter your password"
                 required
-                className="w-full h-11 pl-10 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
-                style={{ borderColor: "#e5e7eb" }}
-                onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
-                onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                autoComplete="current-password"
+                className="auth-input auth-input--icon auth-input--toggle"
               />
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-              </div>
               <button
                 type="button"
                 aria-label={showPw ? "Hide password" : "Show password"}
                 onClick={() => setShowPw(!showPw)}
-                className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                className="auth-eye auth-focus"
               >
                 <Eye open={showPw} />
               </button>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-2"
-            style={{
-              background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
-              color: canSubmit ? "white" : "#9ca3af",
-              cursor: canSubmit ? "pointer" : "not-allowed",
-              boxShadow: canSubmit ? `0 6px 20px ${B}30` : "none"
-            }}
-          >
-            {loading ? <><Spinner /> Signing in…</> : "Sign in to ReSync →"}
-          </button>
+          <div className="pt-2">
+            <button type="submit" disabled={!canSubmit} className="auth-primary auth-focus">
+              {loading ? <><Spinner /> Signing in…</> : "Sign in to ReSync"}
+            </button>
+          </div>
         </form>
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-sm text-[#4b5275] mt-6">
           Don't have an account?{" "}
-          <button onClick={() => onNavigate("signup")} className="font-bold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" style={{ color: B }}>Sign up free</button>
+          <button onClick={() => onNavigate("signup")} className="auth-link auth-focus px-1">Sign up free</button>
         </p>
 
-        <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-center gap-2 text-[11px] text-gray-400">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+        <div className="mt-7 pt-5 border-t border-[#e6e8f7] flex items-center justify-center gap-2 text-xs text-[#7d81a3] lg:hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
           <span>256-bit encryption · Academic manuscript privacy guaranteed</span>
         </div>
 
         {forgotModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                <h3 className="text-base font-bold text-gray-900">Reset Password</h3>
+            <div role="dialog" aria-modal="true" aria-labelledby="forgot-title" className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-[#f6f7ff]">
+                <h3 id="forgot-title" className="text-base font-bold text-[#0b0f3d]">Reset Password</h3>
                 <button
                   type="button"
+                  aria-label="Close"
                   onClick={() => setForgotModal(false)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="auth-focus w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </button>
@@ -195,15 +180,14 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                     <button
                       type="button"
                       onClick={() => setForgotModal(false)}
-                      className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all cursor-pointer"
-                      style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+                      className="auth-primary auth-focus"
                     >
                       Close
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={handleForgotSubmit} className="space-y-4">
-                    <p className="text-xs text-gray-500 leading-relaxed">
+                    <p className="text-sm text-[#4b5275] leading-relaxed">
                       Enter your email address and we'll send you a link to reset your password.
                     </p>
                     {forgotError && (
@@ -211,27 +195,23 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                         {forgotError}
                       </div>
                     )}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email address</label>
+                    <div className="space-y-2">
+                      <label htmlFor="forgot-email-input" className="auth-label">Email address</label>
                       <input
+                        id="forgot-email-input"
                         type="email"
                         value={forgotEmail}
                         onChange={e => setForgotEmail(e.target.value)}
                         placeholder="maria.santos@dlsu.edu.ph"
                         required
-                        className="w-full h-11 px-4 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
-                        style={{ borderColor: "#e5e7eb" }}
+                        autoComplete="email"
+                        className="auth-input"
                       />
                     </div>
                     <button
                       type="submit"
                       disabled={!forgotEmail || forgotLoading}
-                      className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
-                      style={{
-                        background: (forgotEmail && !forgotLoading) ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
-                        color: (forgotEmail && !forgotLoading) ? "white" : "#9ca3af",
-                        cursor: (forgotEmail && !forgotLoading) ? "pointer" : "not-allowed",
-                      }}
+                      className="auth-primary auth-focus"
                     >
                       {forgotLoading ? <><Spinner /> Sending reset link…</> : "Send reset link"}
                     </button>
@@ -242,6 +222,6 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
           </div>
         )}
       </div>
-    </AuthLayout>
+    </AuthShell>
   );
 }

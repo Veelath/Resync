@@ -1,9 +1,9 @@
 import { useState } from "react";
 import type React from 'react';
 import { Spinner, Eye } from '../components/AppPrimitives';
-import { AuthLayout } from '../components/AuthLayout';
+import { AuthShell } from '../components/AuthShell';
+import { PasswordRequirements, isPasswordValid } from '../components/PasswordRequirements';
 import type { Screen } from '../lib/appTypes';
-import { B, BH, BL } from '../lib/brand';
 import { supabase } from '../lib/supabase';
 
 export function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Screen) => void; onBack: () => void }) {
@@ -13,12 +13,12 @@ export function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Sc
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const canSubmit = password.length >= 8 && !loading;
+  const canSubmit = isPasswordValid(password) && !loading;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+    if (!isPasswordValid(password)) {
+      setError("Password does not meet all the requirements yet.");
       return;
     }
     setLoading(true);
@@ -36,86 +36,73 @@ export function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Sc
   }
 
   return (
-    <AuthLayout onNavigate={onNavigate} onBack={onBack}>
+    <AuthShell onNavigate={onNavigate} onBack={onBack}>
       <div>
         {/* Header */}
-        <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
+        <div className="auth-rise mb-6">
+          <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase mb-3" style={{ background: "#eef0ff", color: "#1a1fcc" }}>
             Security
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Set new password</h1>
-          <p className="text-xs text-gray-500 leading-relaxed">Enter your new account password below.</p>
+          </span>
+          <h1 className="text-3xl lg:text-[42px] font-extrabold text-[#0b0f3d] tracking-[-0.035em] leading-[1.05] mb-2">Set new password</h1>
+          <p className="text-[15px] text-[#4b5275] leading-relaxed">Enter your new account password below.</p>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100" role="alert">{error}</div>}
         {success && (
-          <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 text-sm rounded-xl border border-emerald-100">
+          <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 text-sm rounded-xl border border-emerald-100" role="status">
             Password updated successfully! Redirecting to login…
           </div>
         )}
 
         {!success ? (
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
-              <div className="relative">
+          <form onSubmit={submit} className="space-y-5">
+            <div className="space-y-2">
+              <label htmlFor="reset-password-input" className="auth-label">New password</label>
+              <div className="auth-field">
                 <input
+                  id="reset-password-input"
                   type={showPw ? "text" : "password"}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder="New password"
                   required
-                  className="w-full h-11 pl-10 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
-                  style={{ borderColor: "#e5e7eb" }}
-                  onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
-                  onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+                  aria-describedby="reset-password-requirements"
+                  autoComplete="new-password"
+                  className="auth-input auth-input--toggle"
                 />
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-                </div>
                 <button
                   type="button"
+                  aria-label={showPw ? "Hide password" : "Show password"}
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                  className="auth-eye auth-focus"
                 >
                   <Eye open={showPw} />
                 </button>
               </div>
-              {password.length > 0 && password.length < 8 && (
-                <p className="text-[11px] text-amber-600 mt-1">Must be at least 8 characters</p>
-              )}
+              <PasswordRequirements id="reset-password-requirements" password={password} />
             </div>
 
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all mt-2"
-              style={{
-                background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
-                color: canSubmit ? "white" : "#9ca3af",
-                cursor: canSubmit ? "pointer" : "not-allowed",
-                boxShadow: canSubmit ? `0 6px 20px ${B}30` : "none"
-              }}
-            >
-              {loading ? <><Spinner /> Updating password…</> : "Update Password →"}
-            </button>
+            <div className="pt-2">
+              <button type="submit" disabled={!canSubmit} className="auth-primary auth-focus">
+                {loading ? <><Spinner /> Updating password…</> : "Update password"}
+              </button>
+            </div>
           </form>
         ) : (
           <button
             type="button"
             onClick={() => onNavigate("login")}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 text-white transition-all mt-2 cursor-pointer"
-            style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
+            className="auth-primary auth-focus"
           >
-            Go to login →
+            Go to login
           </button>
         )}
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-sm text-[#4b5275] mt-6">
           Remembered your credentials?{" "}
-          <button onClick={() => onNavigate("login")} className="font-bold hover:underline" style={{ color: B }}>Back to login</button>
+          <button onClick={() => onNavigate("login")} className="auth-link auth-focus px-1">Back to login</button>
         </p>
       </div>
-    </AuthLayout>
+    </AuthShell>
   );
 }

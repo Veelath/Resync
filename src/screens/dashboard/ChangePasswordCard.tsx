@@ -1,4 +1,5 @@
 import { Eye, Spinner } from '../../components/AppPrimitives';
+import { PasswordRequirements, isPasswordValid } from '../../components/PasswordRequirements';
 import { B, BH, BL } from '../../lib/brand';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 
@@ -80,7 +81,8 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
                     type={showNewPw ? "text" : "password"}
                     value={newPw}
                     onChange={e => setNewPw(e.target.value)}
-                    placeholder="Minimum 8 characters"
+                    aria-describedby="change-password-requirements"
+                    placeholder="New password"
                     className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
                     style={{ borderColor: "#e5e7eb" }}
                     onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
@@ -95,7 +97,7 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
                     <Eye open={showNewPw} />
                   </button>
                 </div>
-                <p className="text-[11px] text-gray-400">Must be at least 8 characters long.</p>
+                <PasswordRequirements id="change-password-requirements" password={newPw} />
               </div>
 
               <div className="space-y-1.5">
@@ -126,9 +128,9 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={pwLoading}
-                  className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all flex items-center gap-2 shadow-sm"
-                  style={{ background: `linear-gradient(135deg, ${B}, ${BH})`, opacity: pwLoading ? 0.7 : 1 }}
+                  disabled={pwLoading || !isPasswordValid(newPw)}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all flex items-center gap-2 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed"
+                  style={{ background: `linear-gradient(135deg, ${B}, ${BH})`, opacity: pwLoading || !isPasswordValid(newPw) ? 0.5 : 1 }}
                 >
                   {pwLoading ? <><Spinner /> Updating…</> : "Update Password"}
                 </button>

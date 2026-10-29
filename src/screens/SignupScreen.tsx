@@ -1,26 +1,21 @@
 import { useState, useId } from "react";
 import type React from 'react';
 import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
-import { AuthLayout } from '../components/AuthLayout';
+import { AuthShell } from '../components/AuthShell';
+import { PasswordRequirements, isPasswordValid } from '../components/PasswordRequirements';
 import type { Screen } from '../lib/appTypes';
-import { B, BH, BL } from '../lib/brand';
+import { B } from '../lib/brand';
 import { supabase } from '../lib/supabase';
 
-function FieldInput({ label, type = "text", value, onChange, placeholder, right, required = true }: {
-  label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; right?: React.ReactNode; required?: boolean;
+function FieldInput({ label, type = "text", value, onChange, placeholder, required = true }: {
+  label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; required?: boolean;
 }) {
   const id = useId();
-  const [focused, setFocused] = useState(false);
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
-        {right}
-      </div>
+    <div className="space-y-2">
+      <label htmlFor={id} className="auth-label">{label}</label>
       <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
-        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        className="w-full h-11 px-4 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
-        style={{ borderColor: focused ? B : "#e5e7eb", boxShadow: focused ? `0 0 0 3px ${B}12` : "none" }} />
+        className="auth-input" />
     </div>
   );
 }
@@ -37,14 +32,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   const [error, setError] = useState("");
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
 
-  const str = pw.length === 0 ? 0 : pw.length < 8 ? 1 : pw.length < 12 ? 2 : 3;
-  const strMeta = [
-    { label: "", color: "", bar: "" },
-    { label: "Weak", color: "#ef4444", bar: "#f87171" },
-    { label: "Good", color: "#d97706", bar: "#fbbf24" },
-    { label: "Strong", color: "#16a34a", bar: "#4ade80" },
-  ][str];
-  const canSubmit = !!firstName.trim() && !!lastName.trim() && !!email && pw.length >= 8 && agreed && !loading;
+  const canSubmit = !!firstName.trim() && !!lastName.trim() && !!email && isPasswordValid(pw) && agreed && !loading;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -77,32 +65,32 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   }
 
   return (
-    <AuthLayout onNavigate={onNavigate} onBack={onBack}>
+    <AuthShell onNavigate={onNavigate} onBack={onBack}>
       <div>
-        <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3" style={{ background: BL, color: B }}>
+        <div className="auth-rise mb-6">
+          <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase mb-3" style={{ background: "#eef0ff", color: "#1a1fcc" }}>
             New Account
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Create your account</h1>
-          <p className="text-xs text-gray-500 leading-relaxed">Free to use — no credit card required.</p>
+          </span>
+          <h1 className="text-3xl lg:text-[42px] font-extrabold text-[#0b0f3d] tracking-[-0.035em] leading-[1.05] mb-2">Create your account</h1>
+          <p className="text-[15px] text-[#4b5275] leading-relaxed">Free to use — no credit card required.</p>
         </div>
 
         <button
           type="button"
           onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
-          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-5 shadow-sm"
+          className="auth-google auth-focus auth-rise mb-6"
         >
           <GIcon />Continue with Google
         </button>
 
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-gray-100" /><span className="text-[10px] text-gray-400 font-bold tracking-wider">OR REGISTER WITH EMAIL</span><div className="flex-1 h-px bg-gray-100" />
+        <div className="auth-or auth-rise mb-6">
+          <span>or register with email</span>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100" role="alert">{error}</div>}
 
         <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FieldInput label="First name" value={firstName} onChange={setFirstName} placeholder="Maria" required={true} />
             <FieldInput label="Middle name (optional)" value={middleName} onChange={setMiddleName} placeholder="Clara" required={false} />
           </div>
@@ -110,26 +98,17 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
           <FieldInput label="Email address" type="email" value={email} onChange={setEmail} placeholder="maria.santos@dlsu.edu.ph" />
 
           {/* password */}
-          <div className="space-y-1.5">
-            <label htmlFor="signup-password-input" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
-            <div className="relative">
-              <input id="signup-password-input" type={showPw ? "text" : "password"} value={pw} onChange={e => setPw(e.target.value)} placeholder="At least 8 characters" required
-                className="w-full h-11 px-4 pr-11 rounded-xl border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none transition-all"
-                style={{ borderColor: "#e5e7eb" }}
-                onFocus={e => { e.target.style.borderColor = B; e.target.style.boxShadow = `0 0 0 3px ${B}12`; }}
-                onBlur={e => { e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }} />
-              <button type="button" aria-label={showPw ? "Hide password" : "Show password"} onClick={() => setShowPw(!showPw)} className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+          <div className="space-y-2">
+            <label htmlFor="signup-password-input" className="auth-label">Password</label>
+            <div className="auth-field">
+              <input id="signup-password-input" type={showPw ? "text" : "password"} value={pw} onChange={e => setPw(e.target.value)} placeholder="Password" required
+                aria-describedby="signup-password-requirements" autoComplete="new-password"
+                className="auth-input auth-input--toggle" />
+              <button type="button" aria-label={showPw ? "Hide password" : "Show password"} onClick={() => setShowPw(!showPw)} className="auth-eye auth-focus">
                 <Eye open={showPw} />
               </button>
             </div>
-            {pw.length > 0 && (
-              <div className="flex items-center gap-2 pt-0.5">
-                <div className="flex gap-1 flex-1">
-                  {[1, 2, 3].map(n => <div key={n} className="h-1 flex-1 rounded-full transition-all duration-300" style={{ background: str >= n ? strMeta.bar : "#e5e7eb" }} />)}
-                </div>
-                <span className="text-xs font-bold" style={{ color: strMeta.color }}>{strMeta.label}</span>
-              </div>
-            )}
+            <PasswordRequirements id="signup-password-requirements" password={pw} />
           </div>
 
           {/* terms */}
@@ -139,19 +118,18 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
               role="checkbox"
               aria-checked={agreed}
               onClick={() => setAgreed(!agreed)}
-              className="mt-0.5 w-[18px] h-[18px] min-w-[18px] rounded-md border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1"
-              style={{ background: agreed ? B : "white", borderColor: agreed ? B : "#d1d5db" }}
+              className="auth-focus mt-0.5 w-[20px] h-[20px] min-w-[20px] rounded-md border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              style={{ background: agreed ? B : "white", borderColor: agreed ? B : "#c4c8e6" }}
               aria-label="Agree to terms of service and privacy policy"
             >
               {agreed && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="w-2.5 h-2.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>}
             </button>
-            <span className="text-xs text-gray-500 leading-relaxed">
+            <span className="text-sm text-[#4b5275] leading-relaxed">
               I agree to the{" "}
               <button
                 type="button"
                 onClick={() => setLegalModal("terms")}
-                className="font-bold hover:underline cursor-pointer rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-                style={{ color: B }}
+                className="auth-link auth-focus px-0.5 cursor-pointer"
               >
                 Terms of Service
               </button>{" "}
@@ -159,24 +137,23 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
               <button
                 type="button"
                 onClick={() => setLegalModal("privacy")}
-                className="font-bold hover:underline cursor-pointer rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-                style={{ color: B }}
+                className="auth-link auth-focus px-0.5 cursor-pointer"
               >
                 Privacy Policy
               </button>
             </span>
           </div>
 
-          <button type="submit" disabled={!canSubmit}
-            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 mt-1"
-            style={{ background: canSubmit ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6", color: canSubmit ? "white" : "#9ca3af", cursor: canSubmit ? "pointer" : "not-allowed", boxShadow: canSubmit ? `0 6px 20px ${B}30` : "none" }}>
-            {loading ? <><Spinner />Creating account…</> : "Create account →"}
-          </button>
+          <div className="pt-2">
+            <button type="submit" disabled={!canSubmit} className="auth-primary auth-focus">
+              {loading ? <><Spinner />Creating account…</> : "Create account"}
+            </button>
+          </div>
         </form>
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-sm text-[#4b5275] mt-6">
           Already have an account?{" "}
-          <button onClick={() => onNavigate("login")} className="font-bold hover:underline rounded px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" style={{ color: B }}>Log in</button>
+          <button onClick={() => onNavigate("login")} className="auth-link auth-focus px-1">Log in</button>
         </p>
 
         {legalModal && (
@@ -193,7 +170,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                   type="button"
                   aria-label="Close modal"
                   onClick={() => setLegalModal(null)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                  className="auth-focus w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true">
                     <path d="M18 6L6 18M6 6l12 12" />
@@ -243,7 +220,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                 <button
                   type="button"
                   onClick={() => setLegalModal(null)}
-                  className="px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  className="auth-focus px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer"
                   style={{ background: B, color: "white" }}
                 >
                   Close
@@ -253,6 +230,6 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
           </div>
         )}
       </div>
-    </AuthLayout>
+    </AuthShell>
   );
 }
