@@ -2,7 +2,7 @@
 import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
-import { fetchManuscript } from '../../services/api';
+import { fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
 import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
 import { ResultsScorePanel } from './ResultsScorePanel';
@@ -10,11 +10,24 @@ import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer, PreviewLegend } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText } from './helpers';
 import { verifiedQuoteRanges } from './highlights';
+import { ResultsCheckout } from './ResultsCheckout';
 
 type Tab = 'recommendations' | 'citations';
 
 export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean }) {
-  const result = isSample ? SAMPLE_REPORT : scan;
+  const [currentScan, setCurrentScan] = useState(scan);
+  const result = isSample ? SAMPLE_REPORT : currentScan;
+  const locked = !isSample && result?.access?.unlocked === false;
+  const [balance, setBalance] = useState<number | null>(null);
+  const [buyCredits, setBuyCredits] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
+  const [unlockedToast, setUnlockedToast] = useState(false);
+  useEffect(() => setCurrentScan(scan), [scan]);
+  useEffect(() => {
+    if (!locked || !result?.user_id) return;
+    getCreditBalance(result.user_id).then(value => setBalance(value.balance)).catch(() => setBalance(null));
+  }, [locked, result?.user_id]);
   const [manuscriptText, setManuscriptText] = useState<string | null>(isSample ? SAMPLE_MANUSCRIPT : null);
   const [manuscriptLoading, setManuscriptLoading] = useState(!isSample);
   const [manuscriptReason, setManuscriptReason] = useState<string>();
@@ -38,6 +51,34 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   }, [isSample, result?.analysis_run_id]);
 
   if (!result) return null;
+
+  async function handleUnlock() {
+    if (!result || unlocking) return;
+    if (balance === 0) { setBuyCredits(true); return; }
+    setUnlocking(true);
+    setUnlockError('');
+    try {
+      const response = await unlockScan(result.analysis_run_id);
+      setBalance(response.credits_remaining);
+      const full = await getScanResult(result.analysis_run_id);
+      if (full.result_version !== 'v7') throw new Error('The full report is not ready. Refresh and try again.');
+      setCurrentScan(full as V7ScanResponse);
+      setUnlockedToast(true);
+      window.setTimeout(() => setUnlockedToast(false), 4000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unlock failed. Try again.';
+      setUnlockError(message);
+      if (/not enough credits/i.test(message)) setBalance(0);
+    } finally { setUnlocking(false); }
+  }
+
+  const unlockControl = <div className="space-y-2">
+    <button type="button" onClick={handleUnlock} disabled={unlocking} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white hover:bg-[#1115a5] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
+      {unlocking ? 'Unlocking…' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
+    </button>
+    <p className="text-center text-xs text-[#4b5563]">{balance == null ? 'Checking credit balance' : `You have ${balance} ${balance === 1 ? 'credit' : 'credits'}`}</p>
+    {unlockError && <p role="alert" className="text-sm text-[#9f1239]">{unlockError} {balance === 0 ? 'Buy credits to continue.' : 'Try again.'}</p>}
+  </div>;
 
   const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result.doc_url);
   const suppliedTitle = result.manuscript_title?.trim();
@@ -66,8 +107,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const displayedCitations = citationFilter ? citations.filter(citation => citation.status === citationFilter) : citations;
   const citeCount = (status: Citation['status']) => citations.filter(citation => citation.status === status).length;
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'recommendations', label: `Recommendations (${recommendations.length})` },
-    { id: 'citations', label: `Citations (${citations.length})` },
+    { id: 'recommendations', label: `Recommendations (${recommendations.length + (locked ? result.access!.locked_counts.recommendations : 0)})` },
+    { id: 'citations', label: `Citations (${citations.length + (locked ? result.access!.locked_counts.citations : 0)})` },
   ];
 
   function highlighted(text: string): React.ReactNode[] {
@@ -98,6 +139,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
 
   return <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50 print:h-auto print:overflow-visible font-sans">
     <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} />
+    {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
+    {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
     <div className="hidden print:block p-8 bg-white space-y-4">
       <h1 className="text-2xl font-bold">ReSync Manuscript Coherence Report</h1>
       <p>{displayTitle} · {Math.round(result.overall_coherence_score)}/100 · {result.score_breakdown.band}</p>
@@ -116,7 +159,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             <p className="text-xs text-gray-500 mt-4">Overall assessment <strong>{result.score_breakdown.band}</strong> · {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
           </header>
           <div className="mb-6"><PreviewLegend /></div>
-          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
+          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : <ManuscriptViewer result={result} reason={manuscriptReason} />)}
         </div>
@@ -144,10 +187,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
                     <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 mb-1">Recommended revision</p><p className="text-xs text-gray-700 leading-relaxed">{plainText(recommendation.revision)}</p></div>
                     {result.manuscript_sections && recommendation.quote && <button type="button" onClick={() => focusLinked('highlight', recommendation.id)} className="text-sm font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">Show in manuscript</button>}
                   </div>
-                </div>) : <p className="text-sm text-gray-500">No recommendations for this scan.</p>}
+                </div>) : !locked && <p className="text-sm text-gray-500">No recommendations for this scan.</p>}
+                {locked && <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.recommendations} more recommendations in the full report</p>{unlockControl}</div>}
               </div>}
-              {activeTab === 'citations' && <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
-                citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />}
+              {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.citations} citations checked in the full report</p>{unlockControl}</div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
+                citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>
           {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'} · A rough hint only, not proof that AI wrote the text. Well-written academic prose can score 40-60 on its own. Never use it alone to judge a submission.
             <details className="mt-2"><summary className="cursor-pointer font-semibold text-indigo-700">More about this indicator</summary><p className="mt-2">{plainText(result.ai_text_indicator.disclaimer)}</p></details>

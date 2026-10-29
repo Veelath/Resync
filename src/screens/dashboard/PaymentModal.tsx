@@ -34,8 +34,8 @@ export function PaymentModal({ creditBalance, creditModalStep, setCreditModalSte
             {/* Modal Header */}
             <div className="px-6 pt-5 pb-3 flex items-start justify-between border-b border-gray-100">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Purchase Scan Credits</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Scan credits never expire and apply to any thesis analysis.</p>
+                <h3 className="text-lg font-bold text-gray-900">Buy credits</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Credits never expire and can unlock a full report.</p>
               </div>
               <button
                 type="button"

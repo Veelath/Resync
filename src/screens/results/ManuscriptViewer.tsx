@@ -6,9 +6,9 @@ export function PreviewLegend() {
   return <p className="flex items-start gap-2 text-sm text-[#4b5563]"><span className="mt-1 size-3 shrink-0 rounded-sm bg-[#fde2e4]" aria-hidden="true" />Highlighted: a sentence with a suggested revision.</p>;
 }
 
-export function ManuscriptSections({ result, onHighlight }: { result: V7ScanResponse; onHighlight?: (id: string) => void }) {
+export function ManuscriptSections({ result, onHighlight, locked, unlockControl }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode }) {
   return <div className="space-y-9">
-    {result.manuscript_sections?.map((section, index) => {
+    {result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
       const text = section.text ?? '';
       const ranges = recommendationRanges(section, result.recommendations);
       const pieces: React.ReactNode[] = [];
@@ -26,6 +26,13 @@ export function ManuscriptSections({ result, onHighlight }: { result: V7ScanResp
         {section.text != null && <div className="whitespace-pre-wrap break-words font-serif text-[17px] leading-[1.7] text-[#303746]">{pieces}</div>}
       </section>;
     })}
+    {locked && <div className="relative -mx-4 overflow-hidden rounded-2xl border border-[#dfe5f5] bg-gradient-to-b from-[#e9edf8] to-[#dfe5f5] px-5 pb-6 pt-7 sm:mx-0 sm:px-7">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[#0b0f3d]" aria-hidden="true" />
+      <p className="mb-5 text-sm font-semibold text-[#0b0f3d]">The rest of your manuscript is below the waterline</p>
+      <ol start={2} className="space-y-2 text-sm text-[#4b5563]">{result.manuscript_sections?.slice(1).map((section, index) => <li key={`${index}-${section.name}`} className="flex gap-3"><span className="tabular-nums">{index + 2}</span>{section.name}</li>)}</ol>
+      <p className="my-6 text-sm font-semibold text-[#0b0f3d]">{result.access?.locked_counts.sections} more sections, {result.access?.locked_counts.recommendations} recommendations, {result.access?.locked_counts.citations} citations</p>
+      {unlockControl}
+    </div>}
   </div>;
 }
 
