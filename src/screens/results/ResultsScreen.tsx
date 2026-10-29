@@ -18,6 +18,7 @@ type Tab = 'recommendations' | 'citations';
 export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean }) {
   const [currentScan, setCurrentScan] = useState(scan);
   const result = isSample ? SAMPLE_REPORT : currentScan;
+  const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result?.doc_url ?? '');
   const locked = !isSample && result?.access?.unlocked === false;
   const [balance, setBalance] = useState<number | null>(null);
   const [buyCredits, setBuyCredits] = useState(false);
@@ -30,12 +31,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     getCreditBalance(result.user_id).then(value => setBalance(value.balance)).catch(() => setBalance(null));
   }, [locked, result?.user_id]);
   const [manuscriptText, setManuscriptText] = useState<string | null>(isSample ? SAMPLE_MANUSCRIPT : null);
-  const [manuscriptLoading, setManuscriptLoading] = useState(!isSample);
+  const [manuscriptLoading, setManuscriptLoading] = useState(!isSample && isGoogleDoc);
   const [manuscriptReason, setManuscriptReason] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('recommendations');
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
 
   useEffect(() => {
+    if (!isGoogleDoc) { setManuscriptText(null); setManuscriptLoading(false); return; }
     if (isSample || result?.manuscript_sections || !result?.analysis_run_id) return;
     let cancelled = false;
     setManuscriptLoading(true);
@@ -48,7 +50,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     }).catch(() => { if (!cancelled) setManuscriptText(null); })
       .finally(() => { if (!cancelled) setManuscriptLoading(false); });
     return () => { cancelled = true; };
-  }, [isSample, result?.analysis_run_id]);
+  }, [isSample, isGoogleDoc, result?.analysis_run_id, result?.manuscript_sections]);
 
   if (!result) return null;
 
@@ -80,7 +82,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     {unlockError && <p role="alert" className="text-sm text-[#9f1239]">{unlockError} {balance === 0 ? 'Buy credits to continue.' : 'Try again.'}</p>}
   </div>;
 
-  const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result.doc_url);
   const suppliedTitle = result.manuscript_title?.trim();
   const loadedTitle = extractDisplayTitle(manuscriptText);
   const displayTitle = isSample ? 'Guided Reading Outcomes' : (suppliedTitle && !/^https?:\/\/docs\.google\.com\//i.test(suppliedTitle) ? suppliedTitle : null)
