@@ -66,7 +66,7 @@ const sections: { title: string; body: ReactNode[] }[] = [
   {
     title: '10. Contact us',
     body: [
-      <br />University of Cebu - Banilad<br />readSync.uc.edu@gmail.com</>,
+      <><br />University of Cebu - Banilad<br />readSync.uc.edu@gmail.com</>,
     ],
   },
 ];
