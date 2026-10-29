@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
@@ -7,7 +7,7 @@ import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/samp
 import { ResultsHeader } from './ResultsHeader';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
-import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
+import { AlignmentLegend, ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText } from './helpers';
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
@@ -165,6 +165,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:block print:h-auto print:overflow-visible">
       <div tabIndex={0} aria-label="Manuscript" className="results-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
+          {result.manuscript_sections && <div className="mb-6"><AlignmentLegend /></div>}
           {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />

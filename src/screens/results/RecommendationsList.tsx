@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ManuscriptFlowPair } from '../../services/v7Result';
 import type { RecommendationCategory } from './categoryColors';
 import { plainText } from './helpers';
+import { alignmentOf } from './alignment';
 
 export interface RecommendationItem {
   id: string;
@@ -19,12 +20,7 @@ const VISIBLE_FIXES = 2;
 const clip = (text: string, max: number) => text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 
 // Only pairs with recommendations are listed, and those score below 0.85, so two honest labels are enough.
-function levelOf(pair?: ManuscriptFlowPair) {
-  const overall = pair?.scores.overall_coherence;
-  return overall != null && overall >= 0.65
-    ? { verdict: 'are only partly aligned', bar: 'border-l-sky-500' }
-    : { verdict: 'are not aligned', bar: 'border-l-rose-500' };
-}
+const levelOf = alignmentOf;
 
 function problemOf(pair?: ManuscriptFlowPair) {
   const explanation = pair?.explanation;

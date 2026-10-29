@@ -2,8 +2,20 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import type React from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { matchedRecommendations, recommendationRanges } from './highlights';
-import { categoryColors, neutralHighlight } from './categoryColors';
+import { alignmentOf, alignmentTones } from './alignment';
 import './manuscript.css';
+
+export function AlignmentLegend() {
+  return <div className="text-sm text-[#4b5563]">
+    <ul className="flex flex-wrap gap-x-6 gap-y-1">
+      {Object.values(alignmentTones).map(tone => <li key={tone.label} className="flex items-center gap-2">
+        <span className="size-3 shrink-0 rounded-sm" style={{ backgroundColor: tone.color }} aria-hidden="true" />
+        <span><strong className="font-semibold text-[#0b0f3d]">{tone.label}:</strong> {tone.description}</span>
+      </li>)}
+    </ul>
+    <p className="mt-2">Click a highlight to see its suggested revision.</p>
+  </div>;
+}
 
 function PaperHeading({ name }: { name: string }) {
   const chapter = name.match(/^(chapter\s+(?:[ivxlcdm]+|\d+))\b[\s:.-]*(.*)$/i);
@@ -12,6 +24,10 @@ function PaperHeading({ name }: { name: string }) {
 
 export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean }) {
   const linked = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
+  const pairOf = (id: string) => {
+    const recommendation = linked.find(item => (item.id ?? item.recommendation_id) === id);
+    return result.manuscript_flow.find(pair => pair.order === recommendation?.pair_order);
+  };
   const withheld = result.manuscript_sections?.slice(1) ?? [];
   const fallback = { heading: 'The manuscript continues', paragraphs: Array(3).fill('Quiet lines continue across the page. Soft words fill this space while the full report waits to be opened. '.repeat(4)) };
   return <div className="manuscript-body">
@@ -28,7 +44,7 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
             const pieces: React.ReactNode[] = [];
             let cursor = start;
             for (const range of ranges.filter(item => item.start >= start && item.end <= end)) {
-              const tone = range.category ? categoryColors[range.category] : neutralHighlight;
+              const tone = alignmentOf(pairOf(range.id));
               pieces.push(text.slice(cursor, range.start));
               pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
                 aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
