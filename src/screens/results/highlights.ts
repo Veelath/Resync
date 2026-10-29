@@ -1,4 +1,7 @@
 import type { V7Recommendation } from '../../services/v7Result';
+import { recommendationCategory, type RecommendationCategory } from './categoryColors';
+
+type CategorizedRecommendation = V7Recommendation & { category?: RecommendationCategory };
 
 // Match the backend's verified quotes across whitespace and smart/straight quote differences.
 export function verifiedQuoteRanges(text: string, quotes: string[]): { start: number; end: number }[] {
@@ -27,7 +30,7 @@ export function verifiedQuoteRanges(text: string, quotes: string[]): { start: nu
   for (const match of matches) if (!ranges.length || match.start >= ranges[ranges.length - 1].end) ranges.push(match);
   return ranges;
 }
-export function matchedRecommendations(sections: { name: string; text: string | null }[], recommendations: V7Recommendation[]) {
+export function matchedRecommendations(sections: { name: string; text: string | null }[], recommendations: CategorizedRecommendation[]) {
   return recommendations.map(recommendation => {
     const sentence = recommendation.original_sentence;
     if (!sentence || recommendation.section) return recommendation;
@@ -37,16 +40,16 @@ export function matchedRecommendations(sections: { name: string; text: string | 
   });
 }
 
-export function recommendationRanges(section: { name: string; text: string | null }, recommendations: V7Recommendation[]) {
+export function recommendationRanges(section: { name: string; text: string | null }, recommendations: CategorizedRecommendation[]) {
   const text = section.text ?? '';
-  const ranges: { start: number; end: number; id: string }[] = [];
+  const ranges: { start: number; end: number; id: string; category?: RecommendationCategory }[] = [];
   for (const recommendation of recommendations) {
     const sentence = recommendation.original_sentence;
     if (!sentence || (recommendation.section && recommendation.section !== section.name)
       || (!recommendation.section && recommendation.section_a !== section.name && recommendation.section_b !== section.name)) continue;
     let start = text.indexOf(sentence);
     while (start >= 0 && ranges.some(range => start < range.end && start + sentence.length > range.start)) start = text.indexOf(sentence, start + 1);
-    if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id });
+    if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id, category: recommendationCategory(recommendation.category) });
   }
   return ranges.sort((a, b) => a.start - b.start);
 }
