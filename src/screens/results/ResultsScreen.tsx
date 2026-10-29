@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
 import { fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
 import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
+import { BackToTop } from '../../components/AppPrimitives';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
 import { AlignmentLegend, ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
@@ -18,6 +19,7 @@ type Tab = 'recommendations' | 'citations';
 
 export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean }) {
   const [currentScan, setCurrentScan] = useState(scan);
+  const manuscriptScroll = useRef<HTMLDivElement>(null);
   const result = isSample ? SAMPLE_REPORT : currentScan;
   const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result?.doc_url ?? '');
   const locked = !isSample && result?.access?.unlocked === false;
@@ -163,13 +165,14 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
       <h1 className="max-w-4xl text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl" style={{ fontFamily: 'Source Serif 4, Georgia, serif' }}>{displayTitle}</h1>
     </header>
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:block print:h-auto print:overflow-visible">
-      <div tabIndex={0} aria-label="Manuscript" className="results-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
+      <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
           {result.manuscript_sections && <div className="mb-6"><AlignmentLegend /></div>}
           {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />
             : <div className="mx-auto flex max-w-[420px] flex-col items-center py-8 text-center"><ResultsScorePanel result={result} large /><p className="mt-5 text-sm leading-6 text-[#4b5563]">This report was created before manuscripts were stored, so the text can't be shown. Re-scan to see your manuscript with highlights.</p></div>)}
+          <BackToTop container={manuscriptScroll} label="Back to top of the manuscript" />
         </div>
       </div>
       <aside tabIndex={0} aria-label="Analysis panel" className="results-scroll order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-2 lg:w-[clamp(380px,28vw,520px)] lg:rounded-none lg:shadow-none lg:overflow-y-auto print:hidden">

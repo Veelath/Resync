@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type React from 'react';
 import { ArrowUp } from 'lucide-react';
 import resyncLogo from '@/imports/Untitled_design__1_.webp';
 import './app-primitives.css';
@@ -25,22 +26,38 @@ export function HomeButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function BackToTop() {
+// Default: page-level button near the page bottom. With `container`, it follows that element when it scrolls on its
+// own (the results manuscript column on desktop), else the window, and shows once the reader has moved away from the top.
+export function BackToTop({ container, label = 'Back to top' }: { container?: React.RefObject<HTMLElement | null>; label?: string } = {}) {
   const [visible, setVisible] = useState(false);
+  const scroller = () => {
+    const element = container?.current;
+    return element && element.scrollHeight > element.clientHeight + 1 && getComputedStyle(element).overflowY !== 'visible' ? element : null;
+  };
   useEffect(() => {
     const update = () => {
+      if (container) {
+        const element = scroller();
+        setVisible((element ? element.scrollTop : window.scrollY) > 300);
+        return;
+      }
       const maximum = document.documentElement.scrollHeight - window.innerHeight;
       setVisible(maximum > 0 && window.scrollY >= Math.min(maximum * .75, Math.max(0, maximum - 200)));
     };
     update();
+    const element = container?.current;
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
-    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update); };
-  }, []);
-  return <button type="button" aria-label="Back to top" aria-hidden={!visible} tabIndex={visible ? 0 : -1}
-    onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}
-    className={`resync-back-to-top ${visible ? 'is-visible' : ''}`}>
-    <ArrowUp size={22} strokeWidth={2.5} aria-hidden="true" />
+    element?.addEventListener('scroll', update, { passive: true });
+    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update); element?.removeEventListener('scroll', update); };
+  }, [container]);
+  const toTop = () => {
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+    (scroller() ?? window).scrollTo({ top: 0, behavior });
+  };
+  return <button type="button" aria-label={label} aria-hidden={!visible} tabIndex={visible ? 0 : -1} onClick={toTop}
+    className={`resync-back-to-top ${container ? 'is-inline' : ''} ${visible ? 'is-visible' : ''}`}>
+    <ArrowUp size={container ? 18 : 22} strokeWidth={2.5} aria-hidden="true" /><span className="back-to-top-text" aria-hidden="true">Back to top</span>
   </button>;
 }
 

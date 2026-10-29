@@ -3,3 +3,7 @@
 .resync-back-to-top:hover{background:#111760}
 .resync-back-to-top:focus-visible{outline:3px solid #1a1fcc;outline-offset:4px}
 @media(prefers-reduced-motion:reduce){.resync-back-to-top{transition:none!important;transform:none}}
+.resync-back-to-top.is-inline{position:sticky;right:auto;bottom:20px;z-index:20;display:flex;gap:6px;width:auto;height:40px;margin:24px auto 0;padding:0 16px;border-radius:999px;font:600 14px/1 'Plus Jakarta Sans',sans-serif;box-shadow:0 8px 20px #1a1fcc40}
+.resync-back-to-top.is-inline .back-to-top-text{display:inline}
+.resync-back-to-top .back-to-top-text{display:none}
+@media print{.resync-back-to-top{display:none}}
