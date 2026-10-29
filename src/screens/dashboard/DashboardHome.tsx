@@ -10,7 +10,7 @@ const steps = [
   { number: '04', label: 'Export Report', description: 'Download your annotated report and fix recommendations as a PDF.', icon: Download },
 ];
 const outputs = [
-  ['Coherence Score', 'A 0–100 coherence score for logical links between consecutive manuscript sections.'],
+  ['Coherence Score', 'A 0-100 score from four equal parts: objectives, methodology, claims and numbers.'],
   ['Annotated Manuscript', 'Manuscript text with verified passages highlighted inline for review.'],
   ['Fix Recommendations', 'Suggested revisions for flagged section links, ready to review.'],
   ['Verified Reference List', 'Public or private access status for every cited URL and DOI in your bibliography.'],
@@ -66,7 +66,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
       </article>)}</div>
     </main>
     <div className="phase2-supporting">
-      <section><p>Outputs</p><h2>What You Get</h2><span>Four deliverables, every scan, automatically.</span><div>{outputs.map(([title, description]) => <article key={title}><strong>{title}</strong><span>{description}</span></article>)}</div></section>
+      <section><p>Outputs</p><h2>What You Get</h2><span>A free preview with every scan; the full report unlocks for 1 credit.</span><div>{outputs.map(([title, description]) => <article key={title}><strong>{title}</strong>{title !== 'Coherence Score' && <small className="phase2-full-tag">Full report</small>}<span>{description}</span></article>)}</div></section>
       <section><p>Guidance</p><h2>Best Results With</h2><span>Clear sections help ReSync assess how each part of your manuscript connects to the next.</span><div>{guidance.map(([title, description]) => <article key={title}><strong>{title}</strong><span>{description}</span></article>)}</div></section>
     </div>
   </div>;
