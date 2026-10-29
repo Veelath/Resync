@@ -66,7 +66,7 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
         {/* Google SSO */}
         <button
           type="button"
-          onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })}
+          onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
           className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-150 mb-5 shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
         >
           <GIcon /> Continue with Google

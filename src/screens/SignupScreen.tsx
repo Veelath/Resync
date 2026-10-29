@@ -89,7 +89,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
 
         <button
           type="button"
-          onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })}
+          onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
           className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-5 shadow-sm"
         >
           <GIcon />Continue with Google
