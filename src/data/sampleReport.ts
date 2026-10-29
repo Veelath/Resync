@@ -32,6 +32,14 @@ export const SAMPLE_REPORT: V7ScanResponse = {
   manuscript_id: '33333333-3333-4333-8333-333333333333',
   doc_url: 'guided-reading-outcomes.docx',
   result_version: 'v7',
+  access: { unlocked: true, unlock_cost: 1, locked_counts: { sections: 0, recommendations: 0, citations: 0 } },
+  manuscript_sections: [
+    { name: 'Abstract', text: 'This manuscript examines whether guided reading improves comprehension among university students.' },
+    { name: 'Introduction', text: 'Guided reading is expected to support reading comprehension. The study compares student performance before and after the intervention.' },
+    { name: 'Methodology', text: 'The study measures reading comprehension before and after six weeks of guided reading. Students completed a pre-test and a post-test using the same assessment instrument.' },
+    { name: 'Results', text: 'The post-test results are reported for thirty students. The mean post-test score exceeded the mean pre-test score, but the Results section does not report both values together.' },
+    { name: 'Conclusion', text: 'The findings suggest guided reading may improve comprehension. The manuscript should connect this conclusion to the paired measurements described in Methodology.' },
+  ],
   overall_coherence_score: 75.5,
   sections_analyzed: ['Abstract', 'Introduction', 'Methodology', 'Results', 'Conclusion'],
   manuscript_flow: [
@@ -100,6 +108,7 @@ export const SAMPLE_REPORT: V7ScanResponse = {
     evidence_verified: true, finding_status: 'material_issue',
   }],
   recommendations: [{
+    id: 'r-3-1', section: 'Results',
     recommendation_id: '55555555-5555-4555-8555-555555555555',
     section_a: 'Methodology', section_b: 'Results', pair_order: 3,
     original_sentence: 'The post-test results are reported for thirty students.',

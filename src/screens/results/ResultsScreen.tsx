@@ -32,7 +32,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const [manuscriptLoading, setManuscriptLoading] = useState(!isSample);
   const [manuscriptReason, setManuscriptReason] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('recommendations');
-  const [mobilePane, setMobilePane] = useState<'report' | 'xai'>('report');
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
 
   useEffect(() => {
@@ -89,8 +88,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const recommendations = result.recommendations.map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
 
   function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
-    if (kind === 'recommendation') { setActiveTab('recommendations'); setMobilePane('xai'); }
-    else setMobilePane('report');
+    if (kind === 'recommendation') setActiveTab('recommendations');
     requestAnimationFrame(() => {
       const target = document.getElementById(`${kind}-${id}`);
       target?.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
@@ -137,35 +135,34 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     </div>;
   }
 
-  return <div className="h-screen h-dvh flex flex-col overflow-hidden bg-gray-50 print:h-auto print:overflow-visible font-sans">
+  return <div className="min-h-screen bg-[#f6f7fb] font-sans text-[#0b0f3d] print:bg-white">
     <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} />
     {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
     <div className="hidden print:block p-8 bg-white space-y-4">
       <h1 className="text-2xl font-bold">ReSync Manuscript Coherence Report</h1>
-      <p>{displayTitle} · {Math.round(result.overall_coherence_score)}/100 · {result.score_breakdown.band}</p>
+      <p>{displayTitle}. {Math.round(result.overall_coherence_score)} out of 100. {result.score_breakdown.band}.</p>
       <ResultsScorePanel result={result} />
       <h2 className="font-bold">Recommendations</h2>
       {result.recommendations.map(item => <p key={item.recommendation_id}>{item.original_sentence && `${plainText(item.original_sentence)} → `}{plainText(item.recommended_revision)}</p>)}
       <h2 className="font-bold">Citations</h2>
       {citations.map(citation => <p key={citation.id}>{citation.ref} {citation.url}</p>)}
     </div>
-    <main className="flex-1 flex overflow-hidden print:block print:overflow-visible">
-      <div className={`${mobilePane === 'report' ? 'flex' : 'hidden'} lg:flex flex-1 min-w-0 overflow-y-auto bg-white flex-col print:flex print:overflow-visible`}>
-        <div className="sticky top-0 z-20 px-6 py-3 bg-white border-b border-gray-100 text-xs font-semibold text-gray-500 print:hidden">Manuscript preview</div>
-        <div className="w-full max-w-5xl mx-auto px-6 lg:px-10 py-10">
-          <header className="mb-7"><p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 mb-5">{isSample ? 'Sample manuscript report' : 'Manuscript report'}</p>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900" style={{ fontFamily: 'Georgia, serif' }}>{displayTitle}</h1>
-            <p className="text-xs text-gray-500 mt-4">Overall assessment <strong>{result.score_breakdown.band}</strong> · {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
-          </header>
+    <header className="mx-auto max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:px-8">
+      <h1 className="max-w-4xl font-serif text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl">{displayTitle}</h1>
+      <p className="mt-3 text-sm text-[#4b5563]">{result.score_breakdown.band}, {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
+    </header>
+    <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:px-8 print:block">
+      <div className="order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] lg:order-1 print:shadow-none">
+        <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
           <div className="mb-6"><PreviewLegend /></div>
           {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : <ManuscriptViewer result={result} reason={manuscriptReason} />)}
         </div>
       </div>
-      <div className={`${mobilePane === 'xai' ? 'flex w-full' : 'hidden'} lg:flex shrink-0 bg-white flex-col overflow-hidden lg:w-[360px] xl:w-[420px] 2xl:w-[460px] border-l border-gray-100 print:hidden`}>
-        <div className="flex-1 overflow-y-auto print:overflow-visible">
+      <aside className="order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] lg:sticky lg:top-4 lg:order-2 lg:w-[380px] print:hidden">
+        <div>
           <ResultsScorePanel result={result} />
             <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-3 print:hidden" role="tablist" aria-label="Results tabs">
               {tabs.map((tab, index) => <button key={tab.id} type="button" role="tab" id={`results-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls="results-tab-panel" tabIndex={activeTab === tab.id ? 0 : -1}
@@ -183,8 +180,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
                   <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
                   <div className="min-w-0 flex-1 rounded-xl bg-gray-50 p-3 space-y-2">
                     {recommendation.section && <p className="text-xs font-semibold text-gray-600">{recommendation.section}</p>}
-                    {recommendation.quote && <div className="rounded-lg bg-gray-100 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Original sentence</p><p className="text-xs text-gray-700 leading-relaxed">“{plainText(recommendation.quote)}”</p></div>}
-                    <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 mb-1">Recommended revision</p><p className="text-xs text-gray-700 leading-relaxed">{plainText(recommendation.revision)}</p></div>
+                    {recommendation.quote && <div className="rounded-lg bg-[#f6f7fb] p-3"><p className="mb-1 text-xs font-semibold text-[#4b5563]">Original sentence</p><p className="font-serif text-[16px] leading-relaxed text-[#303746]">“{recommendation.quote}”</p></div>}
+                    <div className="rounded-lg border border-[#dfe5f5] bg-[#f6f7fb] p-3"><p className="mb-1 text-xs font-semibold text-[#1a1fcc]">Suggested revision</p><p className="text-sm leading-relaxed text-[#303746]">{plainText(recommendation.revision)}</p></div>
                     {result.manuscript_sections && recommendation.quote && <button type="button" onClick={() => focusLinked('highlight', recommendation.id)} className="text-sm font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">Show in manuscript</button>}
                   </div>
                 </div>) : !locked && <p className="text-sm text-gray-500">No recommendations for this scan.</p>}
@@ -193,15 +190,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.citations} citations checked in the full report</p>{unlockControl}</div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>
-          {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'} · A rough hint only, not proof that AI wrote the text. Well-written academic prose can score 40-60 on its own. Never use it alone to judge a submission.
+          {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'}. A rough hint only, not proof that AI wrote the text. Well-written academic prose can score 40-60 on its own. Never use it alone to judge a submission.
             <details className="mt-2"><summary className="cursor-pointer font-semibold text-indigo-700">More about this indicator</summary><p className="mt-2">{plainText(result.ai_text_indicator.disclaimer)}</p></details>
           </div>}
         </div>
-      </div>
+      </aside>
     </main>
-    <nav className="lg:hidden shrink-0 grid grid-cols-2 border-t border-gray-200 bg-white print:hidden" aria-label="Mobile report panes">
-      <button type="button" onClick={() => setMobilePane('report')} className={`py-3 text-xs font-bold ${mobilePane === 'report' ? 'text-indigo-600' : 'text-gray-500'}`}>Manuscript</button>
-      <button type="button" onClick={() => setMobilePane('xai')} className={`py-3 text-xs font-bold ${mobilePane === 'xai' ? 'text-indigo-600' : 'text-gray-500'}`}>Analysis</button>
-    </nav>
   </div>;
 }
