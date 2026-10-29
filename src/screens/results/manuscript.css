@@ -9,6 +9,8 @@
 .manuscript-body section + section { margin-top: 1.5em; }
 .manuscript-heading { margin-bottom: 1.5em; text-align: center; font-weight: 600; color: #0b0f3d; }
 .manuscript-body p { margin: 0 0 1.5em; text-align: justify; text-indent: 2em; }
+.manuscript-compact-block { margin: 0 0 1.5em; }
+.manuscript-body .manuscript-compact-block p { margin: 0; text-align: left; text-indent: 0; line-height: 1.15; }
 .manuscript-highlight { border-radius: 2px; text-align: left; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .manuscript-highlight:hover, .manuscript-highlight:focus-visible { box-shadow: 0 0 0 2px #1a1fcc; outline: none; }
 .manuscript-highlight.result-focus, .results-screen .result-focus { animation: manuscript-target 1s ease-out 2; }

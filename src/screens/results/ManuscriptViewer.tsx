@@ -26,22 +26,40 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
       const ranges = recommendationRanges(section, linked);
       return <section key={`${index}-${section.name}`} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
         <PaperHeading name={section.name} />
-        {section.text != null && [...text.matchAll(/[^\r\n]+/g)].map((match, paragraphIndex) => {
-          const start = match.index;
-          const end = start + match[0].length;
-          const pieces: React.ReactNode[] = [];
-          let cursor = start;
-          for (const range of ranges.filter(item => item.start >= start && item.end <= end)) {
-            const tone = range.category ? categoryColors[range.category] : neutralHighlight;
-            pieces.push(text.slice(cursor, range.start));
-            pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
-              aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
-              className="manuscript-highlight" style={{ backgroundColor: tone.tint, color: tone.ink, textDecorationColor: tone.color }}>{text.slice(range.start, range.end)}</button>);
-            cursor = range.end;
+        {section.text != null && (() => {
+          const lines = [...text.matchAll(/[^\r\n]+/g)];
+          const renderLine = (match: RegExpMatchArray) => {
+            const start = match.index!;
+            const end = start + match[0].length;
+            const pieces: React.ReactNode[] = [];
+            let cursor = start;
+            for (const range of ranges.filter(item => item.start >= start && item.end <= end)) {
+              const tone = range.category ? categoryColors[range.category] : neutralHighlight;
+              pieces.push(text.slice(cursor, range.start));
+              pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
+                aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
+                className="manuscript-highlight" style={{ backgroundColor: tone.tint, color: tone.ink, textDecorationColor: tone.color }}>{text.slice(range.start, range.end)}</button>);
+              cursor = range.end;
+            }
+            pieces.push(text.slice(cursor, end));
+            return pieces;
+          };
+          const rendered: React.ReactNode[] = [];
+          for (let line = 0; line < lines.length;) {
+            let end = line;
+            while (end < lines.length && lines[end][0].trim().length > 0 && lines[end][0].trim().length <= 60 &&
+              !/[.!?;:]$/.test(lines[end][0].trim()) &&
+              (end === line || lines[end].index! - (lines[end - 1].index! + lines[end - 1][0].length) <= 2)) end++;
+            if (end - line >= 3) {
+              rendered.push(<div key={line} className="manuscript-compact-block">{lines.slice(line, end).map((item, offset) => <p key={line + offset}>{renderLine(item)}</p>)}</div>);
+              line = end;
+            } else {
+              rendered.push(<p key={line}>{renderLine(lines[line])}</p>);
+              line++;
+            }
           }
-          pieces.push(text.slice(cursor, end));
-          return <p key={paragraphIndex}>{pieces}</p>;
-        })}
+          return rendered;
+        })()}
       </section>;
     })}
     {locked && <div className="locked-manuscript relative -mx-5 overflow-clip px-5 sm:mx-0 sm:px-0">
