@@ -93,7 +93,7 @@ export default function App() {
       const target = destination?.screen ?? 'home';
       let next: Screen = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
       // A signed-in user pressing Back must stay signed in: skip the sign-in / sign-up pages.
-      if (sessionRef.current && (next === 'login' || next === 'signup' || (next === 'home' && !destination?.sample))) next = 'dashboard';
+      if (sessionRef.current && (next === 'login' || next === 'signup')) next = 'dashboard';
       screenRef.current = next;
       setScreen(next);
       setIsSampleMode(destination?.sample ?? false);
@@ -105,7 +105,7 @@ export default function App() {
 
   function navigate(s: Screen, asSample = false) {
     const target = s === 'dashboard' && !sessionRef.current ? 'login'
-      : sessionRef.current && (s === 'login' || s === 'signup' || (s === 'home' && !asSample)) ? 'dashboard'
+      : sessionRef.current && (s === 'login' || s === 'signup') ? 'dashboard'
       : s;
     const transient = ['processing', 'login', 'signup', 'reset-password'];
     const previous = window.history.state?.resync?.screen as Screen | undefined;
