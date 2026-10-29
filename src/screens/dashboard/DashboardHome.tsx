@@ -59,7 +59,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
     </div></section>
     <main className="phase2-process">
       <div className="phase2-process-heading"><p>Process</p><h2>How It Works</h2><span>Template, upload, scan, then review your report.</span></div>
-      <div className="phase2-steps">{steps.map(({ number, label, description, icon: Icon }, index) => <article className={`phase2-step ${index % 2 ? 'phase2-step-low' : ''}`} key={number}>
+      <div className="phase2-steps"><div className="phase2-step-line" aria-hidden="true" />{steps.map(({ number, label, description, icon: Icon }, index) => <article className="phase2-step" key={number}>
         <span className="phase2-step-number" aria-hidden="true">{number}</span>
         <div className="phase2-step-icon"><Icon size={26} strokeWidth={2.2} aria-hidden="true" /></div>
         <p>Step {index + 1}</p><h3>{label}</h3><span>{description}</span>
