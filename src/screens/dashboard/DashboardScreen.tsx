@@ -269,7 +269,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
   }, [profileMenuOpen]);
 
   return (
-    <div className="phase2-dashboard-shell min-h-full" style={{ background: activeNav === 'Academic Profile' ? '#f8f5ff' : '#f8f9ff' }}>
+    <div className="phase2-dashboard-shell min-h-full" style={{ background: activeNav === 'Academic Profile' ? '#f7f9ff' : '#f8f9ff' }}>
 
       {/* ── Top nav ── */}
       <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} onNavigate={onNavigate} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} notifications={notifications} onMarkNotificationsRead={onMarkNotificationsRead} onOpenReport={onOpenReport} notifOpen={notifOpen} setNotifOpen={setNotifOpen} notifRef={notifRef} unreadCount={unreadCount} avatarUrl={avatarUrl} />
