@@ -94,7 +94,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     if (kind === 'recommendation') setActiveTab('recommendations');
     requestAnimationFrame(() => {
       const target = document.getElementById(`${kind}-${id}`);
-      target?.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+      const scroller = target?.closest<HTMLElement>('.results-scroll');
+      if (target && scroller && window.matchMedia('(min-width: 1024px)').matches) {
+        scroller.scrollTo({ top: scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (scroller.clientHeight - target.clientHeight) / 2, behavior });
+      } else target?.scrollIntoView({ block: 'center', behavior });
       target?.focus({ preventScroll: true });
       target?.classList.add('result-focus');
       window.setTimeout(() => target?.classList.remove('result-focus'), 1600);
@@ -138,7 +142,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     </div>;
   }
 
-  return <div className="min-h-screen bg-[#f6f7fb] font-sans text-[#0b0f3d] print:bg-white">
+  return <div className="results-screen min-h-screen bg-[#f6f7fb] font-sans text-[#0b0f3d] lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
     <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} />
     {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
@@ -151,12 +155,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
       <h2 className="font-bold">Citations</h2>
       {citations.map(citation => <p key={citation.id}>{citation.ref} {citation.url}</p>)}
     </div>
-    <header className="mx-auto max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:px-8">
+    <header className="mx-auto w-full max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:shrink-0 lg:px-8">
       <h1 className="max-w-4xl text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl" style={{ fontFamily: 'Source Serif 4, Georgia, serif' }}>{displayTitle}</h1>
       <p className="mt-3 text-sm text-[#4b5563]">{displayBand}, {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
     </header>
-    <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:px-8 print:block">
-      <div className="order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] lg:order-1 print:shadow-none">
+    <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:items-stretch lg:gap-8 lg:px-8 lg:pb-4 print:block print:h-auto print:overflow-visible">
+      <div tabIndex={0} aria-label="Manuscript" className="results-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
           <div className="mb-6"><PreviewLegend /></div>
           {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
@@ -164,7 +168,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             : <ManuscriptViewer result={result} reason={manuscriptReason} />)}
         </div>
       </div>
-      <aside className="order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] lg:sticky lg:top-4 lg:order-2 lg:w-[380px] print:hidden">
+      <aside tabIndex={0} aria-label="Analysis panel" className="results-scroll order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-2 lg:w-[380px] lg:overflow-y-auto print:hidden">
         <div>
           <ResultsScorePanel result={result} />
             <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-3 print:hidden" role="tablist" aria-label="Results tabs">

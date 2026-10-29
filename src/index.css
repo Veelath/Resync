@@ -109,10 +109,13 @@ h1, h2, h3 {
 }
 
 .result-focus { outline: 3px solid #1a1fcc; outline-offset: 4px; }
+.results-scroll, html:has(.results-screen), body:has(.results-screen) { scrollbar-width: none; }
+.results-scroll::-webkit-scrollbar, html:has(.results-screen)::-webkit-scrollbar, body:has(.results-screen)::-webkit-scrollbar { display: none; }
 .locked-manuscript { min-height: 520px; }
 .locked-manuscript-copy { filter: blur(5px); mask-image: linear-gradient(to bottom, transparent, #000 72px); user-select: none; pointer-events: none; }
 .locked-manuscript-overlay { position: absolute; inset: 0; display: flex; justify-content: center; pointer-events: none; }
 .locked-manuscript-card { position: sticky; top: max(16px, calc(50vh - 130px)); align-self: flex-start; margin-top: clamp(120px, 25vh, 220px); pointer-events: auto; }
+@media (min-width: 1024px) { .locked-manuscript-card { top: max(16px, calc(50% - 105px)); } }
 .report-reveal { animation: report-reveal 260ms ease-out both; }
 @keyframes report-reveal { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .report-reveal { animation: none; } }
