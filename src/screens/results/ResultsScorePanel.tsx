@@ -13,7 +13,7 @@ export function ResultsScorePanel({ result }: { result: V7ScanResponse }) {
 
   return (
     <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
-      <ScoreRing score={result.overall_coherence_score} size={88} band={result.score_breakdown.band} solidArc />
+      <ScoreRing score={result.overall_coherence_score} size={88} band={result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase())} solidArc />
       <p className="text-xs font-bold text-gray-500">Coherence score</p>
       <p className="text-xs text-gray-500 text-center">Four equal parts; a part that does not apply is left out.</p>
       <div className="w-full mt-2 space-y-2" aria-label="Result summary">

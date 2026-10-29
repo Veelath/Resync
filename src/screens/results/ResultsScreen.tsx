@@ -85,6 +85,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const displayTitle = isSample ? 'Guided Reading Outcomes' : (suppliedTitle && !/^https?:\/\/docs\.google\.com\//i.test(suppliedTitle) ? suppliedTitle : null)
     || (loadedTitle && !/^https?:\/\/docs\.google\.com\//i.test(loadedTitle) ? loadedTitle : null)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
+  const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
   const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const linkedIds = new Set(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
@@ -143,7 +144,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
     <div className="hidden print:block p-8 bg-white space-y-4">
       <h1 className="text-2xl font-bold">ReSync Manuscript Coherence Report</h1>
-      <p>{displayTitle}. {Math.round(result.overall_coherence_score)} out of 100. {result.score_breakdown.band}.</p>
+      <p>{displayTitle}. {Math.round(result.overall_coherence_score)} out of 100. {displayBand}.</p>
       <ResultsScorePanel result={result} />
       <h2 className="font-bold">Recommendations</h2>
       {result.recommendations.map(item => <p key={item.recommendation_id}>{item.original_sentence && `${plainText(item.original_sentence)} → `}{plainText(item.recommended_revision)}</p>)}
@@ -152,7 +153,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     </div>
     <header className="mx-auto max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:px-8">
       <h1 className="max-w-4xl text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl" style={{ fontFamily: 'Source Serif 4, Georgia, serif' }}>{displayTitle}</h1>
-      <p className="mt-3 text-sm text-[#4b5563]">{result.score_breakdown.band}, {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
+      <p className="mt-3 text-sm text-[#4b5563]">{displayBand}, {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
     </header>
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:px-8 print:block">
       <div className="order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] lg:order-1 print:shadow-none">
@@ -174,12 +175,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
                   event.preventDefault();
                   setActiveTab(tabs[next].id);
                   document.getElementById(`results-tab-${tabs[next].id}`)?.focus();
-                }} className={`px-3 py-3 text-xs font-bold border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}>{tab.label}</button>)}
+                }} className={`px-3 py-3 text-xs font-bold border-b-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] ${activeTab === tab.id ? 'border-[#1a1fcc] text-[#1a1fcc]' : 'border-transparent text-[#4b5563]'}`}>{tab.label}</button>)}
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
                 {recommendations.length ? recommendations.map((recommendation, index) => <div key={recommendation.id} id={`recommendation-${recommendation.id}`} tabIndex={-1} className="flex items-start gap-3 scroll-mt-6 rounded-lg">
-                  <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="rounded-lg bg-[#e9edf8] text-[#0b0f3d] text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
                   <div className="min-w-0 flex-1 rounded-xl bg-gray-50 p-3 space-y-2">
                     {recommendation.section && <p className="text-xs font-semibold text-gray-600">{recommendation.section}</p>}
                     {recommendation.quote && <div className="rounded-lg bg-[#f6f7fb] p-3"><p className="mb-1 text-xs font-semibold text-[#4b5563]">Original sentence</p><p className="font-serif text-[16px] leading-relaxed text-[#303746]">“{recommendation.quote}”</p></div>}
