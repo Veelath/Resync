@@ -2,6 +2,7 @@ import { B, BH } from '../../lib/brand';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { timeAgo, type AppNotification } from '../../components/ScanNotifications';
 import type { Screen } from '../../lib/appTypes';
+import { Logo, LOGO_HEADER_CLASS } from '../../components/AppPrimitives';
 
 type ActiveNav = "Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits";
 
@@ -29,7 +30,7 @@ export function DashboardHeader({ activeNav, setActiveNav, onNavigate, creditsLo
       <header className={`phase2-header sticky top-0 z-30 bg-white border-b ${activeNav === 'Academic Profile' ? 'phase2-header-profile' : ''}`}>
         <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-2 md:gap-4" style={{ height: 64 }}>
           <div className="flex items-center shrink-0">
-            <button type="button" aria-label="Home" onClick={() => onNavigate('home')} className="phase2-logo rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"><span>S</span><strong>Re<em>Sync</em></strong></button>
+            <button type="button" aria-label="Home" onClick={() => onNavigate('home')} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"><Logo header className={LOGO_HEADER_CLASS} /></button>
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard"] as const).map(label => (
