@@ -9,7 +9,7 @@ import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer, PreviewLegend } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText } from './helpers';
-import { verifiedQuoteRanges } from './highlights';
+import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 
 type Tab = 'recommendations' | 'citations';
@@ -85,7 +85,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const displayTitle = isSample ? 'Guided Reading Outcomes' : (suppliedTitle && !/^https?:\/\/docs\.google\.com\//i.test(suppliedTitle) ? suppliedTitle : null)
     || (loadedTitle && !/^https?:\/\/docs\.google\.com\//i.test(loadedTitle) ? loadedTitle : null)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
-  const recommendations = result.recommendations.map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
+  const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
+  const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
+  const linkedIds = new Set(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
 
   function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
     if (kind === 'recommendation') setActiveTab('recommendations');
@@ -149,14 +151,14 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
       {citations.map(citation => <p key={citation.id}>{citation.ref} {citation.url}</p>)}
     </div>
     <header className="mx-auto max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:px-8">
-      <h1 className="max-w-4xl font-serif text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl">{displayTitle}</h1>
+      <h1 className="max-w-4xl text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl" style={{ fontFamily: 'Source Serif 4, Georgia, serif' }}>{displayTitle}</h1>
       <p className="mt-3 text-sm text-[#4b5563]">{result.score_breakdown.band}, {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
     </header>
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:px-8 print:block">
       <div className="order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] lg:order-1 print:shadow-none">
         <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
           <div className="mb-6"><PreviewLegend /></div>
-          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
+          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : <ManuscriptViewer result={result} reason={manuscriptReason} />)}
         </div>
@@ -182,12 +184,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
                     {recommendation.section && <p className="text-xs font-semibold text-gray-600">{recommendation.section}</p>}
                     {recommendation.quote && <div className="rounded-lg bg-[#f6f7fb] p-3"><p className="mb-1 text-xs font-semibold text-[#4b5563]">Original sentence</p><p className="font-serif text-[16px] leading-relaxed text-[#303746]">“{recommendation.quote}”</p></div>}
                     <div className="rounded-lg border border-[#dfe5f5] bg-[#f6f7fb] p-3"><p className="mb-1 text-xs font-semibold text-[#1a1fcc]">Suggested revision</p><p className="text-sm leading-relaxed text-[#303746]">{plainText(recommendation.revision)}</p></div>
-                    {result.manuscript_sections && recommendation.quote && <button type="button" onClick={() => focusLinked('highlight', recommendation.id)} className="text-sm font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">Show in manuscript</button>}
+                    {linkedIds.has(recommendation.id) && <button type="button" onClick={() => focusLinked('highlight', recommendation.id)} className="text-sm font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">Show in manuscript</button>}
                   </div>
                 </div>) : !locked && <p className="text-sm text-gray-500">No recommendations for this scan.</p>}
-                {locked && <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.recommendations} more recommendations in the full report</p>{unlockControl}</div>}
+                {locked && <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'} in the full report</p>{unlockControl}</div>}
               </div>}
-              {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.citations} citations checked in the full report</p>{unlockControl}</div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
+              {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p>{unlockControl}</div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>
           {result.ai_text_indicator && <div className="p-5 border-t border-gray-100 text-xs text-gray-600">AI-text indicator: {result.ai_text_indicator.overall_score ?? '—'}. A rough hint only, not proof that AI wrote the text. Well-written academic prose can score 40-60 on its own. Never use it alone to judge a submission.

@@ -109,7 +109,9 @@ h1, h2, h3 {
 }
 
 .result-focus { outline: 3px solid #1a1fcc; outline-offset: 4px; }
-@media (prefers-reduced-motion: reduce) { .result-focus { scroll-behavior: auto; } }
+.report-reveal { animation: report-reveal 260ms ease-out both; }
+@keyframes report-reveal { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .report-reveal { animation: none; } }
 
 .score-band { --band: var(--color-band-moderate); --band-surface: var(--surface-warn); }
 .score-band[data-band="strong"] { --band: var(--color-band-strong); --band-surface: var(--surface-success); }

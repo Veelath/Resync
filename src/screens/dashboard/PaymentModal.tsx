@@ -2,7 +2,7 @@ import { CREDIT_PACKAGES } from './helpers';
 import { B, BH } from '../../lib/brand';
 import type { Dispatch, FormEvent, RefObject, SetStateAction } from 'react';
 
-export function PaymentModal({ creditBalance, creditModalStep, setCreditModalStep, selectedPkgId, setSelectedPkgId, selectedPkg, receiptRef, receiptTime, receiptLast4, receiptAmount, cardNumber, setCardNumber, cardExpiry, setCardExpiry, cardCvc, setCardCvc, cardName, setCardName, paymentError, setPaymentError, purchasedCredits, closeBuyCreditsModal, handlePaymentSubmit }: { creditBalance: number | null; creditModalStep: "package" | "payment" | "processing" | "success"; setCreditModalStep: Dispatch<SetStateAction<"package" | "payment" | "processing" | "success">>; selectedPkgId: string; setSelectedPkgId: Dispatch<SetStateAction<string>>; selectedPkg: (typeof CREDIT_PACKAGES)[number]; receiptRef: string | null; receiptTime: Date | null; receiptLast4: string; receiptAmount: number; cardNumber: string; setCardNumber: Dispatch<SetStateAction<string>>; cardExpiry: string; setCardExpiry: Dispatch<SetStateAction<string>>; cardCvc: string; setCardCvc: Dispatch<SetStateAction<string>>; cardName: string; setCardName: Dispatch<SetStateAction<string>>; paymentError: string; setPaymentError: Dispatch<SetStateAction<string>>; purchasedCredits: number; closeBuyCreditsModal: () => void; handlePaymentSubmit: (e: FormEvent) => Promise<void> }) {
+export function PaymentModal({ creditBalance, creditModalStep, setCreditModalStep, selectedPkgId, setSelectedPkgId, selectedPkg, receiptRef, receiptTime, receiptLast4, receiptAmount, cardNumber, setCardNumber, cardExpiry, setCardExpiry, cardCvc, setCardCvc, cardName, setCardName, paymentError, setPaymentError, purchasedCredits, closeBuyCreditsModal, handlePaymentSubmit, returnLabel = 'Return to Dashboard' }: { creditBalance: number | null; creditModalStep: "package" | "payment" | "processing" | "success"; setCreditModalStep: Dispatch<SetStateAction<"package" | "payment" | "processing" | "success">>; selectedPkgId: string; setSelectedPkgId: Dispatch<SetStateAction<string>>; selectedPkg: (typeof CREDIT_PACKAGES)[number]; receiptRef: string | null; receiptTime: Date | null; receiptLast4: string; receiptAmount: number; cardNumber: string; setCardNumber: Dispatch<SetStateAction<string>>; cardExpiry: string; setCardExpiry: Dispatch<SetStateAction<string>>; cardCvc: string; setCardCvc: Dispatch<SetStateAction<string>>; cardName: string; setCardName: Dispatch<SetStateAction<string>>; paymentError: string; setPaymentError: Dispatch<SetStateAction<string>>; purchasedCredits: number; closeBuyCreditsModal: () => void; handlePaymentSubmit: (e: FormEvent) => Promise<void>; returnLabel?: string }) {
   return (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
@@ -357,7 +357,7 @@ export function PaymentModal({ creditBalance, creditModalStep, setCreditModalSte
                     className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white shadow-sm transition-all hover:opacity-90 flex items-center justify-center cursor-pointer"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
                   >
-                    Return to Dashboard
+                    {returnLabel}
                   </button>
                 </div>
               </div>

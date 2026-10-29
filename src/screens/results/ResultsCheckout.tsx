@@ -48,5 +48,5 @@ export function ResultsCheckout({ userId, balance, onBalance, onClose }: { userI
     selectedPkg={selectedPkg} receiptRef={receiptRef} receiptTime={receiptTime} receiptLast4={receiptLast4} receiptAmount={receiptAmount}
     cardNumber={cardNumber} setCardNumber={setCardNumber} cardExpiry={cardExpiry} setCardExpiry={setCardExpiry} cardCvc={cardCvc} setCardCvc={setCardCvc}
     cardName={cardName} setCardName={setCardName} paymentError={error} setPaymentError={setError} purchasedCredits={purchasedCredits}
-    closeBuyCreditsModal={onClose} handlePaymentSubmit={handlePaymentSubmit} />;
+    closeBuyCreditsModal={onClose} handlePaymentSubmit={handlePaymentSubmit} returnLabel="Return to report" />;
 }

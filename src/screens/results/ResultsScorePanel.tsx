@@ -28,10 +28,12 @@ export function ResultsScorePanel({ result }: { result: V7ScanResponse }) {
             const caption = applicable ? null : key === 'numeric_consistency' ? 'No figures to compare' : 'Not enough text';
             const title = `${description} ${applicable ? `Average ${value}%.${share ? ` Contribution ${share} of ${maximum}.` : ''}` : 'Not applicable.'}`;
             return <div key={key} className="min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3" role="group" aria-label={`${label}: ${applicable ? `${value}%` : 'Not applicable'}. ${title}`} title={title}>
-              <div className="flex items-start gap-2 text-xs text-gray-700">
+              <div className="flex flex-col gap-1 text-xs text-gray-700">
+                <div className="flex items-center gap-2">
                 <span className={`mt-1 size-2 shrink-0 rounded-full ${applicable ? color : 'bg-gray-300'}`} aria-hidden="true" />
-                <span className="min-w-0 flex-1 leading-tight">{label}</span>
-                <span className="font-bold tabular-nums text-gray-900">{applicable ? share ? `${share} of ${maximum}` : `${value}%` : 'Not applicable'}</span>
+                <span className="min-w-0 leading-tight">{label}</span>
+                </div>
+                <span className="font-bold tabular-nums text-[#0b0f3d]">{applicable ? share ? `${share} of ${maximum}` : `${value}%` : 'Not applicable'}</span>
               </div>
               <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-valuetext={applicable ? share ? `${share} of ${maximum}` : `${value}%` : 'Not applicable'}>
                 <div className={`h-full rounded-full ${applicable ? color : 'bg-gray-300'}`} style={{ width: `${value}%` }} />

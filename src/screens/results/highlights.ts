@@ -1,3 +1,5 @@
+import type { V7Recommendation } from '../../services/v7Result';
+
 // Match the backend's verified quotes across whitespace and smart/straight quote differences.
 export function verifiedQuoteRanges(text: string, quotes: string[]): { start: number; end: number }[] {
   const normalize = (value: string) => value.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ');
@@ -25,7 +27,15 @@ export function verifiedQuoteRanges(text: string, quotes: string[]): { start: nu
   for (const match of matches) if (!ranges.length || match.start >= ranges[ranges.length - 1].end) ranges.push(match);
   return ranges;
 }
-import type { V7Recommendation } from '../../services/v7Result';
+export function matchedRecommendations(sections: { name: string; text: string | null }[], recommendations: V7Recommendation[]) {
+  return recommendations.map(recommendation => {
+    const sentence = recommendation.original_sentence;
+    if (!sentence || recommendation.section) return recommendation;
+    const section = [recommendation.section_a, recommendation.section_b]
+      .find(name => sections.find(item => item.name === name)?.text?.includes(sentence));
+    return { ...recommendation, section: section ?? '' };
+  });
+}
 
 export function recommendationRanges(section: { name: string; text: string | null }, recommendations: V7Recommendation[]) {
   const text = section.text ?? '';

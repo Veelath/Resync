@@ -1,16 +1,17 @@
 import type { V7ScanResponse } from '../../services/v7Result';
 import type React from 'react';
-import { recommendationRanges } from './highlights';
+import { matchedRecommendations, recommendationRanges } from './highlights';
 
 export function PreviewLegend() {
   return <p className="flex items-start gap-2 text-sm text-[#4b5563]"><span className="mt-1 size-3 shrink-0 rounded-sm bg-[#fde2e4]" aria-hidden="true" />Highlighted: a sentence with a suggested revision.</p>;
 }
 
-export function ManuscriptSections({ result, onHighlight, locked, unlockControl }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode }) {
+export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean }) {
+  const linked = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   return <div className="space-y-9">
     {result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
       const text = section.text ?? '';
-      const ranges = recommendationRanges(section, result.recommendations);
+      const ranges = recommendationRanges(section, linked);
       const pieces: React.ReactNode[] = [];
       let cursor = 0;
       for (const range of ranges) {
@@ -21,7 +22,7 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl 
         cursor = range.end;
       }
       pieces.push(text.slice(cursor));
-      return <section key={`${index}-${section.name}`} className="scroll-mt-6">
+      return <section key={`${index}-${section.name}`} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
         <h2 className="mb-4 flex gap-3 text-lg font-semibold text-[#0b0f3d]"><span className="text-[#6b7280] tabular-nums">{index + 1}</span>{section.name}</h2>
         {section.text != null && <div className="whitespace-pre-wrap break-words font-serif text-[17px] leading-[1.7] text-[#303746]">{pieces}</div>}
       </section>;
@@ -30,7 +31,7 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl 
       <div className="absolute inset-x-0 top-0 h-1 bg-[#0b0f3d]" aria-hidden="true" />
       <p className="mb-5 text-sm font-semibold text-[#0b0f3d]">The rest of your manuscript is below the waterline</p>
       <ol start={2} className="space-y-2 text-sm text-[#4b5563]">{result.manuscript_sections?.slice(1).map((section, index) => <li key={`${index}-${section.name}`} className="flex gap-3"><span className="tabular-nums">{index + 2}</span>{section.name}</li>)}</ol>
-      <p className="my-6 text-sm font-semibold text-[#0b0f3d]">{result.access?.locked_counts.sections} more sections, {result.access?.locked_counts.recommendations} recommendations, {result.access?.locked_counts.citations} citations</p>
+      <p className="my-6 text-sm font-semibold text-[#0b0f3d]">{result.access?.locked_counts.sections} more sections, {result.access?.locked_counts.recommendations} {result.access?.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'}, {result.access?.locked_counts.citations} {result.access?.locked_counts.citations === 1 ? 'citation' : 'citations'}</p>
       {unlockControl}
     </div>}
   </div>;
