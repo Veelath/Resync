@@ -4,8 +4,8 @@ import type { Screen } from '../../lib/appTypes';
 import './dashboard-design.css';
 
 const steps = [
-  { number: '01', label: 'Upload Manuscript', description: 'Upload your Word file or paste a Google Docs share link.', icon: Upload },
-  { number: '02', label: 'Set Type & Template', description: 'Choose your manuscript type and optionally attach a chapter template.', icon: PanelsTopLeft },
+  { number: '01', label: 'Chapter Template (Optional)', description: 'Attach, edit, or reuse saved headings, or skip to use detected headings.', icon: PanelsTopLeft },
+  { number: '02', label: 'Upload Manuscript', description: 'Upload your Word file or paste a Google Docs share link.', icon: Upload },
   { number: '03', label: 'Coherence Scan', description: 'AI checks section links, citations, and the AI-text indicator.', icon: ScanSearch },
   { number: '04', label: 'Export Report', description: 'Download your annotated report and fix recommendations as a PDF.', icon: Download },
 ];
@@ -16,7 +16,7 @@ const outputs = [
   ['Verified Reference List', 'Public or private access status for every cited URL and DOI in your bibliography.'],
 ];
 const guidance = [
-  ['Digital Manuscripts', 'DOCX, PDF, Google Docs'],
+  ['Digital Manuscripts', '.doc, .docx, Google Docs link'],
   ['Section Flow', 'Consecutive section links'],
   ['Single-Column Flow', 'Sequential reading order'],
   ['Direct Prose', 'Claims and conclusions'],
@@ -58,7 +58,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
       </div>
     </div></section>
     <main className="phase2-process">
-      <div className="phase2-process-heading"><p>Process</p><h2>How It Works</h2><span>Four simple steps from manuscript to coherence report.</span></div>
+      <div className="phase2-process-heading"><p>Process</p><h2>How It Works</h2><span>Template, upload, scan, then review your report.</span></div>
       <div className="phase2-steps">{steps.map(({ number, label, description, icon: Icon }, index) => <article className={`phase2-step ${index % 2 ? 'phase2-step-low' : ''}`} key={number}>
         <span className="phase2-step-number" aria-hidden="true">{number}</span>
         <div className="phase2-step-icon"><Icon size={26} strokeWidth={2.2} aria-hidden="true" /></div>

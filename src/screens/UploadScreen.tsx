@@ -86,7 +86,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [templateNotification, setTemplateNotification] = useState<string | null>(null);
   const templateToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check localStorage on mount / when step === 2
+  // Check localStorage on mount / when returning to the template step
   useEffect(() => {
     try {
       const saved = localStorage.getItem("resync_saved_template");
@@ -246,7 +246,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       });
       if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc });
     } catch (e: any) {
-      console.error(e);
+      if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
       onScanFailed?.(errMsg);
       lastScanError = errMsg;
@@ -273,37 +273,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setTemplateChapters(prev => prev.map((ch, i) => i === cIdx ? { ...ch, sections: ch.sections.map((s, si) => si === sIdx ? val : s) } : ch));
   }
 
-  const canProceedToStep2 = mode === "file" ? !!uploadedFile : link.trim().length > 0;
-
-  function handleStep1Continue() {
-    if (mode === "file") {
-      if (!uploadedFile) {
-        setScanError("Please select a manuscript file to upload.");
-        return;
-      }
-      if (uploadedFile.size === 0) {
-        setScanError("The uploaded document appears to be empty or contains no extractable text.");
-        return;
-      }
-      if (!isWordFile(uploadedFile)) {
-        setScanError("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
-        return;
-      }
-      if (uploadedFile.size > MAX_MANUSCRIPT_BYTES) {
-        setScanError("This file is larger than 25 MB. Please upload a smaller Word document.");
-        return;
-      }
-    } else if (mode === "link") {
-      if (!link.trim() || !link.includes("docs.google.com")) {
-        setScanError("Please provide a valid Google Docs link.");
-        return;
-      }
-    }
-    lastScanError = null;
-    setScanError(null);
-    setStep(2);
-  }
-
   return (
     <div className="min-h-full bg-white">
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
@@ -317,7 +286,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
-              Step {step} of 2: {step === 1 ? "Manuscript" : "Optional Template"}
+              Step {step} of 2: {step === 1 ? "Chapter Template" : "Manuscript"}
             </span>
           </div>
         </div>
@@ -328,7 +297,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
         {/* Step Progress Bar */}
         <div className="mb-8 p-3 sm:p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 min-w-0">
-          <div role="button" tabIndex={0} aria-label="Go to Step 1: Manuscript" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
+          <div role="button" tabIndex={0} aria-label="Go to Step 1: Chapter Template" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm"
               style={{ background: step === 1 ? B : "#16a34a" }}>
               {step > 1 ? (
@@ -336,19 +305,19 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               ) : "1"}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-gray-900">1. Manuscript</p>
-              <p className="text-[11px] text-gray-400">Upload .doc/.docx or add Google Docs link</p>
+              <p className="text-xs font-bold text-gray-900">1. Chapter Template (Optional)</p>
+              <p className="text-[11px] text-gray-400">Attach, edit or use saved headings</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
-          <div role="button" tabIndex={canProceedToStep2 ? 0 : -1} aria-label="Go to Step 2: Optional Template" aria-disabled={!canProceedToStep2} className={`flex items-center gap-2 sm:gap-3 min-w-0 rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${canProceedToStep2 ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`} onClick={() => canProceedToStep2 && setStep(2)} onKeyDown={e => { if (canProceedToStep2 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setStep(2); } }}>
+          <div role="button" tabIndex={0} aria-label="Go to Step 2: Upload Manuscript" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(2)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(2); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
               style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
               2
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Optional Template (Editable)</p>
-              <p className="text-[11px] text-gray-400">Review & customize chapter headings</p>
+              <p className="text-xs font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Upload Manuscript</p>
+              <p className="text-[11px] text-gray-400">Upload .doc/.docx or add Google Docs link</p>
             </div>
           </div>
           <div className="hidden sm:block flex-1 h-0.5 max-w-[80px] bg-gray-200" />
@@ -358,26 +327,26 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             </div>
             <div>
               <p className="text-xs font-bold text-gray-600">3. Coherence Scan</p>
-              <p className="text-[11px] text-gray-400">Cross-chapter report</p>
+              <p className="text-[11px] text-gray-400">Then review your report</p>
             </div>
           </div>
         </div>
 
         {/* ════════════════════════════════════════════════════════════════
-            STEP 1: MANUSCRIPT INTAKE
+            STEP 2: MANUSCRIPT INTAKE
         ════════════════════════════════════════════════════════════════ */}
-        {step === 1 ? (
+        {step === 2 ? (
           <div>
             <div className="mb-8">
-              <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 1 · Manuscript Intake</p>
+              <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 2 · Manuscript Intake</p>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Upload manuscript</h1>
-              <p className="text-gray-500 text-sm">ReSync detects section headings from your manuscript. A chapter template is optional in Step 2.</p>
+              <p className="text-gray-500 text-sm">Upload a Word document or add a Google Docs link. ReSync uses your template headings if you chose them in Step 1; otherwise it detects sections.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
               <div className="space-y-7">
 
-                {/* 2. Manuscript Source */}
+                {/* Manuscript Source */}
                 <div>
                   <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500 block mb-3">Manuscript Source</label>
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
@@ -461,21 +430,20 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   )}
                 </div>
 
-                {/* Continue button */}
+                {/* Scan button */}
                 <div className="space-y-3">
                   <button
                     type="button"
-                    disabled={!canProceedToStep2}
-                    onClick={handleStep1Continue}
-                    className="w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                    disabled={isScanning}
+                    onClick={handleScan}
+                    className="w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 text-white"
                     style={{
-                      background: canProceedToStep2 ? `linear-gradient(135deg, ${B}, ${BH})` : "#f3f4f6",
-                      color: canProceedToStep2 ? "white" : "#9ca3af",
-                      cursor: canProceedToStep2 ? "pointer" : "not-allowed",
-                      boxShadow: canProceedToStep2 ? `0 8px 24px ${B}30` : "none"
+                      background: isScanning ? "#9ca3af" : `linear-gradient(135deg, ${B}, ${BH})`,
+                      cursor: isScanning ? "not-allowed" : "pointer",
+                      boxShadow: isScanning ? "none" : `0 8px 24px ${B}30`
                     }}
                   >
-                    Continue to Template Setup (Step 2) →
+                    {isScanning ? "Scanning manuscript…" : "Run Coherence Scan (1 Credit) →"}
                   </button>
                   {scanError && (
                     <div role="alert" className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
@@ -496,8 +464,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 {[
                   {
                     n: "1",
-                    title: "Prepare chapter headings",
-                    body: "ReSync detects section headings from your manuscript.",
+                    title: "Chapter template (optional)",
+                    body: "In Step 1, attach, edit or load saved headings. You can skip to use detected headings.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
                   },
                   {
@@ -508,8 +476,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   },
                   {
                     n: "3",
-                    title: "Optional template",
-                    body: "In Step 2, you can attach a chapter template if your school requires one.",
+                    title: "Run coherence scan",
+                    body: "Start the scan, then review your report when it is ready.",
                     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
                   },
                 ].map(({ n, title, body, icon }) => (
@@ -533,18 +501,18 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
           </div>
         ) : (
           /* ════════════════════════════════════════════════════════════════
-              STEP 2: OPTIONAL TEMPLATE
+              STEP 1: OPTIONAL TEMPLATE
           ════════════════════════════════════════════════════════════════ */
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 2 · Chapter Template</span>
+                  <span className="text-xs mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 1 · Chapter Template (Optional)</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Optional chapter template</h1>
-                <p className="text-gray-500 text-sm mt-1">Skip this step to let ReSync detect sections. Attach or load a template only if your school requires specific headings.</p>
+                <p className="text-gray-500 text-sm mt-1">Attach, edit or load a saved template if you need specific headings. Skip to use headings detected from your manuscript.</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2">
                 {templateNotification && (
                   <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 animate-fade-in">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-emerald-600">
@@ -749,45 +717,27 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   />
                 </div>
 
-                {/* Bottom Navigation Buttons */}
-                <div className="flex items-center gap-3 pt-4">
+                {/* Template navigation */}
+                <div className="flex flex-wrap items-center gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => { setStep(1); lastScanError = null; setScanError(null); }}
-                    className="px-5 h-12 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                    onClick={() => { handleResetTemplate(); setStep(2); }}
+                    className="w-full sm:w-auto px-5 h-12 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    ← Back to Step 1
+                    Skip, use detected headings
                   </button>
                   <button
                     type="button"
-                    disabled={isScanning}
-                    onClick={handleScan}
-                    className="flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all shadow-md flex items-center justify-center gap-2"
+                    onClick={() => setStep(2)}
+                    className="w-full sm:flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all shadow-md flex items-center justify-center gap-2"
                     style={{
-                      background: isScanning ? "#9ca3af" : `linear-gradient(135deg, ${B}, ${BH})`,
-                      boxShadow: isScanning ? "none" : `0 8px 24px ${B}30`,
-                      cursor: isScanning ? "not-allowed" : "pointer"
+                      background: `linear-gradient(135deg, ${B}, ${BH})`,
+                      boxShadow: `0 8px 24px ${B}30`
                     }}
                   >
-                    {isScanning ? (
-                      <>
-                        <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                        Scanning manuscript…
-                      </>
-                    ) : (
-                      <>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
-                        Run Coherence Scan (1 Credit) →
-                      </>
-                    )}
+                    Continue to Upload Manuscript (Step 2) →
                   </button>
                 </div>
-                {scanError && (
-                  <div role="alert" className="mt-3 flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-red-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                    <p className="flex-1 leading-snug font-medium">{scanError}</p>
-                  </div>
-                )}
               </div>
 
               {/* Right column: Summary Card */}
@@ -795,13 +745,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <div className="rounded-2xl p-5 bg-white border border-gray-200 shadow-sm space-y-4">
                   <div>
                     <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-1">Scan Configuration</p>
-                    <h4 className="text-sm font-bold text-gray-900">Manuscript Summary</h4>
+                    <h4 className="text-sm font-bold text-gray-900">Template Summary</h4>
                   </div>
                   <div className="space-y-2.5 text-xs border-t border-gray-100 pt-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">File:</span>
-                      <span className="font-semibold text-gray-800 truncate max-w-[170px]">{uploadedFile?.name || "Google Docs link"}</span>
-                    </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Template:</span>
                       <span className="font-bold" style={{ color: B }}>{templateChapters.length ? "Custom" : "Auto-detect"}</span>

@@ -177,18 +177,33 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
           {/* Section header */}
           <div className="text-center mb-20">
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-5 mono uppercase tracking-widest" style={{ background: `${B}08`, color: B }}>
-              System overview
+              How It Works
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight">From manuscript<br />to focused revisions</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight">Template, upload, scan,<br />then review your report</h2>
           </div>
 
           {/* Overview */}
           <div className="space-y-28">
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Template · Step 1</div>
+                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Set chapter headings (optional)</h3>
+                <p className="text-base text-gray-500 leading-relaxed max-w-sm">Attach and edit a chapter template, use a saved one, or skip to let ReSync detect headings from your manuscript.</p>
+              </div>
+              <div className="rounded-3xl border border-gray-100 bg-gray-50 p-8 shadow-sm">
+                <p className="text-xs mono font-bold uppercase tracking-widest mb-5" style={{ color: B }}>Chapter template</p>
+                <div className="space-y-3">
+                  {["Introduction", "Methodology", "Results", "References"].map(heading => <div key={heading} className="rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm font-semibold text-gray-700">{heading}</div>)}
+                </div>
+                <p className="text-xs text-gray-400 mt-5">Optional · detected headings work too</p>
+              </div>
+            </div>
+
             {/* ── Upload: text left, visual right ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Upload</div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Upload · Step 2</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   Add a <span className="font-semibold text-gray-700">Word file (.doc/.docx)</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies sections and checks how each connects to the next.
@@ -278,7 +293,7 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
               </div>
 
               <div className="order-1 lg:order-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Analysis</div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Scan · Step 3</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review connections between sections</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   Resync compares consecutive sections to identify weak logical links or conflicting information in your manuscript.
@@ -301,7 +316,7 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
             {/* ── Results: text left, visual right ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Results</div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Report · Step 4</div>
                 <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review the report</h3>
                 <p className="text-base text-gray-500 leading-relaxed max-w-sm">
                   See highlighted passages, explanations, and suggested revisions in one report. Use the findings as guidance while you review and update your paper.
