@@ -12,7 +12,7 @@ export function ScoreRing({ score, size = 112, band, showLabel = true }: { score
       <div className="relative" style={{ width: size, height: size }}>
         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
           <circle cx="50" cy="50" r={r} fill="white" stroke="#e5e7eb" strokeWidth="11" />
-          <circle cx="50" cy="50" r={r} fill="none" stroke="#1a1fcc" strokeWidth="11" strokeLinecap="round" className="score-ring-arc"
+          <circle cx="50" cy="50" r={r} fill="none" stroke="#1a1fcc" strokeWidth="11" strokeLinecap="round"
             strokeDasharray={`${(Math.max(0, Math.min(100, score)) / 100) * circ} ${circ}`} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
