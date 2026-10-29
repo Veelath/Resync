@@ -158,6 +158,7 @@ export default function App() {
   function handleScanStart() {
     scanRunRef.current += 1;
     scanSettledRef.current = false;
+    setScanResult(null);  // a rescan starts clean: the previous report and its recommendations are dropped
     setToast(null);
     unlockAudio();
   }

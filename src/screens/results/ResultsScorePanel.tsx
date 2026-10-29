@@ -3,10 +3,10 @@ import type { DimensionKey, V7ScanResponse } from '../../services/v7Result';
 import { categoryColors } from './categoryColors';
 
 const dimensions: { key: DimensionKey; label: string; color: string; description: string }[] = [
-  { key: 'objectives_alignment', label: 'Objectives', color: categoryColors.objectives.color, description: 'How well neighboring sections support the stated objectives.' },
-  { key: 'methodology_fit', label: 'Methodology', color: categoryColors.methodology.color, description: 'How well the method connects to the neighboring sections.' },
-  { key: 'claim_support', label: 'Claims', color: categoryColors.claims.color, description: 'How well claims are supported by neighboring sections.' },
-  { key: 'numeric_consistency', label: 'Numeric', color: categoryColors.numeric.color, description: 'How well figures agree across neighboring sections.' },
+  { key: 'objectives_alignment', label: 'Context Alignment', color: categoryColors.objectives.color, description: 'How well the text stays aligned with the purpose and context the paper sets up.' },
+  { key: 'methodology_fit', label: 'Operational Alignment', color: categoryColors.methodology.color, description: 'How well how the work was done matches the rest of the paper.' },
+  { key: 'claim_support', label: 'Logical Support', color: categoryColors.claims.color, description: 'How well statements are backed up by the surrounding text.' },
+  { key: 'numeric_consistency', label: 'Evidence Consistency', color: categoryColors.numeric.color, description: 'How well numbers and data agree across the paper.' },
 ];
 
 export function ResultsScorePanel({ result, large = false }: { result: V7ScanResponse; large?: boolean }) {
@@ -14,11 +14,10 @@ export function ResultsScorePanel({ result, large = false }: { result: V7ScanRes
 
   return (
     <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
-      <ScoreRing score={result.overall_coherence_score} size={large ? 176 : 88} band={result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase())} solidArc />
-      <p className="text-xs font-bold text-gray-500">Coherence score</p>
-      <p className="text-xs text-gray-500 text-center">Four equal parts; a part that does not apply is left out.</p>
+      <ScoreRing score={result.overall_coherence_score} size={large ? 176 : 88} band={result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase())} label="Overall Coherence Score" solidArc />
       {!!result.score_breakdown.critical_penalty && <p className="text-xs font-semibold text-rose-700 text-center">Critical flaw: {result.score_breakdown.critical_penalty} points deducted for a pair that does not connect.</p>}
       <div className="w-full mt-2 space-y-2" aria-label="Result summary">
+        <p className="text-xs font-semibold text-gray-500 text-center">Breakdown of your total score</p>
         <div className="grid grid-cols-2 gap-2">
           {dimensions.map(({ key, label, color, description }) => {
             const average = result.score_breakdown.dimensions[key];

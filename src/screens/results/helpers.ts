@@ -76,10 +76,10 @@ export const SECTION_STATUS = {
 export const STRENGTH_THRESHOLD = 70;
 export const FAIR_THRESHOLD = 50;
 export const DIMENSION_LABELS = {
-  objectives_alignment: 'Matches the objectives',
-  methodology_fit: 'Fits the method',
-  numeric_consistency: 'Numbers agree',
-  claim_support: 'Claims are supported',
+  objectives_alignment: 'Context alignment',
+  methodology_fit: 'Operational alignment',
+  numeric_consistency: 'Evidence consistency',
+  claim_support: 'Logical support',
 } as const;
 
 export function plainText(value: string | null | undefined): string {

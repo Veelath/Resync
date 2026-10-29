@@ -2,10 +2,10 @@ export function scoreBandTone(score: number, band = '') {
   return /strong|high/i.test(band) ? 'strong' : /solid|moderate|medium/i.test(band) ? 'moderate' : /weak|low|needs/i.test(band) ? 'weak' : score >= 80 ? 'strong' : score >= 60 ? 'moderate' : 'weak';
 }
 
-export function ScoreRing({ score, size = 112, band, showLabel = true }: { score: number; size?: number; band?: string; showLabel?: boolean; solidArc?: boolean }) {
+export function ScoreRing({ score, size = 112, band, showLabel = true, label: labelText }: { score: number; size?: number; band?: string; showLabel?: boolean; solidArc?: boolean; label?: string }) {
   const r = 38; const circ = 2 * Math.PI * r;
   const tone = scoreBandTone(score, band);
-  const label = band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
+  const label = labelText || band || (score >= 80 ? "Strong Coherence" : score >= 60 ? "Moderate Coherence" : "Needs Work");
   const displayedScore = Math.round(score);
   return (
     <div className="score-band flex flex-col items-center gap-1.5" data-band={tone} role="img" aria-label={`Coherence score: ${displayedScore} out of 100, ${label}`}>

@@ -10,9 +10,9 @@ import './home-landing.css';
 const nav = [{ label: 'Overview', href: '#section-overview' }, { label: 'Capabilities', href: '#section-capabilities' }, { label: 'About', href: '#section-about' }];
 const checks = [
   ['Section Flow', 'Does each section logically connect with the one before it?'],
-  ['Objectives Alignment', 'Do neighboring sections support the stated objectives?'],
-  ['Methodology Fit', 'Does the next section follow from the methods described?'],
-  ['Claim Support', 'Do claims follow from the evidence in neighboring sections?'],
+  ['Context Alignment', 'Does the text stay aligned with the purpose the paper sets up?'],
+  ['Operational Alignment', 'Does how the work was done match the rest of the paper?'],
+  ['Logical Support', 'Are statements backed up by the surrounding text?'],
   ['Citation Accessibility', 'Check cited URLs and DOIs for public reachability.'],
   ['AI-Text Indicator', 'Review a signal for possible AI-generated text.'],
 ];
