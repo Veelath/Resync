@@ -2,7 +2,7 @@ import { useState } from "react";
 import type React from 'react';
 import { Spinner, Eye } from '../components/AppPrimitives';
 import { AuthShell } from '../components/AuthShell';
-import { PasswordRequirements, isPasswordValid } from '../components/PasswordRequirements';
+import { PasswordRequirements, isPasswordValid, passwordPolicyMessage } from '../components/PasswordRequirements';
 import type { Screen } from '../lib/appTypes';
 import { supabase } from '../lib/supabase';
 
@@ -26,7 +26,7 @@ export function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Sc
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(passwordPolicyMessage(error));
     } else {
       setSuccess(true);
       setTimeout(() => {

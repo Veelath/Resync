@@ -4,11 +4,20 @@ export const PASSWORD_RULES = [
   { id: 'length', label: 'At least 8 characters', test: (pw: string) => pw.length >= 8 },
   { id: 'lowercase', label: 'At least 1 lowercase letter', test: (pw: string) => /[a-z]/.test(pw) },
   { id: 'uppercase', label: 'At least 1 uppercase letter', test: (pw: string) => /[A-Z]/.test(pw) },
-  { id: 'number-or-symbol', label: 'At least 1 number or special character', test: (pw: string) => /[0-9]|[^A-Za-z0-9]/.test(pw) },
+  { id: 'number', label: 'At least 1 number', test: (pw: string) => /[0-9]/.test(pw) },
+  { id: 'symbol', label: 'At least 1 symbol (e.g. ! @ # $)', test: (pw: string) => /[^A-Za-z0-9]/.test(pw) },
 ];
 
 export function isPasswordValid(pw: string) {
   return PASSWORD_RULES.every(rule => rule.test(pw));
+}
+
+// Supabase rejects passwords that miss its policy with code "weak_password" (AuthWeakPasswordError); its message text varies, so match both.
+export function passwordPolicyMessage(error: { code?: string; name?: string; message?: string } | null | undefined) {
+  if (error?.code === 'weak_password' || error?.name === 'AuthWeakPasswordError' || error?.message?.includes('Password should')) {
+    return 'Your password does not meet the account rules. It needs at least 8 characters, with a lowercase letter, an uppercase letter, a number and a symbol.';
+  }
+  return error?.message || 'Something went wrong. Please try again.';
 }
 
 // Each row shows its state with the icon shape as well as the colour: a hollow ring is unmet, a filled tick is met.
