@@ -3,6 +3,7 @@ import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
+import { PrivacyScreen } from './screens/PrivacyScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
 import { HomeScreen } from './screens/HomeScreen';
@@ -196,6 +197,10 @@ export default function App() {
     setScreen('home');
     window.history.replaceState({ resync: { index: historyIndex.current, screen: 'home', sample: false } }, '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (window.location.pathname === '/privacy') {
+    return <PrivacyScreen />;
   }
 
   if (sessionLoading) {
