@@ -84,6 +84,7 @@ export interface V7ScanResponse {
     citation_integrity_score: number | null;
     dimensions: Record<DimensionKey, number | null>;
     dimension_weights?: Partial<Record<DimensionKey, number>> | null;
+    critical_penalty?: number;
     citation_detail: { well_formed_ratio: number; link_resolution_rate: number; cross_match_score: number; total_entries: number };
   };
   ai_text_indicator: AITextIndicatorResponse | null;

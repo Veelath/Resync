@@ -17,6 +17,7 @@ export function ResultsScorePanel({ result, large = false }: { result: V7ScanRes
       <ScoreRing score={result.overall_coherence_score} size={large ? 176 : 88} band={result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase())} solidArc />
       <p className="text-xs font-bold text-gray-500">Coherence score</p>
       <p className="text-xs text-gray-500 text-center">Four equal parts; a part that does not apply is left out.</p>
+      {!!result.score_breakdown.critical_penalty && <p className="text-xs font-semibold text-rose-700 text-center">Critical flaw: {result.score_breakdown.critical_penalty} points deducted for a pair that does not connect.</p>}
       <div className="w-full mt-2 space-y-2" aria-label="Result summary">
         <div className="grid grid-cols-2 gap-2">
           {dimensions.map(({ key, label, color, description }) => {
