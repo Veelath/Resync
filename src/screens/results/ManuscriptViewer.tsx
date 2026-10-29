@@ -1,5 +1,6 @@
 import type { V7ScanResponse } from '../../services/v7Result';
 import type React from 'react';
+import { LockKeyhole } from 'lucide-react';
 import { matchedRecommendations, recommendationRanges } from './highlights';
 
 export function PreviewLegend() {
@@ -8,6 +9,8 @@ export function PreviewLegend() {
 
 export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean }) {
   const linked = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
+  const withheld = result.manuscript_sections?.slice(1) ?? [];
+  const fallback = { heading: 'The manuscript continues', paragraphs: Array(3).fill('Quiet lines continue across the page. Soft words fill this space while the full report waits to be opened. '.repeat(4)) };
   return <div className="space-y-9">
     {result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
       const text = section.text ?? '';
@@ -27,12 +30,24 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
         {section.text != null && <div className="whitespace-pre-wrap break-words font-serif text-[17px] leading-[1.7] text-[#303746]">{pieces}</div>}
       </section>;
     })}
-    {locked && <div className="relative -mx-4 overflow-hidden rounded-2xl border border-[#dfe5f5] bg-gradient-to-b from-[#e9edf8] to-[#dfe5f5] px-5 pb-6 pt-7 sm:mx-0 sm:px-7">
-      <div className="absolute inset-x-0 top-0 h-1 bg-[#0b0f3d]" aria-hidden="true" />
-      <p className="mb-5 text-sm font-semibold text-[#0b0f3d]">The rest of your manuscript is below the waterline</p>
-      <ol start={2} className="space-y-2 text-sm text-[#4b5563]">{result.manuscript_sections?.slice(1).map((section, index) => <li key={`${index}-${section.name}`} className="flex gap-3"><span className="tabular-nums">{index + 2}</span>{section.name}</li>)}</ol>
-      <p className="my-6 text-sm font-semibold text-[#0b0f3d]">{result.access?.locked_counts.sections} more sections, {result.access?.locked_counts.recommendations} {result.access?.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'}, {result.access?.locked_counts.citations} {result.access?.locked_counts.citations === 1 ? 'citation' : 'citations'}</p>
-      {unlockControl}
+    {locked && <div className="locked-manuscript relative -mx-5 overflow-clip px-5 sm:mx-0 sm:px-0">
+      <p className="sr-only">The rest of the manuscript is locked. Unlock the full report to read it.</p>
+      <div className="locked-manuscript-copy space-y-9" aria-hidden="true">
+        {(withheld.length ? withheld : [{ name: '', text: null }]).map((section, index) => {
+          const placeholder = section.placeholder ?? fallback;
+          return <section key={index}>
+            <h2 className="mb-4 flex gap-3 text-lg font-semibold text-[#0b0f3d]"><span className="text-[#6b7280] tabular-nums">{index + 2}</span>{placeholder.heading}</h2>
+            <div className="space-y-5 font-serif text-[17px] leading-[1.7] text-[#303746]">{placeholder.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} className="break-words">{paragraph}</p>)}</div>
+          </section>;
+        })}
+      </div>
+      <div className="locked-manuscript-overlay">
+        <div className="locked-manuscript-card w-full max-w-[360px] rounded-2xl border border-[#dfe5f5] bg-white p-5 text-center shadow-[0_16px_48px_#0b0f3d24] sm:p-6">
+          <LockKeyhole className="mx-auto mb-3 size-6 text-[#0b0f3d]" aria-hidden="true" />
+          <p className="mb-4 text-sm font-semibold text-[#0b0f3d]">{result.access?.locked_counts.sections} more sections, {result.access?.locked_counts.recommendations} {result.access?.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'}, {result.access?.locked_counts.citations} {result.access?.locked_counts.citations === 1 ? 'citation' : 'citations'}</p>
+          {unlockControl}
+        </div>
+      </div>
     </div>}
   </div>;
 }

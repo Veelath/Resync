@@ -67,7 +67,7 @@ export interface V7ScanResponse {
   manuscript_title?: string | null;
   result_version: 'v7';
   access?: { unlocked: boolean; unlock_cost: number; locked_counts: { sections: number; recommendations: number; citations: number } };
-  manuscript_sections?: { name: string; text: string | null }[];
+  manuscript_sections?: { name: string; text: string | null; placeholder?: { heading: string; paragraphs: string[] } }[];
   overall_coherence_score: number;
   sections_analyzed: string[];
   manuscript_flow: ManuscriptFlowPair[];
