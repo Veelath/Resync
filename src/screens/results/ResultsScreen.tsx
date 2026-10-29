@@ -45,7 +45,19 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const displayTitle = isSample ? 'Guided Reading Outcomes' : (suppliedTitle && !/^https?:\/\/docs\.google\.com\//i.test(suppliedTitle) ? suppliedTitle : null)
     || (loadedTitle && !/^https?:\/\/docs\.google\.com\//i.test(loadedTitle) ? loadedTitle : null)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
-  const recommendations = result.recommendations.map(rec => ({ id: rec.recommendation_id, section: rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
+  const recommendations = result.recommendations.map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision }));
+
+  function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
+    if (kind === 'recommendation') { setActiveTab('recommendations'); setMobilePane('xai'); }
+    else setMobilePane('report');
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`${kind}-${id}`);
+      target?.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+      target?.focus({ preventScroll: true });
+      target?.classList.add('result-focus');
+      window.setTimeout(() => target?.classList.remove('result-focus'), 1600);
+    });
+  }
   const citations: Citation[] = result.citations.map((citation, index) => ({
     id: `cit-${index}`, ref: citationText(citation.citation_raw_reference_text), url: citation.citation_primary_link || '',
     status: citationAccess(citation), title: citationText(citation.citation_crossref_title),
@@ -104,7 +116,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             <p className="text-xs text-gray-500 mt-4">Overall assessment <strong>{result.score_breakdown.band}</strong> · {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
           </header>
           <div className="mb-6"><PreviewLegend /></div>
-          {result.manuscript_sections ? <ManuscriptSections result={result} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
+          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : <ManuscriptViewer result={result} reason={manuscriptReason} />)}
         </div>
@@ -124,12 +136,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                {recommendations.length ? recommendations.map((recommendation, index) => <div key={recommendation.id} className="flex items-start gap-3">
+                {recommendations.length ? recommendations.map((recommendation, index) => <div key={recommendation.id} id={`recommendation-${recommendation.id}`} tabIndex={-1} className="flex items-start gap-3 scroll-mt-6 rounded-lg">
                   <span className="rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
                   <div className="min-w-0 flex-1 rounded-xl bg-gray-50 p-3 space-y-2">
                     {recommendation.section && <p className="text-xs font-semibold text-gray-600">{recommendation.section}</p>}
                     {recommendation.quote && <div className="rounded-lg bg-gray-100 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Original sentence</p><p className="text-xs text-gray-700 leading-relaxed">“{plainText(recommendation.quote)}”</p></div>}
                     <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3"><p className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 mb-1">Recommended revision</p><p className="text-xs text-gray-700 leading-relaxed">{plainText(recommendation.revision)}</p></div>
+                    {result.manuscript_sections && recommendation.quote && <button type="button" onClick={() => focusLinked('highlight', recommendation.id)} className="text-sm font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">Show in manuscript</button>}
                   </div>
                 </div>) : <p className="text-sm text-gray-500">No recommendations for this scan.</p>}
               </div>}

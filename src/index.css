@@ -104,6 +104,9 @@ h1, h2, h3 {
   overflow-wrap: anywhere;
 }
 
+.result-focus { outline: 3px solid #1a1fcc; outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .result-focus { scroll-behavior: auto; } }
+
 .score-band { --band: var(--color-band-moderate); --band-surface: var(--surface-warn); }
 .score-band[data-band="strong"] { --band: var(--color-band-strong); --band-surface: var(--surface-success); }
 .score-band[data-band="weak"] { --band: var(--color-band-weak); --band-surface: var(--surface-error); }
