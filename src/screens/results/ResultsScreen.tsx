@@ -7,11 +7,12 @@ import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/samp
 import { ResultsHeader } from './ResultsHeader';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
-import { ManuscriptSections, ManuscriptViewer, PreviewLegend } from './ManuscriptViewer';
+import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText } from './helpers';
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
-import { categoryColors, recommendationCategory, type RecommendationCategory } from './categoryColors';
+import { recommendationCategory, type RecommendationCategory } from './categoryColors';
+import { RecommendationsList } from './RecommendationsList';
 
 type Tab = 'recommendations' | 'citations';
 
@@ -34,6 +35,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const [manuscriptLoading, setManuscriptLoading] = useState(!isSample && isGoogleDoc);
   const [manuscriptReason, setManuscriptReason] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('recommendations');
+  const [revealId, setRevealId] = useState<string | null>(null);
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
 
   useEffect(() => {
@@ -88,12 +90,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     || (loadedTitle && !/^https?:\/\/docs\.google\.com\//i.test(loadedTitle) ? loadedTitle : null)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
-  const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
+  const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
-  const linkedIds = new Set(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
+  const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
 
   function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
-    if (kind === 'recommendation') setActiveTab('recommendations');
+    if (kind === 'recommendation') { setActiveTab('recommendations'); setRevealId(id); }
     requestAnimationFrame(() => {
       const target = document.getElementById(`${kind}-${id}`);
       const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
@@ -164,7 +166,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:block print:h-auto print:overflow-visible">
       <div tabIndex={0} aria-label="Manuscript" className="results-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
-          <div className="mb-6"><PreviewLegend /></div>
           {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />
@@ -186,16 +187,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                {recommendations.length ? recommendations.map((recommendation, index) => <div key={recommendation.id} id={`recommendation-${recommendation.id}`} tabIndex={-1} className="flex items-start gap-3 scroll-mt-6 rounded-lg">
-                  <span className="rounded-lg bg-[#e9edf8] text-[#0b0f3d] text-[11px] font-bold px-2 py-1.5 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
-                  <div className="min-w-0 flex-1 rounded-xl bg-gray-50 p-3 space-y-2">
-                    {recommendation.section && <p className="text-xs font-semibold text-gray-600">{recommendation.section}</p>}
-                    {recommendation.category && <span className="inline-block rounded-md px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: categoryColors[recommendation.category].tint, color: categoryColors[recommendation.category].ink, borderBottom: `2px solid ${categoryColors[recommendation.category].color}` }}>{categoryColors[recommendation.category].label}</span>}
-                    {recommendation.quote && <div className="rounded-lg bg-[#f6f7fb] p-3"><p className="mb-1 text-xs font-semibold text-[#4b5563]">Original sentence</p><p className="font-serif text-[16px] leading-relaxed text-[#303746]">“{recommendation.quote}”</p></div>}
-                    <div className="rounded-lg border border-[#dfe5f5] bg-[#f6f7fb] p-3"><p className="mb-1 text-xs font-semibold text-[#1a1fcc]">Suggested revision</p><p className="text-sm leading-relaxed text-[#303746]">{plainText(recommendation.revision)}</p></div>
-                    {linkedIds.has(recommendation.id) && <button type="button" onClick={() => focusLinked('highlight', recommendation.id)} className="text-sm font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">Show in manuscript</button>}
-                  </div>
-                </div>) : !locked && <p className="text-sm text-gray-500">No recommendations for this scan.</p>}
+                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} />
                 {locked && <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'} in the full report</p>{unlockControl}</div>}
               </div>}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p>{unlockControl}</div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}

@@ -15,6 +15,8 @@ export interface ManuscriptFlowPair {
   culprit_sentences: { section_a: { sentence: string; delta: number }[]; section_b: { sentence: string; delta: number }[] };
   explanation: {
     coherence_scores: { overall: number; objectives: number; methodology: number; numeric: number; claims: number };
+    link_summary?: string;
+    comparison?: { a_says?: string; b_says?: string };
     highlighted_inconsistencies: { section: string; quote: string; what: string; why: string }[];
     recommendations: { section: string; original_sentence: string | null; recommended_revision: string }[];
     reference_list: { section: string; sentence: string }[];
@@ -45,6 +47,7 @@ export interface V7Recommendation {
   section_b: string;
   pair_order: number;
   original_sentence: string | null;
+  issue?: string;
   recommended_revision: string;
   recommendation_text: string;
   recommendation_priority: 'High' | 'Medium' | 'Low';

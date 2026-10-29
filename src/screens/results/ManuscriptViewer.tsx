@@ -5,12 +5,6 @@ import { matchedRecommendations, recommendationRanges } from './highlights';
 import { categoryColors, neutralHighlight } from './categoryColors';
 import './manuscript.css';
 
-export function PreviewLegend() {
-  return <div className="text-sm text-[#4b5563]"><ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
-    {Object.entries(categoryColors).map(([key, value]) => <li key={key} className="flex items-start gap-2"><span className="mt-1 size-3 shrink-0 rounded-sm" style={{ backgroundColor: value.color }} aria-hidden="true" /><span><strong>{value.label}:</strong> {value.description.toLowerCase()}.</span></li>)}
-  </ul><p className="mt-2">Click a highlight to see its suggested revision.</p></div>;
-}
-
 function PaperHeading({ name }: { name: string }) {
   const chapter = name.match(/^(chapter\s+(?:[ivxlcdm]+|\d+))\b[\s:.-]*(.*)$/i);
   return <h2 className="manuscript-heading">{chapter ? <><span className="block">{chapter[1]}</span>{chapter[2] && <span className="block">{chapter[2]}</span>}</> : name}</h2>;
