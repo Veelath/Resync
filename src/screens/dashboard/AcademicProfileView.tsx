@@ -59,6 +59,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                 <div className="flex items-center gap-2 mb-1">
                   {editMode ? (
                     <input
+                      aria-label="Full name"
                       value={draft.fullName}
                       onChange={e => setDraft({ ...draft, fullName: e.target.value })}
                       placeholder="Full Name"
@@ -98,6 +99,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                     <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400">Full Name</p>
                     {editMode ? (
                       <input
+                        aria-label="Full name"
                         value={draft.fullName}
                         onChange={e => setDraft({ ...draft, fullName: e.target.value })}
                         className="text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded-lg px-2.5 py-1 w-full mt-1 focus:outline-none focus:border-blue-400"
@@ -118,6 +120,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                     {editMode ? (
                       <input
                         type="email"
+                        aria-label="Email address"
                         value={draft.email}
                         onChange={e => setDraft({ ...draft, email: e.target.value })}
                         className="text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded-lg px-2.5 py-1 w-full mt-1 focus:outline-none focus:border-blue-400"
@@ -138,6 +141,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                     {editMode ? (
                       <input
                         type="tel"
+                        aria-label="Contact number"
                         value={draft.contactNumber}
                         onChange={e => setDraft({ ...draft, contactNumber: e.target.value })}
                         className="text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded-lg px-2.5 py-1 w-full mt-1 focus:outline-none focus:border-blue-400"

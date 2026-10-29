@@ -48,9 +48,10 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
 
             <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Current Password</label>
+                <label htmlFor="current-password" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Current Password</label>
                 <div className="relative">
                   <input
+                    id="current-password"
                     type={showCurrentPw ? "text" : "password"}
                     value={currentPw}
                     onChange={e => setCurrentPw(e.target.value)}
@@ -62,6 +63,7 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
                   />
                   <button
                     type="button"
+                    aria-label={showCurrentPw ? 'Hide current password' : 'Show current password'}
                     onClick={() => setShowCurrentPw(!showCurrentPw)}
                     className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                   >
@@ -71,9 +73,10 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
+                <label htmlFor="new-password" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">New Password</label>
                 <div className="relative">
                   <input
+                    id="new-password"
                     type={showNewPw ? "text" : "password"}
                     value={newPw}
                     onChange={e => setNewPw(e.target.value)}
@@ -85,6 +88,7 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
                   />
                   <button
                     type="button"
+                    aria-label={showNewPw ? 'Hide new password' : 'Show new password'}
                     onClick={() => setShowNewPw(!showNewPw)}
                     className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                   >
@@ -95,9 +99,10 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Confirm New Password</label>
+                <label htmlFor="confirm-password" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Confirm New Password</label>
                 <div className="relative">
                   <input
+                    id="confirm-password"
                     type={showConfirmPw ? "text" : "password"}
                     value={confirmPw}
                     onChange={e => setConfirmPw(e.target.value)}
@@ -109,6 +114,7 @@ export function ChangePasswordCard({ pwSuccessMsg, pwErrorMsg, currentPw, setCur
                   />
                   <button
                     type="button"
+                    aria-label={showConfirmPw ? 'Hide confirmation password' : 'Show confirmation password'}
                     onClick={() => setShowConfirmPw(!showConfirmPw)}
                     className="absolute inset-y-0 right-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                   >
