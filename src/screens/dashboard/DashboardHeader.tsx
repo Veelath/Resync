@@ -2,12 +2,14 @@ import { Logo, LOGO_HEADER_CLASS } from '../../components/AppPrimitives';
 import { B, BH } from '../../lib/brand';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { timeAgo, type AppNotification } from '../../components/ScanNotifications';
+import type { Screen } from '../../lib/appTypes';
 
 type ActiveNav = "Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits";
 
-export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, creditBalance, profile, profileMenuOpen, setProfileMenuOpen, profileMenuRef, onLogout, notifications, onMarkNotificationsRead, onOpenReport, notifOpen, setNotifOpen, notifRef, unreadCount, avatarUrl }: {
+export function DashboardHeader({ activeNav, setActiveNav, onNavigate, creditsLoading, creditBalance, profile, profileMenuOpen, setProfileMenuOpen, profileMenuRef, onLogout, notifications, onMarkNotificationsRead, onOpenReport, notifOpen, setNotifOpen, notifRef, unreadCount, avatarUrl }: {
   activeNav: ActiveNav;
   setActiveNav: Dispatch<SetStateAction<ActiveNav>>;
+  onNavigate: (screen: Screen) => void;
   creditsLoading: boolean;
   creditBalance: number | null;
   profile: { fullName: string };
@@ -25,10 +27,10 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
   avatarUrl: string | null;
 }) {
   return (
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100/80" style={{ boxShadow: "0 1px 0 rgba(26,31,204,.06)" }}>
+      <header className={`phase2-header sticky top-0 z-30 bg-white border-b ${activeNav === 'Academic Profile' ? 'phase2-header-profile' : ''}`}>
         <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-2 md:gap-4" style={{ height: 64 }}>
           <div className="flex items-center shrink-0">
-            <Logo header className={LOGO_HEADER_CLASS} />
+            <button type="button" aria-label="Home" onClick={() => onNavigate('home')} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"><Logo header className={LOGO_HEADER_CLASS} /></button>
           </div>
           <nav className="flex items-center gap-0.5 flex-1">
             {(["Dashboard"] as const).map(label => (
@@ -92,10 +94,10 @@ export function DashboardHeader({ activeNav, setActiveNav, creditsLoading, credi
                 aria-expanded={profileMenuOpen}
                 className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
               >
-                <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-white shrink-0" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
+                <div className="phase2-header-avatar w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-white shrink-0" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
                   {avatarUrl
                     ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-                    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>}
+                    : profile.fullName.split(' ').filter(Boolean).map(part => part[0]).slice(0, 2).join('').toLowerCase()}
                 </div>
                 <p className="hidden md:block text-xs font-bold text-gray-800">{profile.fullName}</p>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`w-3 h-3 text-gray-400 hidden md:block transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>

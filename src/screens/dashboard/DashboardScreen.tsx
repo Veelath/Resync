@@ -269,10 +269,10 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
   }, [profileMenuOpen]);
 
   return (
-    <div className="min-h-full" style={{ background: "#f8f9ff" }}>
+    <div className="phase2-dashboard-shell min-h-full" style={{ background: activeNav === 'Academic Profile' ? '#f8f5ff' : '#f8f9ff' }}>
 
       {/* ── Top nav ── */}
-      <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} notifications={notifications} onMarkNotificationsRead={onMarkNotificationsRead} onOpenReport={onOpenReport} notifOpen={notifOpen} setNotifOpen={setNotifOpen} notifRef={notifRef} unreadCount={unreadCount} avatarUrl={avatarUrl} />
+      <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} onNavigate={onNavigate} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} notifications={notifications} onMarkNotificationsRead={onMarkNotificationsRead} onOpenReport={onOpenReport} notifOpen={notifOpen} setNotifOpen={setNotifOpen} notifRef={notifRef} unreadCount={unreadCount} avatarUrl={avatarUrl} />
 
       {activeNav === "Settings" ? (
         <main className="w-full max-w-6xl mx-auto px-6 md:px-10 py-10 space-y-7">

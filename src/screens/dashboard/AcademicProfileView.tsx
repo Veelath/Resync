@@ -1,14 +1,14 @@
-import { B, BH, BL } from '../../lib/brand';
+import { B, BH } from '../../lib/brand';
 import type { Dispatch, SetStateAction } from 'react';
 
 type ProfileFields = { firstName: string; middleName: string; lastName: string; fullName: string; email: string; contactNumber: string };
 
 export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profile, draft, setDraft, saveProfile, cancelEdit, avatarUrl, avatarError, handleAvatarFile, removeAvatar }: { setActiveNav: Dispatch<SetStateAction<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">>; editMode: boolean; setEditMode: Dispatch<SetStateAction<boolean>>; profile: ProfileFields; draft: ProfileFields; setDraft: Dispatch<SetStateAction<ProfileFields>>; saveProfile: () => void; cancelEdit: () => void; avatarUrl: string | null; avatarError: string; handleAvatarFile: (file: File) => Promise<void>; removeAvatar: () => void }) {
   return (
-        <main className="w-full max-w-6xl mx-auto px-6 md:px-10 py-10 space-y-7">
+        <main className="phase2-profile w-full max-w-[1240px] mx-auto px-6 md:px-8 py-10 space-y-7">
 
           {/* Page header */}
-          <div className="flex items-start justify-between gap-4">
+          <div className="phase2-profile-heading flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Academic Profile</h2>
@@ -39,8 +39,8 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
           </div>
 
           {/* Identity & Profile Picture Card */}
-          <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-            <div className="px-8 sm:px-10 py-9 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8" style={{ background: `linear-gradient(90deg, ${BL}, white)` }}>
+          <div className="phase2-profile-card bg-white rounded-3xl overflow-hidden">
+            <div className="phase2-profile-band px-8 sm:px-10 py-9 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
               {/* Avatar with Photo change trigger */}
               <div className="relative group shrink-0">
                 <div className="w-28 h-28 rounded-3xl overflow-hidden flex items-center justify-center text-white text-4xl font-bold shadow-md"
@@ -51,7 +51,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                 </div>
                 <label className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-600 hover:text-blue-600 hover:border-blue-400 cursor-pointer transition-all" title="Change profile picture">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg>
-                  <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) void handleAvatarFile(f); e.target.value = ""; }} />
+                  <input type="file" aria-label="Change profile picture" accept="image/jpeg,image/png" className="sr-only" onChange={e => { const f = e.target.files?.[0]; if (f) void handleAvatarFile(f); e.target.value = ""; }} />
                 </label>
               </div>
 
@@ -86,7 +86,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
             </div>
 
             {/* Contact Details List */}
-            <div className="px-8 sm:px-10 py-8">
+            <div className="phase2-profile-details px-8 sm:px-10 py-8">
               <h4 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-5">Personal Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {/* Full Name */}
@@ -159,7 +159,11 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
             </div>
           </div>
 
-          <div className="h-4" />
+          <div className="phase2-password-link">
+            <div className="phase2-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/></svg></div>
+            <div><strong>Need to change your password?</strong><p>Password and security options are managed under Settings.</p></div>
+            <button type="button" onClick={() => setActiveNav('Settings')}>Go to Settings <span aria-hidden="true">→</span></button>
+          </div>
         </main>
   );
 }
