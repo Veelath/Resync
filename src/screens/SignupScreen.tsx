@@ -7,15 +7,26 @@ import type { Screen } from '../lib/appTypes';
 import { B } from '../lib/brand';
 import { supabase } from '../lib/supabase';
 
-function FieldInput({ label, type = "text", value, onChange, placeholder, required = true }: {
-  label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; required?: boolean;
+const MAIL_ICON = (
+  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3.5 7l8.5 6 8.5-6" /></svg>
+);
+
+const LOCK_ICON = (
+  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
+);
+
+function FieldInput({ label, type = "text", value, onChange, placeholder, icon, required = true }: {
+  label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; icon?: React.ReactNode; required?: boolean;
 }) {
   const id = useId();
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="auth-label">{label}</label>
-      <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
-        className="auth-input" />
+      <div className="auth-field">
+        {icon && <span className="auth-field-icon" aria-hidden="true">{icon}</span>}
+        <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
+          className={icon ? "auth-input auth-input--icon" : "auth-input"} />
+      </div>
     </div>
   );
 }
@@ -68,9 +79,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     <AuthShell onNavigate={onNavigate} onBack={onBack}>
       <div>
         <div className="auth-rise mb-6">
-          <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase mb-3" style={{ background: "#eef0ff", color: "#1a1fcc" }}>
-            New Account
-          </span>
+          <p className="text-xs font-bold tracking-[0.16em] uppercase mb-3" style={{ color: B }}>New account</p>
           <h1 className="text-3xl lg:text-[42px] font-extrabold text-[#0b0f3d] tracking-[-0.035em] leading-[1.05] mb-2">Create your account</h1>
           <p className="text-[15px] text-[#4b5275] leading-relaxed">Free to use — no credit card required.</p>
         </div>
@@ -95,15 +104,16 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
             <FieldInput label="Middle name (optional)" value={middleName} onChange={setMiddleName} placeholder="Clara" required={false} />
           </div>
           <FieldInput label="Last name" value={lastName} onChange={setLastName} placeholder="Santos" required={true} />
-          <FieldInput label="Email address" type="email" value={email} onChange={setEmail} placeholder="maria.santos@dlsu.edu.ph" />
+          <FieldInput label="Email address" type="email" value={email} onChange={setEmail} placeholder="maria.santos@dlsu.edu.ph" icon={MAIL_ICON} />
 
           {/* password */}
           <div className="space-y-2">
             <label htmlFor="signup-password-input" className="auth-label">Password</label>
             <div className="auth-field">
+              <span className="auth-field-icon" aria-hidden="true">{LOCK_ICON}</span>
               <input id="signup-password-input" type={showPw ? "text" : "password"} value={pw} onChange={e => setPw(e.target.value)} placeholder="Password" required
                 aria-describedby="signup-password-requirements" autoComplete="new-password"
-                className="auth-input auth-input--toggle" />
+                className="auth-input auth-input--icon auth-input--toggle" />
               <button type="button" aria-label={showPw ? "Hide password" : "Show password"} onClick={() => setShowPw(!showPw)} className="auth-eye auth-focus">
                 <Eye open={showPw} />
               </button>
@@ -118,8 +128,8 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
               role="checkbox"
               aria-checked={agreed}
               onClick={() => setAgreed(!agreed)}
-              className="auth-focus mt-0.5 w-[20px] h-[20px] min-w-[20px] rounded-md border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer"
-              style={{ background: agreed ? B : "white", borderColor: agreed ? B : "#c4c8e6" }}
+              className="auth-focus mt-0.5 w-[22px] h-[22px] min-w-[22px] border-[1.5px] flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              style={{ background: agreed ? B : "white", borderColor: agreed ? B : "#c4c8e6", borderRadius: 7 }}
               aria-label="Agree to terms of service and privacy policy"
             >
               {agreed && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" className="w-2.5 h-2.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>}
@@ -144,17 +154,16 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
             </span>
           </div>
 
-          <div className="pt-2">
-            <button type="submit" disabled={!canSubmit} className="auth-primary auth-focus">
-              {loading ? <><Spinner />Creating account…</> : "Create account"}
+          <div className="pt-2 flex flex-wrap items-center gap-x-5 gap-y-4">
+            <button type="submit" disabled={!canSubmit} className="auth-primary auth-focus" style={{ width: "auto", padding: "0 30px" }}>
+              {loading ? <><Spinner />Creating account…</> : <>Create account<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="M13 6l6 6-6 6" /></svg></>}
             </button>
+            <p className="text-sm text-[#4b5275]">
+              Have an account?{" "}
+              <button type="button" onClick={() => onNavigate("login")} className="auth-link auth-focus px-1">Sign in</button>
+            </p>
           </div>
         </form>
-
-        <p className="text-center text-sm text-[#4b5275] mt-6">
-          Already have an account?{" "}
-          <button onClick={() => onNavigate("login")} className="auth-link auth-focus px-1">Log in</button>
-        </p>
 
         {legalModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
