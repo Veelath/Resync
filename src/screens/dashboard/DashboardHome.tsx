@@ -9,6 +9,20 @@ const steps = [
   { number: '03', label: 'Coherence Scan', description: 'AI checks section links, citations, and the AI-text indicator.', icon: ScanSearch },
   { number: '04', label: 'Export Report', description: 'Download your annotated report and fix recommendations as a PDF.', icon: Download },
 ];
+const outputs = [
+  ['Coherence Score', 'A 0–100 coherence score for logical links between consecutive manuscript sections.'],
+  ['Annotated Manuscript', 'Manuscript text with verified passages highlighted inline for review.'],
+  ['Fix Recommendations', 'Suggested revisions for flagged section links, ready to review.'],
+  ['Verified Reference List', 'Public or private access status for every cited URL and DOI in your bibliography.'],
+];
+const guidance = [
+  ['Digital Manuscripts', 'DOCX, PDF, Google Docs'],
+  ['Section Flow', 'Consecutive section links'],
+  ['Single-Column Flow', 'Sequential reading order'],
+  ['Direct Prose', 'Claims and conclusions'],
+  ['Open References', 'Citations and DOI checks'],
+  ['AI-Text Indicator', 'Review the text signal'],
+];
 
 export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: 'Good morning' | 'Good afternoon' | 'Good evening' }) {
   const firstName = session?.user?.user_metadata?.full_name?.split(' ')[0] || session?.user?.email?.split('@')[0] || 'there';
@@ -51,5 +65,9 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
         <p>Step {index + 1}</p><h3>{label}</h3><span>{description}</span>
       </article>)}</div>
     </main>
+    <div className="phase2-supporting">
+      <section><p>Outputs</p><h2>What You Get</h2><span>Four deliverables, every scan, automatically.</span><div>{outputs.map(([title, description]) => <article key={title}><strong>{title}</strong><span>{description}</span></article>)}</div></section>
+      <section><p>Guidance</p><h2>Best Results With</h2><span>Clear sections help ReSync assess how each part of your manuscript connects to the next.</span><div>{guidance.map(([title, description]) => <article key={title}><strong>{title}</strong><span>{description}</span></article>)}</div></section>
+    </div>
   </div>;
 }
