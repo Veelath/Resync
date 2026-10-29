@@ -332,6 +332,22 @@ export async function getCreditBalance(userId: string): Promise<CreditBalanceRes
   return resp.json();
 }
 
+export async function unlockScan(analysisRunId: string): Promise<{ unlocked: true; charged: boolean; credits_remaining: number | null }> {
+  const response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}/unlock`, {
+    method: 'POST', headers: await authHeaders(),
+  });
+  if (!response.ok) throw new Error(await extractErrorDetail(response));
+  return response.json();
+}
+
+export async function getScanResult(analysisRunId: string): Promise<ScanResult> {
+  const response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}`, { headers: await authHeaders() });
+  if (!response.ok) throw new Error(await extractErrorDetail(response));
+  const body = await response.json();
+  if (body.status !== 'completed' || !body.result) throw new Error('The full report is not ready. Refresh and try again.');
+  return adaptScanResult(body.result);
+}
+
 export async function createCreditCheckout(
   userId: string,
   creditAmount: number,

@@ -38,6 +38,7 @@ export interface V7Inconsistency {
 }
 
 export interface V7Recommendation {
+  id?: string;
   recommendation_id: string;
   section_a: string;
   section_b: string;
@@ -64,6 +65,8 @@ export interface V7ScanResponse {
   doc_url: string;
   manuscript_title?: string | null;
   result_version: 'v7';
+  access?: { unlocked: boolean; unlock_cost: number; locked_counts: { sections: number; recommendations: number; citations: number } };
+  manuscript_sections?: { name: string; text: string | null }[];
   overall_coherence_score: number;
   sections_analyzed: string[];
   manuscript_flow: ManuscriptFlowPair[];
