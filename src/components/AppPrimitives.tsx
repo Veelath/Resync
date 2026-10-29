@@ -1,6 +1,7 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
 import resyncLogo from '@/imports/Untitled_design__1_.webp';
+import './app-primitives.css';
 
 export function Logo({ className = "", header = false }: { className?: string; header?: boolean }) {
   if (header) return <span className={`relative block shrink-0 overflow-hidden aspect-[3135/1542] ${className}`}><img src={resyncLogo} alt="ReSync" className="absolute max-w-none" style={{ width: "116.91%", height: "205.25%", left: "-8.006%", top: "-48.703%" }} /></span>;
@@ -25,20 +26,22 @@ export function HomeButton({ onClick }: { onClick: () => void }) {
 }
 
 export function BackToTop() {
-  const endRef = useRef<HTMLDivElement>(null);
-  const [atEnd, setAtEnd] = useState(false);
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setAtEnd(entry.isIntersecting), { rootMargin: "0px 0px 80px 0px" });
-    if (endRef.current) observer.observe(endRef.current);
-    return () => observer.disconnect();
+    const update = () => {
+      const maximum = document.documentElement.scrollHeight - window.innerHeight;
+      setVisible(maximum > 0 && window.scrollY >= Math.min(maximum * .75, Math.max(0, maximum - 200)));
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update); };
   }, []);
-  return <>
-    <div ref={endRef} className="h-px" aria-hidden="true" />
-    {atEnd && <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })}
-      className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-      <ArrowUp className="h-4 w-4" aria-hidden="true" />Back to top
-    </button>}
-  </>;
+  return <button type="button" aria-label="Back to top" aria-hidden={!visible} tabIndex={visible ? 0 : -1}
+    onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}
+    className={`resync-back-to-top ${visible ? 'is-visible' : ''}`}>
+    <ArrowUp size={22} strokeWidth={2.5} aria-hidden="true" />
+  </button>;
 }
 
 export function Spinner({ cls = "w-4 h-4" }: { cls?: string }) {
