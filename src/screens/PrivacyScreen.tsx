@@ -42,7 +42,7 @@ const sections: { title: string; body: ReactNode[] }[] = [
   {
     title: '6. Your choices and rights',
     body: [
-      <>Depending on where you live, you may have the right to access, correct, delete, or export your personal information, and to object to some processing. To exercise these rights, contact us at [EMAIL]. You can also choose not to upload manuscripts, although the service will not work without them.</>,
+      <>Depending on where you live, you may have the right to access, correct, delete, or export your personal information, and to object to some processing. To exercise these rights, contact us at readSync.uc.edu@gmail.com. You can also choose not to upload manuscripts, although the service will not work without them.</>,
     ],
   },
   {
@@ -66,7 +66,7 @@ const sections: { title: string; body: ReactNode[] }[] = [
   {
     title: '10. Contact us',
     body: [
-      <>[COMPANY NAME]<br />[ADDRESS]<br />[EMAIL]</>,
+      <br />University of Cebu - Banilad<br />readSync.uc.edu@gmail.com</>,
     ],
   },
 ];
@@ -77,7 +77,7 @@ export function PrivacyScreen() {
       <main className="mx-auto max-w-3xl px-4 py-10 text-gray-800">
         <a href="/" className="text-sm font-semibold text-blue-700 hover:underline">← Back to Resync</a>
         <h1 className="mt-6 text-3xl font-bold text-gray-900">Resync Privacy Policy</h1>
-        <p className="mt-2 text-sm text-gray-500">Last updated: [DATE]</p>
+        <p className="mt-2 text-sm text-gray-500">Last updated: October 30, 2026</p>
         <p className="mt-6 leading-relaxed">
           This policy explains what information Resync ("we", "us") collects when you use the Resync website and services, how we use it, and the choices you have. Resync checks academic manuscripts for coherence across chapters.
         </p>
