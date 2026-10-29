@@ -25,3 +25,18 @@ export function verifiedQuoteRanges(text: string, quotes: string[]): { start: nu
   for (const match of matches) if (!ranges.length || match.start >= ranges[ranges.length - 1].end) ranges.push(match);
   return ranges;
 }
+import type { V7Recommendation } from '../../services/v7Result';
+
+export function recommendationRanges(section: { name: string; text: string | null }, recommendations: V7Recommendation[]) {
+  const text = section.text ?? '';
+  const ranges: { start: number; end: number; id: string }[] = [];
+  for (const recommendation of recommendations) {
+    const sentence = recommendation.original_sentence;
+    if (!sentence || (recommendation.section && recommendation.section !== section.name)
+      || (!recommendation.section && recommendation.section_a !== section.name && recommendation.section_b !== section.name)) continue;
+    let start = text.indexOf(sentence);
+    while (start >= 0 && ranges.some(range => start < range.end && start + sentence.length > range.start)) start = text.indexOf(sentence, start + 1);
+    if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id });
+  }
+  return ranges.sort((a, b) => a.start - b.start);
+}

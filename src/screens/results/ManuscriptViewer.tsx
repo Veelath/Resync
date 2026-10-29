@@ -1,7 +1,32 @@
 import type { V7ScanResponse } from '../../services/v7Result';
+import type React from 'react';
+import { recommendationRanges } from './highlights';
 
 export function PreviewLegend() {
-  return <p className="flex items-start gap-2 text-xs text-gray-600"><span className="mt-0.5 size-3 shrink-0 rounded-sm bg-rose-200" aria-hidden="true" />Highlighted passages: a sentence the analysis flagged in a weak section connection or tied to a finding.</p>;
+  return <p className="flex items-start gap-2 text-sm text-[#4b5563]"><span className="mt-1 size-3 shrink-0 rounded-sm bg-[#fde2e4]" aria-hidden="true" />Highlighted: a sentence with a suggested revision.</p>;
+}
+
+export function ManuscriptSections({ result, onHighlight }: { result: V7ScanResponse; onHighlight?: (id: string) => void }) {
+  return <div className="space-y-9">
+    {result.manuscript_sections?.map((section, index) => {
+      const text = section.text ?? '';
+      const ranges = recommendationRanges(section, result.recommendations);
+      const pieces: React.ReactNode[] = [];
+      let cursor = 0;
+      for (const range of ranges) {
+        pieces.push(text.slice(cursor, range.start));
+        pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
+          aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
+          className="rounded-sm bg-[#fde2e4] text-[#9f1239] underline decoration-[#be123c] underline-offset-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">{text.slice(range.start, range.end)}</button>);
+        cursor = range.end;
+      }
+      pieces.push(text.slice(cursor));
+      return <section key={`${index}-${section.name}`} className="scroll-mt-6">
+        <h2 className="mb-4 flex gap-3 text-lg font-semibold text-[#0b0f3d]"><span className="text-[#6b7280] tabular-nums">{index + 1}</span>{section.name}</h2>
+        {section.text != null && <div className="whitespace-pre-wrap break-words font-serif text-[17px] leading-[1.7] text-[#303746]">{pieces}</div>}
+      </section>;
+    })}
+  </div>;
 }
 
 export function ManuscriptViewer({ result, reason }: { result: V7ScanResponse; reason?: string }) {

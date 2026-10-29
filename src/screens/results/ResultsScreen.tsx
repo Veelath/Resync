@@ -7,7 +7,7 @@ import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/samp
 import { ResultsHeader } from './ResultsHeader';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
-import { ManuscriptViewer, PreviewLegend } from './ManuscriptViewer';
+import { ManuscriptSections, ManuscriptViewer, PreviewLegend } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText } from './helpers';
 import { verifiedQuoteRanges } from './highlights';
 
@@ -23,7 +23,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
 
   useEffect(() => {
-    if (isSample || !result?.analysis_run_id) return;
+    if (isSample || result?.manuscript_sections || !result?.analysis_run_id) return;
     let cancelled = false;
     setManuscriptLoading(true);
     setManuscriptText(null);
@@ -104,8 +104,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
             <p className="text-xs text-gray-500 mt-4">Overall assessment <strong>{result.score_breakdown.band}</strong> · {result.inconsistencies.length} findings across {result.sections_analyzed.length} sections</p>
           </header>
           <div className="mb-6"><PreviewLegend /></div>
-          {manuscriptLoading && <p className="text-sm text-gray-600">Loading manuscript text…</p>}
-          {!manuscriptLoading && (manuscriptText
+          {result.manuscript_sections ? <ManuscriptSections result={result} /> : manuscriptLoading ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : <ManuscriptViewer result={result} reason={manuscriptReason} />)}
         </div>

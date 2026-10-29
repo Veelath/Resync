@@ -39,6 +39,7 @@ export interface V7Inconsistency {
 
 export interface V7Recommendation {
   id?: string;
+  section?: string;
   recommendation_id: string;
   section_a: string;
   section_b: string;
