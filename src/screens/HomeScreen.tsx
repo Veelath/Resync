@@ -1,457 +1,67 @@
+import { ArrowRight, Check, FileText, TrendingUp, Upload, AlertTriangle } from 'lucide-react';
+import type { Session } from '@supabase/supabase-js';
 import { Logo, BackToTop, LOGO_HEADER_CLASS } from '../components/AppPrimitives';
 import { ScoreRing } from '../components/AppScoreRing';
 import type { Screen } from '../lib/appTypes';
-import type { Session } from '@supabase/supabase-js';
-import { B, BH, BL } from '../lib/brand';
-import spacyLogo from "@/assets/technology/spacy.png";
-import geminiLogo from "@/assets/technology/gemini.svg";
+import spacyLogo from '@/assets/technology/spacy.png';
+import geminiLogo from '@/assets/technology/gemini.svg';
+import './home-landing.css';
 
-function PreviewCard() {
-  return (
-    <div className="w-full max-w-md mx-auto" style={{ filter: "drop-shadow(0 24px 48px rgba(26,31,204,0.13))" }}>
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        {/* header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-          <div className="flex items-center gap-2.5" aria-hidden="true">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-300" />
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-300" />
-          </div>
-          <div className="text-xs text-gray-400 font-medium mono">resync_report.pdf</div>
-          <div style={{ width: 48 }} />
-        </div>
-        {/* score row */}
-        <div className="flex items-center gap-4 px-5 py-4 border-b border-gray-50">
-          <ScoreRing score={74} size={72} />
-          <div className="flex-1 space-y-1.5">
-            {[
-              { label: "Logic Gaps", n: 2, c: "text-violet-600 bg-violet-50 border-violet-200" },
-              { label: "Contradictions", n: 2, c: "text-red-700 bg-red-50 border-red-200" },
-              { label: "Redundancies", n: 1, c: "text-amber-800 bg-amber-50 border-amber-200" },
-            ].map(({ label, n, c }) => (
-              <div key={label} className={`flex justify-between items-center text-xs px-2.5 py-1 rounded-lg border ${c}`}>
-                <span className="font-medium">{label}</span>
-                <span className="font-bold mono tabular-nums">{n}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* highlighted passage */}
-        <div className="px-5 py-4 space-y-2">
-          <div className="text-[10px] mono font-bold text-blue-700 uppercase tracking-widest">Chapter 1 — Statement of the Problem</div>
-          <p className="text-xs text-gray-600 leading-relaxed">
-            The study aims to{" "}
-            <mark className="bg-violet-100 border border-violet-300 text-violet-800 rounded px-0.5 not-italic" style={{ background: undefined, textDecoration: "none" }}>
-              measure student engagement using biometric data
-            </mark>
-            {" "}collected over one semester.
-          </p>
-          <div className="flex items-start gap-2 mt-2 p-2.5 rounded-xl bg-violet-50 border border-violet-100">
-            <div className="w-1 h-full min-h-[32px] rounded-full bg-violet-400 shrink-0" aria-hidden="true" />
-            <div>
-              <div className="text-[10px] font-bold text-violet-700 mb-0.5">Logic Gap — Objectives → Methodology</div>
-              <p className="text-[10px] text-violet-600 leading-relaxed">Biometric collection is promised in Objectives but absent from Methodology.</p>
-            </div>
-          </div>
-        </div>
-        {/* citation row */}
-        <div className="px-5 pb-4 flex gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 border border-green-200 text-[10px] font-semibold text-green-700">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-            <span className="tabular-nums">4</span> public
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] font-semibold text-red-700">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            <span className="tabular-nums">2</span> private
-          </div>
-          <div className="ml-auto text-[10px] text-gray-400 mono self-center tabular-nums">~2 min scan</div>
-        </div>
-      </div>
+const nav = [{ label: 'Overview', href: '#section-overview' }, { label: 'Capabilities', href: '#section-capabilities' }, { label: 'About', href: '#section-about' }];
+const checks = [
+  ['Section Flow', 'Does each section logically connect with the one before it?'],
+  ['Objectives Alignment', 'Do neighboring sections support the stated objectives?'],
+  ['Methodology Fit', 'Does the next section follow from the methods described?'],
+  ['Claim Support', 'Do claims follow from the evidence in neighboring sections?'],
+  ['Citation Accessibility', 'Check cited URLs and DOIs for public reachability.'],
+  ['AI-Text Indicator', 'Review a signal for possible AI-generated text.'],
+];
+
+function ReportPreview() {
+  return <div className="lp-preview" aria-label="Example coherence report preview">
+    <div className="lp-window"><span className="lp-dots" aria-hidden="true"><i /><i /><i /></span><span>resync_report.pdf</span></div>
+    <div className="lp-preview-body">
+      <div className="lp-summary"><ScoreRing score={74} size={84} /><div className="lp-counts"><div><span>Logic gaps</span><strong>2</strong></div><div><span>Contradictions</span><strong>2</strong></div><div><span>Redundancies</span><strong>1</strong></div></div></div>
+      <div className="lp-excerpt"><span className="lp-mono-label">Chapter 1 · Statement of the problem</span><p>The study aims to <mark>measure student engagement using biometric data</mark> collected over one semester.</p></div>
+      <div className="lp-finding"><strong>Logic gap · Objectives → Methodology</strong><span>Biometric collection is promised in Objectives but absent from Methodology.</span></div>
+      <div className="lp-preview-foot"><span>✓&nbsp; 4 public</span><span>×&nbsp; 2 private</span><small>~2 min scan</small></div>
     </div>
-  );
+  </div>;
 }
 
 export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null }) {
-  return (
-    <div className="min-h-full bg-white">
-      <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}`}</style>
+  const start = () => onNavigate(session ? 'upload' : 'signup');
+  const sample = () => onNavigate('results', true);
+  return <div className="landing-page">
+    <nav className="lp-nav" aria-label="Main navigation"><div className="lp-wrap lp-nav-inner">
+      <a className="lp-brand" href="#top" aria-label="ReSync, back to top"><Logo header className={LOGO_HEADER_CLASS} /></a>
+      <div className="lp-nav-links">{nav.map(item => <a key={item.href} href={item.href}>{item.label}</a>)}</div>
+      <div className="lp-nav-actions">{session ? <button className="lp-btn lp-btn-primary lp-nav-cta" onClick={() => onNavigate('dashboard')}>Go to Dashboard</button> : <><button className="lp-login" onClick={() => onNavigate('login')}>Log in</button><button className="lp-btn lp-btn-primary lp-nav-cta" onClick={() => onNavigate('signup')}>Sign up free</button></>}</div>
+    </div></nav>
 
-      {/* ── Nav ── */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
-          <Logo header className={LOGO_HEADER_CLASS} />
-          <div className="hidden md:flex items-center gap-1">
-            {[
-              { label: "Overview", id: "section-overview" },
-              { label: "Capabilities", id: "section-capabilities" },
-              { label: "About", id: "section-about" },
-            ].map(l => (
-              <button key={l.id} onClick={() => document.getElementById(l.id)?.scrollIntoView({ behavior: "smooth" })} className="px-3.5 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98]">{l.label}</button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            {session ? (
-            <button onClick={() => onNavigate("dashboard")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] shadow-sm" style={{ background: B }}>Go to Dashboard</button>
-            ) : (
-              <>
-            <button onClick={() => onNavigate("login")} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98]">Log in</button>
-            <button onClick={() => onNavigate("signup")} className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] shadow-sm" style={{ background: B }}>Sign up free</button>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+    <main id="top">
+      <header id="section-overview" className="lp-hero"><div className="lp-wrap lp-hero-grid">
+        <div className="lp-hero-copy"><span className="lp-tag"><i />Manuscript coherence checker</span><h1>Check your manuscript <span>for coherence.</span></h1><p>ReSync reviews consecutive section links, citations, and the AI-text indicator. Receive a clear report that helps you focus your revisions.</p><div className="lp-hero-actions"><button className="lp-btn lp-btn-primary" onClick={start}>Get started <ArrowRight size={18} /></button><button className="lp-btn lp-btn-secondary" onClick={sample}>View sample report</button></div><ul className="lp-benefits"><li><Check />Free preview with every scan</li><li><Check />Results in ~2 min</li><li><Check />No credit card needed</li></ul></div>
+        <div className="lp-hero-art"><ReportPreview /><div className="lp-float lp-score-float"><span><TrendingUp size={18} /></span><div><strong>Score improved</strong><small>74 → 84 after revision</small></div></div><div className="lp-float lp-alert-float"><i />Contradiction detected</div></div>
+      </div></header>
 
-      <main>
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden">
-        {/* background grid */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(26,31,204,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(26,31,204,.04) 1px,transparent 1px)`, backgroundSize: "56px 56px" }} />
-        {/* top glow */}
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-96 pointer-events-none" style={{ background: `radial-gradient(ellipse at center, ${BL} 0%, transparent 70%)` }} />
+      <section className="lp-stats lp-wrap" aria-label="ReSync at a glance"><div><strong>4</strong><span>Coherence dimensions</span></div><div><strong>~2 min</strong><span>Per full thesis</span></div><div><strong>.doc/.docx</strong><span>or Google Docs link</span></div><div><strong>3 models</strong><span>Support the analysis</span></div></section>
 
-        <div className="relative w-full px-6 md:px-10 lg:px-16 xl:px-20 pt-20 pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* left */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold mb-7" style={{ borderColor: `${B}30`, background: `${B}08`, color: B }}>
-                Manuscript coherence checker
-              </div>
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 tracking-tight leading-[1.08] mb-6">
-                Check your manuscript<br />
-                <span style={{ color: B }}>for coherence.</span>
-              </h1>
-              <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-lg">
-                Resync reviews consecutive section links, citations, and the AI-text indicator. Receive a clear report that helps you focus your revisions.
-              </p>
-              <div className="flex flex-wrap gap-3 mb-8">
-                <button onClick={() => onNavigate("signup")}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 shadow-lg"
-                  style={{ background: `linear-gradient(135deg, ${B}, ${BH})`, boxShadow: `0 8px 24px ${B}30` }}>
-                  Get started free
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </button>
-                <button onClick={() => onNavigate("results", true)}
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 transition-colors duration-150">
-                  View sample report
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-5 text-xs text-gray-400 font-medium">
-                {["Free to start", "Results in ~2 min", "No credit card needed"].map(t => (
-                  <span key={t} className="flex items-center gap-1.5">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-            {/* right — product preview */}
-            <div className="hidden lg:block" style={{ animation: "float 5s ease-in-out infinite" }}>
-              <PreviewCard />
-            </div>
-          </div>
-        </div>
-      </section>
+      <section className="lp-process lp-wrap" aria-labelledby="lp-process-title"><div className="lp-process-heading"><span className="lp-eyebrow">How it works</span><h2 id="lp-process-title">Template, upload, scan, then review your report</h2></div><div className="lp-steps">
+        <div className="lp-step"><div className="lp-step-copy"><span className="lp-step-number">01</span><span className="lp-eyebrow">Template · Step 1</span><h3>Set chapter headings (optional)</h3><p>Attach and edit a chapter template, use a saved one, or skip to let ReSync detect headings from your manuscript.</p></div><div className="lp-mock lp-template"><span className="lp-mono-label">Chapter template</span>{['Introduction', 'Methodology', 'Results', 'References'].map((name, i) => <div className="lp-template-row" key={name}><span>0{i + 1}</span>{name}</div>)}<small>Optional · detected headings work too</small></div></div>
+        <div className="lp-step lp-flip"><div className="lp-step-copy"><span className="lp-step-number">02</span><span className="lp-eyebrow">Upload · Step 2</span><h3>Upload your manuscript</h3><p>Add a <strong>Word file (.doc/.docx)</strong> or paste a <strong>Google Docs link</strong>. ReSync identifies sections and checks how each connects to the next.</p><div className="lp-tags"><span>Section detection</span><span>Citation checks</span><span>AI-text indicator</span></div></div><div className="lp-mock lp-upload"><div className="lp-drop"><span className="lp-upload-icon"><Upload size={26} /></span><strong>Drop your thesis here</strong><small>.doc, .docx or Google Docs link · max 25 MB</small><span className="lp-or">or</span><button className="lp-btn lp-btn-primary" onClick={start}>Browse file</button></div><div className="lp-detected"><strong><Check size={15} />Detected sections</strong><div>{['Introduction', 'RRL', 'Methodology', 'Results', 'Conclusion'].map(name => <span key={name}>{name}</span>)}</div></div></div></div>
+        <div className="lp-step"><div className="lp-step-copy"><span className="lp-step-number">03</span><span className="lp-eyebrow">Scan · Step 3</span><h3>Review connections between sections</h3><p>ReSync compares consecutive sections to identify weak logical links or conflicting information in your manuscript.</p><ul className="lp-scan-list"><li>Checks how each section relates to the next</li><li>Reviews citations and the AI-text indicator</li><li>Flags findings that need the author's review</li></ul></div><div className="lp-mock lp-scan"><div className="lp-scan-paragraph"><span className="lp-mono-label">Chapter 1 · Objectives</span><p>The study will <mark>measure engagement using biometric data</mark> collected over one semester.</p></div><div className="lp-connector" aria-hidden="true" /><div className="lp-scan-paragraph"><span className="lp-mono-label">Chapter 2 · Methodology</span><p>Data were collected using the <strong>Maslach Burnout Inventory</strong> and the AWS survey instrument only.</p></div><div className="lp-scan-alert"><span><AlertTriangle size={18} /></span><div><strong>Contradiction detected</strong><small>Objectives ↔ Methodology</small></div></div></div></div>
+        <div className="lp-step lp-flip"><div className="lp-step-copy"><span className="lp-step-number">04</span><span className="lp-eyebrow">Report · Step 4</span><h3>Review the report</h3><p>Every scan includes a free preview. Unlock the full report for 1 credit to see highlighted passages, explanations, and suggested revisions.</p><div className="lp-tags"><span>Inline highlights</span><span>Fix suggestions</span><span>Coherence score</span><span>Citation check</span></div></div><div className="lp-mock lp-report"><div className="lp-report-head"><ScoreRing score={84} size={76} showLabel={false} /><div><small>Manuscript</small><strong>Predictors of Academic Burnout Among STEM Undergraduates</strong><span>Score improved · ↑ from 74</span></div></div><span className="lp-mono-label">Revision plan</span><div className="lp-revision done"><Check size={17} />Align biometric data collection with Methodology chapter</div><div className="lp-revision done"><Check size={17} />Reconcile sample size n=120 vs n=106 in Chapter 4</div><div className="lp-revision"><span className="lp-empty-check" />Remove duplicate technology acceptance definition</div><div className="lp-revision"><span className="lp-empty-check" />Revise Conclusions to reflect null tutoring result</div></div></div>
+      </div></section>
 
-      {/* ── Stats strip ── */}
-      <div className="border-y border-gray-100 bg-gray-50/60">
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-5 flex flex-wrap justify-center md:justify-between gap-6">
-          {[
-            ["4", "Coherence dimensions"],
-            ["~2 min", "Per full thesis"],
-            [".doc/.docx + GDocs", "Accepted formats"],
-            ["3 models", "Support the analysis"],
-          ].map(([val, label]) => (
-            <div key={label} className="flex items-center gap-3">
-              <span className="text-xl font-bold mono" style={{ color: B }}>{val}</span>
-              <span className="text-sm text-gray-400">{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <section id="section-about" className="lp-about lp-wrap" aria-labelledby="lp-about-title"><div className="lp-about-panel"><div><span className="lp-eyebrow">AI technologies used</span><h2 id="lp-about-title">Models that support the review</h2><p>ReSync uses AI models to assess links between consecutive sections, then generate findings and revision recommendations.</p><p className="lp-about-note">The output is AI-generated and is not fully human-verified. Review each suggestion with your adviser before making changes.</p></div><div className="lp-models"><div><img src={spacyLogo} alt="spaCy" /></div><div><img src={geminiLogo} alt="Gemini" /></div><div>MiniLM-L6-V2</div></div></div></section>
 
-      {/* ── System overview ── */}
-      <section id="section-overview" className="bg-white border-t border-gray-100">
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-24">
+      <section id="section-capabilities" className="lp-capabilities lp-wrap" aria-labelledby="lp-capabilities-title"><div className="lp-cap-heading"><div><span className="lp-eyebrow">Key capabilities</span><h2 id="lp-capabilities-title">What ReSync checks</h2></div><button onClick={sample}>View sample report <ArrowRight size={17} /></button></div><div className="lp-cap-grid">{checks.map(([title, body], i) => <article className="lp-cap" key={title}><span>{String(i + 1).padStart(2, '0')}</span><h3>{title}</h3><p>{body}</p></article>)}</div><p className="lp-score-note"><FileText size={18} />The four-part coherence score covers objectives, methodology, claims, and numbers.</p></section>
 
-          {/* Section header */}
-          <div className="text-center mb-20">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-5 mono uppercase tracking-widest" style={{ background: `${B}08`, color: B }}>
-              How It Works
-            </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight leading-tight">Template, upload, scan,<br />then review your report</h2>
-          </div>
+      <section className="lp-cta lp-wrap"><div><Logo header className="lp-cta-logo" /><h2>Review your manuscript with ReSync</h2><p>Create an account to upload your paper. Every scan includes a free preview; the full report unlocks for 1 credit.</p><button className="lp-btn lp-btn-white" onClick={start}>Get started <ArrowRight size={18} /></button></div></section>
+    </main>
 
-          {/* Overview */}
-          <div className="space-y-28">
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Template · Step 1</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Set chapter headings (optional)</h3>
-                <p className="text-base text-gray-500 leading-relaxed max-w-sm">Attach and edit a chapter template, use a saved one, or skip to let ReSync detect headings from your manuscript.</p>
-              </div>
-              <div className="rounded-3xl border border-gray-100 bg-gray-50 p-8 shadow-sm">
-                <p className="text-xs mono font-bold uppercase tracking-widest mb-5" style={{ color: B }}>Chapter template</p>
-                <div className="space-y-3">
-                  {["Introduction", "Methodology", "Results", "References"].map(heading => <div key={heading} className="rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm font-semibold text-gray-700">{heading}</div>)}
-                </div>
-                <p className="text-xs text-gray-400 mt-5">Optional · detected headings work too</p>
-              </div>
-            </div>
-
-            {/* ── Upload: text left, visual right ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Upload · Step 2</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Upload your manuscript</h3>
-                <p className="text-base text-gray-500 leading-relaxed max-w-sm">
-                  Add a <span className="font-semibold text-gray-700">Word file (.doc/.docx)</span> or paste a <span className="font-semibold text-gray-700">Google Docs link</span>. Resync identifies sections and checks how each connects to the next.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-6">
-                  {["Section detection", "Citation checks", "AI-text indicator"].map(t => (
-                    <span key={t} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500 shrink-0"><path d="M5 12l5 5L20 7" /></svg>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Visual: drag-drop card */}
-              <div className="relative">
-                <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(26,31,204,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(26,31,204,.04) 1px,transparent 1px)`, backgroundSize: "32px 32px" }} />
-                <div className="relative p-8">
-                  {/* Drop zone card */}
-                  <div className="bg-white rounded-2xl border-2 border-dashed p-8 text-center shadow-sm" style={{ borderColor: `${B}30` }}>
-                    <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: BL }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7" style={{ color: B }} aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                    </div>
-                    <p className="text-sm font-bold text-gray-700 mb-1">Drop your thesis here</p>
-                    <p className="text-xs text-gray-400">.doc, .docx or Google Docs link · max 25&nbsp;MB</p>
-                    <div className="mt-5 flex items-center justify-center gap-2">
-                      <div className="flex-1 h-px bg-gray-100" />
-                      <span className="text-xs text-gray-600 font-medium">or</span>
-                      <div className="flex-1 h-px bg-gray-100" />
-                    </div>
-                    <button className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2" style={{ background: `linear-gradient(135deg,${B},${BH})` }}>Browse file</button>
-                  </div>
-                  {/* Detected sections chip */}
-                  <div className="absolute -bottom-4 -right-2 bg-white rounded-2xl border border-gray-100 p-3.5 shadow-lg flex items-start gap-3" style={{ minWidth: 220 }}>
-                    <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#f0fdf4" }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-green-600" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-                    </div>
-                    <div>
-                      <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-2">Detected Sections</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {["Introduction", "RRL", "Methodology", "Results", "Conclusion"].map(s => (
-                          <span key={s} className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: BL, color: B }}>{s}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Analysis: visual left, text right ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-              {/* Visual: paragraph scan with glowing connector */}
-              <div className="relative order-2 lg:order-1">
-                <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(26,31,204,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(26,31,204,.04) 1px,transparent 1px)`, backgroundSize: "32px 32px" }} />
-                <div className="relative p-8 space-y-3">
-                  {/* Para A */}
-                  <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 1 — Objectives</p>
-                    <p className="text-xs text-gray-600 leading-relaxed">The study will <mark className="bg-violet-100 border border-violet-200 text-violet-800 rounded px-0.5 not-italic" style={{ textDecoration: "none" }}>measure engagement using biometric data</mark> collected over one semester.</p>
-                  </div>
-                  {/* SVG connector */}
-                  <div className="flex justify-center py-1">
-                    <svg width="48" height="36" viewBox="0 0 48 36" fill="none">
-                      <path d="M24 2 C 8 2, 8 34, 24 34" stroke={B} strokeWidth="2" strokeDasharray="4 3" fill="none" opacity="0.5" />
-                      <circle cx="24" cy="2" r="3" fill={B} opacity="0.6" />
-                      <circle cx="24" cy="34" r="3" fill={B} opacity="0.6" />
-                      <defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="coloredBlur" /><feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
-                    </svg>
-                  </div>
-                  {/* Para B */}
-                  <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest mb-2" style={{ color: B }}>Chapter 2 — Methodology</p>
-                    <p className="text-xs text-gray-600 leading-relaxed">Data were collected using the <span className="font-semibold text-gray-800">Maslach Burnout Inventory</span> and the AWS survey instrument only.</p>
-                  </div>
-                  {/* Warning badge */}
-                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white rounded-2xl border border-red-200 shadow-lg px-3.5 py-2.5 flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-red-500"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-red-700">Contradiction Detected</p>
-                      <p className="text-[9px] text-gray-400">Objectives ↔ Methodology</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="order-1 lg:order-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Scan · Step 3</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review connections between sections</h3>
-                <p className="text-base text-gray-500 leading-relaxed max-w-sm">
-                  Resync compares consecutive sections to identify weak logical links or conflicting information in your manuscript.
-                </p>
-                <div className="mt-7 space-y-3">
-                  {[
-                    "Checks how each section relates to the next",
-                    "Reviews citations and the AI-text indicator",
-                    "Flags findings that need the author's review",
-                  ].map(item => (
-                    <div key={item} className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: B }} />
-                      <p className="text-sm text-gray-500">{item}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* ── Results: text left, visual right ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mono mb-6" style={{ background: `${B}08`, color: B }}>Report · Step 4</div>
-                <h3 className="text-3xl font-bold text-gray-900 tracking-tight mb-4 leading-snug">Review the report</h3>
-                <p className="text-base text-gray-500 leading-relaxed max-w-sm">
-                  See highlighted passages, explanations, and suggested revisions in one report. Use the findings as guidance while you review and update your paper.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-6">
-                  {["Inline highlights", "Fix suggestions", "Coherence score", "Citation check"].map(t => (
-                    <span key={t} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-green-500 shrink-0"><path d="M5 12l5 5L20 7" /></svg>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Visual: score ring + checklist card */}
-              <div className="relative">
-                <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ backgroundImage: `linear-gradient(rgba(26,31,204,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(26,31,204,.04) 1px,transparent 1px)`, backgroundSize: "32px 32px" }} />
-                <div className="relative p-8">
-                  <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                    <div className="flex items-center gap-5 pb-5 mb-5 border-b border-gray-50">
-                      <ScoreRing score={84} size={88} />
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-400 mb-1">Manuscript</p>
-                        <p className="text-sm font-bold text-gray-800 leading-snug">Predictors of Academic Burnout Among STEM Undergraduates</p>
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Score improved</span>
-                          <span className="text-[10px] text-gray-400">↑ from 74</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-3">Revision Plan</p>
-                    <div className="space-y-2">
-                      {[
-                        { done: true, text: "Align biometric data collection with Methodology chapter" },
-                        { done: true, text: "Reconcile sample size n=120 vs n=108 in Chapter 4" },
-                        { done: false, text: "Remove duplicate 'technology acceptance' definition" },
-                        { done: false, text: "Revise Conclusions to reflect null tutoring result" },
-                      ].map(({ done, text }, i) => (
-                        <div key={i} className={`flex items-start gap-2.5 p-2.5 rounded-xl transition-colors ${done ? "bg-green-50" : "bg-gray-50"}`}>
-                          <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${done ? "bg-green-500" : "border-2 border-gray-300"}`}>
-                            {done && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-2.5 h-2.5"><path d="M5 12l5 5L20 7" /></svg>}
-                          </div>
-                          <p className={`text-xs leading-relaxed ${done ? "text-green-800 line-through decoration-green-400" : "text-gray-600"}`}>{text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── AI technologies ── */}
-      <section className="border-t border-gray-100 bg-gray-50/40">
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.35fr] gap-10 lg:gap-16 items-center">
-            <div>
-              <p className="text-xs mono font-bold uppercase tracking-widest mb-3" style={{ color: B }}>AI technologies used</p>
-              <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-3">Models that support the review</h2>
-              <p className="text-sm text-gray-500 leading-relaxed max-w-lg">
-                Resync uses AI models to assess links between consecutive sections, then generate findings and revision recommendations. The output is AI-generated and is not fully human-verified. Review each suggestion with your adviser before making changes.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="min-h-28 rounded-2xl border border-gray-200 bg-white p-5 flex items-center justify-center shadow-sm">
-                <img src={spacyLogo} alt="spaCy" className="h-14 w-14 object-contain" />
-              </div>
-              <div className="min-h-28 rounded-2xl border border-gray-200 bg-white p-5 flex items-center justify-center shadow-sm">
-                <span className="text-lg font-semibold tracking-tight text-gray-800 whitespace-nowrap">MiniLM-L6-V2</span>
-              </div>
-              <div className="min-h-28 rounded-2xl border border-gray-200 bg-white p-5 flex items-center justify-center shadow-sm">
-                <img src={geminiLogo} alt="Gemini" className="h-10 w-auto max-w-full object-contain" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 6 checks ── */}
-      <section id="section-capabilities" className="border-t border-gray-100 bg-gray-50/40">
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-20">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
-            <div>
-              <p className="text-xs mono font-bold uppercase tracking-widest text-gray-400 mb-3">Key capabilities</p>
-              <h2 className="text-4xl font-bold text-gray-900 tracking-tight leading-tight">What Resync checks</h2>
-            </div>
-            <button onClick={() => onNavigate("results", true)} className="text-sm font-semibold hover:underline self-start md:self-auto rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 transition-colors" style={{ color: B }}>
-              View sample report →
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
-            {[
-              ["01", "Section Flow", "Does each section logically connect with the one before it?"],
-              ["02", "Objectives Alignment", "Do neighboring sections support the stated objectives?"],
-              ["03", "Methodology Fit", "Does the next section follow from the methods described?"],
-              ["04", "Claim Support", "Do claims follow from the evidence in neighboring sections?"],
-              ["05", "Citation Accessibility", "Check cited URLs and DOIs for public reachability."],
-              ["06", "AI-Text Indicator", "Review a signal for possible AI-generated text."],
-            ].map(([num, label, desc]) => (
-              <div key={num} className="group flex items-start gap-4 p-5 rounded-2xl border border-transparent hover:border-gray-200 hover:bg-white transition-colors duration-200 cursor-default">
-                <span className="text-2xl font-black mono text-gray-100 group-hover:text-blue-100 transition-colors select-none shrink-0 w-9 leading-none mt-0.5">{num}</span>
-                <div>
-                  <p className="text-sm font-bold text-gray-800 mono mb-1">{label}</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section id="section-about" className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-16">
-        <div className="relative rounded-3xl overflow-hidden p-12 md:p-16 text-center" style={{ background: `linear-gradient(160deg, #0d1147, ${B} 55%, ${BH})` }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, rgba(255,255,255,.1) 1px, transparent 1px)`, backgroundSize: "28px 28px" }} />
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(129,140,248,.3) 0%, transparent 70%)" }} />
-          <div className="relative z-10">
-            <Logo className="h-10 w-auto mx-auto mb-7 brightness-0 invert" />
-            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-3">Review your manuscript with Resync</h2>
-            <p className="text-blue-200 mb-8 text-sm leading-relaxed max-w-sm mx-auto">Create an account to upload your paper and receive a coherence report.</p>
-            <button onClick={() => onNavigate("signup")} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-white font-bold text-sm hover:bg-blue-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-900 transition-all duration-150 shadow-xl" style={{ color: B }}>
-              Get started
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-            </button>
-          </div>
-        </div>
-        <p className="text-center text-xs text-gray-400 mt-8 max-w-md mx-auto leading-relaxed">
-          Resync is a decision-support tool. Final judgment on your manuscript always rests with your adviser and panel.
-        </p>
-      </section>
-      </main>
-      <BackToTop />
-    </div>
-  );
+    <footer className="lp-footer"><div className="lp-wrap"><div className="lp-footer-links"><a href="#top" aria-label="ReSync, back to top"><Logo header className="lp-footer-logo" /></a>{nav.map(item => <a key={item.href} href={item.href}>{item.label}</a>)}{session ? <button onClick={() => onNavigate('dashboard')}>Dashboard</button> : <button onClick={() => onNavigate('login')}>Log in</button>}<a href="/privacy">Privacy</a><a href="/terms">Terms</a></div><p>ReSync is a decision-support tool. Final judgment on your manuscript always rests with your adviser and panel.</p></div></footer>
+    <BackToTop />
+  </div>;
 }
