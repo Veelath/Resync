@@ -1,8 +1,9 @@
-import { ArrowRight, Check, FileText, TrendingUp, Upload, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Check, FileText, RefreshCw, Upload, AlertTriangle } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { Logo, BackToTop, LOGO_HEADER_CLASS } from '../components/AppPrimitives';
 import { ScoreRing } from '../components/AppScoreRing';
 import type { Screen } from '../lib/appTypes';
+import { categoryColors } from './results/categoryColors';
 import spacyLogo from '@/assets/technology/spacy.png';
 import geminiLogo from '@/assets/technology/gemini.svg';
 import './home-landing.css';
@@ -16,15 +17,22 @@ const checks = [
   ['Citation Accessibility', 'Check cited URLs and DOIs for public reachability.'],
   ['AI-Text Indicator', 'Review a signal for possible AI-generated text.'],
 ];
+// Shares of the 74/100 score; each part is out of 25 and they add up to 74.
+const reportParts = [
+  { label: 'Context Alignment', share: 19.5, color: categoryColors.objectives.color },
+  { label: 'Operational Alignment', share: 17, color: categoryColors.methodology.color },
+  { label: 'Logical Support', share: 18, color: categoryColors.claims.color },
+  { label: 'Evidence Consistency', share: 19.5, color: categoryColors.numeric.color },
+];
 
 function ReportPreview() {
   return <div className="lp-preview" aria-label="Example coherence report preview">
     <div className="lp-window"><span className="lp-dots" aria-hidden="true"><i /><i /><i /></span><span>resync_report.pdf</span></div>
     <div className="lp-preview-body">
-      <div className="lp-summary"><ScoreRing score={74} size={84} /><div className="lp-counts"><div><span>Logic gaps</span><strong>2</strong></div><div><span>Contradictions</span><strong>2</strong></div><div><span>Redundancies</span><strong>1</strong></div></div></div>
-      <div className="lp-excerpt"><span className="lp-mono-label">Chapter 1 · Statement of the problem</span><p>The study aims to <mark>measure student engagement using biometric data</mark> collected over one semester.</p></div>
-      <div className="lp-finding"><strong>Logic gap · Objectives → Methodology</strong><span>Biometric collection is promised in Objectives but absent from Methodology.</span></div>
-      <div className="lp-preview-foot"><span>✓&nbsp; 4 public</span><span>×&nbsp; 2 private</span><small>~2 min scan</small></div>
+      <div className="lp-summary"><ScoreRing score={74} size={84} band="Solid" /><div className="lp-parts">{reportParts.map(({ label, share, color }) => <div className="lp-part" key={label}><div className="lp-part-head"><span><i style={{ background: color }} />{label}</span><strong>{share.toFixed(1)} of 25</strong></div><div className="lp-part-bar"><i style={{ width: `${share * 4}%`, background: color }} /></div></div>)}</div></div>
+      <div className="lp-excerpt"><span className="lp-mono-label">Chapter 1 · Statement of the Problem</span><p>The study aims to <mark>measure student engagement using biometric data</mark> collected over one semester.</p></div>
+      <div className="lp-finding"><strong>Your Objectives and your Methodology are not aligned.</strong><small>Here’s why</small><span>Biometric data collection is promised in the Objectives but never described in the Methodology.</span></div>
+      <div className="lp-preview-foot"><span>✓&nbsp; 4 public</span><span>×&nbsp; 2 private</span><small>Results in a few minutes</small></div>
     </div>
   </div>;
 }
@@ -41,11 +49,11 @@ export function HomeScreen({ onNavigate, session }: { onNavigate: (s: Screen, as
 
     <main id="top">
       <header id="section-overview" className="lp-hero"><div className="lp-wrap lp-hero-grid">
-        <div className="lp-hero-copy"><span className="lp-tag"><i />Manuscript coherence checker</span><h1>Check your manuscript <span>for coherence.</span></h1><p>ReSync reviews consecutive section links, citations, and the AI-text indicator. Receive a clear report that helps you focus your revisions.</p><div className="lp-hero-actions"><button className="lp-btn lp-btn-primary" onClick={start}>Get started <ArrowRight size={18} /></button><button className="lp-btn lp-btn-secondary" onClick={sample}>View sample report</button></div><ul className="lp-benefits"><li><Check />Free preview with every scan</li><li><Check />Results in ~2 min</li><li><Check />No credit card needed</li></ul></div>
-        <div className="lp-hero-art"><ReportPreview /><div className="lp-float lp-score-float"><span><TrendingUp size={18} /></span><div><strong>Score improved</strong><small>74 → 84 after revision</small></div></div><div className="lp-float lp-alert-float"><i />Contradiction detected</div></div>
+        <div className="lp-hero-copy"><span className="lp-tag"><i />Manuscript coherence checker</span><h1>Check your manuscript <span>for coherence.</span></h1><p>ReSync reviews consecutive section links, citations, and the AI-text indicator. Receive a clear report that helps you focus your revisions.</p><div className="lp-hero-actions"><button className="lp-btn lp-btn-primary" onClick={start}>Get started <ArrowRight size={18} /></button><button className="lp-btn lp-btn-secondary" onClick={sample}>View sample report</button></div><ul className="lp-benefits"><li><Check />Free preview with every scan</li><li><Check />Results in a few minutes</li><li><Check />No credit card needed</li></ul></div>
+        <div className="lp-hero-art"><ReportPreview /><div className="lp-float lp-score-float"><span><RefreshCw size={18} /></span><div><strong>Re-scan after you revise</strong></div></div><div className="lp-float lp-alert-float"><i />Not aligned: Objectives → Methodology</div></div>
       </div></header>
 
-      <section className="lp-stats lp-wrap" aria-label="ReSync at a glance"><div><strong>4</strong><span>Coherence dimensions</span></div><div><strong>~2 min</strong><span>Per full thesis</span></div><div><strong>.doc/.docx</strong><span>or Google Docs link</span></div><div><strong>3 models</strong><span>Support the analysis</span></div></section>
+      <section className="lp-stats lp-wrap" aria-label="ReSync at a glance"><div><strong>4</strong><span>Coherence dimensions</span></div><div><strong>A few min</strong><span>Results per full thesis</span></div><div><strong>.doc/.docx</strong><span>or Google Docs link</span></div><div><strong>3 models</strong><span>Support the analysis</span></div></section>
 
       <section className="lp-process lp-wrap" aria-labelledby="lp-process-title"><div className="lp-process-heading"><span className="lp-eyebrow">How it works</span><h2 id="lp-process-title">Template, upload, scan, then review your report</h2></div><div className="lp-steps">
         <div className="lp-step"><div className="lp-step-copy"><span className="lp-step-number">01</span><span className="lp-eyebrow">Template · Step 1</span><h3>Set chapter headings (optional)</h3><p>Attach and edit a chapter template, use a saved one, or skip to let ReSync detect headings from your manuscript.</p></div><div className="lp-mock lp-template"><span className="lp-mono-label">Chapter template</span>{['Introduction', 'Methodology', 'Results', 'References'].map((name, i) => <div className="lp-template-row" key={name}><span>0{i + 1}</span>{name}</div>)}<small>Optional · detected headings work too</small></div></div>
