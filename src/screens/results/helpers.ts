@@ -130,20 +130,48 @@ export function citationContains(reference: string, value: string | number | und
   return value != null && normalize(reference).includes(normalize(String(value)));
 }
 
+const ROMAN_NUMERAL = /^(?:i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx)$/i;
+const FRONT_MATTER = /^(?:table of contents|a\s+(?:capstone|thesis|research|project|dissertation)\b|presented to\b|in partial fulfil+ment|submitted (?:to|in)\b|by\b)/i;
+const LOWERCASE_CONNECTOR = /^(?:a|an|and|as|at|by|for|from|in|of|on|or|the|to|with)$/;
+const SECTION_HEADING = /^(?:abstract|introduction|acknowledg\w*|dedication|approval sheet|chapter\s)/i;
+
+// A line can carry a title only when it is not a page number, roman numeral, fragment or front-matter phrase.
+function isMeaningfulTitleLine(line: string): boolean {
+  const text = line.trim();
+  if ((text.match(/\p{L}/gu) ?? []).length < 4) return false;
+  if (/^\d+$/.test(text) || ROMAN_NUMERAL.test(text)) return false;
+  return !FRONT_MATTER.test(text);
+}
+
+function isMostlyUppercase(line: string): boolean {
+  const letters = line.match(/\p{L}/gu) ?? [];
+  const upper = letters.filter(letter => letter === letter.toUpperCase()).length;
+  return letters.length > 0 && upper / letters.length >= 0.8;
+}
+
+function isTitleCase(line: string): boolean {
+  return line.split(/\s+/).every(word => !/^\p{L}/u.test(word) || /^\p{Lu}/u.test(word) || LOWERCASE_CONNECTOR.test(word));
+}
+
+// Joins the second meaningful line only when it reads as the rest of the same title, not a new section.
+function continuesTitle(previous: string, next: string): boolean {
+  if (isMostlyUppercase(previous) && isMostlyUppercase(next)) return true;
+  return !/[.!?:;,]$/.test(previous) && next.split(/\s+/).length <= 12 && isTitleCase(next) && !SECTION_HEADING.test(next);
+}
+
 export function extractDisplayTitle(text: string | null) {
   if (!text) return null;
-  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.trim());
-  const trivial = (line: string) => !line || /^(?:\d+|[ivxlcdm]+)$/i.test(line);
-  const first = lines.findIndex(line => !trivial(line));
-  if (first < 0) return null;
-  const title = [lines[first]];
-  const uppercase = lines[first] === lines[first].toUpperCase();
-  for (const line of lines.slice(first + 1)) {
-    if (trivial(line) || /^(?:a\s+(?:capstone|thesis|research|project)|submitted|presented|by\b)/i.test(line)) break;
-    if (uppercase && line !== line.toUpperCase()) break;
-    title.push(line);
-  }
-  return title.join(' ');
+  const [first, second] = text.replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.trim()).filter(isMeaningfulTitleLine);
+  if (!first) return null;
+  const title = second && continuesTitle(first, second) ? `${first} ${second}` : first;
+  return title.slice(0, 160).trim();
+}
+
+// A stored or supplied title is only used when it passes the same test as a line taken from the manuscript text.
+export function usableTitle(value: string | null | undefined): string | null {
+  const title = value?.trim();
+  if (!title || /^https?:\/\/docs\.google\.com\//i.test(title) || !isMeaningfulTitleLine(title)) return null;
+  return title;
 }
 
 export function normalizeManuscriptPreview(text: string) {

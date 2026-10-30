@@ -9,7 +9,7 @@ import { BackToTop } from '../../components/AppPrimitives';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
 import { AlignmentLegend, ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
-import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText } from './helpers';
+import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
@@ -86,10 +86,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample }: { onNaviga
     {unlockError && <p role="alert" className="text-sm text-[#9f1239]">{unlockError} {balance === 0 ? 'Buy credits to continue.' : 'Try again.'}</p>}
   </div>;
 
-  const suppliedTitle = result.manuscript_title?.trim();
-  const loadedTitle = extractDisplayTitle(manuscriptText);
-  const displayTitle = isSample ? 'Guided Reading Outcomes' : (suppliedTitle && !/^https?:\/\/docs\.google\.com\//i.test(suppliedTitle) ? suppliedTitle : null)
-    || (loadedTitle && !/^https?:\/\/docs\.google\.com\//i.test(loadedTitle) ? loadedTitle : null)
+  const displayTitle = isSample ? 'Guided Reading Outcomes' : usableTitle(result.manuscript_title)
+    || usableTitle(extractDisplayTitle(manuscriptText))
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
   const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
