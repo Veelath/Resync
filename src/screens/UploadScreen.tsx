@@ -541,7 +541,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   type="button"
                   onClick={hasSavedTemplate ? handleUseSavedTemplate : undefined}
                   disabled={!hasSavedTemplate}
-                  title={!hasSavedTemplate ? "No saved template yet." : undefined}
+                  aria-disabled={!hasSavedTemplate}
+                  title={!hasSavedTemplate ? "No saved template yet. Save one first." : undefined}
                   className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors flex items-center gap-1.5 ${
                     hasSavedTemplate
                       ? "border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
