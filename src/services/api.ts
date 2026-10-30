@@ -71,6 +71,37 @@ export class InsufficientCreditsError extends Error {
   }
 }
 
+/** A notice the backend attaches while a scan runs, e.g. when the AI rate limit makes it wait. */
+export interface ScanStatusNotice {
+  message: string;
+  level: 'info' | 'wait';
+}
+
+let currentScanStatus: ScanStatusNotice | null = null;
+const scanStatusListeners = new Set<() => void>();
+
+function setScanStatus(next: ScanStatusNotice | null) {
+  if (next?.message === currentScanStatus?.message && next?.level === currentScanStatus?.level) return;
+  currentScanStatus = next;
+  scanStatusListeners.forEach(listener => listener());
+}
+
+export function getScanStatus(): ScanStatusNotice | null {
+  return currentScanStatus;
+}
+
+export function subscribeScanStatus(listener: () => void): () => void {
+  scanStatusListeners.add(listener);
+  return () => scanStatusListeners.delete(listener);
+}
+
+/** Reads `status_message` / `status_message_level` defensively; both are absent on older backends. */
+function readScanStatus(job: any): ScanStatusNotice | null {
+  const message = typeof job?.status_message === 'string' ? job.status_message.trim() : '';
+  if (!message) return null;
+  return { message, level: job.status_message_level === 'wait' ? 'wait' : 'info' };
+}
+
 /** How long to wait between status polls while a scan job runs. */
 const POLL_INTERVAL_MS = 2500;
 
@@ -147,6 +178,18 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
  * whole job rather than a single request, hence the larger default.
  */
 export async function executeManuscriptScan(
+  payload: ScanRequest,
+  options?: ScanOptions
+): Promise<ScanResult> {
+  setScanStatus(null);
+  try {
+    return await runManuscriptScan(payload, options);
+  } finally {
+    setScanStatus(null);
+  }
+}
+
+async function runManuscriptScan(
   payload: ScanRequest,
   options?: ScanOptions
 ): Promise<ScanResult> {
@@ -273,6 +316,8 @@ export async function executeManuscriptScan(
 
     consecutiveFailures = 0;
     const job = await statusResponse.json();
+    // A long wait for the AI is not a failure: the notice is informational and never counted against the poll budget.
+    setScanStatus(job.status === 'completed' || job.status === 'failed' ? null : readScanStatus(job));
 
     if (job.status === 'completed' && job.result) {
       return adaptScanResult(job.result);

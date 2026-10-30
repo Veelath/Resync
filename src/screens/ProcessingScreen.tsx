@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Logo } from '../components/AppPrimitives';
 import type { Screen } from '../lib/appTypes';
+import { getScanStatus, subscribeScanStatus } from '../services/api';
 import './processing-screen.css';
 
 const steps = [
@@ -13,6 +14,10 @@ const finalStep = { label: 'Finalizing your report', detail: 'Preparing findings
 
 export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [done, setDone] = useState(0);
+  const status = useSyncExternalStore(subscribeScanStatus, getScanStatus);
+  const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
+  const noticeKey = status ? `${status.level}:${status.message}` : null;
+  const notice = status && noticeKey !== dismissedNotice ? status : null;
   useEffect(() => {
     let elapsed = 0;
     const timers = steps.map((step, index) => {
@@ -47,6 +52,22 @@ export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: 
 
         <h1>Analyzing your manuscript</h1>
         <p className="processing-screen__subtitle">Running {steps.length} checks across consecutive sections</p>
+
+        <div aria-live="polite">
+          {notice && (
+            <div className={`processing-screen__notice processing-screen__notice--${notice.level}`}>
+              {notice.level === 'wait' ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 2h12M6 22h12M7 2c0 5 5 6 5 10s-5 5-5 10M17 2c0 5-5 6-5 10s5 5 5 10" /></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+              )}
+              <p>{notice.message}</p>
+              <button type="button" className="processing-screen__notice-dismiss" aria-label="Dismiss notification" onClick={() => setDismissedNotice(noticeKey)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+            </div>
+          )}
+        </div>
 
         <section className="processing-screen__card" aria-label="Scan progress">
           <div className="processing-screen__progress-heading">
