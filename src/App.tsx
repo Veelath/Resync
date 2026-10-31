@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
 import { saveSourceFile } from './lib/sourceFile';
+import { readRoute, routePath } from './lib/routes';
+import { getScanResult } from './services/api';
 import type { Session } from '@supabase/supabase-js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
@@ -24,6 +26,8 @@ export default function App() {
   const sessionRef = useRef<Session | null>(null);
   const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
   const [scanFile, setScanFile] = useState<File | null>(null);  // the uploaded Word file, so results can show it as written
+  const [activeScanId, setActiveScanId] = useState<string | null>(null);
+  const [resultError, setResultError] = useState('');
   const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
   const [toast, setToast] = useState<AppNotification | null>(null);
   const [soundBlocked, setSoundBlocked] = useState(false);
@@ -33,26 +37,42 @@ export default function App() {
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
 
-  const RESTORABLE_SCREENS: Screen[] = ['dashboard', 'upload'];
+  function showRoute(pathname: string, index: number, currentSession = sessionRef.current) {
+    const route = readRoute(pathname);
+    let target = route.unknown ? (currentSession ? 'dashboard' : 'home') : route.screen;
+    let path = route.unknown ? routePath(target) : pathname;
+    if (target === 'processing' && scanSettledRef.current) { target = 'dashboard'; path = '/dashboard'; }
+    if (!currentSession && !route.sample && ['dashboard', 'upload', 'results'].includes(target)) {
+      if (route.scanId) sessionStorage.setItem('resync_return_to', routePath('results', route.scanId));
+      target = 'login'; path = '/login';
+    }
+    if (currentSession && ['login', 'signup'].includes(target)) { target = 'dashboard'; path = '/dashboard'; }
+    if (path !== window.location.pathname) window.history.replaceState({ resync: { index } }, '', path);
+    historyIndex.current = index;
+    screenRef.current = target;
+    setScreen(target);
+    setIsSampleMode(Boolean(route.sample && target === 'results'));
+    setActiveScanId(target === 'results' && !route.sample ? route.scanId ?? null : null);
+    setResultError('');
+    sessionStorage.setItem('resync_screen', target);
+  }
+
+  function afterSignIn() {
+    const returnTo = sessionStorage.getItem('resync_return_to');
+    sessionStorage.removeItem('resync_return_to');
+    const path = returnTo && readRoute(returnTo).scanId ? returnTo : '/dashboard';
+    window.history.replaceState({ resync: { index: historyIndex.current } }, '', path);
+    showRoute(path, historyIndex.current);
+  }
 
   useEffect(() => {
-    const savedScreen = sessionStorage.getItem('resync_screen') as Screen | null;
     const isRecovery = window.location.pathname === '/reset-password' || window.location.hash.includes('type=recovery');
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       sessionRef.current = session;
-      let initialScreen: Screen = 'home';
-      if (isRecovery) {
-        initialScreen = 'reset-password';
-      } else if (session && savedScreen && RESTORABLE_SCREENS.includes(savedScreen)) {
-        initialScreen = savedScreen;
-      } else if (session) {
-        initialScreen = 'dashboard';
-      }
-      screenRef.current = initialScreen;
-      setScreen(initialScreen);
-      window.history.replaceState({ resync: { index: 0, screen: initialScreen, sample: false } }, '');
+      if (isRecovery && window.location.pathname !== '/reset-password') window.history.replaceState({ resync: { index: 0 } }, '', '/reset-password');
+      showRoute(window.location.pathname, 0, session);
       setSessionLoading(false);
     });
 
@@ -60,64 +80,45 @@ export default function App() {
       setSession(session);
       sessionRef.current = session;
       if (event === 'PASSWORD_RECOVERY') {
-        screenRef.current = 'reset-password';
-        setScreen("reset-password");
-        window.history.replaceState({ resync: { index: historyIndex.current, screen: 'home', sample: false } }, '');
+        window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/reset-password');
+        showRoute('/reset-password', historyIndex.current, session);
       } else if (event === 'SIGNED_IN' && session) {
-        setScreen(prev => {
-          if (['login', 'signup', 'home'].includes(prev)) {
-            sessionStorage.setItem('resync_screen', 'dashboard');
-            screenRef.current = 'dashboard';
-            window.history.replaceState({ resync: { index: historyIndex.current, screen: 'dashboard', sample: false } }, '');
-            return "dashboard";
-          }
-          return prev;
-        });
+        if (['login', 'signup', 'home'].includes(screenRef.current)) afterSignIn();
       } else if (!session) {
-        setScreen(prev => {
-          if (['dashboard', 'upload', 'processing', 'results'].includes(prev)) {
-            sessionStorage.setItem('resync_screen', 'home');
-            screenRef.current = 'home';
-            window.history.replaceState({ resync: { index: historyIndex.current, screen: 'home', sample: false } }, '');
-            return "home";
-          }
-          return prev;
-        });
+        if (['dashboard', 'upload', 'processing', 'results'].includes(screenRef.current) && window.location.pathname !== '/sample') {
+          window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/');
+          showRoute('/', historyIndex.current, null);
+        }
       }
     });
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    const onPopState = (event: PopStateEvent) => {
-      const destination = event.state?.resync as { index: number; screen: Screen; sample: boolean } | undefined;
-      historyIndex.current = destination?.index ?? 0;
-      const target = destination?.screen ?? 'home';
-      let next: Screen = !sessionRef.current && !destination?.sample && ['dashboard', 'upload', 'results'].includes(target) ? 'home' : target;
-      // A signed-in user pressing Back must stay signed in: skip the sign-in / sign-up pages.
-      if (sessionRef.current && (next === 'login' || next === 'signup')) next = 'dashboard';
-      screenRef.current = next;
-      setScreen(next);
-      setIsSampleMode(destination?.sample ?? false);
-      sessionStorage.setItem('resync_screen', next);
-    };
+    const onPopState = (event: PopStateEvent) => showRoute(window.location.pathname, event.state?.resync?.index ?? 0);
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  function navigate(s: Screen, asSample = false) {
-    const target = s === 'dashboard' && !sessionRef.current ? 'login'
+  function navigate(s: Screen, asSample = false, resultId?: string) {
+    if (s === 'results' && !asSample && !sessionRef.current && (resultId || scanResult?.analysis_run_id)) {
+      sessionStorage.setItem('resync_return_to', routePath('results', resultId ?? scanResult?.analysis_run_id));
+    }
+    const target = !sessionRef.current && !asSample && ['dashboard', 'upload', 'processing', 'results'].includes(s) ? 'login'
       : sessionRef.current && (s === 'login' || s === 'signup') ? 'dashboard'
       : s;
     const transient = ['processing', 'login', 'signup', 'reset-password'];
-    const previous = window.history.state?.resync?.screen as Screen | undefined;
     const replacingTransient = transient.includes(screenRef.current) && !transient.includes(target);
-    const entry = { index: historyIndex.current + (replacingTransient ? 0 : 1), screen: transient.includes(target) ? previous ?? 'home' : target, sample: asSample };
-    if (replacingTransient) window.history.replaceState({ resync: entry }, '');
-    else window.history.pushState({ resync: entry }, '');
+    const scanId = target === 'results' && !asSample ? resultId ?? scanResult?.analysis_run_id : undefined;
+    const path = routePath(target, scanId, asSample);
+    if (target === 'results' && !asSample && !scanId) { showRoute('/dashboard', historyIndex.current); return; }
+    const entry = { index: historyIndex.current + (replacingTransient ? 0 : 1) };
+    if (replacingTransient) window.history.replaceState({ resync: entry }, '', path);
+    else window.history.pushState({ resync: entry }, '', path);
     historyIndex.current = entry.index;
     screenRef.current = target;
     setIsSampleMode(asSample);
+    setActiveScanId(asSample ? null : scanId ?? null);
     setScreen(target);
     sessionStorage.setItem('resync_screen', target);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -132,7 +133,7 @@ export default function App() {
       setScreen(fallback);
       setIsSampleMode(false);
       sessionStorage.setItem('resync_screen', fallback);
-      window.history.replaceState({ resync: { index: 0, screen: fallback, sample: false } }, '');
+      window.history.replaceState({ resync: { index: 0 } }, '', routePath(fallback));
     }
   }
 
@@ -166,6 +167,18 @@ export default function App() {
     unlockAudio();
   }
 
+  useEffect(() => {
+    if (screen !== 'results' || isSampleMode || !activeScanId || !session || scanResult?.analysis_run_id === activeScanId) return;
+    let cancelled = false;
+    setResultError('');
+    getScanResult(activeScanId).then(result => {
+      if (!cancelled) { setScanResult(result); setScanFile(null); }
+    }).catch(error => {
+      if (!cancelled) setResultError(error instanceof Error ? error.message : 'Unable to load this report.');
+    });
+    return () => { cancelled = true; };
+  }, [screen, isSampleMode, activeScanId, session, scanResult?.analysis_run_id]);
+
   function handleScanCompleted() {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
@@ -187,11 +200,7 @@ export default function App() {
   }
 
   function handleLoginSuccess() {
-    setIsSampleMode(false);
-    screenRef.current = 'dashboard';
-    setScreen("dashboard");
-    window.history.replaceState({ resync: { index: historyIndex.current, screen: 'dashboard', sample: false } }, '');
-    sessionStorage.setItem('resync_screen', 'dashboard');
+    if (screenRef.current === 'login') afterSignIn();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -200,15 +209,15 @@ export default function App() {
     sessionStorage.setItem('resync_screen', 'home');
     screenRef.current = 'home';
     setScreen('home');
-    window.history.replaceState({ resync: { index: historyIndex.current, screen: 'home', sample: false } }, '');
+    window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  if (window.location.pathname === '/privacy') {
+  if (screen === 'privacy') {
     return <PrivacyScreen />;
   }
 
-  if (window.location.pathname === '/terms') {
+  if (screen === 'terms') {
     return <TermsScreen />;
   }
 
@@ -231,12 +240,12 @@ export default function App() {
         onClose={() => setToast(null)}
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(); navigate("results"); }} />}
+      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(); navigate("results", false, result.analysis_run_id); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
-      {screen === "results" && (isSampleMode || scanResult?.result_version === 'v7'
+      {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
         ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
-            <p>{scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.'}</p>
+            <p>{resultError || (activeScanId && scanResult?.analysis_run_id !== activeScanId ? 'Loading report…' : scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.')}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>
           </div>)}
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
