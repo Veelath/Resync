@@ -19,7 +19,9 @@ const WORD_MIME_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
+const MAX_TEMPLATE_BYTES = 100 * 1024;
 const WORD_ACCEPT = ".doc,.docx," + WORD_MIME_TYPES.join(",");
+const TEMPLATE_ACCEPT = WORD_ACCEPT + ",.txt,text/plain";
 
 // Word documents only (.doc / .docx): checks the extension and, when the browser reports one, the MIME type.
 function isWordFile(file: File): boolean {
@@ -176,16 +178,23 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   async function handleTemplateFileChange(file: File) {
-    if (!isWordFile(file)) {
+    const isTextTemplate = /\.txt$/i.test(file.name);
+    if (!isWordFile(file) && !isTextTemplate) {
       setCustomTemplateFile(null);
       setTemplateChapters([]);
-      setTemplateParseError('Unsupported template file. Please upload a Word document (.doc or .docx).');
+      setTemplateParseError('Unsupported template file. Please upload a Word document (.doc or .docx) or a text file (.txt).');
+      return;
+    }
+    if (file.size > MAX_TEMPLATE_BYTES) {
+      setCustomTemplateFile(null);
+      setTemplateChapters([]);
+      setTemplateParseError('This template is larger than 100 KB. Please upload a smaller file.');
       return;
     }
     setCustomTemplateFile(file);
     setTemplateParseError(null);
     try {
-      const parsed = await parseDocxTemplate(file);
+      const parsed = isTextTemplate ? await parseTextTemplate(file) : await parseDocxTemplate(file);
       if (parsed.length === 0) {
         setTemplateParseError('No headings found in the template. No template will be sent.');
         setTemplateChapters([]);
@@ -701,7 +710,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
                     <p className="font-semibold text-gray-800">Have an institutional Word template file?</p>
-                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.doc or .docx).</p>
+                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.doc, .docx, or .txt).</p>
                   </div>
                   <button
                     type="button"
@@ -714,7 +723,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
                         <span>{customTemplateFile.name}</span>
                       </>
-                    ) : "+ Attach template (.doc, .docx) (Optional)"}
+                    ) : "+ Attach template (.doc, .docx, .txt) (Optional)"}
                   </button>
                   {templateParseError && (
                     <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
@@ -722,7 +731,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <input
                     ref={customTemplateInputRef}
                     type="file"
-                    accept={WORD_ACCEPT}
+                    accept={TEMPLATE_ACCEPT}
                     className="hidden"
                     onChange={e => {
                       const f = e.target.files?.[0];
