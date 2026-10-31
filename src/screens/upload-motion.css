@@ -1,0 +1,40 @@
+/* Motion for the two upload steps. Layout and colors stay the app's own; this only adds movement. */
+.upload-motion .um-panel{animation:um-in .5s cubic-bezier(.2,.7,.2,1) both}
+.upload-motion .um-panel > *,
+.upload-motion .um-panel .um-stagger > *{animation:um-rise .55s cubic-bezier(.2,.7,.2,1) both}
+.upload-motion .um-panel > :nth-child(1){animation-delay:.04s}
+.upload-motion .um-panel > :nth-child(2){animation-delay:.12s}
+.upload-motion .um-panel > :nth-child(3){animation-delay:.2s}
+.upload-motion .um-panel .um-stagger > :nth-child(1){animation-delay:.16s}
+.upload-motion .um-panel .um-stagger > :nth-child(2){animation-delay:.24s}
+.upload-motion .um-panel .um-stagger > :nth-child(3){animation-delay:.32s}
+.upload-motion .um-panel .um-stagger > :nth-child(4){animation-delay:.4s}
+.upload-motion .um-panel .um-stagger > :nth-child(5){animation-delay:.48s}
+
+/* progress line between steps fills as you move forward */
+.um-line{position:relative;overflow:hidden;background:#e5e7eb}
+.um-line::after{content:"";position:absolute;inset:0;background:var(--um-brand,#1a1fcc);transform:scaleX(0);transform-origin:left;transition:transform .6s cubic-bezier(.3,.7,.2,1)}
+.um-line.is-done::after{transform:scaleX(1)}
+.um-badge{transition:background .3s,transform .3s}
+.um-badge.is-active{animation:um-pop .5s cubic-bezier(.2,.9,.3,1.3)}
+
+/* drop zone: icon floats, a soft ring pulses while waiting for a file */
+.um-drop{position:relative}
+.um-drop:not(.has-file)::after{content:"";position:absolute;inset:-2px;border-radius:1rem;pointer-events:none;box-shadow:0 0 0 0 rgba(26,31,204,.18);animation:um-ring 2.8s ease-out infinite}
+.um-drop.is-drag{transform:scale(1.01)}
+.um-drop{transition:transform .2s,background .2s,border-color .2s}
+.um-float{animation:um-float 4s ease-in-out infinite}
+.um-drop:hover .um-float{animation-duration:2s}
+
+/* main buttons: light sweep, lift on hover */
+.um-cta{position:relative;overflow:hidden}
+.um-cta:not(:disabled):hover{transform:translateY(-2px)}
+.um-cta:not(:disabled)::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);animation:um-sheen 3.6s ease-in-out 1s infinite;pointer-events:none}
+
+@keyframes um-in{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes um-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes um-pop{0%{transform:scale(.7)}100%{transform:scale(1)}}
+@keyframes um-ring{0%{box-shadow:0 0 0 0 rgba(26,31,204,.18)}70%,100%{box-shadow:0 0 0 14px rgba(26,31,204,0)}}
+@keyframes um-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes um-sheen{0%{left:-40%}45%,100%{left:130%}}
+@media (prefers-reduced-motion:reduce){.upload-motion *,.upload-motion *::after{animation:none !important;transition:none !important}}

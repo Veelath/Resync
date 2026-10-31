@@ -17,6 +17,8 @@ export interface RecommendationItem {
 }
 
 export type Severity = 'Critical' | 'Moderate' | 'Minor';
+/** A pair with no contradiction but a loose link: it gets linking sentences to add, and costs no points. */
+export type CardLevel = Severity | 'Suggestion';
 
 export const severityTones = {
   Critical: { background: '#fecdd3', border: '#e11d48', ink: '#881337', description: 'the sections directly contradict each other' },
@@ -32,10 +34,11 @@ export function isRateLimited(reviewStatus: { status: string; reason?: string } 
 const VISIBLE_FIXES = 2;
 
 // Chronological triage cards: red = Critical, orange = Moderate, blue = Minor; green and gray rows for the rest.
-const LEVELS: Record<Severity, { verdict: string; bar: string; chip: string; label: string }> = {
+const LEVELS: Record<CardLevel, { verdict: string; bar: string; chip: string; label: string }> = {
   Critical: { verdict: 'are not aligned', bar: 'border-l-rose-500', chip: 'bg-rose-50 text-rose-800', label: 'Critical' },
   Moderate: { verdict: 'are only partly aligned', bar: 'border-l-orange-500', chip: 'bg-orange-50 text-orange-800', label: 'Moderate' },
   Minor: { verdict: 'have a small gap', bar: 'border-l-sky-500', chip: 'bg-sky-50 text-sky-800', label: 'Minor' },
+  Suggestion: { verdict: 'could connect more smoothly', bar: 'border-l-indigo-400', chip: 'bg-indigo-50 text-indigo-800', label: 'Suggestion' },
 };
 
 const clip = (text: string, max: number) => text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
@@ -63,11 +66,17 @@ export function severityOf(pair: ManuscriptFlowPair, hasItems: boolean): Severit
   return pair.severity !== undefined ? pair.severity : hasItems ? 'Moderate' : null;
 }
 
+/** What the card should show: a clear pair that still has linking sentences to add is a suggestion, not "all clear". */
+export function levelOf(pair: ManuscriptFlowPair, hasItems: boolean): CardLevel | 'None' | null {
+  const severity = severityOf(pair, hasItems);
+  return severity === 'None' && hasItems ? 'Suggestion' : severity;
+}
+
 /** One pair with a real issue: why, the lines involved, and the suggested edits. Shared by the list and the dimension view. */
 export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, revealId }: {
   pair: ManuscriptFlowPair;
   items: RecommendationItem[];
-  severity: Severity;
+  severity: CardLevel;
   linkedIds: Set<string>;
   onShowInManuscript: (id: string) => void;
   revealId: string | null;
@@ -88,16 +97,16 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
       </span>
     </div>
     <div>
-      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-rose-700">Here’s why</p>
-      <p className="text-sm leading-snug text-[#303746]">{problemOf(pair)}</p>
-      {(saysA || saysB) && <ul className="mt-1.5 space-y-1 text-sm leading-snug text-[#303746]">
+      <p className={`mb-1 text-xs font-bold uppercase tracking-wide ${severity === 'Suggestion' ? 'text-indigo-700' : 'text-rose-700'}`}>{severity === 'Suggestion' ? 'Why this is suggested' : 'Here’s why'}</p>
+      <p className="text-sm leading-snug text-[#303746]">{severity === 'Suggestion' ? 'No contradiction was found, but these two sections are only loosely linked. Adding the linking sentences below ties them together.' : problemOf(pair)}</p>
+      {severity !== 'Suggestion' && (saysA || saysB) && <ul className="mt-1.5 space-y-1 text-sm leading-snug text-[#303746]">
         {saysA && <li className="flex gap-2"><span aria-hidden="true" className="text-gray-400">•</span><span><span className="font-semibold capitalize text-[#0b0f3d]">{pair.section_a}</span> says: {saysA}</span></li>}
         {saysB && <li className="flex gap-2"><span aria-hidden="true" className="text-gray-400">•</span><span><span className="font-semibold capitalize text-[#0b0f3d]">{pair.section_b}</span> says: {saysB}</span></li>}
       </ul>}
       {lines.length > 0 && <ul className="mt-1.5 space-y-1">{lines.map((item, index) => <li key={index} className="rounded-md bg-[#f6f7fb] p-2 font-serif text-[13px] text-[#303746]"><span className="block font-sans text-xs font-semibold capitalize text-gray-600">In {item.section}</span>“{clip(plainText(item.quote), 160)}”</li>)}</ul>}
     </div>
     {items.length > 0 && <div>
-      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#1a1fcc]">Suggested parts to edit</p>
+      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#1a1fcc]">{severity === 'Suggestion' ? 'Sentences to add' : 'Suggested parts to edit'}</p>
       <ol className="space-y-2">
         {items.map((item, index) => <li key={item.id} id={`recommendation-${item.id}`} tabIndex={-1} hidden={index >= VISIBLE_FIXES && !open} className="scroll-mt-12 space-y-1 rounded-lg border border-[#dfe5f5] p-2.5 text-sm leading-snug text-[#303746]">
           {item.kind === 'add'
@@ -118,7 +127,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   </section>;
 }
 
-export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, revealId, onlyOrders, mode = 'issues', rateLimited = false }: {
+export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, revealId, onlyOrders, mode = 'issues', rateLimited = false, score }: {
   items: RecommendationItem[];
   pairs: ManuscriptFlowPair[];
   linkedIds: Set<string>;
@@ -128,12 +137,14 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
   /** 'issues' lists only pairs that need editing; 'clear' lists the pairs that need no action. */
   mode?: 'issues' | 'clear';
   rateLimited?: boolean;
+  /** Overall score, so an empty list can say why the score is not 100. */
+  score?: number;
 }) {
   const rows = pairs
     .filter(pair => pair.scores.overall_coherence != null && (!onlyOrders || onlyOrders.has(pair.order)))
     .map(pair => {
       const pairItems = items.filter(item => item.pair === pair.order);
-      return { pair, pairItems, severity: severityOf(pair, pairItems.length > 0) };
+      return { pair, pairItems, severity: levelOf(pair, pairItems.length > 0) };
     })
     .filter(row => mode === 'issues' ? row.severity !== null && row.severity !== 'None' : row.severity === 'None');
   // Pairs the AI could not judge are not "fine": they are shown with the recommendations as something still to do.
@@ -163,6 +174,6 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
         : `${unreviewed.length} section ${unreviewed.length === 1 ? 'pair' : 'pairs'} could not be reviewed by the AI, so we can’t say whether ${unreviewed.length === 1 ? 'it is' : 'they are'} fine. Scan again to retry.`}</p>
       <ul className="space-y-1 text-xs text-amber-900">{unreviewed.map(pair => <li key={pair.order} className="capitalize">{pair.section_a} ↔ {pair.section_b}</li>)}</ul>
     </div>}
-    {!rows.length && !(mode === 'issues' && unreviewed.length > 0) && <p className="text-sm text-gray-500">{mode === 'issues' ? 'No recommendations. Your sections are consistent with each other.' : 'Nothing here yet.'}</p>}
+    {!rows.length && !(mode === 'issues' && unreviewed.length > 0) && <p className="text-sm text-gray-500">{mode === 'issues' ? score != null && score < 99.5 ? 'No contradictions were found between your sections. The score is below 100 because some sections connect loosely, not because of a mistake. Open a score box above to see how it was worked out.' : 'No recommendations. Your sections are consistent with each other.' : 'Nothing here yet.'}</p>}
   </div>;
 }

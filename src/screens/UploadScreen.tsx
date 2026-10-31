@@ -4,6 +4,8 @@ import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
 import { executeManuscriptScan } from '../services/api';
+import './upload-motion.css';
+import { UploadTour, uploadTourSeen } from './UploadTour';
 
 type UploadMode = "file" | "link";
 
@@ -83,6 +85,7 @@ let lastScanError: string | null = null;
 
 export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: () => void; onScanFailed?: (message: string) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
+  const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -297,7 +300,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full bg-white upload-motion" style={{ ["--um-brand" as string]: B }}>
+      <UploadTour open={tourOpen} onStepChange={setStep} onClose={() => setTourOpen(false)} />
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -308,6 +312,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
           </div>
           <div className="flex items-center gap-2">
+            <button type="button" className="ut-replay" onClick={() => setTourOpen(true)}>Replay tour</button>
             <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
               Step {step} of 2: {step === 1 ? "Chapter Template" : "Manuscript"}
             </span>
@@ -319,9 +324,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-10">
 
         {/* Step Progress Bar */}
-        <div className="mb-8 p-3 sm:p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 min-w-0">
+        <div data-tour="progress" className="mb-8 p-3 sm:p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 min-w-0">
           <div role="button" tabIndex={0} aria-label="Go to Step 1: Chapter Template" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm"
+            <div key={`b1-${step}`} className={`um-badge is-active w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm`}
               style={{ background: step === 1 ? B : "#16a34a" }}>
               {step > 1 ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
@@ -332,7 +337,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               <p className="text-[11px] text-gray-400">Attach, edit or use saved headings</p>
             </div>
           </div>
-          <div className="hidden sm:block flex-1 h-0.5 max-w-[80px]" style={{ background: step >= 2 ? B : "#e5e7eb" }} />
+          <div className={`um-line hidden sm:block flex-1 h-0.5 max-w-[80px] ${step >= 2 ? "is-done" : ""}`} />
           <div role="button" tabIndex={0} aria-label="Go to Step 2: Upload Manuscript" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(2)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(2); } }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
               style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
@@ -343,7 +348,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               <p className="text-[11px] text-gray-400">Upload .doc/.docx or add Google Docs link</p>
             </div>
           </div>
-          <div className="hidden sm:block flex-1 h-0.5 max-w-[80px] bg-gray-200" />
+          <div className="um-line hidden sm:block flex-1 h-0.5 max-w-[80px]" />
           <div className="flex items-center gap-2 sm:gap-3 opacity-60">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gray-100 text-gray-400">
               3
@@ -359,7 +364,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             STEP 2: MANUSCRIPT INTAKE
         ════════════════════════════════════════════════════════════════ */}
         {step === 2 ? (
-          <div>
+          <div key="step2" className="um-panel">
             <div className="mb-8">
               <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 2 · Manuscript Intake</p>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Upload manuscript</h1>
@@ -370,7 +375,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               <div className="space-y-7">
 
                 {/* Manuscript Source */}
-                <div>
+                <div data-tour="source">
                   <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500 block mb-3">Manuscript Source</label>
                   <div className="grid grid-cols-2 gap-2.5 mb-4">
                     {([
@@ -409,7 +414,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
                       onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) acceptManuscriptFile(f); }}
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50"
+                      className={`um-drop ${drag ? "is-drag" : ""} ${uploadedFile ? "has-file" : ""} flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50`}
                       style={{ borderColor: drag || uploadedFile ? B : "#e5e7eb", background: drag || uploadedFile ? BL : undefined }}>
                       <input ref={fileInputRef} type="file" accept={WORD_ACCEPT} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) acceptManuscriptFile(f); e.target.value = ""; }} />
                       {uploadedFile ? (
@@ -427,7 +432,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         </>
                       ) : (
                         <>
-                          <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400">
+                          <div className="um-float w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                           </div>
                           <div className="text-center">
@@ -454,12 +459,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 </div>
 
                 {/* Scan button */}
-                <div className="space-y-3">
+                <div data-tour="run" className="space-y-3">
                   <button
                     type="button"
                     disabled={isScanning}
                     onClick={handleScan}
-                    className="w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 text-white"
+                    className="um-cta w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 text-white"
                     style={{
                       background: isScanning ? "#9ca3af" : `linear-gradient(135deg, ${B}, ${BH})`,
                       cursor: isScanning ? "not-allowed" : "pointer",
@@ -478,7 +483,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               </div>
 
               {/* Right: Prep guide */}
-              <div className="lg:sticky lg:top-24 space-y-3">
+              <div className="um-stagger lg:sticky lg:top-24 space-y-3">
                 <div className="rounded-2xl p-5" style={{ background: BL, border: `1px solid ${B}18` }}>
                   <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: `${B}99` }}>Scan preparation</p>
                   <p className="text-sm font-bold text-gray-800 leading-snug">Clear chapter headings help ReSync check cross-chapter coherence.</p>
@@ -526,7 +531,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
           /* ════════════════════════════════════════════════════════════════
               STEP 1: OPTIONAL TEMPLATE
           ════════════════════════════════════════════════════════════════ */
-          <div>
+          <div key="step1" className="um-panel">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
@@ -707,7 +712,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 ))}
 
                 {/* Optional institutional file override */}
-                <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div data-tour="template" className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
                     <p className="font-semibold text-gray-800">Have an institutional Word template file?</p>
                     <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.doc, .docx, or .txt).</p>
@@ -753,7 +758,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="w-full sm:flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all shadow-md flex items-center justify-center gap-2"
+                    className="um-cta w-full sm:flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all shadow-md flex items-center justify-center gap-2"
                     style={{
                       background: `linear-gradient(135deg, ${B}, ${BH})`,
                       boxShadow: `0 8px 24px ${B}30`
@@ -765,7 +770,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               </div>
 
               {/* Right column: Summary Card */}
-              <div className="lg:sticky lg:top-24 space-y-4">
+              <div className="um-stagger lg:sticky lg:top-24 space-y-4">
                 <div className="rounded-2xl p-5 bg-white border border-gray-200 shadow-sm space-y-4">
                   <div>
                     <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-1">Scan Configuration</p>

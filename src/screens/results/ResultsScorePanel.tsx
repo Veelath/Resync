@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useState } from 'react';
-import { ScoreRing } from '../../components/AppScoreRing';
 import type { DimensionBreakdown, DimensionKey, DimensionName, V7ScanResponse } from '../../services/v7Result';
 import { categoryColors } from './categoryColors';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
@@ -10,6 +9,9 @@ const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color
   { name: 'logical_support', key: 'claim_support', label: 'Logical Support', color: categoryColors.claims.color, description: 'How well statements are backed up by the surrounding text.' },
   { name: 'evidence_consistency', key: 'numeric_consistency', label: 'Evidence Consistency', color: categoryColors.numeric.color, description: 'How well numbers and data agree across the paper.' },
 ];
+
+// Each of the four parts owns a quarter of the ring, filled in proportion to its score.
+const RING_QUARTER = 21.5;
 
 // Reports saved before the traced breakdown only have raw averages: show them, without issue counts.
 function breakdownOf(result: V7ScanResponse): DimensionBreakdown {
@@ -32,6 +34,8 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
   revealId?: string | null;
 }) {
   const breakdown = breakdownOf(result);
+  const overall = Math.round(result.overall_coherence_score);
+  const band = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
   const [openName, setOpenName] = useState<DimensionName | null>(null);
   // Hovering or focusing a box explains where its score came from. It is drawn with fixed position so the scrolling
   // side panel cannot clip it.
@@ -53,14 +57,34 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
     : [];
 
   return (
-    <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
-      <ScoreRing score={result.overall_coherence_score} size={large ? 176 : 88} band={result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase())} label={unreviewed > 0 ? 'Overall Coherence Score (provisional)' : 'Overall Coherence Score'} solidArc />
-      {unreviewed > 0 && <p className="text-xs font-semibold text-amber-700 text-center">{isRateLimited(result.ai_synthesis?.review_status)
+    <div className={`rp-score relative flex flex-col gap-3.5 ${large ? 'rp-score-large' : ''}`}>
+      <div className="rp-hero" role="img" aria-label={`Coherence score: ${overall} out of 100, ${band}${unreviewed > 0 ? ', provisional' : ''}`}>
+        <div className="rp-ring" aria-hidden="true">
+          <svg width="128" height="128" viewBox="0 0 100 100">
+            {DIMENSIONS.map(({ name, color }, index) => {
+              const entry = breakdown[name].score;
+              const fill = typeof entry === 'number' ? Math.max(0, Math.min(100, entry)) / 100 * RING_QUARTER : 0;
+              const start = -88 + index * 90;
+              return <Fragment key={name}>
+                <circle cx="50" cy="50" r="42" fill="none" stroke={color} strokeOpacity="0.3" strokeWidth="9" strokeLinecap="round" pathLength="100" strokeDasharray={`${RING_QUARTER} 100`} transform={`rotate(${start} 50 50)`} />
+                {fill > 0 && <circle className="rp-arc" style={{ ['--l' as string]: fill, animationDelay: `${0.3 + index * 0.18}s` }} cx="50" cy="50" r="42" fill="none" stroke={color} strokeWidth="9" strokeLinecap="round" pathLength="100" strokeDasharray={`${fill} 100`} transform={`rotate(${start} 50 50)`} />}
+              </Fragment>;
+            })}
+          </svg>
+          <div className="rp-ring-center" style={{ ['--n' as string]: overall }}><b /><small>/100</small></div>
+        </div>
+        <div className="rp-hero-text">
+          {unreviewed > 0 && <span className="rp-badge">Provisional</span>}
+          <span className="rp-hero-title">Overall coherence score</span>
+          <span className="rp-hero-sub">{band}. Combined from the four checks below.</span>
+        </div>
+      </div>
+      {unreviewed > 0 && <p className="rp-note"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8v.01" /></svg><span>{isRateLimited(result.ai_synthesis?.review_status)
         ? provisionalMessage
-        : `This score is provisional: ${unreviewed} section ${unreviewed === 1 ? 'pair' : 'pairs'} could not be reviewed, so ${unreviewed === 1 ? 'it is' : 'they are'} not counted. Scan again to retry.`}</p>}
-      <div className="w-full mt-2 space-y-2" aria-label="Score breakdown">
-        <p className="text-xs font-semibold text-gray-500 text-center">Breakdown of your total score</p>
-        <div className="grid grid-cols-2 gap-2">
+        : `This score is provisional: ${unreviewed} section ${unreviewed === 1 ? 'pair' : 'pairs'} could not be reviewed, so ${unreviewed === 1 ? 'it is' : 'they are'} not counted. Scan again to retry.`}</span></p>}
+      <div className="w-full space-y-2" aria-label="Score breakdown">
+        <p className="rp-label">Breakdown of your total score</p>
+        <div className="grid grid-cols-2 gap-2.5">
           {DIMENSIONS.map(({ name, label, color, description }) => {
             const entry = breakdown[name];
             const applicable = entry.score !== 'N/A';
@@ -70,7 +94,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             const caption = applicable ? null : name === 'evidence_consistency' ? 'No figures to compare' : 'Not enough text';
             const title = `${description} ${applicable ? `Score ${value} out of 100.` : 'Not applicable.'}`;
             return <div key={name} tabIndex={0} onMouseEnter={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onFocus={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)}
-              className="min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3 outline-none transition hover:border-[#1a1fcc]/40 focus-visible:border-[#1a1fcc]" role="group" aria-label={`${label}: ${applicable ? `${value} out of 100` : 'Not applicable'}. ${title}`}>
+              className="rp-card min-w-0 outline-none" role="group" aria-label={`${label}: ${applicable ? `${value} out of 100` : 'Not applicable'}. ${title}`}>
               <div className="flex flex-col gap-1 text-xs text-gray-700">
                 <div className="flex items-center gap-2">
                   <span className={`mt-1 size-2 shrink-0 rounded-full ${applicable ? '' : 'bg-gray-300'}`} style={applicable ? { backgroundColor: color } : undefined} aria-hidden="true" />

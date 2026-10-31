@@ -1,6 +1,8 @@
 import { ArrowRight, Download, FileText, Link2, MessageSquare, PanelsTopLeft, ScanSearch, Sparkles, Upload } from 'lucide-react';
+import { useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import type { Screen } from '../../lib/appTypes';
+import { OnboardingTour, tourSeen } from './OnboardingTour';
 import './dashboard-design.css';
 
 const steps = [
@@ -26,7 +28,10 @@ const guidance = [
 
 export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: 'Good morning' | 'Good afternoon' | 'Good evening' }) {
   const firstName = session?.user?.user_metadata?.full_name?.split(' ')[0] || session?.user?.email?.split('@')[0] || 'there';
+  const [tourOpen, setTourOpen] = useState(() => !tourSeen());
   return <div className="phase2-dashboard">
+    <OnboardingTour name={firstName} open={tourOpen} onClose={() => setTourOpen(false)} />
+    {!tourOpen && <button type="button" className="tour-replay" onClick={() => setTourOpen(true)}>Replay tour</button>}
     <section className="phase2-hero"><div className="phase2-hero-inner">
       <div className="phase2-hero-grid">
         <div className="phase2-hero-copy">

@@ -11,12 +11,14 @@ import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
-import { AlignmentLegend, ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
+import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
 import { RecommendationsList, inconsistencyTone, isRateLimited, severityTones } from './RecommendationsList';
+
+import './report-design.css';
 
 type Tab = 'recommendations' | 'clear' | 'citations';
 
@@ -110,10 +112,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
   const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
-  const issueCount = result.manuscript_flow.filter(pair => pair.severity !== undefined ? pair.severity !== null && pair.severity !== 'None' : recommendations.some(rec => rec.pair === pair.order)).length;
+  const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
+  const issueCount = result.manuscript_flow.filter(pair => pair.severity !== undefined ? pair.severity !== null && (pair.severity !== 'None' || hasAdvice(pair.order)) : hasAdvice(pair.order)).length;
   // Pairs that need no action (no real issue found, or only a harmless wording difference) get their own tab, so the
   // Recommendations tab holds recommendations only. Pairs the AI could not review are never counted as clear.
-  const clearCount = result.manuscript_flow.filter(pair => pair.scores.overall_coherence != null && (pair.severity !== undefined ? pair.severity === 'None' : false)).length;
+  const clearCount = result.manuscript_flow.filter(pair => pair.scores.overall_coherence != null && (pair.severity !== undefined ? pair.severity === 'None' && !hasAdvice(pair.order) : false)).length;
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const linkedIds = docxFile && docxLinked ? docxLinked : new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
@@ -203,7 +206,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:block print:h-auto print:overflow-visible">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
-          {result.manuscript_sections && <div className="mb-6"><AlignmentLegend /></div>}
           {docxFile ? <><DocxManuscript file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />
@@ -226,14 +228,17 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} onlyOrders={lockedOrders} rateLimited={rateLimited} />
-                {locked && <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'} in the full report</p>{unlockControl}</div>}
+                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} />
               </div>}
               {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} mode="clear" />}
-              {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p>{unlockControl}</div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
+              {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>
         </div>
+        {locked && <div className="rp-unlock print:hidden">
+          <p className="rp-unlock-title">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'} in the full report</p>
+          {unlockControl}
+        </div>}
       </aside>
     </main>
   </div>;
