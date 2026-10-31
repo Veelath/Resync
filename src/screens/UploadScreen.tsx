@@ -60,6 +60,23 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
   return chapters.length > 0 ? chapters : [];
 }
 
+async function parseTextTemplate(file: File): Promise<TemplateChapter[]> {
+  const headings = (await file.text())
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+  return headings.length > 0 ? [{ id: 'c1', title: 'Template headings', sections: headings }] : [];
+}
+
+function buildTemplateToc(chapters: TemplateChapter[]): string[] | undefined {
+  const headings = chapters.flatMap(chapter => chapter.sections);
+  if (!headings.length) return undefined;
+  return headings.some(heading => /^references|bibliography/i.test(heading))
+    ? headings
+    : [...headings, 'References'];
+}
+
 let lastScanError: string | null = null;
 
 export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: () => void; onScanFailed?: (message: string) => void }) {
@@ -85,6 +102,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [hasSavedTemplate, setHasSavedTemplate] = useState<boolean>(false);
   const [templateNotification, setTemplateNotification] = useState<string | null>(null);
   const templateToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const templateToc = buildTemplateToc(templateChapters);
 
   // Check localStorage on mount / when returning to the template step
   useEffect(() => {
@@ -233,10 +251,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       onNavigate("processing");
       navigatedToProcessing = true;
 
-      const rawSections = templateChapters.flatMap(c => c.sections);
-      const templateToc = rawSections.length
-        ? rawSections.some(s => /^references|bibliography/i.test(s)) ? rawSections : [...rawSections, "References"]
-        : undefined;
       const result = await executeManuscriptScan({
         user_id: session.user.id,
         file: uploadedFile ?? undefined,
@@ -754,14 +768,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       <span className="font-bold" style={{ color: B }}>{templateChapters.length ? "Custom" : "Auto-detect"}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Chapters:</span>
-                      <span className="font-semibold text-gray-800">{templateChapters.length} Chapters</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Total Sections:</span>
-                      <span className="font-semibold text-gray-800">
-                        {templateChapters.reduce((acc, c) => acc + c.sections.length, 0)} Headings
-                      </span>
+                      <span className="text-gray-400">Template headings:</span>
+                      <span className="font-semibold text-gray-800">{templateToc?.length ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Credit Cost:</span>
