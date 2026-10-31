@@ -75,13 +75,22 @@ export class InsufficientCreditsError extends Error {
 export interface ScanStatusNotice {
   message: string;
   level: 'info' | 'wait';
+  queued: boolean;
+  queuePosition: number | null;
+  estimatedWaitSeconds: number | null;
 }
 
 let currentScanStatus: ScanStatusNotice | null = null;
 const scanStatusListeners = new Set<() => void>();
 
 function setScanStatus(next: ScanStatusNotice | null) {
-  if (next?.message === currentScanStatus?.message && next?.level === currentScanStatus?.level) return;
+  if (
+    next?.message === currentScanStatus?.message &&
+    next?.level === currentScanStatus?.level &&
+    next?.queued === currentScanStatus?.queued &&
+    next?.queuePosition === currentScanStatus?.queuePosition &&
+    next?.estimatedWaitSeconds === currentScanStatus?.estimatedWaitSeconds
+  ) return;
   currentScanStatus = next;
   scanStatusListeners.forEach(listener => listener());
 }
@@ -95,11 +104,32 @@ export function subscribeScanStatus(listener: () => void): () => void {
   return () => scanStatusListeners.delete(listener);
 }
 
-/** Reads `status_message` / `status_message_level` defensively; both are absent on older backends. */
-function readScanStatus(job: any): ScanStatusNotice | null {
-  const message = typeof job?.status_message === 'string' ? job.status_message.trim() : '';
-  if (!message) return null;
-  return { message, level: job.status_message_level === 'wait' ? 'wait' : 'info' };
+/** Reads queue and status fields defensively; both are absent on older backends. */
+function readScanStatus(job: unknown): ScanStatusNotice | null {
+  if (!job || typeof job !== 'object') return null;
+  const record = job as Record<string, unknown>;
+  const message = typeof record.status_message === 'string' ? record.status_message.trim() : '';
+  const queuePosition = typeof record.queue_position === 'number' && Number.isInteger(record.queue_position) && record.queue_position >= 1
+    ? record.queue_position
+    : null;
+  const estimatedWaitSeconds = typeof record.estimated_wait_seconds === 'number' && Number.isFinite(record.estimated_wait_seconds) && record.estimated_wait_seconds >= 0
+    ? record.estimated_wait_seconds
+    : null;
+  const queued = queuePosition !== null;
+  const waitMinutes = estimatedWaitSeconds === null ? null : Math.max(1, Math.ceil(estimatedWaitSeconds / 60));
+  const fallbackMessage = queued
+    ? queuePosition >= 2
+      ? `You are #${queuePosition} in line. Your scan will start in about ${waitMinutes ?? 'a few'} minutes.`
+      : `You're next in line. Another scan is running, so yours will take a little longer than usual${waitMinutes === null ? '' : ` (about ${waitMinutes} minutes)`}.`
+    : '';
+  if (!message && !queued) return null;
+  return {
+    message: message || fallbackMessage,
+    level: record.status_message_level === 'wait' ? 'wait' : 'info',
+    queued,
+    queuePosition,
+    estimatedWaitSeconds,
+  };
 }
 
 /** How long to wait between status polls while a scan job runs. */

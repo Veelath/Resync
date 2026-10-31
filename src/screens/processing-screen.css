@@ -26,6 +26,8 @@
 .processing-screen__progress-track { height: 10px; margin: 14px 4px 22px; overflow: hidden; border-radius: 999px; background: #eef0ff; }
 .processing-screen__progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #2d35e8, #1a1fcc); }
 .processing-screen__active-step { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 84px; padding: 14px 22px; border: 1px solid #8e95fa; border-radius: 16px; }
+.processing-screen__active-step--queued { border-color: #dfe3ff; background: #fafbff; }
+.processing-screen__active-step--queued .processing-screen__spinner { border-top-color: #9aa1c2; }
 .processing-screen__step-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .processing-screen__step-copy strong { font-size: 16.5px; line-height: 1.3; }
 .processing-screen__step-copy span { color: #5d6383; font-size: 13.5px; line-height: 1.4; }

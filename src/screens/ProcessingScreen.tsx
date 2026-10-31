@@ -12,26 +12,30 @@ const steps = [
   { label: 'Checking the AI-text indicator', detail: 'Reviewing the advisory indicator by section', dur: 2000 },
 ];
 const finalStep = { label: 'Generating AI Recommendations', detail: 'The AI is reviewing each pair of sections. This can take a little longer.' };
+const waitingStep = { label: 'Waiting in line', detail: 'Your scan will start as soon as the current scan is complete.' };
 
 export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [done, setDone] = useState(0);
   const status = useSyncExternalStore(subscribeScanStatus, getScanStatus);
+  const isQueued = status?.queued === true;
   const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
   const noticeKey = status ? `${status.level}:${status.message}` : null;
   const notice = status && noticeKey !== dismissedNotice ? status : null;
   useEffect(() => {
+    if (isQueued) return;
+    const startingDone = done;
     let elapsed = 0;
-    const timers = steps.map((step, index) => {
+    const timers = steps.slice(startingDone).map((step, index) => {
       elapsed += step.dur;
-      return setTimeout(() => setDone(index + 1), elapsed);
+      return setTimeout(() => setDone(startingDone + index + 1), elapsed);
     });
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [isQueued]);
 
   // The display clock is unchanged; the scan request and polling remain in UploadScreen.
-  const pct = done >= steps.length ? 99 : Math.min(99, Math.round((done / steps.length) * 100));
+  const pct = isQueued ? 0 : done >= steps.length ? 99 : Math.min(99, Math.round((done / steps.length) * 100));
   // From 90% on the checks are finished and the slow part, the AI review, is running, so say so instead of sitting at 99%.
-  const active = pct >= 90 ? finalStep : steps[done] ?? finalStep;
+  const active = isQueued ? waitingStep : pct >= 90 ? finalStep : steps[done] ?? finalStep;
 
   return (
     <main className="processing-screen">
@@ -73,7 +77,7 @@ export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: 
           <div className="processing-screen__progress-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Manuscript analysis progress">
             <div className="processing-screen__progress-fill" style={{ width: `${pct}%` }} />
           </div>
-          <div className="processing-screen__active-step" aria-current="step" aria-live="polite">
+          <div className={`processing-screen__active-step${isQueued ? ' processing-screen__active-step--queued' : ''}`} aria-current="step" aria-live="polite">
             <div className="processing-screen__step-copy"><strong>{active.label}</strong><span>{active.detail}</span></div>
             <span className="processing-screen__spinner" aria-hidden="true" />
           </div>
