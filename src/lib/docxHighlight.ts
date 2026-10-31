@@ -50,10 +50,13 @@ function wrap(located: Located[], spec: HighlightSpec, first: boolean) {
     range.setEnd(slice.node, slice.end);
     const mark = document.createElement('mark');
     mark.dataset.highlightFor = spec.id;
-    mark.style.cssText = `background:${spec.background};border-bottom:2px solid ${spec.border};border-radius:2px;cursor:pointer;color:inherit;padding:0`;
+    mark.style.cssText = `background:${spec.background};border-bottom:2px solid ${spec.border};border-radius:2px;color:inherit;padding:0${spec.onClick ? ';cursor:pointer' : ''}`;
     if (spec.title) mark.title = spec.title;
-    if (first && index === slices.length - 1) { mark.id = `highlight-${spec.id}`; mark.tabIndex = -1; }
-    if (spec.onClick) mark.addEventListener('click', () => spec.onClick?.(spec.id));
+    if (first && index === slices.length - 1) { mark.id = `highlight-${spec.id}`; mark.tabIndex = spec.onClick ? 0 : -1; if (spec.onClick) mark.setAttribute('role', 'button'); }
+    if (spec.onClick) {
+      mark.addEventListener('click', () => spec.onClick?.(spec.id));
+      mark.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); spec.onClick?.(spec.id); } });
+    }
     range.surroundContents(mark);
   });
 }

@@ -16,7 +16,7 @@ import { citationAccess, citationContains, citationText, extractDisplayTitle, no
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
-import { RecommendationsList } from './RecommendationsList';
+import { RecommendationsList, inconsistencyTone, isRateLimited, severityTones } from './RecommendationsList';
 
 type Tab = 'recommendations' | 'clear' | 'citations';
 
@@ -118,15 +118,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const linkedIds = docxFile && docxLinked ? docxLinked : new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
   // Colors follow the pair's grade, so a highlight in the paper matches the card that explains it.
-  const HIGHLIGHT_TONES = { Critical: { background: '#fecdd3', border: '#e11d48' }, Moderate: { background: '#fed7aa', border: '#ea580c' }, Minor: { background: '#bae6fd', border: '#0284c7' } } as const;
+  const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
   const docxHighlights: HighlightSpec[] = docxFile ? [
     ...recommendations.flatMap(rec => {
       const pair = result.manuscript_flow.find(entry => entry.order === rec.pair);
-      const tone = HIGHLIGHT_TONES[(pair?.severity && pair.severity !== 'None' ? pair.severity : 'Moderate') as keyof typeof HIGHLIGHT_TONES];
+      const tone = severityTones[(pair?.severity && pair.severity !== 'None' ? pair.severity : 'Moderate') as keyof typeof severityTones];
       return rec.quote && rec.kind !== 'add' ? [{ id: rec.id, text: rec.quote, ...tone, title: 'Click to see why this was flagged', onClick: (id: string) => focusLinked('recommendation', id) }] : [];
     }),
     ...result.manuscript_flow.flatMap(pair => (pair.explanation?.highlighted_inconsistencies ?? []).filter(item => item.quote).map((item, index) => ({
-      id: `issue-${pair.order}-${index}`, text: item.quote, background: '#fef3c7', border: '#f59e0b', title: 'Part of an inconsistency between sections',
+      id: `issue-${pair.order}-${index}`, text: item.quote, ...inconsistencyTone, title: 'Part of an inconsistency between sections',
     }))),
   ] : [];
 
@@ -203,8 +203,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:block print:h-auto print:overflow-visible">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
-          {!docxFile && result.manuscript_sections && <div className="mb-6"><AlignmentLegend /></div>}
-          {docxFile ? <DocxManuscript file={docxFile} highlights={docxHighlights} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
+          {result.manuscript_sections && <div className="mb-6"><AlignmentLegend /></div>}
+          {docxFile ? <><DocxManuscript file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />
             : <div className="mx-auto flex max-w-[420px] flex-col items-center py-8 text-center"><ResultsScorePanel result={result} large /><p className="mt-5 text-sm leading-6 text-[#4b5563]">This report was created before manuscripts were stored, so the text can't be shown. Re-scan to see your manuscript with highlights.</p></div>)}
@@ -226,7 +226,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} onlyOrders={lockedOrders} dailyLimit={result.ai_synthesis?.review_status?.status === 'daily_limit'} />
+                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} onlyOrders={lockedOrders} rateLimited={rateLimited} />
                 {locked && <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="mb-3 font-semibold">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'} in the full report</p>{unlockControl}</div>}
               </div>}
               {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} mode="clear" />}

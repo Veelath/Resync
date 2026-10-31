@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { ScoreRing } from '../../components/AppScoreRing';
 import type { DimensionBreakdown, DimensionKey, DimensionName, V7ScanResponse } from '../../services/v7Result';
 import { categoryColors } from './categoryColors';
-import { PairIssueCard, type RecommendationItem, type Severity } from './RecommendationsList';
+import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
 const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
   { name: 'context_alignment', key: 'objectives_alignment', label: 'Context Alignment', color: categoryColors.objectives.color, description: 'How well the text stays aligned with the purpose and context the paper sets up.' },
@@ -55,8 +55,8 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
   return (
     <div className="relative px-5 pt-6 pb-4 border-b border-gray-100 flex flex-col items-center gap-2.5">
       <ScoreRing score={result.overall_coherence_score} size={large ? 176 : 88} band={result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase())} label={unreviewed > 0 ? 'Overall Coherence Score (provisional)' : 'Overall Coherence Score'} solidArc />
-      {unreviewed > 0 && <p className="text-xs font-semibold text-amber-700 text-center">{result.ai_synthesis?.review_status?.status === 'daily_limit'
-        ? 'The AI review is unavailable right now because the daily AI limit was reached. This score is provisional: it shows only how well your sections lead into each other, with no points taken off yet for contradictions. Try again later.'
+      {unreviewed > 0 && <p className="text-xs font-semibold text-amber-700 text-center">{isRateLimited(result.ai_synthesis?.review_status)
+        ? provisionalMessage
         : `This score is provisional: ${unreviewed} section ${unreviewed === 1 ? 'pair' : 'pairs'} could not be reviewed, so ${unreviewed === 1 ? 'it is' : 'they are'} not counted. Scan again to retry.`}</p>}
       <div className="w-full mt-2 space-y-2" aria-label="Score breakdown">
         <p className="text-xs font-semibold text-gray-500 text-center">Breakdown of your total score</p>

@@ -25,9 +25,11 @@ function keepTextOnly(root: HTMLElement) {
 }
 
 /** The student's uploaded Word file, drawn as it looks in Word, with the recommended sentences highlighted. */
-export function DocxManuscript({ file, highlights, onLinked, onFailed }: {
+export function DocxManuscript({ file, highlights, locked, secondSection, onLinked, onFailed }: {
   file: File;
   highlights: HighlightSpec[];
+  locked: boolean;
+  secondSection?: string;
   onLinked: (ids: Set<string>) => void;
   onFailed: () => void;
 }) {
@@ -46,14 +48,32 @@ export function DocxManuscript({ file, highlights, onLinked, onFailed }: {
     const body = bodyRef.current;
     if (!body) return;
     setStatus('loading');
-    body.innerHTML = '';
-    renderAsync(file, body, styleRef.current ?? undefined, {
+    body.replaceChildren();
+    const rendered = document.createElement('div');
+    const styles = document.createElement('div');
+    renderAsync(file, rendered, styles, {
       className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
       breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
       renderFootnotes: true, renderEndnotes: true, useBase64URL: true,
     }).then(() => {
       if (cancelled) return;
-      keepTextOnly(body);
+      keepTextOnly(rendered);
+      if (locked) {
+        const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
+        const target = normalize(secondSection ?? '');
+        const heading = target && [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].find(element => {
+          const text = normalize(element.textContent ?? '');
+          return text === target || (text.endsWith(` ${target}`) && /^chapter\s+(?:\d+|[ivxlcdm]+)\b/.test(text));
+        });
+        if (!heading || !rendered.lastChild) { callbacks.current.onFailed(); return; }
+        const withheld = document.createRange();
+        withheld.setStartBefore(heading);
+        withheld.setEndAfter(rendered.lastChild);
+        withheld.deleteContents();
+        keepTextOnly(rendered);
+      }
+      styleRef.current?.replaceChildren(...styles.childNodes);
+      body.replaceChildren(...rendered.childNodes);
       const specs = callbacks.current.highlights;
       callbacks.current.onLinked(highlightSentences(body, specs));
       setStatus('ready');
@@ -62,7 +82,7 @@ export function DocxManuscript({ file, highlights, onLinked, onFailed }: {
       if (!cancelled) callbacks.current.onFailed();
     });
     return () => { cancelled = true; };
-  }, [file, highlightKey]);
+  }, [file, highlightKey, locked, secondSection]);
 
   // Word pages are fixed width: shrink them to fit a narrow pane instead of scrolling sideways.
   useEffect(() => {

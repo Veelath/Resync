@@ -2,18 +2,19 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import type React from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { matchedRecommendations, recommendationRanges } from './highlights';
-import { alignmentOf, alignmentTones } from './alignment';
+import { inconsistencyTone, severityOf, severityTones } from './RecommendationsList';
 import './manuscript.css';
 
 export function AlignmentLegend() {
   return <div className="text-sm text-[#4b5563]">
     <ul className="flex flex-wrap gap-x-6 gap-y-1">
-      {Object.values(alignmentTones).map(tone => <li key={tone.label} className="flex items-center gap-2">
-        <span className="size-3 shrink-0 rounded-sm" style={{ backgroundColor: tone.color }} aria-hidden="true" />
-        <span><strong className="font-semibold text-[#0b0f3d]">{tone.label}:</strong> {tone.description}</span>
+      {Object.entries(severityTones).map(([label, tone]) => <li key={label} className="flex items-center gap-2">
+        <span className="size-3 shrink-0 rounded-sm" style={{ backgroundColor: tone.background, borderBottom: `2px solid ${tone.border}` }} aria-hidden="true" />
+        <span><strong className="font-semibold text-[#0b0f3d]">{label}:</strong> {tone.description}</span>
       </li>)}
+      <li className="flex items-center gap-2"><span className="size-3 shrink-0 rounded-sm" style={{ backgroundColor: inconsistencyTone.background, borderBottom: `2px solid ${inconsistencyTone.border}` }} aria-hidden="true" /><span><strong className="font-semibold text-[#0b0f3d]">Inconsistency:</strong> {inconsistencyTone.description}</span></li>
     </ul>
-    <p className="mt-2">Click a highlight to see its suggested revision.</p>
+    <p className="mt-2">Click a highlighted recommendation passage to see its suggested revision.</p>
   </div>;
 }
 
@@ -22,7 +23,7 @@ function PaperHeading({ name }: { name: string }) {
   return <h2 className="manuscript-heading">{chapter ? <><span className="block">{chapter[1]}</span>{chapter[2] && <span className="block">{chapter[2]}</span>}</> : name}</h2>;
 }
 
-export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean }) {
+export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed, placeholderOnly }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean; placeholderOnly?: boolean }) {
   const linked = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const pairOf = (id: string) => {
     const recommendation = linked.find(item => (item.id ?? item.recommendation_id) === id);
@@ -31,7 +32,7 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
   const withheld = result.manuscript_sections?.slice(1) ?? [];
   const fallback = { heading: 'The manuscript continues', paragraphs: Array(3).fill('Quiet lines continue across the page. Soft words fill this space while the full report waits to be opened. '.repeat(4)) };
   return <div className="manuscript-body">
-    {result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
+    {!placeholderOnly && result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
       const text = section.text ?? '';
       const ranges = recommendationRanges(section, linked);
       return <section key={`${index}-${section.name}`} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
@@ -44,11 +45,13 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
             const pieces: React.ReactNode[] = [];
             let cursor = start;
             for (const range of ranges.filter(item => item.start >= start && item.end <= end)) {
-              const tone = alignmentOf(pairOf(range.id));
+              const pair = pairOf(range.id);
+              const severity = pair ? severityOf(pair, true) : 'Moderate';
+              const tone = severityTones[severity && severity !== 'None' ? severity : 'Moderate'];
               pieces.push(text.slice(cursor, range.start));
               pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
                 aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
-                className="manuscript-highlight" style={{ backgroundColor: tone.tint, color: tone.ink, textDecorationColor: tone.color }}>{text.slice(range.start, range.end)}</button>);
+                className="manuscript-highlight" style={{ backgroundColor: tone.background, color: tone.ink, textDecorationColor: tone.border }}>{text.slice(range.start, range.end)}</button>);
               cursor = range.end;
             }
             pieces.push(text.slice(cursor, end));

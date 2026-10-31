@@ -18,6 +18,17 @@ export interface RecommendationItem {
 
 export type Severity = 'Critical' | 'Moderate' | 'Minor';
 
+export const severityTones = {
+  Critical: { background: '#fecdd3', border: '#e11d48', ink: '#881337', description: 'the sections directly contradict each other' },
+  Moderate: { background: '#fed7aa', border: '#ea580c', ink: '#7c2d12', description: 'a claim, method, goal or number does not match' },
+  Minor: { background: '#bae6fd', border: '#0284c7', ink: '#075985', description: 'a small term, figure or name differs' },
+} as const;
+export const inconsistencyTone = { background: '#fef3c7', border: '#f59e0b', description: 'a quoted passage that disagrees' };
+export const provisionalMessage = "Some AI reviews could not finish because the AI's temporary limit was reached. This score is provisional; try scanning again later.";
+export function isRateLimited(reviewStatus: { status: string; reason?: string } | undefined): boolean {
+  return reviewStatus?.status === 'daily_limit' || (reviewStatus?.status === 'partial' && reviewStatus.reason === 'rate_limited');
+}
+
 const VISIBLE_FIXES = 2;
 
 // Chronological triage cards: red = Critical, orange = Moderate, blue = Minor; green and gray rows for the rest.
@@ -107,7 +118,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   </section>;
 }
 
-export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, revealId, onlyOrders, mode = 'issues', dailyLimit = false }: {
+export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, revealId, onlyOrders, mode = 'issues', rateLimited = false }: {
   items: RecommendationItem[];
   pairs: ManuscriptFlowPair[];
   linkedIds: Set<string>;
@@ -116,8 +127,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
   onlyOrders?: Set<number>;
   /** 'issues' lists only pairs that need editing; 'clear' lists the pairs that need no action. */
   mode?: 'issues' | 'clear';
-  /** The AI review could not run because the daily AI limit was reached. */
-  dailyLimit?: boolean;
+  rateLimited?: boolean;
 }) {
   const rows = pairs
     .filter(pair => pair.scores.overall_coherence != null && (!onlyOrders || onlyOrders.has(pair.order)))
@@ -148,8 +158,8 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
       return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} revealId={revealId} /></Fragment>;
     })}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
-      <p className="text-sm font-semibold text-amber-900">{dailyLimit
-        ? `The AI review is unavailable right now because the daily AI limit was reached, so ${unreviewed.length === 1 ? 'this pair' : `these ${unreviewed.length} pairs`} could not be checked. This does not mean ${unreviewed.length === 1 ? 'it is' : 'they are'} fine. Try again later.`
+      <p className="text-sm font-semibold text-amber-900">{rateLimited
+        ? provisionalMessage
         : `${unreviewed.length} section ${unreviewed.length === 1 ? 'pair' : 'pairs'} could not be reviewed by the AI, so we can’t say whether ${unreviewed.length === 1 ? 'it is' : 'they are'} fine. Scan again to retry.`}</p>
       <ul className="space-y-1 text-xs text-amber-900">{unreviewed.map(pair => <li key={pair.order} className="capitalize">{pair.section_a} ↔ {pair.section_b}</li>)}</ul>
     </div>}

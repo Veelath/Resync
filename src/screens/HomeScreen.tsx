@@ -17,19 +17,18 @@ const checks = [
   ['Citation Accessibility', 'Check cited URLs and DOIs for public reachability.'],
   ['AI-Text Indicator', 'Review a signal for possible AI-generated text.'],
 ];
-// Shares of the 74/100 score; each part is out of 25 and they add up to 74.
 const reportParts = [
-  { label: 'Context Alignment', share: 19.5, color: categoryColors.objectives.color },
-  { label: 'Operational Alignment', share: 17, color: categoryColors.methodology.color },
-  { label: 'Logical Support', share: 18, color: categoryColors.claims.color },
-  { label: 'Evidence Consistency', share: 19.5, color: categoryColors.numeric.color },
+  { label: 'Context Alignment', score: 83, deduction: 7, severity: 'Moderate', color: categoryColors.objectives.color },
+  { label: 'Operational Alignment', score: 80, deduction: 10, severity: 'Critical', color: categoryColors.methodology.color },
+  { label: 'Logical Support', score: 70, deduction: 12, severity: 'Critical', color: categoryColors.claims.color },
+  { label: 'Evidence Consistency', score: 73, deduction: 5, severity: 'Minor', color: categoryColors.numeric.color },
 ];
 
 function ReportPreview() {
   return <div className="lp-preview" aria-label="Example coherence report preview">
     <div className="lp-window"><span className="lp-dots" aria-hidden="true"><i /><i /><i /></span><span>resync_report.pdf</span></div>
     <div className="lp-preview-body">
-      <div className="lp-summary"><ScoreRing score={74} size={84} band="Solid" /><div className="lp-parts">{reportParts.map(({ label, share, color }) => <div className="lp-part" key={label}><div className="lp-part-head"><span><i style={{ background: color }} />{label}</span><strong>{share.toFixed(1)} of 25</strong></div><div className="lp-part-bar"><i style={{ width: `${share * 4}%`, background: color }} /></div></div>)}</div></div>
+      <div className="lp-summary"><ScoreRing score={reportParts.reduce((sum, part) => sum + part.score, 0) / reportParts.length} size={84} band="Solid" /><div className="lp-parts">{reportParts.map(({ label, score, deduction, severity, color }) => <div className="lp-part" key={label}><div className="lp-part-head"><span><i style={{ background: color }} />{label}</span><strong>{score}/100</strong></div><small>-{deduction} {severity}</small><div className="lp-part-bar"><i style={{ width: `${score}%`, background: color }} /></div></div>)}</div></div>
       <div className="lp-excerpt"><span className="lp-mono-label">Chapter 1 · Statement of the Problem</span><p>The study aims to <mark>measure student engagement using biometric data</mark> collected over one semester.</p></div>
       <div className="lp-finding"><strong>Your Objectives and your Methodology are not aligned.</strong><small>Here’s why</small><span>Biometric data collection is promised in the Objectives but never described in the Methodology.</span></div>
       <div className="lp-preview-foot"><span>✓&nbsp; 4 public</span><span>×&nbsp; 2 private</span><small>Results in a few minutes</small></div>
