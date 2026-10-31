@@ -17,7 +17,7 @@ const outputs = [
 ];
 const guidance = [
   ['Digital Manuscripts', '.doc, .docx, Google Docs link'],
-  ['Section Flow', 'Consecutive section links'],
+  ['Section Flow', 'Holistic manuscript analysis'],
   ['Single-Column Flow', 'Sequential reading order'],
   ['Direct Prose', 'Claims and conclusions'],
   ['Open References', 'Citations and DOI checks'],
@@ -32,7 +32,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
         <div className="phase2-hero-copy">
           <span className="phase2-greeting"><i />{greeting}, {firstName}</span>
           <h1>Your manuscript,<br /><span>checked end-to-end.</span></h1>
-          <p>Check logical links between consecutive sections, citations, and the AI-text indicator in one report.</p>
+          <p>Run a holistic manuscript analysis, check citations, and see the AI-text indicator in one report.</p>
           <div className="phase2-actions">
             <button className="phase2-primary" onClick={() => onNavigate('upload')}><Upload size={19} aria-hidden="true" />Start a Scan</button>
             <button className="phase2-secondary" onClick={() => onNavigate('results', true)}>Preview sample <ArrowRight size={18} aria-hidden="true" /></button>
@@ -51,7 +51,7 @@ export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (
         </div>
       </div>
       <div className="phase2-strip">
-        <span><Link2 size={17} />Consecutive section coherence</span>
+        <span><Link2 size={17} />Holistic manuscript analysis</span>
         <span><MessageSquare size={17} />Citation accessibility checks</span>
         <span><Sparkles size={17} />AI-text indicator</span>
         <strong><FileText size={17} />Word (.doc/.docx) &amp; Google Docs</strong>

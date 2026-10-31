@@ -5,7 +5,7 @@
 .processing-screen__content { position: relative; display: flex; flex-direction: column; align-items: center; width: min(100% - 32px, 640px); text-align: center; }
 .processing-screen__hero { position: relative; display: grid; place-items: center; width: 300px; height: 300px; flex: none; }
 .processing-screen__orbit, .processing-screen__orbit svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.processing-screen__orbit { animation: processing-orbit 26s linear infinite; }
+.processing-screen__orbit { transform: scale(1.18); }  /* the Lottie loader plays itself, no CSS animation */
 .processing-screen__orbit-track { fill: none; stroke: #cbd0fb; stroke-width: 1.5; stroke-dasharray: 3.6 7.2; }
 .processing-screen__orbit-arc { fill: none; stroke: #1a1fcc; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 90 720; transform: rotate(-68deg); transform-origin: center; }
 .processing-screen__orbit-dot { fill: #1a1fcc; }

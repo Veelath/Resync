@@ -78,12 +78,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
                   {profile.email}
                 </p>
               </div>
-              <div className="sm:ml-auto sm:max-w-[14rem] text-left">
-                <p className="text-xs font-bold text-gray-800">Profile picture</p>
-                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">JPEG or PNG, max 5MB. Click the camera badge on your avatar to upload.</p>
-                {avatarError && <p role="alert" className="text-xs font-semibold text-red-600 mt-1.5">{avatarError}</p>}
-                {avatarUrl && <button type="button" onClick={removeAvatar} className="text-xs font-semibold text-gray-500 hover:text-red-600 hover:underline mt-1.5">Remove photo</button>}
-              </div>
+              {avatarError && <p role="alert" className="sm:ml-auto sm:max-w-[14rem] text-left text-xs font-semibold text-red-600">{avatarError}</p>}
             </div>
 
             {/* Contact Details List */}

@@ -1,16 +1,17 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Logo } from '../components/AppPrimitives';
+import { LottieLoader } from '../components/LottieLoader';
 import type { Screen } from '../lib/appTypes';
 import { getScanStatus, subscribeScanStatus } from '../services/api';
 import './processing-screen.css';
 
 const steps = [
   { label: 'Reading your manuscript', detail: 'Extracting chapters, sections and references', dur: 1500 },
-  { label: 'Checking section flow and links', detail: 'Comparing consecutive sections', dur: 2500 },
+  { label: 'Checking section flow and links', detail: 'Comparing sections across your whole manuscript', dur: 2500 },
   { label: 'Verifying citation access', detail: 'Checking which sources are public or private', dur: 3000 },
   { label: 'Checking the AI-text indicator', detail: 'Reviewing the advisory indicator by section', dur: 2000 },
 ];
-const finalStep = { label: 'Finalizing your report', detail: 'Preparing findings and AI explanations' };
+const finalStep = { label: 'Generating AI Recommendations', detail: 'The AI is reviewing each pair of sections. This can take a little longer.' };
 
 export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [done, setDone] = useState(0);
@@ -29,7 +30,8 @@ export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: 
 
   // The display clock is unchanged; the scan request and polling remain in UploadScreen.
   const pct = done >= steps.length ? 99 : Math.min(99, Math.round((done / steps.length) * 100));
-  const active = steps[done] ?? finalStep;
+  // From 90% on the checks are finished and the slow part, the AI review, is running, so say so instead of sitting at 99%.
+  const active = pct >= 90 ? finalStep : steps[done] ?? finalStep;
 
   return (
     <main className="processing-screen">
@@ -37,13 +39,7 @@ export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: 
       <div className="processing-screen__glow" aria-hidden="true" />
       <div className="processing-screen__content">
         <div className="processing-screen__hero">
-          <div className="processing-screen__orbit" aria-hidden="true">
-            <svg viewBox="0 0 300 300" focusable="false">
-              <circle className="processing-screen__orbit-track" cx="150" cy="150" r="144" />
-              <circle className="processing-screen__orbit-arc" cx="150" cy="150" r="114" />
-              <circle className="processing-screen__orbit-dot" cx="150" cy="6" r="7" />
-            </svg>
-          </div>
+          <LottieLoader className="processing-screen__orbit" />
           <div className="processing-screen__logo"><Logo className="processing-screen__logo-image" /></div>
           <span className="processing-screen__chip processing-screen__chip--links"><i />Section links</span>
           <span className="processing-screen__chip processing-screen__chip--citations"><i />Citations</span>
@@ -51,7 +47,7 @@ export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: 
         </div>
 
         <h1>Analyzing your manuscript</h1>
-        <p className="processing-screen__subtitle">Running {steps.length} checks across consecutive sections</p>
+        <p className="processing-screen__subtitle">Running {steps.length} checks as a holistic manuscript analysis</p>
 
         <div aria-live="polite">
           {notice && (

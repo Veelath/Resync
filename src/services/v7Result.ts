@@ -1,6 +1,9 @@
 import type { CitationReport, AITextIndicatorResponse } from './api';
 
 export type DimensionKey = 'objectives_alignment' | 'methodology_fit' | 'numeric_consistency' | 'claim_support';
+export type DimensionName = 'context_alignment' | 'operational_alignment' | 'evidence_consistency' | 'logical_support';
+export interface DimensionDeduction { order: number | null; section_a: string; section_b: string; severity: 'Critical' | 'Moderate' | 'Minor'; points: number }
+export type DimensionBreakdown = Record<DimensionName, { score: number | 'N/A'; baseline?: number | null; penalty: number; issues?: number; pairs?: number; deductions?: DimensionDeduction[] }>;
 export type PairScores = Record<DimensionKey | 'overall_coherence', number | null>;
 
 export interface ManuscriptFlowPair {
@@ -10,6 +13,12 @@ export interface ManuscriptFlowPair {
   pair_weight: number | null;
   pair_score?: number | null;
   numeric_applicable?: boolean;
+  severity?: 'Critical' | 'Moderate' | 'Minor' | 'None' | null;
+  index_a?: number;
+  index_b?: number;
+  /** false for a pair of sections that are not neighbors (a cross-chapter check) */
+  adjacent?: boolean;
+  failed_dimension?: DimensionKey | 'none' | null;
   scores: PairScores;
   skipped_reason: string | null;
   culprit_sentences: { section_a: { sentence: string; delta: number }[]; section_b: { sentence: string; delta: number }[] };
@@ -48,6 +57,8 @@ export interface V7Recommendation {
   pair_order: number;
   original_sentence: string | null;
   issue?: string;
+  kind?: 'edit' | 'add';
+  placement?: 'start' | 'end';
   recommended_revision: string;
   recommendation_text: string;
   recommendation_priority: 'High' | 'Medium' | 'Low';
@@ -72,12 +83,13 @@ export interface V7ScanResponse {
   access?: { unlocked: boolean; unlock_cost: number; locked_counts: { sections: number; recommendations: number; citations: number } };
   manuscript_sections?: { name: string; text: string | null; placeholder?: { heading: string; paragraphs: string[] } }[];
   overall_coherence_score: number;
+  dimension_breakdown?: DimensionBreakdown;
   sections_analyzed: string[];
   manuscript_flow: ManuscriptFlowPair[];
   inconsistencies_found: number;
   inconsistencies: V7Inconsistency[];
   recommendations: V7Recommendation[];
-  ai_synthesis: { summary: string | null; strongest_pair: PairPointer | null; weakest_pair: PairPointer | null };
+  ai_synthesis: { summary: string | null; strongest_pair: PairPointer | null; weakest_pair: PairPointer | null; review_status?: { status: 'complete' | 'partial' | 'daily_limit'; unreviewed: number } };
   citations_audited: number;
   citations: CitationReport[];
   score_breakdown: {
@@ -87,7 +99,7 @@ export interface V7ScanResponse {
     citation_integrity_score: number | null;
     dimensions: Record<DimensionKey, number | null>;
     dimension_weights?: Partial<Record<DimensionKey, number>> | null;
-    critical_penalty?: number;
+    dimension_breakdown?: DimensionBreakdown;
     citation_detail: { well_formed_ratio: number; link_resolution_rate: number; cross_match_score: number; total_entries: number };
   };
   ai_text_indicator: AITextIndicatorResponse | null;

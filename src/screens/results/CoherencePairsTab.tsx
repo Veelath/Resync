@@ -19,7 +19,7 @@ export function CoherencePairsTab({ pairs, onExplain }: {
       <p className="text-xs mono font-bold uppercase tracking-wider text-gray-500">Coherence pairs ({pairs.length})</p>
       <button type="button" onClick={onExplain} className="text-xs font-bold text-indigo-600 hover:underline">How pairing works</button>
     </div>
-    {pairs.length === 0 && <p className="text-sm text-gray-500">No neighboring section pairs to show.</p>}
+    {pairs.length === 0 && <p className="text-sm text-gray-500">No section pairs to show.</p>}
     {pairs.map(pair => {
       const pairScore = pair.pair_score ?? pair.scores.overall_coherence;
       const score = pairScore == null ? null : pairScore * 100;

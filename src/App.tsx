@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
+import { saveSourceFile } from './lib/sourceFile';
 import type { Session } from '@supabase/supabase-js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
@@ -22,6 +23,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const sessionRef = useRef<Session | null>(null);
   const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
+  const [scanFile, setScanFile] = useState<File | null>(null);  // the uploaded Word file, so results can show it as written
   const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
   const [toast, setToast] = useState<AppNotification | null>(null);
   const [soundBlocked, setSoundBlocked] = useState(false);
@@ -159,6 +161,7 @@ export default function App() {
     scanRunRef.current += 1;
     scanSettledRef.current = false;
     setScanResult(null);  // a rescan starts clean: the previous report and its recommendations are dropped
+    setScanFile(null);
     setToast(null);
     unlockAudio();
   }
@@ -228,10 +231,10 @@ export default function App() {
         onClose={() => setToast(null)}
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result) => { setScanResult(result); handleScanCompleted(); navigate("results"); }} />}
+      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(); navigate("results"); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
       {screen === "results" && (isSampleMode || scanResult?.result_version === 'v7'
-        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} />
+        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
             <p>{scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.'}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>

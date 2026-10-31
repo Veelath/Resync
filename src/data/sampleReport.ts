@@ -1,5 +1,5 @@
 ﻿import type { CitationReport } from '../services/api';
-import type { ManuscriptFlowPair, V7Inconsistency, V7Recommendation, V7ScanResponse } from '../services/v7Result';
+import type { DimensionBreakdown, ManuscriptFlowPair, V7Inconsistency, V7Recommendation, V7ScanResponse } from '../services/v7Result';
 
 export interface Citation {
   id: string;
@@ -228,6 +228,29 @@ const MANUSCRIPT_FLOW: ManuscriptFlowPair[] = [
   },
 ];
 
+// How the AI review graded each pair (its strict rules: only a quotable contradiction counts); the rest are clear.
+const GRADES: Record<number, ['Critical' | 'Moderate' | 'Minor', NonNullable<ManuscriptFlowPair['failed_dimension']>]> = {
+  2: ['Minor', 'claim_support'], 4: ['Moderate', 'objectives_alignment'], 9: ['Moderate', 'methodology_fit'],
+  10: ['Critical', 'numeric_consistency'], 11: ['Critical', 'claim_support'],
+};
+MANUSCRIPT_FLOW.forEach(pair => {
+  const grade = GRADES[pair.order];
+  pair.severity = grade ? grade[0] : 'None';
+  pair.failed_dimension = grade ? grade[1] : 'none';
+  pair.adjacent = true;
+});
+const deduction = (order: number, points: number) => {
+  const pair = MANUSCRIPT_FLOW.find(item => item.order === order)!;
+  return { order, section_a: pair.section_a, section_b: pair.section_b, severity: pair.severity as 'Critical' | 'Moderate' | 'Minor', points };
+};
+// Each part starts from how well the transitions connect, then loses the points the review charged to it.
+const DIMENSION_BREAKDOWN: DimensionBreakdown = {
+  context_alignment: { score: 83, baseline: 88, penalty: 5, issues: 1, pairs: 12, deductions: [deduction(4, 5)] },
+  operational_alignment: { score: 80, baseline: 85, penalty: 5, issues: 1, pairs: 12, deductions: [deduction(9, 5)] },
+  evidence_consistency: { score: 70, baseline: 80, penalty: 10, issues: 1, pairs: 7, deductions: [deduction(10, 10)] },
+  logical_support: { score: 73, baseline: 84, penalty: 11, issues: 2, pairs: 12, deductions: [deduction(2, 1), deduction(11, 10)] },
+};
+
 const INCONSISTENCIES: V7Inconsistency[] = [
   {
     section_a: 'Objectives of the Study', section_b: 'Scope and Limitations', pair_order: 4, coherence_score: 64,
@@ -324,7 +347,8 @@ export const SAMPLE_REPORT: V7ScanResponse = {
   result_version: 'v7',
   access: { unlocked: true, unlock_cost: 1, locked_counts: { sections: 0, recommendations: 0, citations: 0 } },
   manuscript_sections,
-  overall_coherence_score: 74.5,
+  overall_coherence_score: 76.5,
+  dimension_breakdown: DIMENSION_BREAKDOWN,
   sections_analyzed: manuscript_sections.map(section => section.name),
   manuscript_flow: MANUSCRIPT_FLOW,
   inconsistencies_found: INCONSISTENCIES.length,
@@ -338,10 +362,10 @@ export const SAMPLE_REPORT: V7ScanResponse = {
   citations_audited: CITATIONS.length,
   citations: CITATIONS,
   score_breakdown: {
-    overall_score: 74.5, band: 'Solid', cross_chapter_coherence_score: 74.5, citation_integrity_score: 84.4,
+    overall_score: 76.5, band: 'Solid', cross_chapter_coherence_score: 76.5, citation_integrity_score: 84.4,
     dimensions: { objectives_alignment: 0.7867, methodology_fit: 0.7567, numeric_consistency: 0.6943, claim_support: 0.7442 },
     dimension_weights: { objectives_alignment: 0.25, methodology_fit: 0.25, claim_support: 0.25, numeric_consistency: 0.25 },
-    critical_penalty: 0,
+    dimension_breakdown: DIMENSION_BREAKDOWN,
     citation_detail: { well_formed_ratio: 1, link_resolution_rate: 0.625, cross_match_score: 0.91, total_entries: 8 },
   },
   ai_text_indicator: {

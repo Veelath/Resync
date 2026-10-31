@@ -62,7 +62,7 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
 
 let lastScanError: string | null = null;
 
-export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void; onScanStart?: () => void; onScanFailed?: (message: string) => void }) {
+export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: () => void; onScanFailed?: (message: string) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
@@ -244,7 +244,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         template_toc: templateToc,
         manuscript_title: (mode === 'file' && uploadedFile) ? uploadedFile.name.replace(/\.[^/.]+$/, '') : undefined,
       });
-      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc });
+      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, mode === 'file' ? uploadedFile : null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
@@ -773,7 +773,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-xs text-amber-800 leading-relaxed">
                   <p className="font-bold text-amber-900 mb-1">Template Customization Tip</p>
                   {templateChapters.length
-                    ? "Click a heading pill to rename it. ReSync will compare consecutive sections."
+                    ? "Click a heading pill to rename it. ReSync will compare your sections across the whole manuscript."
                     : "No template selected. ReSync will detect sections from the manuscript."}
                 </div>
               </div>

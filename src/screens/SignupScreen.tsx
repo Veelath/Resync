@@ -198,7 +198,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">2. Use of Analysis Tools</h4>
                     <p>
-                      Resync provides consecutive-section coherence checks, citation accessibility scanning, and an AI-text indicator. Analysis results and recommendations are advisory tools intended to assist scholarly writing and revision, and should be evaluated in accordance with your institution's academic guidelines.
+                      Resync provides holistic manuscript analysis, citation accessibility scanning, and an AI-text indicator. Analysis results and recommendations are advisory tools intended to assist scholarly writing and revision, and should be evaluated in accordance with your institution's academic guidelines.
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">3. Account Security</h4>
                     <p>

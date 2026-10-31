@@ -111,6 +111,12 @@ h1, h2, h3 {
 .result-focus { outline: 3px solid #1a1fcc; outline-offset: 4px; }
 .results-scroll, html:has(.results-screen), body:has(.results-screen) { scrollbar-width: none; }
 .results-scroll::-webkit-scrollbar, html:has(.results-screen)::-webkit-scrollbar, body:has(.results-screen)::-webkit-scrollbar { display: none; }
+/* The manuscript pane keeps a wide, visible bar the student can drag, instead of only the mouse wheel. */
+.results-scroll.manuscript-scroll { scrollbar-width: auto; scrollbar-color: #7f88c7 #e9edf8; }
+.results-scroll.manuscript-scroll::-webkit-scrollbar { display: block; width: 14px; }
+.results-scroll.manuscript-scroll::-webkit-scrollbar-track { background: #e9edf8; border-radius: 8px; }
+.results-scroll.manuscript-scroll::-webkit-scrollbar-thumb { background: #7f88c7; border-radius: 8px; border: 3px solid #e9edf8; min-height: 48px; }
+.results-scroll.manuscript-scroll::-webkit-scrollbar-thumb:hover { background: #1a1fcc; }
 .locked-manuscript { min-height: 520px; }
 .locked-manuscript-copy { filter: blur(5px); mask-image: linear-gradient(to bottom, transparent, #000 72px); user-select: none; pointer-events: none; }
 .locked-manuscript-overlay { position: absolute; inset: 0; display: flex; justify-content: center; pointer-events: none; }
