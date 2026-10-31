@@ -103,10 +103,10 @@ function readScanStatus(job: any): ScanStatusNotice | null {
 }
 
 /** How long to wait between status polls while a scan job runs. */
-const POLL_INTERVAL_MS = 2500;
+const POLL_INTERVAL_MS = 5000;
 
 /** Consecutive poll failures tolerated before giving up on a running job.
- * 12 * 2.5s = 30s -- enough to ride out a Render container restart, which
+ * 12 * 5s = 60s -- enough to ride out a Render container restart, which
  * the previous 10s budget was too thin to survive. */
 const MAX_CONSECUTIVE_POLL_FAILURES = 12;
 
