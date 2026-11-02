@@ -28,6 +28,8 @@ export function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Sc
     if (error) {
       setError(passwordPolicyMessage(error));
     } else {
+      // The reset link signs the person in for a moment. End that session so they log in with the new password.
+      await supabase.auth.signOut({ scope: 'local' });
       setSuccess(true);
       setTimeout(() => {
         onNavigate("login");

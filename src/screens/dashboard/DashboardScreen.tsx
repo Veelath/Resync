@@ -1,7 +1,7 @@
 import { CreditsPanel } from './CreditsPanel';
 import { ChangePasswordCard } from './ChangePasswordCard';
 import { DashboardHeader } from './DashboardHeader';
-import type { AppNotification } from '../../components/ScanNotifications';
+import type { AppNotification, NotificationPrefs } from '../../components/ScanNotifications';
 import { PaymentModal } from './PaymentModal';
 import { DashboardHome } from './DashboardHome';
 import { AcademicProfileView } from './AcademicProfileView';
@@ -16,7 +16,7 @@ import type React from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { getCreditBalance, getCreditHistory, createCreditCheckout, confirmCreditCheckout } from '../../services/api';
 
-export function DashboardScreen({ onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: () => void }) {
+export function DashboardScreen({ onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport, notificationPrefs = { alerts: true, sound: true }, onNotificationPrefsChange }: { notificationPrefs?: NotificationPrefs; onNotificationPrefsChange?: (prefs: NotificationPrefs) => void; onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: () => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
@@ -304,12 +304,31 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-base font-bold text-gray-900">Notifications</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">Scan completion alerts are currently sent to your account email.</p>
+                  <p className="text-sm text-gray-500 mt-0.5">Choose what this browser shows when a scan finishes.</p>
                 </div>
               </div>
-              <div className="mt-auto flex items-center justify-between gap-3 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">Scan completion emails</span>
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700">Enabled</span>
+              <div className="mt-auto space-y-3">
+                {([
+                  ["alerts", "Scan alerts", "A pop-up and a bell notification when your report is ready."],
+                  ["sound", "Completion sound", "A short chime when a scan finishes."],
+                ] as const).map(([key, label, hint]) => {
+                  const on = key === "sound" ? notificationPrefs.alerts && notificationPrefs.sound : notificationPrefs.alerts;
+                  const disabled = key === "sound" && !notificationPrefs.alerts;
+                  return <div key={key} className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
+                    <span className="min-w-0">
+                      <span id={`notif-${key}`} className="block text-sm font-semibold text-gray-700">{label}</span>
+                      <span className="block text-xs text-gray-500 mt-0.5">{hint}</span>
+                    </span>
+                    <button type="button" role="switch" aria-checked={on} aria-labelledby={`notif-${key}`} disabled={disabled}
+                      onClick={() => onNotificationPrefsChange?.({ ...notificationPrefs, [key]: !notificationPrefs[key] })}
+                      className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1fcc] focus-visible:ring-offset-2"
+                      style={{ background: on ? B : "#d1d5db" }}>
+                      <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform" style={{ transform: on ? "translateX(20px)" : "none" }} />
+                      <span className="sr-only">{on ? "On" : "Off"}</span>
+                    </button>
+                  </div>;
+                })}
+                <p className="text-xs text-gray-400">Phone alerts are managed in the ReSync mobile app.</p>
               </div>
             </div>
           </div>

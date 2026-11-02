@@ -42,6 +42,23 @@ export function playCompletionChime(): boolean {
 
 export const NOTIFICATIONS_KEY = "resync_notifications";
 
+/** What this browser shows when a scan finishes. Both are on until the person turns them off. */
+export type NotificationPrefs = { alerts: boolean; sound: boolean };
+export const NOTIFICATION_PREFS_KEY = "resync_notification_prefs";
+
+export function loadNotificationPrefs(): NotificationPrefs {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NOTIFICATION_PREFS_KEY) || "{}");
+    return { alerts: saved.alerts !== false, sound: saved.sound !== false };
+  } catch {
+    return { alerts: true, sound: true };
+  }
+}
+
+export function saveNotificationPrefs(prefs: NotificationPrefs) {
+  try { localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(prefs)); } catch { /* storage unavailable: the choice lasts until the page is closed */ }
+}
+
 export function loadNotifications(): AppNotification[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]");

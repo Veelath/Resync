@@ -3,7 +3,10 @@ import type { CitationReport, AITextIndicatorResponse } from './api';
 export type DimensionKey = 'objectives_alignment' | 'methodology_fit' | 'numeric_consistency' | 'claim_support';
 export type DimensionName = 'context_alignment' | 'operational_alignment' | 'evidence_consistency' | 'logical_support';
 export interface DimensionDeduction { order: number | null; section_a: string; section_b: string; severity: 'Critical' | 'Moderate' | 'Minor'; points: number }
-export type DimensionBreakdown = Record<DimensionName, { score: number | 'N/A'; baseline?: number | null; penalty: number; issues?: number; pairs?: number; deductions?: DimensionDeduction[] }>;
+/** One failed check: a pair of sections that did not pass a category, because the AI review quoted a contradiction or because neighbors were only loosely linked (`rating` is the model's 0 to 1 rating). */
+export interface DimensionFailure { order: number | null; section_a: string; section_b: string; reason: 'contradiction' | 'loose_link'; severity: 'Critical' | 'Moderate' | 'Minor' | null; rating: number }
+/** `score` is the percentage of the category's checks that passed. Reports saved before checks were counted carry `baseline`/`penalty` instead of `items`/`passed`/`failures`. */
+export type DimensionBreakdown = Record<DimensionName, { score: number | 'N/A'; items?: number; passed?: number; failures?: DimensionFailure[]; baseline?: number | null; penalty: number; issues?: number; pairs?: number; deductions?: DimensionDeduction[] }>;
 export type PairScores = Record<DimensionKey | 'overall_coherence', number | null>;
 
 export interface ManuscriptFlowPair {
@@ -83,6 +86,8 @@ export interface V7ScanResponse {
   access?: { unlocked: boolean; unlock_cost: number; locked_counts: { sections: number; recommendations: number; citations: number } };
   manuscript_sections?: { name: string; text: string | null; placeholder?: { heading: string; paragraphs: string[] } }[];
   overall_coherence_score: number;
+  /** Set when the paper had no usual headings, saying how it was split into sections. */
+  structure_note?: string | null;
   dimension_breakdown?: DimensionBreakdown;
   sections_analyzed: string[];
   manuscript_flow: ManuscriptFlowPair[];

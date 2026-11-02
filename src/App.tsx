@@ -16,7 +16,7 @@ import { UploadScreen } from './screens/UploadScreen';
 import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
-import { ToastBanner, loadNotifications, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification } from './components/ScanNotifications';
+import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -29,6 +29,10 @@ export default function App() {
   const [activeScanId, setActiveScanId] = useState<string | null>(null);
   const [resultError, setResultError] = useState('');
   const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPrefs>(loadNotificationPrefs);
+  // Scan callbacks run long after they were created, so they read the current choice from here.
+  const notificationPrefsRef = useRef(notificationPrefs);
+  notificationPrefsRef.current = notificationPrefs;
   const [toast, setToast] = useState<AppNotification | null>(null);
   const [soundBlocked, setSoundBlocked] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,12 +142,15 @@ export default function App() {
   }
 
   function pushNotification(kind: AppNotification["kind"], title: string, message: string) {
-    const item: AppNotification = { id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind, title, message, at: Date.now(), read: false };
+    // With alerts off the scan is still listed in the bell, but marked read and without a pop-up.
+    const quiet = !notificationPrefsRef.current.alerts;
+    const item: AppNotification = { id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind, title, message, at: Date.now(), read: quiet };
     setNotifications(prev => {
       const next = [item, ...prev].slice(0, 20);
       try { localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
       return next;
     });
+    if (quiet) return;
     setToast(item);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 8000);
@@ -182,7 +189,8 @@ export default function App() {
   function handleScanCompleted() {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
-    const played = playCompletionChime();
+    const wantsSound = notificationPrefsRef.current.alerts && notificationPrefsRef.current.sound;
+    const played = wantsSound ? playCompletionChime() : true;   // no sound wanted: nothing to be blocked
     setSoundBlocked(!played);
     pushNotification("success", "Scan complete", "Your coherence report is ready to review.");
   }
@@ -251,7 +259,7 @@ export default function App() {
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} onOpenReport={() => scanResult && navigate("results")} />}
+      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={() => scanResult && navigate("results")} />}
     </div>
   );
 }

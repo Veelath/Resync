@@ -1,5 +1,5 @@
 ﻿import type { CitationReport } from '../services/api';
-import type { DimensionBreakdown, ManuscriptFlowPair, V7Inconsistency, V7Recommendation, V7ScanResponse } from '../services/v7Result';
+import type { DimensionBreakdown, DimensionFailure, ManuscriptFlowPair, V7Inconsistency, V7Recommendation, V7ScanResponse } from '../services/v7Result';
 
 export interface Citation {
   id: string;
@@ -239,16 +239,20 @@ MANUSCRIPT_FLOW.forEach(pair => {
   pair.failed_dimension = grade ? grade[1] : 'none';
   pair.adjacent = true;
 });
-const deduction = (order: number, points: number) => {
+const failure = (order: number): DimensionFailure => {
   const pair = MANUSCRIPT_FLOW.find(item => item.order === order)!;
-  return { order, section_a: pair.section_a, section_b: pair.section_b, severity: pair.severity as 'Critical' | 'Moderate' | 'Minor', points };
+  return { order, section_a: pair.section_a, section_b: pair.section_b, reason: 'contradiction', severity: pair.severity as 'Critical' | 'Moderate' | 'Minor', rating: pair.scores.overall_coherence ?? 0 };
 };
-// Each part starts from how well the transitions connect, then loses the points the review charged to it.
+// A category's score is the share of its checks (pairs of sections) that passed; the overall is the average, rounded up.
+const part = (items: number, failures: DimensionFailure[]) => ({
+  score: Math.round((items - failures.length) / items * 10000) / 100, items, passed: items - failures.length, failures,
+  issues: failures.length, pairs: items, penalty: 0,
+});
 const DIMENSION_BREAKDOWN: DimensionBreakdown = {
-  context_alignment: { score: 83, baseline: 88, penalty: 5, issues: 1, pairs: 12, deductions: [deduction(4, 5)] },
-  operational_alignment: { score: 80, baseline: 85, penalty: 5, issues: 1, pairs: 12, deductions: [deduction(9, 5)] },
-  evidence_consistency: { score: 70, baseline: 80, penalty: 10, issues: 1, pairs: 7, deductions: [deduction(10, 10)] },
-  logical_support: { score: 73, baseline: 84, penalty: 11, issues: 2, pairs: 12, deductions: [deduction(2, 1), deduction(11, 10)] },
+  context_alignment: part(12, [failure(4)]),
+  operational_alignment: part(12, [failure(9)]),
+  evidence_consistency: part(7, [failure(10)]),
+  logical_support: part(12, [failure(2), failure(11)]),
 };
 
 const INCONSISTENCIES: V7Inconsistency[] = [
@@ -347,7 +351,7 @@ export const SAMPLE_REPORT: V7ScanResponse = {
   result_version: 'v7',
   access: { unlocked: true, unlock_cost: 1, locked_counts: { sections: 0, recommendations: 0, citations: 0 } },
   manuscript_sections,
-  overall_coherence_score: 76.5,
+  overall_coherence_score: 89,
   dimension_breakdown: DIMENSION_BREAKDOWN,
   sections_analyzed: manuscript_sections.map(section => section.name),
   manuscript_flow: MANUSCRIPT_FLOW,
@@ -362,7 +366,7 @@ export const SAMPLE_REPORT: V7ScanResponse = {
   citations_audited: CITATIONS.length,
   citations: CITATIONS,
   score_breakdown: {
-    overall_score: 76.5, band: 'Solid', cross_chapter_coherence_score: 76.5, citation_integrity_score: 84.4,
+    overall_score: 89, band: 'Strong', cross_chapter_coherence_score: 89, citation_integrity_score: 84.4,
     dimensions: { objectives_alignment: 0.7867, methodology_fit: 0.7567, numeric_consistency: 0.6943, claim_support: 0.7442 },
     dimension_weights: { objectives_alignment: 0.25, methodology_fit: 0.25, claim_support: 0.25, numeric_consistency: 0.25 },
     dimension_breakdown: DIMENSION_BREAKDOWN,

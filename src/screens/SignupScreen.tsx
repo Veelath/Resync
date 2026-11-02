@@ -6,6 +6,7 @@ import { PasswordRequirements, isPasswordValid } from '../components/PasswordReq
 import type { Screen } from '../lib/appTypes';
 import { B } from '../lib/brand';
 import { supabase } from '../lib/supabase';
+import { cleanNameInput, emailError, nameError } from '../lib/validation';
 
 const MAIL_ICON = (
   <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3.5 7l8.5 6 8.5-6" /></svg>
@@ -15,8 +16,10 @@ const LOCK_ICON = (
   <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
 );
 
-function FieldInput({ label, type = "text", value, onChange, placeholder, icon, required = true }: {
+function FieldInput({ label, type = "text", value, onChange, placeholder, icon, required = true, error = "", onBlur, autoComplete }: {
   label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; icon?: React.ReactNode; required?: boolean;
+  /** Shown under the field; empty means the value is fine. */
+  error?: string; onBlur?: () => void; autoComplete?: string;
 }) {
   const id = useId();
   return (
@@ -24,9 +27,11 @@ function FieldInput({ label, type = "text", value, onChange, placeholder, icon, 
       <label htmlFor={id} className="auth-label">{label}</label>
       <div className="auth-field">
         {icon && <span className="auth-field-icon" aria-hidden="true">{icon}</span>}
-        <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} required={required}
-          className={icon ? "auth-input auth-input--icon" : "auth-input"} />
+        <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} onBlur={onBlur} placeholder={placeholder} required={required}
+          autoComplete={autoComplete} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined}
+          className={icon ? "auth-input auth-input--icon" : "auth-input"} style={error ? { borderColor: "#e11d48" } : undefined} />
       </div>
+      {error && <p id={`${id}-error`} role="alert" className="text-xs font-semibold text-rose-600">{error}</p>}
     </div>
   );
 }
@@ -43,10 +48,16 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   const [error, setError] = useState("");
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
 
-  const canSubmit = !!firstName.trim() && !!lastName.trim() && !!email && isPasswordValid(pw) && agreed && !loading;
+  // A field shows its problem once it has been left, or after a submit attempt.
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const touch = (field: string) => setTouched(current => ({ ...current, [field]: true }));
+  const errors = { first: nameError(firstName, "First name"), middle: nameError(middleName, "Middle name", false), last: nameError(lastName, "Last name"), email: emailError(email) };
+  const shown = (field: keyof typeof errors) => touched[field] ? errors[field] : "";
+  const canSubmit = !Object.values(errors).some(Boolean) && isPasswordValid(pw) && agreed && !loading;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setTouched({ first: true, middle: true, last: true, email: true });
     if (!canSubmit) return;
     setLoading(true);
     setError("");
@@ -56,7 +67,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     const full_name = [trimmedFirst, trimmedMiddle, trimmedLast].filter(Boolean).join(" ").trim();
 
     const { error } = await supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password: pw,
       options: {
         data: {
@@ -98,13 +109,13 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
 
         {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100" role="alert">{error}</div>}
 
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} noValidate className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldInput label="First name" value={firstName} onChange={setFirstName} placeholder="Maria" required={true} />
-            <FieldInput label="Middle name (optional)" value={middleName} onChange={setMiddleName} placeholder="Clara" required={false} />
+            <FieldInput label="First name" value={firstName} onChange={value => setFirstName(cleanNameInput(value))} onBlur={() => touch("first")} error={shown("first")} autoComplete="given-name" placeholder="Maria" required={true} />
+            <FieldInput label="Middle name (optional)" value={middleName} onChange={value => setMiddleName(cleanNameInput(value))} onBlur={() => touch("middle")} error={shown("middle")} autoComplete="additional-name" placeholder="Clara" required={false} />
           </div>
-          <FieldInput label="Last name" value={lastName} onChange={setLastName} placeholder="Santos" required={true} />
-          <FieldInput label="Email address" type="email" value={email} onChange={setEmail} placeholder="maria.santos@dlsu.edu.ph" icon={MAIL_ICON} />
+          <FieldInput label="Last name" value={lastName} onChange={value => setLastName(cleanNameInput(value))} onBlur={() => touch("last")} error={shown("last")} autoComplete="family-name" placeholder="Santos" required={true} />
+          <FieldInput label="Email address" type="email" value={email} onChange={setEmail} onBlur={() => touch("email")} error={shown("email")} autoComplete="email" placeholder="maria.santos@dlsu.edu.ph" icon={MAIL_ICON} />
 
           {/* password */}
           <div className="space-y-2">

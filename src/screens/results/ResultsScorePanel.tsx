@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import type { DimensionBreakdown, DimensionKey, DimensionName, V7ScanResponse } from '../../services/v7Result';
 import { categoryColors } from './categoryColors';
-import { PART_POINTS, PartTooltip, formatPoints, toPoints } from './PartTooltip';
+import { PartTooltip, formatPercent } from './PartTooltip';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
 const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
@@ -77,7 +77,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
         <div className="rp-hero-text">
           {unreviewed > 0 && <span className="rp-badge">Provisional</span>}
           <span className="rp-hero-title">Overall coherence score</span>
-          <span className="rp-hero-sub">{band}. Four parts, 25 points each.</span>
+          <span className="rp-hero-sub">{band}. Average of the four categories, rounded up.</span>
         </div>
       </div>
       {unreviewed > 0 && <p className="rp-note"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8v.01" /></svg><span>{isRateLimited(result.ai_synthesis?.review_status)
@@ -93,20 +93,21 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             const issues = entry.issues;
             const canOpen = applicable && !!issues && !!onShowInManuscript;
             const caption = applicable ? null : name === 'evidence_consistency' ? 'No figures to compare' : 'Not enough text';
-            const points = applicable ? toPoints(value) : 0;
-            const title = `${description} ${applicable ? `${formatPoints(points)} out of ${PART_POINTS} points.` : 'Not applicable.'}`;
+            const checks = applicable && entry.items != null && entry.passed != null ? `${entry.passed} out of ${entry.items} correct` : null;
+            const title = `${description} ${applicable ? `${formatPercent(value)} percent${checks ? `, ${checks}` : ''}.` : 'Not applicable.'}`;
             return <div key={name} tabIndex={0} onMouseEnter={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onFocus={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)}
-              className="rp-card min-w-0 outline-none" role="group" aria-label={`${label}: ${applicable ? `${formatPoints(points)} out of ${PART_POINTS}` : 'Not applicable'}. ${title}`}>
+              className="rp-card min-w-0 outline-none" role="group" aria-label={`${label}: ${applicable ? `${formatPercent(value)} percent` : 'Not applicable'}. ${title}`}>
               <div className="flex flex-col gap-1 text-xs text-gray-700">
                 <div className="flex items-center gap-2">
                   <span className={`mt-1 size-2 shrink-0 rounded-full ${applicable ? '' : 'bg-gray-300'}`} style={applicable ? { backgroundColor: color } : undefined} aria-hidden="true" />
                   <span className="min-w-0 leading-tight">{label}</span>
                 </div>
-                <span className="font-bold tabular-nums text-[#0b0f3d]">{applicable ? <>{formatPoints(points)}<span className="text-xs font-semibold text-gray-400">/{PART_POINTS}</span></> : 'Not applicable'}</span>
+                <span className="font-bold tabular-nums text-[#0b0f3d]">{applicable ? <>{formatPercent(value)}<span className="text-xs font-semibold text-gray-400">%</span></> : 'Not applicable'}</span>
               </div>
-              <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={points} aria-valuemin={0} aria-valuemax={PART_POINTS} aria-valuetext={applicable ? `${formatPoints(points)} out of ${PART_POINTS}` : 'Not applicable'}>
-                <div className="h-full rounded-full" style={{ width: `${points / PART_POINTS * 100}%`, backgroundColor: applicable ? color : undefined }} />
+              <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-valuetext={applicable ? `${formatPercent(value)} percent` : 'Not applicable'}>
+                <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: applicable ? color : undefined }} />
               </div>
+              {checks && <p className="mt-1.5 text-[11px] text-gray-500">{checks}</p>}
               {caption && <p className="mt-2 text-[11px] text-gray-500">{caption}</p>}
               {applicable && !!issues && (canOpen
                 ? <button type="button" onClick={() => setOpenName(name)} className="mt-2 text-left text-[11px] font-semibold leading-snug text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">{issues} {issues === 1 ? 'issue' : 'issues'} detected. Click to view.</button>
@@ -118,7 +119,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
       {tip && (() => {
         const dimension = DIMENSIONS.find(item => item.name === tip.name)!;
         const entry = breakdown[tip.name];
-        return <PartTooltip label={dimension.label} description={dimension.description} color={dimension.color} scoreKey={dimension.key} name={dimension.name} entry={entry} rect={tip.rect} flow={result.manuscript_flow}
+        return <PartTooltip label={dimension.label} description={dimension.description} color={dimension.color} name={dimension.name} entry={entry} rect={tip.rect}
           clickable={entry.score !== 'N/A' && !!entry.issues && !!onShowInManuscript} />;
       })()}
       {open && onShowInManuscript && <div role="dialog" aria-modal="true" aria-label={`${open.label} issues`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenName(null)}>

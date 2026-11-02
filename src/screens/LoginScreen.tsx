@@ -5,6 +5,7 @@ import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
 import { AuthShell } from '../components/AuthShell';
 import type { Screen } from '../lib/appTypes';
 import { supabase } from '../lib/supabase';
+import { emailError } from '../lib/validation';
 
 export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate: (s: Screen) => void; onBack: () => void; onLoginSuccess?: () => void }) {
   const [email, setEmail] = useState("");
@@ -23,10 +24,12 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
 
   async function handleForgotSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!forgotEmail || forgotLoading) return;
+    if (forgotLoading) return;
+    const problem = emailError(forgotEmail);
+    if (problem) { setForgotError(problem); return; }
     setForgotLoading(true);
     setForgotError("");
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), {
       redirectTo: window.location.origin + "/reset-password",
     });
     setForgotLoading(false);
@@ -182,7 +185,7 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleForgotSubmit} className="space-y-4">
+                  <form onSubmit={handleForgotSubmit} noValidate className="space-y-4">
                     <p className="text-sm text-[#4b5275] leading-relaxed">
                       Enter your email address and we'll send you a link to reset your password.
                     </p>
@@ -197,7 +200,7 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                         id="forgot-email-input"
                         type="email"
                         value={forgotEmail}
-                        onChange={e => setForgotEmail(e.target.value)}
+                        onChange={e => { setForgotEmail(e.target.value); setForgotError(""); }}
                         placeholder="maria.santos@dlsu.edu.ph"
                         required
                         autoComplete="email"
@@ -206,7 +209,7 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
                     </div>
                     <button
                       type="submit"
-                      disabled={!forgotEmail || forgotLoading}
+                      disabled={!forgotEmail.trim() || forgotLoading}
                       className="auth-primary auth-focus"
                     >
                       {forgotLoading ? <><Spinner /> Sending reset link…</> : "Send reset link"}
