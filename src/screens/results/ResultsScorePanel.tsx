@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import type { DimensionBreakdown, DimensionKey, DimensionName, V7ScanResponse } from '../../services/v7Result';
 import { categoryColors } from './categoryColors';
+import { PART_POINTS, PartTooltip, formatPoints, toPoints } from './PartTooltip';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
 const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
@@ -76,7 +77,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
         <div className="rp-hero-text">
           {unreviewed > 0 && <span className="rp-badge">Provisional</span>}
           <span className="rp-hero-title">Overall coherence score</span>
-          <span className="rp-hero-sub">{band}. Combined from the four checks below.</span>
+          <span className="rp-hero-sub">{band}. Four parts, 25 points each.</span>
         </div>
       </div>
       {unreviewed > 0 && <p className="rp-note"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8v.01" /></svg><span>{isRateLimited(result.ai_synthesis?.review_status)
@@ -92,18 +93,19 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             const issues = entry.issues;
             const canOpen = applicable && !!issues && !!onShowInManuscript;
             const caption = applicable ? null : name === 'evidence_consistency' ? 'No figures to compare' : 'Not enough text';
-            const title = `${description} ${applicable ? `Score ${value} out of 100.` : 'Not applicable.'}`;
+            const points = applicable ? toPoints(value) : 0;
+            const title = `${description} ${applicable ? `${formatPoints(points)} out of ${PART_POINTS} points.` : 'Not applicable.'}`;
             return <div key={name} tabIndex={0} onMouseEnter={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onFocus={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)}
-              className="rp-card min-w-0 outline-none" role="group" aria-label={`${label}: ${applicable ? `${value} out of 100` : 'Not applicable'}. ${title}`}>
+              className="rp-card min-w-0 outline-none" role="group" aria-label={`${label}: ${applicable ? `${formatPoints(points)} out of ${PART_POINTS}` : 'Not applicable'}. ${title}`}>
               <div className="flex flex-col gap-1 text-xs text-gray-700">
                 <div className="flex items-center gap-2">
                   <span className={`mt-1 size-2 shrink-0 rounded-full ${applicable ? '' : 'bg-gray-300'}`} style={applicable ? { backgroundColor: color } : undefined} aria-hidden="true" />
                   <span className="min-w-0 leading-tight">{label}</span>
                 </div>
-                <span className="font-bold tabular-nums text-[#0b0f3d]">{applicable ? <>{value}<span className="text-xs font-semibold text-gray-400">/100</span></> : 'Not applicable'}</span>
+                <span className="font-bold tabular-nums text-[#0b0f3d]">{applicable ? <>{formatPoints(points)}<span className="text-xs font-semibold text-gray-400">/{PART_POINTS}</span></> : 'Not applicable'}</span>
               </div>
-              <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-valuetext={applicable ? `${value} out of 100` : 'Not applicable'}>
-                <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: applicable ? color : undefined }} />
+              <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={points} aria-valuemin={0} aria-valuemax={PART_POINTS} aria-valuetext={applicable ? `${formatPoints(points)} out of ${PART_POINTS}` : 'Not applicable'}>
+                <div className="h-full rounded-full" style={{ width: `${points / PART_POINTS * 100}%`, backgroundColor: applicable ? color : undefined }} />
               </div>
               {caption && <p className="mt-2 text-[11px] text-gray-500">{caption}</p>}
               {applicable && !!issues && (canOpen
@@ -116,29 +118,8 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
       {tip && (() => {
         const dimension = DIMENSIONS.find(item => item.name === tip.name)!;
         const entry = breakdown[tip.name];
-        const applicable = entry.score !== 'N/A';
-        const left = Math.min(Math.max(8, tip.rect.left + tip.rect.width / 2 - 136), window.innerWidth - 280);
-        const below = tip.rect.bottom + 230 < window.innerHeight;
-        return <div role="tooltip" style={{ position: 'fixed', left, width: 272, ...(below ? { top: tip.rect.bottom + 8 } : { bottom: window.innerHeight - tip.rect.top + 8 }) }} className="z-50 rounded-xl border border-gray-200 bg-white p-3 text-xs leading-snug text-gray-700 shadow-xl">
-          <p className="text-sm font-bold text-[#0b0f3d]">{dimension.label}{applicable ? `: ${entry.score}/100` : ''}</p>
-          <p className="mt-1 text-gray-600">{dimension.description}</p>
-          {!applicable && <p className="mt-2">{tip.name === 'evidence_consistency' ? 'Your paper has no figures to compare, so this part is left out of the total.' : 'There was not enough text to judge this part.'}</p>}
-          {applicable && !!entry.pairs && <>
-            {entry.baseline != null && entry.baseline < 100
-              ? <p className="mt-2">It starts from <span className="font-semibold">{entry.baseline}/100</span>, which measures how well your sections lead into each other. Then {entry.penalty ? <>points are taken off for contradictions the AI review could quote (<span className="font-semibold">{entry.baseline} − {entry.penalty} = {entry.score}</span>)</> : 'nothing was taken off because the AI review found no contradiction it could quote'}. The overall score is the average of the parts.</p>
-              : <p className="mt-2">Every part starts at 100. It was checked across <span className="font-semibold">{entry.pairs}</span> section {entry.pairs === 1 ? 'pair' : 'pairs'}, and the overall score is the average of the parts.</p>}
-            {entry.deductions?.length
-              ? <div className="mt-2">
-                  <p className="font-semibold text-[#0b0f3d]">Points taken off</p>
-                  <ul className="mt-1 space-y-1">{entry.deductions.map((item, index) => <li key={index} className="flex items-start justify-between gap-2">
-                    <span className="min-w-0 capitalize">{item.section_a} ↔ {item.section_b} <span className="normal-case text-gray-500">({item.severity})</span></span>
-                    <span className="shrink-0 font-semibold tabular-nums text-rose-700">−{item.points}</span>
-                  </li>)}</ul>
-                  <p className="mt-1 text-gray-600">Click the box to read each one with its quotes.</p>
-                </div>
-              : entry.baseline != null && entry.baseline < 100 ? null : <p className="mt-2 text-emerald-700">Nothing was taken off. The AI review found no contradiction it could quote in this part.</p>}
-          </>}
-        </div>;
+        return <PartTooltip label={dimension.label} description={dimension.description} color={dimension.color} scoreKey={dimension.key} name={dimension.name} entry={entry} rect={tip.rect} flow={result.manuscript_flow}
+          clickable={entry.score !== 'N/A' && !!entry.issues && !!onShowInManuscript} />;
       })()}
       {open && onShowInManuscript && <div role="dialog" aria-modal="true" aria-label={`${open.label} issues`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenName(null)}>
         <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-4 shadow-xl" onClick={event => event.stopPropagation()}>
