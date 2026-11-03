@@ -36,12 +36,25 @@ export function PartTooltip({ label, description, color, name, entry, rect, clic
     body = <p className="mt-2">This report was scored with an older method. Scan again to see how this score was made.</p>;
   } else {
     const failures = entry.failures ?? [];
+    const halves = entry.halves ?? (!!entry.flow?.items && !!entry.cross?.items);   // flow and cross-chapter checks each count for half
     body = <>
-      <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-gray-200" role="img" aria-label={`${entry.passed} out of ${entry.items} correct`}>
-        <div className="h-full rounded-full" style={{ width: `${entry.passed / entry.items * 100}%`, backgroundColor: color }} />
-      </div>
-      <p className="mt-1.5 text-[13px] font-semibold text-[#0b0f3d]">{entry.passed} out of {entry.items} correct <span className="font-normal text-gray-500">· {formatPercent(entry.score as number)}%</span></p>
-      <p className="text-gray-500">{name === 'evidence_consistency' ? 'Counts the pairs of sections that both contain numbers.' : 'Counts each pair of sections in your paper once.'}</p>
+      {halves
+        ? <div className="mt-2.5 space-y-2">
+            {([["Flow between neighboring sections", entry.flow!], ["Chapters that should agree", entry.cross!]] as const).map(([title, count]) => <div key={title}>
+              <p className="flex items-baseline justify-between gap-2 text-[12.5px] font-semibold text-[#0b0f3d]"><span>{title}</span><span className="tabular-nums">{count.passed} out of {count.items} correct</span></p>
+              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-gray-200" role="img" aria-label={`${title}: ${count.passed} out of ${count.items} correct`}>
+                <div className="h-full rounded-full" style={{ width: `${count.passed / count.items * 100}%`, backgroundColor: color }} />
+              </div>
+            </div>)}
+            <p className="text-gray-500">Each counts for half of this score, so the many chapter checks cannot hide weak flow.</p>
+          </div>
+        : <>
+            <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-gray-200" role="img" aria-label={`${entry.passed} out of ${entry.items} correct`}>
+              <div className="h-full rounded-full" style={{ width: `${entry.passed / entry.items * 100}%`, backgroundColor: color }} />
+            </div>
+            <p className="mt-1.5 text-[13px] font-semibold text-[#0b0f3d]">{entry.passed} out of {entry.items} correct</p>
+            <p className="text-gray-500">{name === 'evidence_consistency' ? 'Counts the pairs of sections that both contain numbers.' : 'Counts each pair of sections in your paper once.'}</p>
+          </>}
       {failures.length > 0
         ? <div className="mt-2">
             <p className="font-semibold text-[#0b0f3d]">Why not 100%?</p>

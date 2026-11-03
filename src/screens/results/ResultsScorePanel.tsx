@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import type { DimensionBreakdown, DimensionKey, DimensionName, V7ScanResponse } from '../../services/v7Result';
 import { categoryColors } from './categoryColors';
 import { PartTooltip, formatPercent } from './PartTooltip';
+import type { Placement } from '../../lib/placement';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
 const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
@@ -26,12 +27,13 @@ function breakdownOf(result: V7ScanResponse): DimensionBreakdown {
   return legacy;
 }
 
-export function ResultsScorePanel({ result, large = false, items = [], linkedIds, onShowInManuscript, revealId = null }: {
+export function ResultsScorePanel({ result, large = false, items = [], linkedIds, onShowInManuscript, onShowPlacement, revealId = null }: {
   result: V7ScanResponse;
   large?: boolean;
   items?: RecommendationItem[];
   linkedIds?: Set<string>;
   onShowInManuscript?: (id: string) => void;
+  onShowPlacement?: (section: string, placement: Placement) => void;
   revealId?: string | null;
 }) {
   const breakdown = breakdownOf(result);
@@ -93,7 +95,8 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             const issues = entry.issues;
             const canOpen = applicable && !!issues && !!onShowInManuscript;
             const caption = applicable ? null : name === 'evidence_consistency' ? 'No figures to compare' : 'Not enough text';
-            const checks = applicable && entry.items != null && entry.passed != null ? `${entry.passed} out of ${entry.items} correct` : null;
+            const checks = applicable && entry.items != null && entry.passed != null
+              ? ((entry.halves ?? (entry.flow?.items && entry.cross?.items)) ? `Flow ${entry.flow.passed}/${entry.flow.items} · Chapters ${entry.cross.passed}/${entry.cross.items}` : `${entry.passed} out of ${entry.items} correct`) : null;
             const title = `${description} ${applicable ? `${formatPercent(value)} percent${checks ? `, ${checks}` : ''}.` : 'Not applicable.'}`;
             return <div key={name} tabIndex={0} onMouseEnter={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onFocus={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)}
               className="rp-card min-w-0 outline-none" role="group" aria-label={`${label}: ${applicable ? `${formatPercent(value)} percent` : 'Not applicable'}. ${title}`}>
@@ -133,7 +136,8 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
           </div>
           <div className="space-y-3">
             {tracedPairs.map(pair => <Fragment key={pair.order}><PairIssueCard pair={pair} items={items.filter(item => item.pair === pair.order)} severity={pair.severity as Severity}
-              linkedIds={linkedIds ?? new Set<string>()} revealId={revealId} onShowInManuscript={id => { setOpenName(null); onShowInManuscript(id); }} /></Fragment>)}
+              linkedIds={linkedIds ?? new Set<string>()} revealId={revealId} onShowInManuscript={id => { setOpenName(null); onShowInManuscript(id); }}
+              onShowPlacement={onShowPlacement && ((section, placement) => { setOpenName(null); onShowPlacement(section, placement); })} /></Fragment>)}
             {!tracedPairs.length && <p className="text-sm text-gray-500">No issues are recorded for this part.</p>}
           </div>
         </div>

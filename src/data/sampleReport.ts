@@ -319,6 +319,15 @@ const RECOMMENDATIONS: V7Recommendation[] = [
   rec(2, 11, 'Chapter V: Conclusion and Recommendations', 'Chapter IV: Results and Discussion', 'Chapter V: Conclusion and Recommendations', PROTOTYPE_ADOPT,
     'The 78% figure describes prevalence, not an effect of the prototype.',
     'Limit the recommendation to a pilot in STEM programs, and describe 78% as prevalence only.', 'High'),
+  // A loosely linked pair with no contradiction: two sentences to add, one at the end of each side. No points are lost for them.
+  { recommendation_id: '55555555-5555-4555-8555-555555555501', id: 'r-7-1', section_a: 'Related Studies', section_b: 'Chapter III: Methodology', pair_order: 7,
+    original_sentence: null, issue: '', kind: 'add', placement: 'end', section: 'Related Studies',
+    recommended_revision: 'These studies measured burnout once and left out how students plan their study time, which this study examines.',
+    recommendation_text: 'These studies measured burnout once and left out how students plan their study time, which this study examines.', recommendation_priority: 'Low' },
+  { recommendation_id: '55555555-5555-4555-8555-555555555502', id: 'r-7-2', section_a: 'Related Studies', section_b: 'Chapter III: Methodology', pair_order: 7,
+    original_sentence: null, issue: '', kind: 'add', placement: 'start', section: 'Chapter III: Methodology',
+    recommended_revision: 'To fill the gap left by earlier studies, this chapter describes how burnout and study routines were measured together.',
+    recommendation_text: 'To fill the gap left by earlier studies, this chapter describes how burnout and study routines were measured together.', recommendation_priority: 'Low' },
 ];
 
 const cite = (raw: string, accessible: boolean, link: string, authors: string, year: number, title: string, match: number, cited: boolean): CitationReport => ({

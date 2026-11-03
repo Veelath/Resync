@@ -6,7 +6,9 @@ export interface DimensionDeduction { order: number | null; section_a: string; s
 /** One failed check: a pair of sections that did not pass a category, because the AI review quoted a contradiction or because neighbors were only loosely linked (`rating` is the model's 0 to 1 rating). */
 export interface DimensionFailure { order: number | null; section_a: string; section_b: string; reason: 'contradiction' | 'loose_link'; severity: 'Critical' | 'Moderate' | 'Minor' | null; rating: number }
 /** `score` is the percentage of the category's checks that passed. Reports saved before checks were counted carry `baseline`/`penalty` instead of `items`/`passed`/`failures`. */
-export type DimensionBreakdown = Record<DimensionName, { score: number | 'N/A'; items?: number; passed?: number; failures?: DimensionFailure[]; baseline?: number | null; penalty: number; issues?: number; pairs?: number; deductions?: DimensionDeduction[] }>;
+/** Checks of one kind: how many there were and how many passed. */
+export interface CheckCount { items: number; passed: number }
+export type DimensionBreakdown = Record<DimensionName, { score: number | 'N/A'; items?: number; passed?: number; /** True when flow and chapter checks are weighed as two halves; with too few checks they are pooled. */ halves?: boolean; flow?: CheckCount; cross?: CheckCount; failures?: DimensionFailure[]; baseline?: number | null; penalty: number; issues?: number; pairs?: number; deductions?: DimensionDeduction[] }>;
 export type PairScores = Record<DimensionKey | 'overall_coherence', number | null>;
 
 export interface ManuscriptFlowPair {

@@ -35,7 +35,7 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
     {!placeholderOnly && result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
       const text = section.text ?? '';
       const ranges = recommendationRanges(section, linked);
-      return <section key={`${index}-${section.name}`} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
+      return <section key={`${index}-${section.name}`} data-section-index={index} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
         <PaperHeading name={section.name} />
         {section.text != null && (() => {
           const lines = [...text.matchAll(/[^\r\n]+/g)];

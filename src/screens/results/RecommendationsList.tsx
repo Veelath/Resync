@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import type { ManuscriptFlowPair } from '../../services/v7Result';
 import type { RecommendationCategory } from './categoryColors';
 import { plainText } from './helpers';
+import type { Placement } from '../../lib/placement';
 
 export interface RecommendationItem {
   id: string;
@@ -12,6 +13,8 @@ export interface RecommendationItem {
   issue?: string;
   kind?: 'edit' | 'add';
   placement?: 'start' | 'end';
+  /** For a sentence to add: the existing sentence it goes right after (end) or right before (start). */
+  anchor?: string;
   revision: string;
   category?: RecommendationCategory;
 }
@@ -73,12 +76,14 @@ export function levelOf(pair: ManuscriptFlowPair, hasItems: boolean): CardLevel 
 }
 
 /** One pair with a real issue: why, the lines involved, and the suggested edits. Shared by the list and the dimension view. */
-export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, revealId }: {
+export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, onShowPlacement, revealId }: {
   pair: ManuscriptFlowPair;
   items: RecommendationItem[];
   severity: CardLevel;
   linkedIds: Set<string>;
   onShowInManuscript: (id: string) => void;
+  /** Scrolls to where a new sentence belongs and marks the spot. */
+  onShowPlacement?: (section: string, placement: Placement) => void;
   revealId: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -111,8 +116,16 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
         {items.map((item, index) => <li key={item.id} id={`recommendation-${item.id}`} tabIndex={-1} hidden={index >= VISIBLE_FIXES && !open} className="scroll-mt-12 space-y-1 rounded-lg border border-[#dfe5f5] p-2.5 text-sm leading-snug text-[#303746]">
           {item.kind === 'add'
             ? <>
-                <p className="text-xs font-semibold text-gray-600">Add this sentence at the {item.placement === 'start' ? 'start' : 'end'} of <span className="capitalize">{item.section}</span></p>
+                <p className="text-xs font-semibold text-gray-700">Add this as the <span className="font-extrabold text-[#1a1fcc]">{item.placement === 'start' ? 'FIRST' : 'LAST'} sentence</span> of the <span className="capitalize">{item.section}</span> section</p>
                 <p className="rounded-md bg-[#f6f7fb] p-2 font-serif text-[14px] text-[#303746]">“{plainText(item.revision)}”</p>
+                <p className="text-xs leading-snug text-gray-600">{item.placement === 'start'
+                  ? 'Put it at the very beginning of the section, before its first paragraph.'
+                  : 'Put it at the very end of the section, after its last paragraph.'}
+                  {item.anchor && <> {item.placement === 'start' ? 'It goes right before' : 'It goes right after'}: <span className="font-serif text-gray-700">“{item.anchor}”</span></>}</p>
+                {onShowPlacement && item.section && item.placement && <button type="button" onClick={() => onShowPlacement(item.section!, item.placement!)}
+                  className="mt-0.5 inline-flex items-center gap-1.5 rounded-lg bg-[#1a1fcc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#1115a5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M6 13l6 6 6-6" /></svg>
+                  Go to this spot in your paper</button>}
               </>
             : <>
                 {item.section && <p className="text-xs font-semibold capitalize text-gray-600">In {item.section}</p>}
@@ -127,11 +140,12 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   </section>;
 }
 
-export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, revealId, onlyOrders, mode = 'issues', rateLimited = false, score }: {
+export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, onShowPlacement, revealId, onlyOrders, mode = 'issues', rateLimited = false, score }: {
   items: RecommendationItem[];
   pairs: ManuscriptFlowPair[];
   linkedIds: Set<string>;
   onShowInManuscript: (id: string) => void;
+  onShowPlacement?: (section: string, placement: Placement) => void;
   revealId: string | null;
   onlyOrders?: Set<number>;
   /** 'issues' lists only pairs that need editing; 'clear' lists the pairs that need no action. */
@@ -166,7 +180,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
           {falseAlarm && <p className="mt-0.5 flex items-start gap-1.5 text-xs font-semibold text-emerald-700"><svg aria-hidden="true" viewBox="0 0 20 20" className="mt-px size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="8" /><path d="M6.5 10.3l2.4 2.4 4.6-5" /></svg><span>Minor vocabulary difference detected. No action needed.</span></p>}
         </div>;
       }
-      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} revealId={revealId} /></Fragment>;
+      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} onShowPlacement={onShowPlacement} revealId={revealId} /></Fragment>;
     })}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <p className="text-sm font-semibold text-amber-900">{rateLimited

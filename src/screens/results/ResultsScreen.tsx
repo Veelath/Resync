@@ -13,6 +13,7 @@ import { ResultsScorePanel } from './ResultsScorePanel';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
+import { clearPlacementMarker, edgeSentence, markInDocx, markInSection, type Placement } from '../../lib/placement';
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
@@ -33,6 +34,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState('');
   const [unlockedToast, setUnlockedToast] = useState(false);
+  const [placementMessage, setPlacementMessage] = useState('');
   useEffect(() => setCurrentScan(scan), [scan]);
   useEffect(() => {
     if (!locked || !result?.user_id) return;
@@ -110,7 +112,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     || usableTitle(extractDisplayTitle(manuscriptText))
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
-  const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
+  const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
   const issueCount = result.manuscript_flow.filter(pair => pair.severity !== undefined ? pair.severity !== null && (pair.severity !== 'None' || hasAdvice(pair.order)) : hasAdvice(pair.order)).length;
@@ -133,19 +135,39 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     }))),
   ] : [];
 
+  function scrollToTarget(target: HTMLElement | null, flash = 1600) {
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+    const scroller = target?.closest<HTMLElement>('.results-scroll');
+    if (target && scroller && window.matchMedia('(min-width: 1024px)').matches) {
+      scroller.scrollTo({ top: scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (scroller.clientHeight - target.clientHeight) / 2, behavior });
+    } else target?.scrollIntoView({ block: 'center', behavior });
+    target?.focus({ preventScroll: true });
+    target?.classList.add('result-focus');
+    window.setTimeout(() => target?.classList.remove('result-focus'), flash);
+  }
+
   function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
     if (kind === 'recommendation') { setActiveTab('recommendations'); setRevealId(id); }
-    requestAnimationFrame(() => {
-      const target = document.getElementById(`${kind}-${id}`);
-      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
-      const scroller = target?.closest<HTMLElement>('.results-scroll');
-      if (target && scroller && window.matchMedia('(min-width: 1024px)').matches) {
-        scroller.scrollTo({ top: scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (scroller.clientHeight - target.clientHeight) / 2, behavior });
-      } else target?.scrollIntoView({ block: 'center', behavior });
-      target?.focus({ preventScroll: true });
-      target?.classList.add('result-focus');
-      window.setTimeout(() => target?.classList.remove('result-focus'), 1600);
-    });
+    requestAnimationFrame(() => scrollToTarget(document.getElementById(`${kind}-${id}`)));
+  }
+
+  // "Go to this spot": scrolls to where a new sentence belongs and leaves a visible note there until the next one.
+  function showPlacement(section: string, placement: Placement) {
+    const names = (result?.manuscript_sections ?? []).map(item => item.name);
+    const index = names.findIndex(name => name.toLowerCase() === section.toLowerCase());
+    const marker = index < 0 ? null : docxFile
+      ? markInDocx(document.querySelector<HTMLElement>('.docx-host .docx-main') ?? document.body, names, index, placement)
+      : markInSection(document.querySelector(`[data-section-index="${index}"]`), placement);
+    if (marker) {
+      setPlacementMessage('');
+      scrollToTarget(marker, 2400);
+      return;
+    }
+    clearPlacementMarker();
+    setPlacementMessage(locked && index > 0
+      ? 'That part of your paper is locked. Unlock the full report to see where this sentence goes.'
+      : `We could not find the ${section} section in the page. Look for it by its heading and add the sentence there.`);
+    window.setTimeout(() => setPlacementMessage(''), 6000);
   }
   const citations: Citation[] = result.citations.map((citation, index) => ({
     id: `cit-${index}`, ref: citationText(citation.citation_raw_reference_text), url: citation.citation_primary_link || '',
@@ -188,6 +210,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
 
   return <div className="results-screen min-h-screen bg-[#f6f7fb] font-sans text-[#0b0f3d] lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
     <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} />
+    {placementMessage && <div role="status" className="fixed top-16 right-4 z-50 max-w-sm rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">{placementMessage}</div>}
     {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
     <div className="hidden print:block p-8 bg-white space-y-4">
@@ -215,7 +238,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
       </div>
       <aside tabIndex={0} aria-label="Analysis panel" className="results-scroll order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-2 lg:w-[clamp(380px,28vw,520px)] lg:rounded-none lg:shadow-none lg:overflow-y-auto print:hidden">
         <div>
-          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={id => focusLinked('highlight', id)} />
+          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} />
             {result.structure_note && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-900 print:hidden">{result.structure_note}</p>}
             <div className="scrollbar-none flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-3 print:hidden" role="tablist" aria-label="Results tabs">
               {tabs.map((tab, index) => <button key={tab.id} type="button" role="tab" id={`results-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls="results-tab-panel" tabIndex={activeTab === tab.id ? 0 : -1}
@@ -229,7 +252,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} />
+                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} />
               </div>}
               {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} mode="clear" />}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
