@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import type React from 'react';
 import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
-import { executeManuscriptScan } from '../services/api';
+import { executeManuscriptScan, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
 import './upload-motion.css';
+import './upload-flow.css';
 import { UploadTour, uploadTourSeen } from './UploadTour';
+import { DocxManuscript } from './results/DocxManuscript';
 
 type UploadMode = "file" | "link";
 
@@ -81,10 +83,50 @@ function buildTemplateToc(chapters: TemplateChapter[]): string[] | undefined {
     : [...headings, 'References'];
 }
 
+interface DocInfo {
+  title: string;
+  excerpt: string[];
+  words: number;
+  pages: number;
+  looksStructured: boolean;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+// A quick look inside a Word file for the confirm step: what it starts with, how long it is, whether it has headings.
+async function readDocInfo(file: File): Promise<DocInfo | null> {
+  try {
+    const mammoth = await import('mammoth');
+    const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    const paragraphs = value.split(/\n+/).map(line => line.trim()).filter(Boolean);
+    if (!paragraphs.length) return null;
+    const words = value.split(/\s+/).filter(Boolean).length;
+    const first = paragraphs[0];
+    const hasTitle = first.length <= 90 && !/[.!?]$/.test(first);
+    const body = hasTitle ? paragraphs.slice(1) : paragraphs;
+    const excerpt: string[] = [];
+    let used = 0;
+    for (const paragraph of body) {
+      if (paragraph.length < 40 && excerpt.length === 0) continue;
+      const clipped = paragraph.length > 420 ? `${paragraph.slice(0, 420).trimEnd()}…` : paragraph;
+      excerpt.push(clipped);
+      used += clipped.length;
+      if (used > 1100 || excerpt.length >= 6) break;
+    }
+    const headingLike = paragraphs.filter(line => line.length <= 80 && /^(chapter\s+\w+|\d+(\.\d+)*\.?\s+[A-Z]|introduction|related (literature|studies)|review of|methodology|methods|results|discussion|conclusion|references)/i.test(line)).length;
+    return { title: hasTitle ? first : "", excerpt, words, pages: Math.max(1, Math.ceil(words / 275)), looksStructured: headingLike >= 3 };
+  } catch {
+    return null;
+  }
+}
+
 let lastScanError: string | null = null;
 
 export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: () => void; onScanFailed?: (message: string) => void }) {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
@@ -108,6 +150,90 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [templateNotification, setTemplateNotification] = useState<string | null>(null);
   const templateToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const templateToc = buildTemplateToc(templateChapters);
+  const [docInfo, setDocInfo] = useState<DocInfo | null>(null);
+  const [docLoading, setDocLoading] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+
+  // The sections the scan will compare, read by the backend so they match what the scan sees.
+  const [outline, setOutline] = useState<ManuscriptOutline | null>(null);
+  const [outlineLoading, setOutlineLoading] = useState(false);
+  const [outlineError, setOutlineError] = useState<string | null>(null);
+  const [pagesState, setPagesState] = useState<"idle" | "failed">("idle");
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [linkDraft, setLinkDraft] = useState("");
+  useEffect(() => { setLinkDraft(link); }, [link, step]);
+
+  // A Google Doc is downloaded as a Word file the moment a valid link is in, so a link then behaves exactly like an upload:
+  // same preview, same sections, same scan, same highlighted report.
+  const [linkFile, setLinkFile] = useState<File | null>(null);
+  const [linkState, setLinkState] = useState<"idle" | "loading" | "ready" | "failed">("idle");
+  const [linkProblem, setLinkProblem] = useState<string | null>(null);
+  const downloads = useRef(new Map<string, Promise<File>>());
+  const googleLink = (url: string) => /docs\.google\.com\/document\/d\/[\w-]{10,}/.test(url);
+  useEffect(() => {
+    setLinkFile(null);
+    setLinkProblem(null);
+    const url = link.trim();
+    if (mode !== "link" || !session?.user || !googleLink(url)) { setLinkState("idle"); return; }
+    let cancelled = false;
+    setLinkState("loading");
+    const timer = setTimeout(() => {
+      let request = downloads.current.get(url);
+      if (!request) {
+        request = downloadGoogleDoc(url);
+        request.catch(() => downloads.current.delete(url));
+        downloads.current.set(url, request);
+      }
+      request.then(file => { if (!cancelled) { setLinkFile(file); setLinkState("ready"); } })
+        .catch(error => { if (!cancelled) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); } });
+    }, 600);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Whichever document is in play: the uploaded Word file, or the Google Doc downloaded as one.
+  const activeFile = mode === "file" ? uploadedFile : linkFile;
+
+  // Seconds spent waiting for the document, so a slow Google reply does not look like a frozen page.
+  const [outlineSeconds, setOutlineSeconds] = useState(0);
+  useEffect(() => {
+    if (!outlineLoading && linkState !== "loading") { setOutlineSeconds(0); return; }
+    const timer = setInterval(() => setOutlineSeconds(seconds => seconds + 1), 1000);
+    return () => clearInterval(timer);
+  }, [outlineLoading, linkState]);
+
+  useEffect(() => {
+    if (step !== 3) return;
+    if (mode === "link" && linkState === "loading") return;
+    const source = activeFile ?? (mode === "link" ? link.trim() : null);
+    if (!source) { setOutline(null); return; }
+    let cancelled = false;
+    setOutlineLoading(true);
+    setOutlineError(null);
+    getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() })
+      .then(result => { if (!cancelled) setOutline(result); })
+      .catch(error => { if (!cancelled) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); } })
+      .finally(() => { if (!cancelled) setOutlineLoading(false); });
+    return () => { cancelled = true; };
+  }, [step, mode, activeFile, link, linkState]);
+
+  // A new file gets a fresh try at drawing the pages (the results page's own viewer does the drawing).
+  useEffect(() => { setPagesState('idle'); }, [activeFile]);
+
+  // Credits left, for the "credits after scan" line on the confirm step.
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    let cancelled = false;
+    getCreditBalance(session.user.id).then(result => { if (!cancelled) setCreditBalance(result.balance); }).catch(() => { if (!cancelled) setCreditBalance(null); });
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
+
+  // Read the chosen Word file once the person reaches the confirm step.
+  useEffect(() => {
+    if (step !== 3 || !activeFile) { setDocInfo(null); return; }
+    let cancelled = false;
+    setDocLoading(true);
+    readDocInfo(activeFile).then(info => { if (!cancelled) { setDocInfo(info); setDocLoading(false); } });
+    return () => { cancelled = true; };
+  }, [step, activeFile]);
 
   // Check localStorage on mount / when returning to the template step
   useEffect(() => {
@@ -263,14 +389,16 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       onNavigate("processing");
       navigatedToProcessing = true;
 
+      // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
+      const scanFile = mode === "file" ? uploadedFile : linkFile;
       const result = await executeManuscriptScan({
         user_id: session.user.id,
-        file: uploadedFile ?? undefined,
-        doc_url: mode === "link" ? link : undefined,
+        file: scanFile ?? undefined,
+        doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
-        manuscript_title: (mode === 'file' && uploadedFile) ? uploadedFile.name.replace(/\.[^/.]+$/, '') : undefined,
+        manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
       });
-      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, mode === 'file' ? uploadedFile : null);
+      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
@@ -299,319 +427,102 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setTemplateChapters(prev => prev.map((ch, i) => i === cIdx ? { ...ch, sections: ch.sections.map((s, si) => si === sIdx ? val : s) } : ch));
   }
 
-  return (
-    <div className="min-h-full bg-white upload-motion" style={{ ["--um-brand" as string]: B }}>
-      <UploadTour open={tourOpen} onStepChange={setStep} onClose={() => setTourOpen(false)} />
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => step === 2 ? setStep(1) : onBack()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
-              {step === 2 ? "Back to Step 1" : "Back"}
-            </button>
+  const stepMeta = [
+    { n: 1, title: "1. Chapter Template (Optional)", sub: "Attach, edit or use saved headings" },
+    { n: 2, title: "2. Upload Manuscript", sub: "Word file or Google Docs link" },
+    { n: 3, title: "3. Confirm Document", sub: "Check it is the right file" },
+    { n: 4, title: "4. Coherence Scan", sub: "Then review your report" },
+  ];
+  const stepName = ["Chapter Template", "Manuscript", "Confirm"][step - 1];
+  const hasChapters = templateChapters.some(chapter => chapter.sections.length);
+  const fileLabel = mode === "file" ? uploadedFile?.name ?? "" : linkFile?.name ?? link.replace(/^https?:\/\//, "");
+  const creditsAfter = creditBalance === null ? null : Math.max(creditBalance - 1, 0);
 
-          </div>
+  // Step 2 -> 3: make sure there is something to confirm.
+  function continueToConfirm() {
+    lastScanError = null;
+    if (mode === "file" && !uploadedFile) { setScanError("Please select a manuscript file to upload."); return; }
+    if (mode === "link" && (!link.trim() || !link.includes("docs.google.com"))) { setScanError("Please provide a valid Google Docs link."); return; }
+    setScanError(null);
+    setStep(3);
+  }
+
+  return (
+    <div className="uf upload-motion" style={{ ["--um-brand" as string]: B }}>
+      <UploadTour open={tourOpen} onStepChange={setStep} onClose={() => setTourOpen(false)} />
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#e6e5f7]">
+        <div className="w-full px-6 md:px-10 lg:px-16 h-16 flex items-center justify-between">
+          <button onClick={() => step > 1 ? setStep((step - 1) as 1 | 2) : onBack()} className="flex items-center gap-1.5 text-sm text-[#5a5778] hover:text-[#0b0a2e] transition-colors font-semibold rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+            {step > 1 ? `Back to Step ${step - 1}` : "Back"}
+          </button>
           <div className="flex items-center gap-2">
             <button type="button" className="ut-replay" onClick={() => setTourOpen(true)}>Replay tour</button>
-            <span className="text-xs font-semibold px-3 py-1 rounded-full tabular-nums" style={{ background: BL, color: B }}>
-              Step {step} of 2: {step === 1 ? "Chapter Template" : "Manuscript"}
-            </span>
+            <span className="uf-pill tabular-nums">Step {step} of 4: {stepName}</span>
           </div>
         </div>
       </nav>
 
-      {/* page body */}
-      <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-10">
-
-        {/* Step Progress Bar */}
-        <div data-tour="progress" className="mb-8 p-3 sm:p-4 rounded-2xl border border-gray-100 bg-gray-50/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 min-w-0">
-          <div role="button" tabIndex={0} aria-label="Go to Step 1: Chapter Template" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(1)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(1); } }}>
-            <div key={`b1-${step}`} className={`um-badge is-active w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all shadow-sm`}
-              style={{ background: step === 1 ? B : "#16a34a" }}>
-              {step > 1 ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-              ) : "1"}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-gray-900">1. Chapter Template (Optional)</p>
-              <p className="text-[11px] text-gray-400">Attach, edit or use saved headings</p>
-            </div>
-          </div>
-          <div className={`um-line hidden sm:block flex-1 h-0.5 max-w-[80px] ${step >= 2 ? "is-done" : ""}`} />
-          <div role="button" tabIndex={0} aria-label="Go to Step 2: Upload Manuscript" className="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer rounded-xl p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={() => setStep(2)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(2); } }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm"
-              style={{ background: step === 2 ? B : "#f3f4f6", color: step === 2 ? "white" : "#9ca3af" }}>
-              2
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold" style={{ color: step === 2 ? "#111827" : "#6b7280" }}>2. Upload Manuscript</p>
-              <p className="text-[11px] text-gray-400">Upload .doc/.docx or add Google Docs link</p>
-            </div>
-          </div>
-          <div className="um-line hidden sm:block flex-1 h-0.5 max-w-[80px]" />
-          <div className="flex items-center gap-2 sm:gap-3 opacity-60">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gray-100 text-gray-400">
-              3
-            </div>
-            <div>
-              <p className="text-xs font-bold text-gray-600">3. Coherence Scan</p>
-              <p className="text-[11px] text-gray-400">Then review your report</p>
-            </div>
-          </div>
+      <div className="uf-wrap">
+        {/* Four-step progress */}
+        <div data-tour="progress" className="uf-card uf-stp" role="list">
+          {stepMeta.map((meta, index) => {
+            const state = meta.n === 4 ? "" : step === meta.n ? "is-on" : step > meta.n ? "is-done" : "";
+            return (
+              <Fragment key={meta.n}>
+                {index > 0 && <div className={`uf-cn ${step > index ? "is-done" : ""}`} />}
+                {meta.n === 4 ? (
+                  <div className="uf-si" role="listitem" style={{ cursor: "default", opacity: 0.8 }}>
+                    <span className="uf-sn">4</span>
+                    <div><b>{meta.title}</b><span className="uf-st">{meta.sub}</span></div>
+                  </div>
+                ) : (
+                  <button type="button" role="listitem" className={`uf-si ${state}`} aria-label={`Go to Step ${meta.n}: ${meta.title.slice(3)}`} aria-current={step === meta.n ? "step" : undefined}
+                    onClick={() => { if (meta.n < 3 || fileLabel) setStep(meta.n as 1 | 2 | 3); }}>
+                    <span className="uf-sn">
+                      {step > meta.n ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg> : meta.n}
+                    </span>
+                    <div><b>{meta.title}</b><span className="uf-st">{meta.sub}</span></div>
+                  </button>
+                )}
+              </Fragment>
+            );
+          })}
         </div>
 
-        {/* ════════════════════════════════════════════════════════════════
-            STEP 2: MANUSCRIPT INTAKE
-        ════════════════════════════════════════════════════════════════ */}
-        {step === 2 ? (
-          <div key="step2" className="um-panel">
-            <div className="mb-8">
-              <p className="text-xs mono font-bold uppercase tracking-widest mb-1.5" style={{ color: B }}>Step 2 · Manuscript Intake</p>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Upload manuscript</h1>
-              <p className="text-gray-500 text-sm">Upload a Word document or add a Google Docs link. ReSync uses your template headings if you chose them in Step 1; otherwise it detects sections.</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
-              <div className="space-y-7">
-
-                {/* Manuscript Source */}
-                <div data-tour="source">
-                  <label className="text-xs mono font-bold uppercase tracking-widest text-gray-500 block mb-3">Manuscript Source</label>
-                  <div className="grid grid-cols-2 gap-2.5 mb-4">
-                    {([
-                      [
-                        "file",
-                        <svg key="file-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
-                        "Upload Word file",
-                        ".doc, .docx  max 25\u00A0MB"
-                      ],
-                      [
-                        "link",
-                        <svg key="link-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-600" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>,
-                        "Google Docs",
-                        "Shared view link"
-                      ]
-                    ] as [UploadMode, React.ReactNode, string, string][]).map(([m, icon, label, sub]) => (
-                      <button key={m} type="button" aria-pressed={mode === m} onClick={() => { setMode(m); lastScanError = null; setScanError(null); }}
-                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-colors duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${mode === m ? "bg-blue-50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"}`}
-                        style={{ borderColor: mode === m ? B : undefined }}>
-                        <span className="shrink-0">{icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-bold" style={{ color: mode === m ? B : "#1f2937" }}>{label}</div>
-                          <div className="text-xs text-gray-400">{sub}</div>
-                        </div>
-                        {mode === m && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: B }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3 h-3" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Input Dropzone */}
-                  {mode === "file" ? (
-                    <div onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) acceptManuscriptFile(f); }}
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`um-drop ${drag ? "is-drag" : ""} ${uploadedFile ? "has-file" : ""} flex flex-col items-center justify-center gap-3 py-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all bg-gray-50/40 hover:bg-gray-50`}
-                      style={{ borderColor: drag || uploadedFile ? B : "#e5e7eb", background: drag || uploadedFile ? BL : undefined }}>
-                      <input ref={fileInputRef} type="file" accept={WORD_ACCEPT} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) acceptManuscriptFile(f); e.target.value = ""; }} />
-                      {uploadedFile ? (
-                        <>
-                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ background: BL, border: `1px solid ${B}20` }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6" style={{ color: B }}><path d="M9 12h6M9 16h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm font-bold text-gray-800">{uploadedFile.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">Click to remove or replace file</p>
-                          </div>
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-100 border border-green-200 px-3 py-1 rounded-full">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M5 12l5 5L20 7" /></svg>Manuscript attached
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="um-float w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm font-bold text-gray-700">Drop your .doc or .docx file here</p>
-                            <p className="text-xs text-gray-400 mt-1">or click to browse from device · max 25 MB</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
-                        </div>
-                        <input type="url" value={link} onChange={e => { setLink(e.target.value); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/..."
-                          className="w-full h-12 pl-11 pr-4 rounded-xl border-2 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-all"
-                          style={{ borderColor: link ? B : "#e5e7eb" }}
-                          onFocus={e => (e.target.style.borderColor = B)} onBlur={e => (e.target.style.borderColor = link ? B : "#e5e7eb")} />
-                      </div>
-                      <p className="text-xs text-gray-400">Must be set to <span className="font-semibold text-gray-600">"Anyone with the link can view"</span></p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Scan button */}
-                <div data-tour="run" className="space-y-3">
-                  <button
-                    type="button"
-                    disabled={isScanning}
-                    onClick={handleScan}
-                    className="um-cta w-full h-12 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 text-white"
-                    style={{
-                      background: isScanning ? "#9ca3af" : `linear-gradient(135deg, ${B}, ${BH})`,
-                      cursor: isScanning ? "not-allowed" : "pointer",
-                      boxShadow: isScanning ? "none" : `0 8px 24px ${B}30`
-                    }}
-                  >
-                    {isScanning ? "Scanning manuscript…" : "Run Coherence Scan (1 Credit) →"}
-                  </button>
-                  {scanError && (
-                    <div role="alert" className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-red-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                      <p className="flex-1 leading-snug font-medium">{scanError}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right: Prep guide */}
-              <div className="um-stagger lg:sticky lg:top-24 space-y-3">
-                <div className="rounded-2xl p-5" style={{ background: BL, border: `1px solid ${B}18` }}>
-                  <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: `${B}99` }}>Scan preparation</p>
-                  <p className="text-sm font-bold text-gray-800 leading-snug">Clear chapter headings help ReSync check cross-chapter coherence.</p>
-                </div>
-
-                {[
-                  {
-                    n: "1",
-                    title: "Chapter template (optional)",
-                    body: "In Step 1, attach, edit or load saved headings. You can skip to use detected headings.",
-                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
-                  },
-                  {
-                    n: "2",
-                    title: "Upload manuscript",
-                    body: ".doc or .docx under 25 MB, or Google Docs set to 'Anyone with the link can view'.",
-                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>,
-                  },
-                  {
-                    n: "3",
-                    title: "Run coherence scan",
-                    body: "Start the scan, then review your report when it is ready.",
-                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
-                  },
-                ].map(({ n, title, body, icon }) => (
-                  <div key={n} className="bg-white rounded-2xl p-4 flex gap-3.5 border border-gray-100" style={{ boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
-                    <div className="flex flex-col items-center gap-1 pt-0.5">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black text-white" style={{ background: `linear-gradient(135deg, ${B}, #4f55f5)` }}>
-                        {n}
-                      </div>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: BL, color: B }}>
-                        {icon}
-                      </div>
-                    </div>
-                    <div className="flex-1 pt-0.5">
-                      <p className="text-[13px] font-bold text-gray-800">{title}</p>
-                      <p className="text-[12px] text-gray-400 leading-relaxed mt-0.5">{body}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* ════════════════════════════════════════════════════════════════
-              STEP 1: OPTIONAL TEMPLATE
-          ════════════════════════════════════════════════════════════════ */
-          <div key="step1" className="um-panel">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        {step === 1 && (
+          <div key="step1" className="um-panel flex flex-col gap-[22px]">
+            <div className="uf-head">
               <div>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs mono font-bold uppercase tracking-widest" style={{ color: B }}>Step 1 · Chapter Template (Optional)</span>
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Optional chapter template</h1>
-                <p className="text-gray-500 text-sm mt-1">Attach, edit or load a saved template if you need specific headings. Skip to use headings detected from your manuscript.</p>
+                <div className="uf-eb">Step 1 · Chapter template (optional)</div>
+                <h1 className="uf-h1">Optional chapter template</h1>
+                <p className="uf-sub">Attach, edit or load a saved template if you need specific headings. Skip to use headings detected from your manuscript.</p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="uf-actions">
                 {templateNotification && (
                   <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 animate-fade-in">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-emerald-600">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-emerald-600"><polyline points="20 6 9 17 4 12" /></svg>
                     {templateNotification}
                   </span>
                 )}
-                {/* Button 1: Save Template */}
-                <button
-                  type="button"
-                  onClick={handleSaveTemplate}
-                  disabled={!templateChapters.some(chapter => chapter.sections.length)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                  </svg>
-                  Save Template
+                <button type="button" onClick={handleSaveTemplate} disabled={!hasChapters} className="uf-btn is-ghost is-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+                  Save template
                 </button>
-
-                {/* Button 2: Use Saved Template */}
-                <button
-                  type="button"
-                  onClick={hasSavedTemplate ? handleUseSavedTemplate : undefined}
-                  disabled={!hasSavedTemplate}
-                  aria-disabled={!hasSavedTemplate}
-                  title={!hasSavedTemplate ? "No saved template yet. Save one first." : undefined}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors flex items-center gap-1.5 ${
-                    hasSavedTemplate
-                      ? "border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer"
-                      : "cursor-not-allowed text-gray-300 border-gray-100 bg-gray-50/50"
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
-                  </svg>
-                  Use Saved Template
+                <button type="button" onClick={handleUseSavedTemplate} disabled={!hasSavedTemplate} title={!hasSavedTemplate ? "No saved template yet. Save one first." : undefined} className="uf-btn is-ghost is-sm">Use saved template</button>
+                <button type="button" onClick={handleRemoveAllSections} className="uf-btn is-ghost is-danger is-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
+                  Remove all sections
                 </button>
-
-                {/* Button 3: Remove All Sections */}
-                <button
-                  type="button"
-                  onClick={handleRemoveAllSections}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-red-600 hover:text-red-700 hover:border-red-200 hover:bg-red-50/50 transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                  </svg>
-                  Remove All Sections
-                </button>
-
-                {/* Button 4: Clear Template */}
-                <button
-                  type="button"
-                  onClick={handleResetTemplate}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
+                <button type="button" onClick={handleResetTemplate} className="uf-btn is-ghost is-sm">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
-                  Clear Template
+                  Clear
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
-              {/* Template chapters list */}
-              <div className="space-y-4">
+            <div className="uf-grid">
+              <div className="uf-col">
                 {templateChapters.map((ch, cIdx) => (
                   <div key={ch.id} className="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-all">
                     {/* Chapter header */}
@@ -710,99 +621,297 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     </div>
                   </div>
                 ))}
-
-                {/* Optional institutional file override */}
-                <div data-tour="template" className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div>
-                    <p className="font-semibold text-gray-800">Have an institutional Word template file?</p>
-                    <p className="text-gray-400 text-[11px]">You can optionally upload your school's syllabus or format document (.doc, .docx, or .txt).</p>
+                <div data-tour="template" className="uf-card" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <span className="uf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></svg></span>
+                    <div>
+                      <b style={{ fontSize: 15.5 }}>Have an institutional Word template?</b>
+                      <div style={{ fontSize: 13, color: "#6b6890" }}>Resync reads its headings so your report follows your school's format.</div>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => customTemplateInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors self-start sm:self-auto bg-white flex items-center gap-1.5"
-                    style={{ borderColor: customTemplateFile ? B : "#d1d5db", color: customTemplateFile ? B : "#4b5563" }}
-                  >
-                    {customTemplateFile ? (
-                      <>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /></svg>
-                        <span>{customTemplateFile.name}</span>
-                      </>
-                    ) : "+ Attach template (.doc, .docx, .txt) (Optional)"}
+                  <button type="button" className={`uf-dz ${customTemplateFile ? "has-file" : ""}`} onClick={() => customTemplateInputRef.current?.click()} style={{ font: "inherit", color: "inherit" }}>
+                    <span className="uf-up um-float"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg></span>
+                    <b style={{ fontSize: 16 }}>{customTemplateFile ? customTemplateFile.name : "Attach your school's template"}</b>
+                    <span style={{ fontSize: 13.5, color: "#6b6890" }}>{customTemplateFile ? "Click to replace this file" : "Syllabus or format document · .doc, .docx or .txt"}</span>
                   </button>
-                  {templateParseError && (
-                    <p className="text-[10px] text-amber-600 max-w-[200px] text-right">{templateParseError}</p>
-                  )}
-                  <input
-                    ref={customTemplateInputRef}
-                    type="file"
-                    accept={TEMPLATE_ACCEPT}
-                    className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0];
-                      if (f) handleTemplateFileChange(f);
-                      e.target.value = "";
-                    }}
-                  />
+                  {templateParseError && <p style={{ margin: 0, fontSize: 12.5, color: "#b7791f" }}>{templateParseError}</p>}
+                  <input ref={customTemplateInputRef} type="file" accept={TEMPLATE_ACCEPT} className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleTemplateFileChange(f); e.target.value = ""; }} />
                 </div>
 
-                {/* Template navigation */}
-                <div className="flex flex-wrap items-center gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => { handleResetTemplate(); setStep(2); }}
-                    className="w-full sm:w-auto px-5 h-12 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    Skip, use detected headings
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    className="um-cta w-full sm:flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all shadow-md flex items-center justify-center gap-2"
-                    style={{
-                      background: `linear-gradient(135deg, ${B}, ${BH})`,
-                      boxShadow: `0 8px 24px ${B}30`
-                    }}
-                  >
-                    Continue to Upload Manuscript (Step 2) →
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
+                  <button type="button" onClick={() => { handleResetTemplate(); setStep(2); }} className="uf-btn is-ghost is-lg" style={{ padding: "0 26px" }}>Skip, use detected headings</button>
+                  <button type="button" onClick={() => setStep(2)} className="uf-btn is-lg is-grow um-cta">
+                    Continue to upload manuscript
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </button>
                 </div>
               </div>
 
-              {/* Right column: Summary Card */}
-              <div className="um-stagger lg:sticky lg:top-24 space-y-4">
-                <div className="rounded-2xl p-5 bg-white border border-gray-200 shadow-sm space-y-4">
-                  <div>
-                    <p className="text-[10px] mono font-bold uppercase tracking-widest text-gray-400 mb-1">Scan Configuration</p>
-                    <h4 className="text-sm font-bold text-gray-900">Template Summary</h4>
-                  </div>
-                  <div className="space-y-2.5 text-xs border-t border-gray-100 pt-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Template:</span>
-                      <span className="font-bold" style={{ color: B }}>{templateChapters.length ? "Custom" : "Auto-detect"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Template headings:</span>
-                      <span className="font-semibold text-gray-800">{templateToc?.length ?? 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Credit Cost:</span>
-                      <span className="font-bold text-emerald-600">1 Credit</span>
-                    </div>
+              <div className="uf-col um-stagger">
+                <div className="uf-card" style={{ padding: 22 }}>
+                  <div className="uf-eb is-muted">Scan configuration</div>
+                  <div style={{ fontSize: 19, fontWeight: 800, margin: "8px 0 6px" }}>Template summary</div>
+                  <div className="uf-rows">
+                    <div className="uf-row"><span>Template</span><b style={{ color: "#2b25c8" }}>{hasChapters ? "Custom" : "Auto-detect"}</b></div>
+                    <div className="uf-row"><span>Chapters</span><b>{templateChapters.length} {templateChapters.length === 1 ? "chapter" : "chapters"}</b></div>
+                    <div className="uf-row"><span>Total sections</span><b>{templateToc?.length ?? 0} headings</b></div>
+                    <div className="uf-row"><span>Credit cost</span><b style={{ color: "#0b9f6e" }}>1 credit</b></div>
                   </div>
                 </div>
-
-                <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-200 text-xs text-amber-800 leading-relaxed">
-                  <p className="font-bold text-amber-900 mb-1">Template Customization Tip</p>
-                  {templateChapters.length
-                    ? "Click a heading pill to rename it. ReSync will compare your sections across the whole manuscript."
-                    : "No template selected. ReSync will detect sections from the manuscript."}
+                <div className="uf-tip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0012 2z" /></svg>
+                  <div>
+                    <b>Template tip</b>
+                    {hasChapters ? "Click a heading pill to rename it. Resync will compare your sections across the whole manuscript." : "No template selected. Resync will detect sections from your manuscript."}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
+        {step === 2 && (
+          <div key="step2" className="um-panel flex flex-col gap-[22px]">
+            <div>
+              <div className="uf-eb">Step 2 · Manuscript intake</div>
+              <h1 className="uf-h1">Upload manuscript</h1>
+              <p className="uf-sub">Upload a Word document or add a Google Docs link. Resync uses your template headings if you chose them in Step 1; otherwise it detects sections.</p>
+            </div>
+
+            <div className="uf-grid">
+              <div className="uf-col" style={{ gap: 14 }}>
+                <div data-tour="source" className="uf-col" style={{ gap: 14 }}>
+                  <div className="uf-eb is-muted">Manuscript source</div>
+                  <div className="uf-src">
+                    {([
+                      ["file", "Upload Word file", ".doc, .docx · max 25 MB", "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"],
+                      ["link", "Google Docs", "Shared view link", "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"],
+                    ] as [UploadMode, string, string, string][]).map(([m, label, sub, icon]) => (
+                      <button key={m} type="button" aria-pressed={mode === m} className={`uf-sc ${mode === m ? "is-on" : ""}`}
+                        onClick={() => { setMode(m); lastScanError = null; setScanError(null); }}>
+                        <span className="uf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5" aria-hidden="true"><path d={icon} /></svg></span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <b>{label}</b>
+                          <div style={{ fontSize: 12, color: "#6b6890" }}>{sub}</div>
+                        </div>
+                        <i className="uf-rd" />
+                      </button>
+                    ))}
+                  </div>
+
+                  {mode === "file" ? (
+                    <div role="button" tabIndex={0} aria-label="Choose your Word manuscript"
+                      onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) acceptManuscriptFile(f); }}
+                      onClick={() => fileInputRef.current?.click()}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInputRef.current?.click(); } }}
+                      className={`uf-dz um-drop ${drag ? "is-drag" : ""} ${uploadedFile ? "has-file" : ""}`}>
+                      <input ref={fileInputRef} type="file" accept={WORD_ACCEPT} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) acceptManuscriptFile(f); e.target.value = ""; }} />
+                      {uploadedFile ? (
+                        <>
+                          <span className="uf-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg></span>
+                          <b style={{ fontSize: 16 }}>{uploadedFile.name}</b>
+                          <span style={{ fontSize: 13, color: "#6b6890" }}>{formatBytes(uploadedFile.size)} · click to replace this file</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="uf-up um-float"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg></span>
+                          <b style={{ fontSize: 16 }}>Drop your .doc or .docx file here</b>
+                          <span style={{ fontSize: 13, color: "#6b6890" }}>or click to browse from device · max 25 MB</span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="uf-card" style={{ minHeight: 190, display: "flex", flexDirection: "column", justifyContent: "center", gap: 14, padding: "20px 26px" }}>
+                      <label className="uf-fld">
+                        <span className="uf-lab">Google Docs link</span>
+                        <span className="uf-inp">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
+                          <input type="url" value={link} onChange={e => { setLink(e.target.value); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/…" />
+                        </span>
+                      </label>
+                      <div style={{ display: "flex", gap: 10, fontSize: 13, color: "#6b6890", alignItems: "flex-start" }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2b25c8" strokeWidth="2" className="w-4 h-4 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+                        Set sharing to “Anyone with the link can view” so Resync can read it.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div data-tour="run" className="uf-col" style={{ gap: 12 }}>
+                  <button type="button" onClick={continueToConfirm} className="uf-btn is-lg um-cta" style={{ width: "100%" }}>
+                    Continue to confirm document
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </button>
+                  {scanError && (
+                    <div role="alert" className="uf-error">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                      <p style={{ margin: 0 }}>{scanError}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="uf-col um-stagger" style={{ gap: 12 }}>
+                <div className="uf-prep">
+                  <div className="uf-eb">Scan preparation</div>
+                  <div>Clear chapter headings help Resync check cross-chapter coherence.</div>
+                </div>
+                {[
+                  ["1", "Chapter template (optional)", "In Step 1, attach, edit or load saved headings. You can skip to use detected headings."],
+                  ["2", "Upload manuscript", ".doc or .docx under 25 MB, or a Google Docs link set to “Anyone with the link can view”."],
+                  ["3", "Confirm your document", "Check the file name and preview, then run the scan. It uses 1 credit."],
+                ].map(([n, title, body]) => (
+                  <div key={n} className="uf-card uf-side-step"><span className="uf-n">{n}</span><div><b>{title}</b><p>{body}</p></div></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div key="step3" className="um-panel flex flex-col gap-5">
+            <div className="uf-head">
+              <div>
+                <div className="uf-eb">Step 3 · Confirm document</div>
+                <h1 className="uf-h1">Is this the right document?</h1>
+              </div>
+              <div className="uf-toggle" role="group" aria-label="Manuscript source">
+                <button type="button" className={mode === "file" ? "is-on" : ""} onClick={() => { setMode("file"); if (!uploadedFile) setStep(2); }} aria-pressed={mode === "file"}>Word file</button>
+                <button type="button" className={mode === "link" ? "is-on" : ""} onClick={() => { setMode("link"); if (!link.trim()) setStep(2); }} aria-pressed={mode === "link"}>Google Docs link</button>
+              </div>
+            </div>
+
+            <div className="uf-grid is-wide">
+              <div className="uf-col" style={{ gap: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="uf-eb is-muted">{mode === "file" ? "Your paper · scroll to read it" : "Your Google Doc · scroll to read it"}</div>
+                  {(outline || docInfo) && <span className="uf-pill">About {outline?.pages ?? docInfo?.pages} {(outline?.pages ?? docInfo?.pages) === 1 ? "page" : "pages"}</span>}
+                </div>
+
+                {activeFile && pagesState !== "failed" ? (
+                  <div className="uf-pages" aria-label="Your manuscript, as the report will show it">
+                    <DocxManuscript file={activeFile} highlights={[]} locked={false} onLinked={() => {}} onFailed={() => setPagesState("failed")} />
+                  </div>
+                ) : (
+                  <div className="uf-paper" style={{ height: "auto", minHeight: 320, maxHeight: 560, overflowY: "auto" }} aria-label="Structure of your manuscript">
+                    {linkState === "loading" || outlineLoading ? (
+                      <p style={{ color: "#6b6890" }}>{mode === "link" ? `Opening your Google Doc… ${outlineSeconds}s${outlineSeconds >= 6 ? " (long papers take a little while)" : ""}` : "Reading your document…"}</p>
+                    ) : mode === "link" && linkState === "failed" ? (
+                      <p style={{ color: "#8f1d36", fontWeight: 600 }}>{linkProblem ?? "We could not open this Google Doc."} You can still run the scan, but there is no preview.</p>
+                    ) : outline ? (
+                      <>
+                        {outline.title && <h3>{outline.title}</h3>}
+                        {outline.excerpt.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                      </>
+                    ) : docInfo ? (
+                      <>
+                        {docInfo.title && <h3>{docInfo.title}</h3>}
+                        {docInfo.excerpt.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                      </>
+                    ) : (
+                      <p style={{ color: "#6b6890" }}>{outlineError ?? "We could not read a preview of this document, but it can still be scanned. Check the name on the right."}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="uf-col">
+                <div className="uf-card" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                    <span className="uf-ic" style={{ width: 64, height: 64, borderRadius: 16 }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-7 h-7" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8" /></svg>
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <b style={{ fontSize: 16.5, wordBreak: "break-word" }}>{fileLabel || "No document chosen"}</b>
+                      <div style={{ fontSize: 11.5, color: "#6b6890", fontFamily: "ui-monospace, monospace" }}>
+                        {activeFile ? `${mode === "link" ? "Google Doc · " : ""}${formatBytes(activeFile.size)}${(outline?.words ?? docInfo?.words) ? ` · ~${(outline?.words ?? docInfo?.words ?? 0).toLocaleString("en-US")} words` : ""}` : mode === "link" ? "Google Docs link" : ""}
+                      </div>
+                    </div>
+                  </div>
+
+                  {mode === "file" ? (
+                    <>
+                      <button type="button" className="uf-btn is-ghost is-sm" disabled={isScanning} onClick={() => replaceInputRef.current?.click()}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+                        Replace file
+                      </button>
+                      <input ref={replaceInputRef} type="file" accept={WORD_ACCEPT} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) acceptManuscriptFile(f); e.target.value = ""; }} />
+                    </>
+                  ) : (
+                    <div className="uf-fld">
+                      <span className="uf-lab">Edit the link</span>
+                      <span className="uf-inp">
+                        <input type="url" aria-label="Google Docs link" value={linkDraft} onChange={e => setLinkDraft(e.target.value)} placeholder="https://docs.google.com/document/d/…" />
+                      </span>
+                      <button type="button" className="uf-btn is-ghost is-sm" disabled={isScanning || !linkDraft.trim() || linkDraft.trim() === link.trim()}
+                        onClick={() => {
+                          if (!linkDraft.includes("docs.google.com")) { setScanError("Please provide a valid Google Docs link."); return; }
+                          setScanError(null); setLink(linkDraft.trim());
+                        }}>Update link</button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="uf-card" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div className="uf-eb is-muted">Paper structure</div>
+                    {outline && <span className="uf-pill">{outline.sections.length} {outline.sections.length === 1 ? "section" : "sections"}</span>}
+                  </div>
+                  {outlineLoading ? (
+                    <p style={{ margin: 0, fontSize: 13.5, color: "#6b6890" }}>Finding the sections the scan will compare…</p>
+                  ) : outline ? (
+                    <>
+                      <ol className="uf-outline">
+                        {outline.sections.map((section, index) => (
+                          <li key={`${section.name}-${index}`}>
+                            <span className="uf-outline-n">{index + 1}</span>
+                            <span className="uf-outline-name">{section.name}</span>
+                            <span className="uf-outline-w">{section.words.toLocaleString("en-US")} words</span>
+                          </li>
+                        ))}
+                      </ol>
+                      {outline.structure !== "headings" && (
+                        <p style={{ margin: 0, fontSize: 12.5, color: "#8a5a12" }}>
+                          {outline.structure === "split" ? "No headings found, so the scan will read it in equal parts." : "Headings were found by their shape, not their name."}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: 13.5, color: "#6b6890" }}>{mode === "link" && outlineError ? outlineError : "The sections will be found when the scan starts."}</p>
+                  )}
+                </div>
+
+                <div className="uf-card" style={{ padding: 22 }}>
+                  <div className="uf-eb is-muted">Scan summary</div>
+                  <div className="uf-rows" style={{ borderTop: 0, marginTop: 4 }}>
+                    <div className="uf-row"><span>Chapter template</span><b style={{ color: "#2b25c8" }}>{hasChapters ? "Custom" : "Auto-detect"}</b></div>
+                    <div className="uf-row"><span>Credit cost</span><b style={{ color: "#0b9f6e" }}>1 credit</b></div>
+                    <div className="uf-row"><span>Credits after scan</span><b>{creditsAfter ?? "—"}</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {scanError && (
+              <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                <p style={{ margin: 0 }}>{scanError}</p>
+              </div>
+            )}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, maxWidth: 760 }}>
+              <button type="button" onClick={() => setStep(2)} disabled={isScanning} className="uf-btn is-ghost is-lg" style={{ padding: "0 26px" }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+                Choose a different document
+              </button>
+              <button type="button" onClick={handleScan} disabled={isScanning || (mode === "file" ? !uploadedFile : !link.trim() || linkState === "loading")} className="uf-btn is-lg is-grow um-cta">
+                {isScanning ? "Scanning manuscript…" : "Yes, run coherence scan (1 credit)"}
+                {!isScanning && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

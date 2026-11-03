@@ -450,6 +450,44 @@ export async function confirmCreditCheckout(userId: string, pymtTxnId: string): 
   return resp.json();
 }
 
+export interface ManuscriptOutline {
+  title: string; words: number; pages: number; structure: 'headings' | 'structure' | 'split';
+  sections: { name: string; words: number; role?: string | null }[]; excerpt: string[];
+}
+
+/** The sections a scan would compare, read before the scan so the person can check the paper is the right one. */
+export async function getManuscriptOutline(source: { file: File } | { docUrl: string }): Promise<ManuscriptOutline> {
+  const form = new FormData();
+  if ('file' in source) form.append('file', source.file); else form.append('doc_url', source.docUrl);
+  const resp = await fetch(`${API_BASE_URL}/api/manuscripts/outline`, { method: 'POST', headers: await authHeaders(), body: form });
+  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  return resp.json();
+}
+
+/** A public Google Doc as a Word file, so a link behaves exactly like an uploaded document. */
+export async function downloadGoogleDoc(docUrl: string): Promise<File> {
+  const form = new FormData();
+  form.append('doc_url', docUrl);
+  const resp = await fetch(`${API_BASE_URL}/api/manuscripts/google-docx`, { method: 'POST', headers: await authHeaders(), body: form });
+  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  const name = decodeURIComponent(resp.headers.get('X-Doc-Filename') || 'Google Doc.docx');
+  return new File([await resp.blob()], name, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+export interface PaymentProofBody {
+  pymt_txn_id: string; method: string; reference_number: string; payer_name: string; file_name: string; content_type: string; proof_data: string;
+}
+
+export async function uploadPaymentProof(userId: string, body: PaymentProofBody): Promise<{ status: string; proof_id: string }> {
+  const resp = await fetch(`${API_BASE_URL}/api/credits/proof`, {
+    method: 'POST',
+    headers: creditHeaders(userId, await authHeaders()),
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  return resp.json();
+}
+
 export async function getCreditHistory(userId: string, limit = 50): Promise<CreditHistoryResponse> {
   const resp = await fetch(`${API_BASE_URL}/api/credits/history?limit=${limit}`, {
     headers: creditHeaders(userId, await authHeaders()),

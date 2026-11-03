@@ -16,6 +16,7 @@ import { UploadScreen } from './screens/UploadScreen';
 import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
+import { PAYMENT_EVENT } from './lib/paymentProof';
 import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
 
 export default function App() {
@@ -155,6 +156,16 @@ export default function App() {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 8000);
   }
+
+  // Paying (by card or by uploading proof) lands in the bell and pops up like a finished scan does.
+  useEffect(() => {
+    const onPayment = (event: Event) => {
+      const { credits, amount } = (event as CustomEvent<{ credits: number; amount: number }>).detail;
+      pushNotification("success", "Payment received", `₱${amount.toLocaleString("en-PH")} paid. ${credits} scan credit${credits === 1 ? "" : "s"} added to your balance.`);
+    };
+    window.addEventListener(PAYMENT_EVENT, onPayment);
+    return () => window.removeEventListener(PAYMENT_EVENT, onPayment);
+  }, []);
 
   function markNotificationsRead() {
     setNotifications(prev => {

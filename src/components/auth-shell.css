@@ -89,7 +89,7 @@
   width: 100%;
   height: 52px;
   padding: 0 18px;
-  border-radius: 999px;
+  border-radius: 14px;
   border: 1.5px solid transparent;
   background: #f1f2ff;
   font: inherit;
@@ -154,9 +154,9 @@
   justify-content: center;
   gap: 10px;
   width: 100%;
-  height: 54px;
+  height: 52px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 14px;
   background: #1a1fcc;
   color: #ffffff;
   font: inherit;
@@ -186,8 +186,8 @@
   gap: 12px;
   width: 100%;
   height: 52px;
-  border-radius: 999px;
-  border: 1px solid #dcdff3;
+  border-radius: 14px;
+  border: 1.5px solid #dcdff3;
   background: #ffffff;
   color: #0b0f3d;
   font: inherit;
@@ -246,16 +246,15 @@
 
 .auth-actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px 22px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
 }
 
 .auth-primary--auto {
   position: relative;
   overflow: hidden;
-  width: auto;
-  min-width: 200px;
+  width: 100%;
   padding: 0 30px;
 }
 
@@ -278,11 +277,16 @@
 }
 
 .auth-link--cta {
-  display: inline-flex;
-  align-items: center;
-  height: 56px;
-  padding: 0 10px;
-  font-size: 15.5px;
+  display: inline;
+  padding: 0 2px;
+  font-size: 15px;
+}
+
+.auth-switch {
+  margin: 0;
+  text-align: center;
+  font-size: 15px;
+  color: #4b5275;
 }
 
 .auth-focus:focus-visible {

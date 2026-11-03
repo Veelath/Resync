@@ -13,7 +13,6 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const canSubmit = !!email && !!pw && !loading;
 
   // Forgot password modal state
   const [forgotModal, setForgotModal] = useState(false);
@@ -42,10 +41,15 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (loading) return;
+    // Read the fields themselves: a browser that auto-fills them does not always tell React.
+    const form = new FormData(e.currentTarget as HTMLFormElement);
+    const emailValue = String(form.get("email") ?? email).trim();
+    const passwordValue = String(form.get("password") ?? pw);
+    if (!emailValue || !passwordValue) { setError("Enter your email and password."); return; }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+    const { error } = await supabase.auth.signInWithPassword({ email: emailValue, password: passwordValue });
     setLoading(false);
     if (error) {
       setError(error.message);
@@ -60,7 +64,7 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
         {/* Header */}
         <div className="auth-rise mb-7" style={{ ['--rise-delay' as string]: '0.05s' }}>
           <p className="auth-eyebrow mb-3">Academic portal</p>
-          <h1 className="text-[40px] lg:text-[48px] font-extrabold text-[#0b0f3d] tracking-[-0.035em] leading-[1.05] mb-3">Welcome back</h1>
+          <h1 className="text-[40px] lg:text-[48px] font-extrabold text-[#0b0f3d] tracking-[-0.035em] leading-[1.05] mb-3">Sign in</h1>
           <p className="text-[16px] text-[#4b5275] leading-relaxed">Sign in to review your research manuscript and coherence reports.</p>
         </div>
 
@@ -75,6 +79,7 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
               </span>
               <input
                 id="email-input"
+                name="email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -94,6 +99,7 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
               </span>
               <input
                 id="password-input"
+                name="password"
                 type={showPw ? "text" : "password"}
                 value={pw}
                 onChange={e => setPw(e.target.value)}
@@ -128,10 +134,10 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
           </div>
 
           <div className="auth-actions">
-            <button type="submit" disabled={!canSubmit} className="auth-primary auth-primary--auto auth-primary--cta auth-focus">
-              {loading ? <><Spinner /> Signing in…</> : <>Sign in to ReSync<ArrowRight /></>}
+            <button type="submit" disabled={loading} className="auth-primary auth-primary--cta auth-focus">
+              {loading ? <><Spinner /> Signing in…</> : <>Sign in<ArrowRight /></>}
             </button>
-            <button type="button" onClick={() => onNavigate("signup")} className="auth-link auth-link--cta auth-focus">Sign up free</button>
+            <p className="auth-switch">Don't have an account? <button type="button" onClick={() => onNavigate("signup")} className="auth-link auth-link--cta auth-focus">Sign up free</button></p>
           </div>
         </form>
 

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { createCreditCheckout, confirmCreditCheckout } from '../../services/api';
 import { CREDIT_PACKAGES } from '../dashboard/helpers';
 import { PaymentModal } from '../dashboard/PaymentModal';
+import { announcePayment, payWithProof, PROOF_METHOD_LABEL, type ProofPayment } from '../../lib/paymentProof';
 
 export function ResultsCheckout({ userId, balance, onBalance, onClose }: { userId: string; balance: number | null; onBalance: (value: number) => void; onClose: () => void }) {
   const [step, setStep] = useState<'package' | 'payment' | 'processing' | 'success'>('package');
@@ -17,6 +18,7 @@ export function ResultsCheckout({ userId, balance, onBalance, onClose }: { userI
   const [cardName, setCardName] = useState('Thesis Author');
   const [error, setError] = useState('');
   const [purchasedCredits, setPurchasedCredits] = useState(0);
+  const [receiptMethod, setReceiptMethod] = useState<string | undefined>(undefined);
 
   async function handlePaymentSubmit(event: FormEvent) {
     event.preventDefault();
@@ -37,14 +39,35 @@ export function ResultsCheckout({ userId, balance, onBalance, onClose }: { userI
       setReceiptLast4(digits.slice(-4));
       setReceiptAmount(checkout.amount);
       setPurchasedCredits(selectedPkg.credits);
+      setReceiptMethod(undefined);
       setStep('success');
+      announcePayment(selectedPkg.credits, checkout.amount);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Checkout failed. Try again.');
       setStep('payment');
     }
   }
 
-  return <PaymentModal creditBalance={balance} creditModalStep={step} setCreditModalStep={setStep} selectedPkgId={packageId} setSelectedPkgId={setPackageId}
+  async function handleProofSubmit(proof: ProofPayment) {
+    setError('');
+    setStep('processing');
+    try {
+      const { checkout, balance: newBalance } = await payWithProof(userId, selectedPkg, proof);
+      onBalance(newBalance);
+      setReceiptRef(checkout.checkout_reference);
+      setReceiptTime(new Date());
+      setReceiptAmount(checkout.amount);
+      setPurchasedCredits(selectedPkg.credits);
+      setReceiptMethod(`${PROOF_METHOD_LABEL[proof.method]} · proof uploaded`);
+      setStep('success');
+      announcePayment(selectedPkg.credits, checkout.amount);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'We could not save your proof of payment. Try again.');
+      setStep('payment');
+    }
+  }
+
+  return <PaymentModal receiptMethod={receiptMethod} handleProofSubmit={handleProofSubmit} creditBalance={balance} creditModalStep={step} setCreditModalStep={setStep} selectedPkgId={packageId} setSelectedPkgId={setPackageId}
     selectedPkg={selectedPkg} receiptRef={receiptRef} receiptTime={receiptTime} receiptLast4={receiptLast4} receiptAmount={receiptAmount}
     cardNumber={cardNumber} setCardNumber={setCardNumber} cardExpiry={cardExpiry} setCardExpiry={setCardExpiry} cardCvc={cardCvc} setCardCvc={setCardCvc}
     cardName={cardName} setCardName={setCardName} paymentError={error} setPaymentError={setError} purchasedCredits={purchasedCredits}

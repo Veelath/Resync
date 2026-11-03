@@ -1,4 +1,5 @@
-import { CreditsPanel } from './CreditsPanel';
+import '../upload-flow.css';
+import { CreditsPanel, type CreditActivity } from './CreditsPanel';
 import { ChangePasswordCard } from './ChangePasswordCard';
 import { DashboardHeader } from './DashboardHeader';
 import type { AppNotification, NotificationPrefs } from '../../components/ScanNotifications';
@@ -14,6 +15,7 @@ import guidanceArtwork from "@/assets/guidance-reference.webp";
 import { Info } from "lucide-react";
 import type React from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { announcePayment, payWithProof, PROOF_METHOD_LABEL, type ProofPayment } from '../../lib/paymentProof';
 import { getCreditBalance, getCreditHistory, createCreditCheckout, confirmCreditCheckout } from '../../services/api';
 
 export function DashboardScreen({ onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport, notificationPrefs = { alerts: true, sound: true }, onNotificationPrefsChange }: { notificationPrefs?: NotificationPrefs; onNotificationPrefsChange?: (prefs: NotificationPrefs) => void; onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: () => void }) {
@@ -88,6 +90,8 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
 
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditsUsed, setCreditsUsed] = useState<number | null>(null);
+  const [settingsSection, setSettingsSection] = useState<string>("settings-profile");
+  const [creditHistory, setCreditHistory] = useState<CreditActivity[]>([]);
   const [creditsLoading, setCreditsLoading] = useState(false);
 
   useEffect(() => {
@@ -102,6 +106,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
         .filter(e => e.kind === 'debit')
         .reduce((a, e) => a + Math.abs(e.delta), 0);
       setCreditsUsed(used);
+      setCreditHistory(hist.entries);
     }).catch((e) => {
       console.error('credits fetch failed:', e);
       setCreditBalance(null);
@@ -127,6 +132,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
   const [cardName, setCardName] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [purchasedCredits, setPurchasedCredits] = useState<number>(0);
+  const [receiptMethod, setReceiptMethod] = useState<string | undefined>(undefined);
 
   function closeBuyCreditsModal() {
     setShowBuyCreditsModal(false);
@@ -212,7 +218,30 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
     }
 
     setPurchasedCredits(selectedPkg.credits);
+    setReceiptMethod(undefined);
     setCreditModalStep("success");
+    announcePayment(selectedPkg.credits, selectedPkg.price);
+  }
+
+  async function handleProofSubmit(proof: ProofPayment) {
+    setPaymentError("");
+    if (!session?.user?.id) { setPaymentError("Sign in to upload a proof of payment."); return; }
+    setCreditModalStep("processing");
+    try {
+      const { checkout, balance } = await payWithProof(session.user.id, selectedPkg, proof);
+      setCreditBalance(balance);
+      setReceiptRef(checkout.checkout_reference);
+      setReceiptTime(new Date());
+      setReceiptAmount(checkout.amount);
+      setReceiptPkgId(selectedPkg.id);
+      setPurchasedCredits(selectedPkg.credits);
+      setReceiptMethod(`${PROOF_METHOD_LABEL[proof.method]} · proof uploaded`);
+      setCreditModalStep("success");
+      announcePayment(selectedPkg.credits, checkout.amount);
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "We could not save your proof of payment. Try again.");
+      setCreditModalStep("payment");
+    }
   }
 
   // Settings: Password change states
@@ -275,74 +304,94 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
       <DashboardHeader activeNav={activeNav} setActiveNav={setActiveNav} onNavigate={onNavigate} creditsLoading={creditsLoading} creditBalance={creditBalance} profile={profile} profileMenuOpen={profileMenuOpen} setProfileMenuOpen={setProfileMenuOpen} profileMenuRef={profileMenuRef} onLogout={onLogout} notifications={notifications} onMarkNotificationsRead={onMarkNotificationsRead} onOpenReport={onOpenReport} notifOpen={notifOpen} setNotifOpen={setNotifOpen} notifRef={notifRef} unreadCount={unreadCount} avatarUrl={avatarUrl} />
 
       {activeNav === "Settings" ? (
-        <main className="w-full max-w-6xl mx-auto px-6 md:px-10 py-10 space-y-7">
-          <div>
-            <p className="text-[10px] mono font-bold uppercase tracking-widest mb-1" style={{ color: B }}>Account</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Settings</h2>
-            <p className="text-sm text-gray-500 mt-1.5">Manage your account credentials, security, and preferences.</p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 flex flex-col" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-              <div className="flex items-start gap-4 pb-5 mb-6 border-b border-gray-100">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-base font-bold text-gray-900">Profile information</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">Update your personal contact details and display name.</p>
-                </div>
-              </div>
-              <div className="mt-auto flex items-center justify-between gap-3 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
-                <span className="text-sm font-semibold text-gray-700 truncate">{profile.fullName}</span>
-                <button onClick={() => setActiveNav("Academic Profile")} className="px-4 py-2 rounded-xl text-xs font-bold border transition-colors hover:bg-gray-50 shrink-0" style={{ borderColor: `${B}30`, color: B }}>Open Profile →</button>
-              </div>
+        <main className="uf" style={{ minHeight: "auto", background: "transparent" }}>
+          <div className="uf-wrap" style={{ paddingTop: 28 }}>
+            <div>
+              <div className="uf-eb">Account</div>
+              <h1 className="uf-h1">Settings</h1>
+              <p className="uf-sub">Manage your account credentials, security and preferences.</p>
             </div>
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 flex flex-col" style={{ boxShadow: "0 4px 24px rgba(26,31,204,.05)" }}>
-              <div className="flex items-start gap-4 pb-5 mb-6 border-b border-gray-100">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: BL, color: B }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-base font-bold text-gray-900">Notifications</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">Choose what this browser shows when a scan finishes.</p>
-                </div>
-              </div>
-              <div className="mt-auto space-y-3">
-                {([
-                  ["alerts", "Scan alerts", "A pop-up and a bell notification when your report is ready."],
-                  ["sound", "Completion sound", "A short chime when a scan finishes."],
-                ] as const).map(([key, label, hint]) => {
-                  const on = key === "sound" ? notificationPrefs.alerts && notificationPrefs.sound : notificationPrefs.alerts;
-                  const disabled = key === "sound" && !notificationPrefs.alerts;
-                  return <div key={key} className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-gray-50/70 border border-gray-100">
-                    <span className="min-w-0">
-                      <span id={`notif-${key}`} className="block text-sm font-semibold text-gray-700">{label}</span>
-                      <span className="block text-xs text-gray-500 mt-0.5">{hint}</span>
-                    </span>
-                    <button type="button" role="switch" aria-checked={on} aria-labelledby={`notif-${key}`} disabled={disabled}
-                      onClick={() => onNotificationPrefsChange?.({ ...notificationPrefs, [key]: !notificationPrefs[key] })}
-                      className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1fcc] focus-visible:ring-offset-2"
-                      style={{ background: on ? B : "#d1d5db" }}>
-                      <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform" style={{ transform: on ? "translateX(20px)" : "none" }} />
-                      <span className="sr-only">{on ? "On" : "Off"}</span>
-                    </button>
-                  </div>;
-                })}
-                <p className="text-xs text-gray-400">Phone alerts are managed in the ReSync mobile app.</p>
-              </div>
-            </div>
-          </div>
 
-          {/* Change Password Card */}
-          <ChangePasswordCard pwSuccessMsg={pwSuccessMsg} pwErrorMsg={pwErrorMsg} currentPw={currentPw} setCurrentPw={setCurrentPw} newPw={newPw} setNewPw={setNewPw} confirmPw={confirmPw} setConfirmPw={setConfirmPw} showCurrentPw={showCurrentPw} setShowCurrentPw={setShowCurrentPw} showNewPw={showNewPw} setShowNewPw={setShowNewPw} showConfirmPw={showConfirmPw} setShowConfirmPw={setShowConfirmPw} pwLoading={pwLoading} handleUpdatePassword={handleUpdatePassword} />
+            <div className="uf-settings">
+              <nav className="uf-card uf-snav" aria-label="Settings sections">
+                {([
+                  ["settings-profile", "Profile", "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"],
+                  ["settings-notifications", "Notifications", "M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"],
+                  ["settings-password", "Password", "M5 11h14v10H5zM8 11V7a4 4 0 018 0v4"],
+                  ["credits", "Credits", "M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v10M9 10h4.5a1.5 1.5 0 010 3H9.5a1.5 1.5 0 000 3H15"],
+                ] as const).map(([id, label, icon]) => (
+                  <button key={id} type="button" className={`uf-snav-item ${settingsSection === id ? "is-on" : ""}`}
+                    onClick={() => {
+                      if (id === "credits") { setActiveNav("Usage / Credits"); return; }
+                      setSettingsSection(id);
+                      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[18px] h-[18px]" aria-hidden="true"><path d={icon} /></svg>
+                    {label}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="uf-col" style={{ gap: 20 }}>
+                <div className="uf-two">
+                  <section id="settings-profile" className="uf-card uf-block">
+                    <header className="uf-block-head">
+                      <span className="uf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" /></svg></span>
+                      <div><b>Profile information</b><div>Update your personal contact details and display name.</div></div>
+                    </header>
+                    <div className="uf-row-box">
+                      <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                        <span className="uf-av">{(profile.fullName || "U").split(/\s+/).map(part => part[0]).join("").slice(0, 2).toLowerCase()}</span>
+                        <span className="truncate">{profile.fullName}</span>
+                      </span>
+                      <button type="button" onClick={() => setActiveNav("Academic Profile")} className="uf-btn is-ghost is-sm">Open profile →</button>
+                    </div>
+                  </section>
+
+                  <section id="settings-notifications" className="uf-card uf-block">
+                    <header className="uf-block-head">
+                      <span className="uf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg></span>
+                      <div><b>Notifications</b><div>Choose what this browser shows when a scan finishes or a payment goes through.</div></div>
+                    </header>
+                    {([
+                      ["alerts", "Scan alerts", "A pop-up and a bell notification for finished scans and payments."],
+                      ["sound", "Completion sound", "A short chime when a scan finishes."],
+                    ] as const).map(([key, label, hint]) => {
+                      const on = key === "sound" ? notificationPrefs.alerts && notificationPrefs.sound : notificationPrefs.alerts;
+                      const disabled = key === "sound" && !notificationPrefs.alerts;
+                      return (
+                        <div key={key} className="uf-row-box">
+                          <span style={{ minWidth: 0 }}>
+                            <span id={`notif-${key}`} style={{ display: "block", fontWeight: 700, fontSize: 14 }}>{label}</span>
+                            <span style={{ display: "block", fontSize: 12.5, color: "#6b6890", marginTop: 2 }}>{hint}</span>
+                          </span>
+                          <button type="button" role="switch" aria-checked={on} aria-labelledby={`notif-${key}`} disabled={disabled}
+                            onClick={() => onNotificationPrefsChange?.({ ...notificationPrefs, [key]: !notificationPrefs[key] })}
+                            className="uf-switch" data-on={on}>
+                            <span className="uf-switch-knob" />
+                            <span className="sr-only">{on ? "On" : "Off"}</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                    <p style={{ margin: 0, fontSize: 12.5, color: "#7d7b9e" }}>Phone alerts are managed in the ReSync mobile app.</p>
+                  </section>
+                </div>
+
+                <div id="settings-password">
+                  <ChangePasswordCard pwSuccessMsg={pwSuccessMsg} pwErrorMsg={pwErrorMsg} currentPw={currentPw} setCurrentPw={setCurrentPw} newPw={newPw} setNewPw={setNewPw} confirmPw={confirmPw} setConfirmPw={setConfirmPw} showCurrentPw={showCurrentPw} setShowCurrentPw={setShowCurrentPw} showNewPw={showNewPw} setShowNewPw={setShowNewPw} showConfirmPw={showConfirmPw} setShowConfirmPw={setShowConfirmPw} pwLoading={pwLoading} handleUpdatePassword={handleUpdatePassword} />
+                </div>
+              </div>
+            </div>
+          </div>
         </main>
       ) : activeNav === "Usage / Credits" ? (
-        <CreditsPanel creditsLoading={creditsLoading} creditBalance={creditBalance} creditsUsed={creditsUsed} setPaymentError={setPaymentError} setCreditModalStep={setCreditModalStep} cardName={cardName} setCardName={setCardName} profile={profile} setShowBuyCreditsModal={setShowBuyCreditsModal} onNavigate={onNavigate} />
+        <CreditsPanel creditsLoading={creditsLoading} creditBalance={creditBalance} creditsUsed={creditsUsed} history={creditHistory} setPaymentError={setPaymentError} setCreditModalStep={setCreditModalStep} cardName={cardName} setCardName={setCardName} profile={profile} setShowBuyCreditsModal={setShowBuyCreditsModal} onNavigate={onNavigate} />
       ) : activeNav === "Academic Profile" ? (
         /* ═══════════════════════════════════════════════════
            ACADEMIC PROFILE VIEW (SIMPLIFIED)
         ═══════════════════════════════════════════════════ */
-        <AcademicProfileView setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
+        <AcademicProfileView userId={session?.user?.id} credits={creditBalance} scansRun={creditsUsed} memberSince={session?.user?.created_at} setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
       ) : (<>
 <DashboardHome onNavigate={onNavigate} session={session} greeting={greeting} />
         <BackToTop />
@@ -350,7 +399,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
 
       {/* ── Mock Payment Modal ── */}
       {showBuyCreditsModal && (
-        <PaymentModal creditBalance={creditBalance} creditModalStep={creditModalStep} setCreditModalStep={setCreditModalStep} selectedPkgId={selectedPkgId} setSelectedPkgId={setSelectedPkgId} selectedPkg={selectedPkg} receiptRef={receiptRef} receiptTime={receiptTime} receiptLast4={receiptLast4} receiptAmount={receiptAmount} cardNumber={cardNumber} setCardNumber={setCardNumber} cardExpiry={cardExpiry} setCardExpiry={setCardExpiry} cardCvc={cardCvc} setCardCvc={setCardCvc} cardName={cardName} setCardName={setCardName} paymentError={paymentError} setPaymentError={setPaymentError} purchasedCredits={purchasedCredits} closeBuyCreditsModal={closeBuyCreditsModal} handlePaymentSubmit={handlePaymentSubmit} />
+        <PaymentModal receiptMethod={receiptMethod} handleProofSubmit={handleProofSubmit} creditBalance={creditBalance} creditModalStep={creditModalStep} setCreditModalStep={setCreditModalStep} selectedPkgId={selectedPkgId} setSelectedPkgId={setSelectedPkgId} selectedPkg={selectedPkg} receiptRef={receiptRef} receiptTime={receiptTime} receiptLast4={receiptLast4} receiptAmount={receiptAmount} cardNumber={cardNumber} setCardNumber={setCardNumber} cardExpiry={cardExpiry} setCardExpiry={setCardExpiry} cardCvc={cardCvc} setCardCvc={setCardCvc} cardName={cardName} setCardName={setCardName} paymentError={paymentError} setPaymentError={setPaymentError} purchasedCredits={purchasedCredits} closeBuyCreditsModal={closeBuyCreditsModal} handlePaymentSubmit={handlePaymentSubmit} />
       )}
     </div>
   );

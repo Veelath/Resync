@@ -8,7 +8,7 @@ import spacyLogo from '@/assets/technology/spacy.png';
 import geminiLogo from '@/assets/technology/gemini.svg';
 import './home-landing.css';
 
-const nav = [{ label: 'Overview', href: '#section-overview' }, { label: 'Capabilities', href: '#section-capabilities' }, { label: 'About', href: '#section-about' }];
+const nav = [{ label: 'Overview', href: '#section-overview' }, { label: 'About', href: '#section-about' }, { label: 'Capabilities', href: '#section-capabilities' }];
 const checks = [
   ['Section Flow', 'Does each section logically connect with the one before it?'],
   ['Context Alignment', 'Does the text stay aligned with the purpose the paper sets up?'],

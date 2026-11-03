@@ -1,8 +1,65 @@
 import { CREDIT_PACKAGES } from './helpers';
 import { B, BH } from '../../lib/brand';
-import type { Dispatch, FormEvent, RefObject, SetStateAction } from 'react';
+import { useState, type Dispatch, type FormEvent, type RefObject, type SetStateAction } from 'react';
+import { PROOF_METHOD_LABEL, PROOF_MAX_BYTES, validateProof, type ProofMethod, type ProofPayment } from '../../lib/paymentProof';
 
-export function PaymentModal({ creditBalance, creditModalStep, setCreditModalStep, selectedPkgId, setSelectedPkgId, selectedPkg, receiptRef, receiptTime, receiptLast4, receiptAmount, cardNumber, setCardNumber, cardExpiry, setCardExpiry, cardCvc, setCardCvc, cardName, setCardName, paymentError, setPaymentError, purchasedCredits, closeBuyCreditsModal, handlePaymentSubmit, returnLabel = 'Return to Dashboard' }: { creditBalance: number | null; creditModalStep: "package" | "payment" | "processing" | "success"; setCreditModalStep: Dispatch<SetStateAction<"package" | "payment" | "processing" | "success">>; selectedPkgId: string; setSelectedPkgId: Dispatch<SetStateAction<string>>; selectedPkg: (typeof CREDIT_PACKAGES)[number]; receiptRef: string | null; receiptTime: Date | null; receiptLast4: string; receiptAmount: number; cardNumber: string; setCardNumber: Dispatch<SetStateAction<string>>; cardExpiry: string; setCardExpiry: Dispatch<SetStateAction<string>>; cardCvc: string; setCardCvc: Dispatch<SetStateAction<string>>; cardName: string; setCardName: Dispatch<SetStateAction<string>>; paymentError: string; setPaymentError: Dispatch<SetStateAction<string>>; purchasedCredits: number; closeBuyCreditsModal: () => void; handlePaymentSubmit: (e: FormEvent) => Promise<void>; returnLabel?: string }) {
+// Where the demo transfer goes. Nothing here is a real account: the whole checkout is a simulated sandbox.
+const DEMO_ACCOUNTS: Record<ProofMethod, { to: string; detail: string }> = {
+  gcash: { to: 'Resync Demo · 0900 000 0000', detail: 'Send the exact amount, then screenshot the GCash receipt.' },
+  bank_transfer: { to: 'Resync Demo · Bank 0000-0000-00', detail: 'Transfer the exact amount, then photograph or screenshot the deposit slip.' },
+};
+
+function ProofForm({ method, amount, credits, error, setError, onBack, onSubmit }: { method: ProofMethod; amount: number; credits: number; error: string; setError: (message: string) => void; onBack: () => void; onSubmit: (proof: ProofPayment) => Promise<void> }) {
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [payerName, setPayerName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const account = DEMO_ACCOUNTS[method];
+  const field = 'w-full h-10 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:border-blue-600';
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const problem = validateProof(method, referenceNumber, payerName, file);
+    if (problem || !file) { setError(problem ?? 'Upload a screenshot or PDF of your receipt.'); return; }
+    setError('');
+    void onSubmit({ method, referenceNumber, payerName, file });
+  }
+  return (
+    <form onSubmit={submit} className="p-6 pt-4 space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <button type="button" onClick={onBack} className="text-xs font-semibold text-gray-500 hover:text-gray-900 cursor-pointer">← Back to packages</button>
+        <span className="text-xs font-bold text-gray-900">{credits} Credits — ₱{amount.toLocaleString('en-PH')}</span>
+      </div>
+      {error && <div role="alert" className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">{error}</div>}
+      <ol className="space-y-2 text-xs text-gray-600">
+        <li><b className="text-gray-900">1. Pay ₱{amount.toLocaleString('en-PH')}</b> by {PROOF_METHOD_LABEL[method]} to <b className="text-gray-900">{account.to}</b>. {account.detail}</li>
+        <li><b className="text-gray-900">2. Fill in the details</b> from your receipt, then <b className="text-gray-900">3. upload it</b> below.</li>
+      </ol>
+      <div className="space-y-1">
+        <label htmlFor="proof-payer" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Name on the account you paid from</label>
+        <input id="proof-payer" value={payerName} onChange={event => setPayerName(event.target.value)} placeholder="Juan Dela Cruz" className={field} />
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="proof-reference" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Reference number</label>
+        <input id="proof-reference" value={referenceNumber} onChange={event => setReferenceNumber(event.target.value)} placeholder="e.g. 1234 567 890" maxLength={40} className={`${field} font-mono`} />
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="proof-file" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Proof of payment</label>
+        <label htmlFor="proof-file" className="flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 bg-gray-50 px-4 py-5 text-center cursor-pointer">
+          <span className="text-xs font-semibold text-gray-700">{file ? file.name : 'Choose a screenshot or PDF'}</span>
+          <span className="text-[11px] text-gray-400">{file ? `${(file.size / 1024).toFixed(0)} KB` : `PNG, JPEG, WebP or PDF · up to ${PROOF_MAX_BYTES / 1024 / 1024} MB`}</span>
+        </label>
+        <input id="proof-file" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" className="sr-only"
+          onChange={event => { setFile(event.target.files?.[0] ?? null); setError(''); }} />
+      </div>
+      <button type="submit" className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white shadow-sm hover:opacity-90 cursor-pointer" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
+        Submit proof and add {credits} credits (Simulated)
+      </button>
+    </form>
+  );
+}
+
+export function PaymentModal({ receiptMethod, handleProofSubmit, creditBalance, creditModalStep, setCreditModalStep, selectedPkgId, setSelectedPkgId, selectedPkg, receiptRef, receiptTime, receiptLast4, receiptAmount, cardNumber, setCardNumber, cardExpiry, setCardExpiry, cardCvc, setCardCvc, cardName, setCardName, paymentError, setPaymentError, purchasedCredits, closeBuyCreditsModal, handlePaymentSubmit, returnLabel = 'Return to Dashboard' }: { receiptMethod?: string; handleProofSubmit?: (proof: ProofPayment) => Promise<void>; creditBalance: number | null; creditModalStep: "package" | "payment" | "processing" | "success"; setCreditModalStep: Dispatch<SetStateAction<"package" | "payment" | "processing" | "success">>; selectedPkgId: string; setSelectedPkgId: Dispatch<SetStateAction<string>>; selectedPkg: (typeof CREDIT_PACKAGES)[number]; receiptRef: string | null; receiptTime: Date | null; receiptLast4: string; receiptAmount: number; cardNumber: string; setCardNumber: Dispatch<SetStateAction<string>>; cardExpiry: string; setCardExpiry: Dispatch<SetStateAction<string>>; cardCvc: string; setCardCvc: Dispatch<SetStateAction<string>>; cardName: string; setCardName: Dispatch<SetStateAction<string>>; paymentError: string; setPaymentError: Dispatch<SetStateAction<string>>; purchasedCredits: number; closeBuyCreditsModal: () => void; handlePaymentSubmit: (e: FormEvent) => Promise<void>; returnLabel?: string }) {
+  const [payMethod, setPayMethod] = useState<'card' | ProofMethod>('card');
+  const methods: ('card' | ProofMethod)[] = handleProofSubmit ? ['card', 'gcash', 'bank_transfer'] : ['card'];
   return (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
@@ -130,7 +187,21 @@ export function PaymentModal({ creditBalance, creditModalStep, setCreditModalSte
             )}
 
             {/* Step 2: Payment Details */}
-            {creditModalStep === "payment" && (
+            {creditModalStep === "payment" && methods.length > 1 && (
+              <div role="tablist" aria-label="Payment method" className="px-6 pt-5 flex gap-2">
+                {methods.map(method => (
+                  <button key={method} type="button" role="tab" aria-selected={payMethod === method} onClick={() => { setPayMethod(method); setPaymentError(""); }}
+                    className={`flex-1 rounded-xl border px-2 py-2 text-xs font-bold cursor-pointer transition-colors ${payMethod === method ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {method === 'card' ? 'Card' : PROOF_METHOD_LABEL[method]}
+                  </button>
+                ))}
+              </div>
+            )}
+            {creditModalStep === "payment" && payMethod !== 'card' && handleProofSubmit && (
+              <div key={payMethod}><ProofForm method={payMethod} amount={selectedPkg.price} credits={selectedPkg.credits} error={paymentError} setError={setPaymentError}
+                onBack={() => { setPaymentError(""); setCreditModalStep("package"); }} onSubmit={handleProofSubmit} /></div>
+            )}
+            {creditModalStep === "payment" && payMethod === 'card' && (
               <form onSubmit={handlePaymentSubmit} className="p-6 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                   <button
@@ -317,7 +388,7 @@ export function PaymentModal({ creditBalance, creditModalStep, setCreditModalSte
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500 font-sans text-[11px]">Payment Method</span>
-                    <span className="text-gray-800">Card •••• {receiptLast4 || "4242"}</span>
+                    <span className="text-gray-800">{receiptMethod ?? `Card •••• ${receiptLast4 || "4242"}`}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500 font-sans text-[11px]">Status</span>
