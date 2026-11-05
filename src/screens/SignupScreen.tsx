@@ -1,4 +1,4 @@
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
 import type React from 'react';
 import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
 import { AuthShell } from '../components/AuthShell';
@@ -6,7 +6,7 @@ import { PasswordRequirements, isPasswordValid } from '../components/PasswordReq
 import type { Screen } from '../lib/appTypes';
 import { B } from '../lib/brand';
 import { supabase } from '../lib/supabase';
-import { cleanNameInput, emailError, nameError } from '../lib/validation';
+import { cleanNameInput, emailError, mailDomainAccepts, nameError } from '../lib/validation';
 
 const MAIL_ICON = (
   <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3.5 7l8.5 6 8.5-6" /></svg>
@@ -61,7 +61,18 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   // A field shows its problem once it has been left, or after a submit attempt.
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const touch = (field: string) => setTouched(current => ({ ...current, [field]: true }));
-  const errors = { first: nameError(firstName, "First name"), middle: nameError(middleName, "Middle name", false), last: nameError(lastName, "Last name"), email: emailError(email) };
+  // Whether the part after the @ can receive mail at all (a made-up domain cannot).
+  const [domainBad, setDomainBad] = useState("");
+  useEffect(() => {
+    const value = email.trim().toLowerCase();
+    if (emailError(value)) { setDomainBad(""); return; }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      mailDomainAccepts(value).then(ok => { if (!cancelled) setDomainBad(ok ? "" : "This email domain does not exist or cannot receive email. Check the spelling."); });
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [email]);
+  const errors = { first: nameError(firstName, "First name"), middle: nameError(middleName, "Middle name", false), last: nameError(lastName, "Last name"), email: emailError(email) || domainBad };
   const shown = (field: keyof typeof errors) => touched[field] ? errors[field] : "";
   const canSubmit = !Object.values(errors).some(Boolean) && isPasswordValid(pw) && pw2 === pw && agreed && !loading;
 
@@ -115,7 +126,25 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     else onSignupSuccess?.();
   }
 
+  // Wrong or inactive address: go back to the form with everything still filled in, change the email, and a fresh code goes there.
+  function useDifferentEmail() {
+    setCodeStep(false);
+    setCode("");
+    setError("");
+    setNotice("");
+    setTouched(current => ({ ...current, email: true }));
+  }
+
+  const [resendWait, setResendWait] = useState(0);
+  useEffect(() => {
+    if (resendWait <= 0) return;
+    const timer = setTimeout(() => setResendWait(resendWait - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendWait]);
+
   async function resendCode() {
+    if (resendWait > 0) return;
+    setResendWait(45);
     setError("");
     const { error } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase() });
     if (error) setError(error.message);
@@ -144,7 +173,15 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
               <button type="submit" disabled={code.length < 6 || loading} className="auth-primary auth-focus" style={{ width: "auto", padding: "0 30px" }}>
                 {loading ? <><Spinner />Verifying…</> : "Verify and continue"}
               </button>
-              <button type="button" onClick={resendCode} className="auth-link auth-focus px-1">Send a new code</button>
+              <button type="button" onClick={resendCode} disabled={resendWait > 0} className="auth-link auth-focus px-1" style={resendWait > 0 ? { opacity: 0.55 } : undefined}>{resendWait > 0 ? `Send a new code (${resendWait}s)` : "Send a new code"}</button>
+            </div>
+            <div className="rounded-xl bg-[#f6f7ff] px-4 py-3 text-sm leading-relaxed text-[#4b5275]">
+              <p className="font-semibold text-[#0b0f3d]">Didn’t get the code?</p>
+              <ul className="mt-1 list-disc pl-5">
+                <li>Check your Spam or Junk folder, and wait a minute.</li>
+                <li>Make sure <strong>{email.trim().toLowerCase()}</strong> is spelled right and the mailbox is active.</li>
+              </ul>
+              <button type="button" onClick={useDifferentEmail} className="auth-link auth-focus mt-2 px-0">Use a different email address</button>
             </div>
           </form>
         ) : (<>

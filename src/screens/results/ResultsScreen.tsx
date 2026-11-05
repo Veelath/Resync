@@ -10,6 +10,7 @@ import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/samp
 import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
 import { ResultsScorePanel } from './ResultsScorePanel';
+import { ReportPrint } from './ReportPrint';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
@@ -60,7 +61,17 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     loadSourceFile(scanId).then(file => { if (!cancelled) setStoredFile(file); });
     return () => { cancelled = true; };
   }, [scanId, sourceFile, isSample]);
-  const docxFile = !isSample && !docxFailed ? [sourceFile, storedFile].find(file => file && /\.docx$/i.test(file.name)) ?? null : null;
+  // The sample report is a real Word file too, so it looks exactly like a student's own report: pages, highlights and all.
+  const [sampleFile, setSampleFile] = useState<File | null>(null);
+  useEffect(() => {
+    if (!isSample) { setSampleFile(null); return; }
+    let cancelled = false;
+    fetch('/sample-manuscript.docx').then(response => response.ok ? response.blob() : Promise.reject(new Error('missing')))
+      .then(blob => { if (!cancelled) setSampleFile(new File([blob], 'sample-manuscript.docx')); })
+      .catch(() => { if (!cancelled) setSampleFile(null); });
+    return () => { cancelled = true; };
+  }, [isSample]);
+  const docxFile = docxFailed ? null : isSample ? sampleFile : [sourceFile, storedFile].find(file => file && /\.docx$/i.test(file.name)) ?? null;
 
   useEffect(() => {
     if (!isGoogleDoc) { setManuscriptText(null); setManuscriptLoading(false); return; }
@@ -108,7 +119,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     {unlockError && <p role="alert" className="text-sm text-[#9f1239]">{unlockError} {balance === 0 ? 'Buy credits to continue.' : 'Try again.'}</p>}
   </div>;
 
-  const displayTitle = isSample ? 'Guided Reading Outcomes' : usableTitle(result.manuscript_title)
+  const displayTitle = isSample ? SAMPLE_REPORT.manuscript_title : usableTitle(result.manuscript_title)
     || usableTitle(extractDisplayTitle(manuscriptText))
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
@@ -213,20 +224,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     {placementMessage && <div role="status" className="fixed top-16 right-4 z-50 max-w-sm rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">{placementMessage}</div>}
     {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
-    <div className="hidden print:block p-8 bg-white space-y-4">
-      <h1 className="text-2xl font-bold">ReSync Manuscript Coherence Report</h1>
-      <p>{displayTitle}. {Math.round(result.overall_coherence_score)} out of 100. {displayBand}.</p>
-      <ResultsScorePanel result={result} />
-      <h2 className="font-bold">Recommendations</h2>
-      {result.recommendations.map(item => <p key={item.recommendation_id}>{item.original_sentence && `${plainText(item.original_sentence)} → `}{plainText(item.recommended_revision)}</p>)}
-      <h2 className="font-bold">Citations</h2>
-      {citations.map(citation => <p key={citation.id}>{citation.ref} {citation.url}</p>)}
-    </div>
+    <ReportPrint result={result} title={displayTitle} items={recommendations} citations={citations} locked={locked} lockedOrders={lockedOrders} />
     {/* The Word copy already starts with the paper's own title, so the heading would only repeat it. */}
-    {!docxFile && <header className="mx-auto w-full max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:max-w-none lg:shrink-0 lg:px-5">
+    {!docxFile && <header className="print:hidden mx-auto w-full max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:max-w-none lg:shrink-0 lg:px-5">
       <h1 className="max-w-4xl text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl" style={{ fontFamily: 'Source Serif 4, Georgia, serif' }}>{displayTitle}</h1>
     </header>}
-    <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:block print:h-auto print:overflow-visible">
+    <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
           {docxFile ? <><DocxManuscript file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText

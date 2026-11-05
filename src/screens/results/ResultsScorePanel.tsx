@@ -5,7 +5,7 @@ import { PartTooltip, formatPercent } from './PartTooltip';
 import type { Placement } from '../../lib/placement';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
-const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
+export const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
   { name: 'context_alignment', key: 'objectives_alignment', label: 'Context Alignment', color: categoryColors.objectives.color, description: 'How well the text stays aligned with the purpose and context the paper sets up.' },
   { name: 'operational_alignment', key: 'methodology_fit', label: 'Operational Alignment', color: categoryColors.methodology.color, description: 'How well how the work was done matches the rest of the paper.' },
   { name: 'logical_support', key: 'claim_support', label: 'Logical Support', color: categoryColors.claims.color, description: 'How well statements are backed up by the surrounding text.' },
@@ -16,7 +16,7 @@ const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color
 const RING_QUARTER = 21.5;
 
 // Reports saved before the traced breakdown only have raw averages: show them, without issue counts.
-function breakdownOf(result: V7ScanResponse): DimensionBreakdown {
+export function breakdownOf(result: V7ScanResponse): DimensionBreakdown {
   const saved = result.dimension_breakdown ?? result.score_breakdown.dimension_breakdown;
   if (saved) return saved;
   const legacy = {} as DimensionBreakdown;

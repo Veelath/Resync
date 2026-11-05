@@ -1,0 +1,1772 @@
+{
+ "access": {
+  "unlocked": true,
+  "unlock_cost": 1,
+  "locked_counts": {
+   "sections": 0,
+   "recommendations": 0,
+   "citations": 0
+  }
+ },
+ "status": "completed",
+ "doc_url": "resync-capstone-proposal.docx",
+ "user_id": "22222222-2222-4222-8222-222222222222",
+ "citations": [
+  {
+   "citation_status": "bot_wall",
+   "citation_year_parsed": 2025,
+   "citation_primary_link": "https://www.researchgate.net/publication/389436171_CEBUANER_A_New_Baseline_Cebuano_Named_Entity_Recognition_Model",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Beatrice, M., Pilar, E., Ellyza, O., & Abisado, M",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": false,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Beatrice, M., Pilar, E., Ellyza, O., & Abisado, M. (2025). CEBUANER: A new baseline Cebuano named entity recognition model. ResearchGate. https://www.researchgate.net/publication/389436171_CEBUANER_A_New_Baseline_Cebuano_Named_Entity_Recognition_Model"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2024,
+   "citation_primary_link": "https://doi.org/10.1007/s10462-024-10902-3",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Bolaños, F., Salatino, A., Osborne, F., & Motta, E",
+   "citation_crossref_title": "Artificial intelligence for literature reviews: opportunities and challenges",
+   "citation_is_cited_in_text": false,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Bolaños, F., Salatino, A., Osborne, F., & Motta, E. (2024). Artificial intelligence for literature reviews: Opportunities and challenges. Artificial Intelligence Review, 57(10). https://doi.org/10.1007/s10462-024-10902-3"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2023,
+   "citation_primary_link": "https://doi.org/10.1145/3641289",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Chang, Y.-C., Wang, X., Wang, J., Wu, Y., Zhu, K., Chen, H., Yang, L., Yi, X., Wang, C., Wang, Y., Ye, W., Zhang, Y., Chang, Y., Yu, P. S., Yang, Q., & Xie, X",
+   "citation_crossref_title": "A Survey on Evaluation of Large Language Models",
+   "citation_is_cited_in_text": false,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Chang, Y.-C., Wang, X., Wang, J., Wu, Y., Zhu, K., Chen, H., Yang, L., Yi, X., Wang, C., Wang, Y., Ye, W., Zhang, Y., Chang, Y., Yu, P. S., Yang, Q., & Xie, X. (2023). A survey on evaluation of large language models. ACM Transactions on Intelligent Systems and Technology, 15(1), 1–45. https://doi.org/10.1145/3641289"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2022,
+   "citation_primary_link": "https://doi.org/10.1111/psyp.14009",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Chikhi, S., Matton, N., & Blanchet, S",
+   "citation_crossref_title": "EEG\n                    power spectral measures of cognitive workload: A meta‐analysis",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 0.889,
+   "citation_raw_reference_text": "Chikhi, S., Matton, N., & Blanchet, S. (2022). EEG power spectral measures of cognitive workload: A meta-analysis. Psychophysiology, 59(8), Article e14009. https://doi.org/10.1111/psyp.14009"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2022,
+   "citation_primary_link": "https://doi.org/10.1007/s10838-022-09607-4",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Da Silva, J. T. A",
+   "citation_crossref_title": "A Synthesis of the Formats for Correcting Erroneous and Fraudulent Academic Literature, and Associated Challenges",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Da Silva, J. T. A. (2022). A synthesis of the formats for correcting erroneous and fraudulent academic literature, and associated challenges. Journal for General Philosophy of Science, 53(4), 583–599. https://doi.org/10.1007/s10838-022-09607-4"
+  },
+  {
+   "citation_status": "accessible",
+   "citation_year_parsed": 2026,
+   "citation_primary_link": "https://www.read.enago.com/ai-peer-review-workspace/",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Enago Read",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Enago Read. (2026). AI peer review assistant workspace with complete human oversight. https://www.read.enago.com/ai-peer-review-workspace/"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2023,
+   "citation_primary_link": "https://doi.org/10.3389/frai.2023.1162454",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Fleckenstein, J., Liebenow, L. W., & Meyer, J",
+   "citation_crossref_title": "Automated feedback and writing: a multi-level meta-analysis of effects on students' performance",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Fleckenstein, J., Liebenow, L. W., & Meyer, J. (2023). Automated feedback and writing: A multi-level meta-analysis of effects on students' performance. Frontiers in Artificial Intelligence, 6, Article 1162454. https://doi.org/10.3389/frai.2023.1162454"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2023,
+   "citation_primary_link": "https://doi.org/10.1002/14651858.mr000056.pub2",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Hesselberg, J.-O., Dalsbø, T. K., Strømme, H., Svege, I., & Fretheim, A",
+   "citation_crossref_title": "Reviewer training for improving grant and journal peer review",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Hesselberg, J.-O., Dalsbø, T. K., Strømme, H., Svege, I., & Fretheim, A. (2023). Reviewer training for improving grant and journal peer review. The Cochrane Database of Systematic Reviews, 11(11), Article MR000056. https://doi.org/10.1002/14651858.mr000056.pub2"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2023,
+   "citation_primary_link": "https://doi.org/10.1007/s00799-023-00352-7",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Kashyap, A. R., Yang, Y., & Kan, M.-Y",
+   "citation_crossref_title": "Scientific document processing: challenges for modern learning methods",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Kashyap, A. R., Yang, Y., & Kan, M.-Y. (2023). Scientific document processing: Challenges for modern learning methods. International Journal on Digital Libraries, 24(4), 283–309. https://doi.org/10.1007/s00799-023-00352-7"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2023,
+   "citation_primary_link": "https://doi.org/10.7717/peerj.15744",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Kunasegaran, K., Ismail, A. M. H., Ramasamy, S., Gnanou, J., Caszo, B. A., & Chen, P",
+   "citation_crossref_title": "Understanding mental fatigue and its detection: a comparative analysis of assessments and tools",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Kunasegaran, K., Ismail, A. M. H., Ramasamy, S., Gnanou, J., Caszo, B. A., & Chen, P. (2023). Understanding mental fatigue and its detection: A comparative analysis of assessments and tools. PeerJ, 11, Article e15744. https://doi.org/10.7717/peerj.15744"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2023,
+   "citation_primary_link": "https://doi.org/10.18653/v1/2023.emnlp-main.153",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Liu, Y., Iter, D., Xu, Y., Wang, S., Xu, R., & Zhu, C",
+   "citation_crossref_title": "G-Eval: NLG Evaluation using Gpt-4 with Better Human Alignment",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Liu, Y., Iter, D., Xu, Y., Wang, S., Xu, R., & Zhu, C. (2023). G-Eval: NLG evaluation using GPT-4 with better human alignment. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (pp. 2511–2522). Association for Computational Linguistics. https://doi.org/10.18653/v1/2023.emnlp-main.153"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 1956,
+   "citation_primary_link": "https://doi.org/10.1037/h0043158",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Miller, G. A",
+   "citation_crossref_title": "The magical number seven, plus or minus two: Some limits on our capacity for processing information.",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Miller, G. A. (1956). The magical number seven, plus or minus two: Some limits on our capacity for processing information. Psychological Review, 63(2), 81–97. https://doi.org/10.1037/h0043158"
+  },
+  {
+   "citation_status": "metadata_mismatch",
+   "citation_year_parsed": 2022,
+   "citation_primary_link": "https://doi.org/10.1080/10494820.2022.2096642",
+   "citation_is_accessible": false,
+   "citation_authors_parsed": "Ngo, T. T. N., Chen, H. H.-J., & Lai, K. K.-W",
+   "citation_crossref_title": "The effectiveness of automated writing evaluation in EFL/ESL writing: a three-level meta-analysis",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Ngo, T. T. N., Chen, H. H.-J., & Lai, K. K.-W. (2022). The effectiveness of automated writing evaluation in EFL/ESL writing: A three-level meta-analysis. Interactive Learning Environments, 32(6), 727–744. https://doi.org/10.1080/10494820.2022.2096642"
+  },
+  {
+   "citation_status": "accessible",
+   "citation_year_parsed": 2023,
+   "citation_primary_link": "https://ejournals.ph/article.php?id=32773",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Olitres, B. J",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Olitres, B. J. (2023). Polar influence of code-switching on oral communication skills: The case of Philippine Cebuano-Visayan bilinguals. ETERNAL (English, Teaching, Learning, and Research Journal), 9(02), 200–220. https://ejournals.ph/article.php?id=32773"
+  },
+  {
+   "citation_status": "no_link",
+   "citation_year_parsed": 2024,
+   "citation_primary_link": null,
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Paperpal",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Paperpal. (2024). Paperpal for manuscript: AI-powered submission readiness checker. Editage."
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 1952,
+   "citation_primary_link": "https://doi.org/10.1037/11494-000",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Piaget, J",
+   "citation_crossref_title": "The origins of intelligence in children.",
+   "citation_is_cited_in_text": false,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Piaget, J. (1952). The origins of intelligence in children. International Universities Press. https://doi.org/10.1037/11494-000"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2024,
+   "citation_primary_link": "https://doi.org/10.1007/s10639-024-12896-5",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Rahimi, M., Fathi, J., & Zou, D",
+   "citation_crossref_title": "Exploring the impact of automated written corrective feedback on the academic writing skills of EFL learners: An activity theory perspective",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Rahimi, M., Fathi, J., & Zou, D. (2024). Exploring the impact of automated written corrective feedback on the academic writing skills of EFL learners: An activity theory perspective. Education and Information Technologies, 30(3), 2691–2735. https://doi.org/10.1007/s10639-024-12896-5"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2025,
+   "citation_primary_link": "https://doi.org/10.3390/app15020671",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Seo, H., Hwang, T., Jung, J., Kang, H., Namgoong, H., Lee, Y., & Jung, S",
+   "citation_crossref_title": "Large Language Models as Evaluators in Education: Verification of Feedback Consistency and Accuracy",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Seo, H., Hwang, T., Jung, J., Kang, H., Namgoong, H., Lee, Y., & Jung, S. (2025). Large language models as evaluators in education: Verification of feedback consistency and accuracy. Applied Sciences, 15(2), Article 671. https://doi.org/10.3390/app15020671"
+  },
+  {
+   "citation_status": "accessible",
+   "citation_year_parsed": 2024,
+   "citation_primary_link": "https://aclanthology.org/2024.semeval-1.59/",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Siino, M",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Siino, M. (2024). All-MPNet at SemEval-2024 Task 1: Application of MPNet for evaluating semantic textual relatedness. In Proceedings of the 18th International Workshop on Semantic Evaluation (SemEval-2024) (pp. 379–384). Association for Computational Linguistics. https://aclanthology.org/2024.semeval-1.59/"
+  },
+  {
+   "citation_status": "accessible",
+   "citation_year_parsed": 2026,
+   "citation_primary_link": "https://doi.org/10.48550/arxiv.2602.10881",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Tan, Z., & D'Souza, J",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Tan, Z., & D'Souza, J. (2026). Diagnosing structural failures in LLM-based evidence extraction for meta-analysis. arXiv. https://doi.org/10.48550/arxiv.2602.10881"
+  },
+  {
+   "citation_status": "accessible",
+   "citation_year_parsed": 2025,
+   "citation_primary_link": "https://doi.org/10.48550/arXiv.2504.09737",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Thakkar, N., Yuksekgonul, M., Silberg, J., Garg, A., Peng, N., Sha, F., Yu, R., Vondrick, C., & Zou, J",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Thakkar, N., Yuksekgonul, M., Silberg, J., Garg, A., Peng, N., Sha, F., Yu, R., Vondrick, C., & Zou, J. (2025). Can LLM feedback enhance review quality? A randomized study of 20K reviews at ICLR 2025. arXiv. https://doi.org/10.48550/arXiv.2504.09737"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2025,
+   "citation_primary_link": "https://doi.org/10.69569/jip.2025.642",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Trinidad, A. E., Decano, R. S., & Cuizon, R. O",
+   "citation_crossref_title": "Graduate Students’ Thesis Writing Experiences, Coping Strategies, and Support Needs for Policy Reform",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Trinidad, A. E., Decano, R. S., & Cuizon, R. O. (2025). Graduate students' thesis writing experiences, coping strategies, and support needs for policy reform. Journal of Interdisciplinary Perspectives, 3(11), 45–60. https://doi.org/10.69569/jip.2025.642"
+  },
+  {
+   "citation_status": "accessible",
+   "citation_year_parsed": 2024,
+   "citation_primary_link": "https://www.turnitin.com",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Turnitin",
+   "citation_crossref_title": null,
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": null,
+   "citation_raw_reference_text": "Turnitin. (2024). Turnitin: Academic integrity and plagiarism detection. https://www.turnitin.com"
+  },
+  {
+   "citation_status": "metadata_mismatch",
+   "citation_year_parsed": 1978,
+   "citation_primary_link": "https://doi.org/10.2307/j.ctvjf9vz4",
+   "citation_is_accessible": false,
+   "citation_authors_parsed": "Vygotsky, L. S",
+   "citation_crossref_title": "Mind in Society",
+   "citation_is_cited_in_text": false,
+   "citation_title_match_score": 1.0,
+   "citation_raw_reference_text": "Vygotsky, L. S. (1978). Mind in society: The development of higher psychological processes. Harvard University Press. https://doi.org/10.2307/j.ctvjf9vz4"
+  },
+  {
+   "citation_status": "verified_metadata",
+   "citation_year_parsed": 2024,
+   "citation_primary_link": "https://doi.org/10.1007/s10639-024-12596-0",
+   "citation_is_accessible": true,
+   "citation_authors_parsed": "Xue, Y",
+   "citation_crossref_title": "Towards automated writing evaluation: A comprehensive review with bibliometric, scientometric, and meta-analytic approaches",
+   "citation_is_cited_in_text": true,
+   "citation_title_match_score": 0.667,
+   "citation_raw_reference_text": "Xue, Y. (2024). Towards automated writing evaluation: A comprehensive review with bibliometric, scientometric, and meta-analytic approaches. Education and Information Technologies, 29(12), 19553–19594. https://doi.org/10.1007/s10639-024-12596-0"
+  }
+ ],
+ "ai_synthesis": {
+  "summary": null,
+  "weakest_pair": {
+   "order": 4,
+   "score": 12.22,
+   "section_a": "rationale of the study",
+   "section_b": "recommendation",
+   "overall_coherence": 0.10808899253606796
+  },
+  "review_status": {
+   "status": "complete",
+   "unreviewed": 0
+  },
+  "strongest_pair": {
+   "order": 12,
+   "score": 89.68,
+   "section_a": "scope and limitations of the study",
+   "section_b": "theoretical background",
+   "overall_coherence": 0.9246132373809814
+  }
+ },
+ "manuscript_id": "33333333-3333-4333-8333-333333333333",
+ "db_save_status": "success",
+ "result_version": "v7",
+ "structure_note": null,
+ "analysis_run_id": "11111111-1111-4111-8111-111111111111",
+ "inconsistencies": [],
+ "manuscript_flow": [
+  {
+   "order": 1,
+   "scores": {
+    "claim_support": 0.8089547157287598,
+    "methodology_fit": 0.7313780784606934,
+    "overall_coherence": 0.806584358215332,
+    "numeric_consistency": 0.8271875381469727,
+    "objectives_alignment": 0.8142609000205994
+   },
+   "index_a": 0,
+   "index_b": 1,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "introduction",
+   "section_b": "rationale of the study",
+   "pair_score": 0.7848645647366842,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "Resync is an AI-powered system that uses natural language processing to evaluate manuscript coherence.",
+     "b_says": "Resync directly seeks to solve operational inefficiencies with a consistent, AI-assisted digital workspace."
+    },
+    "link_summary": "The \"introduction\" section presents the evaluation burden and proposes Resync, while the \"rationale of the study\" section details the operational inefficiencies and cost savings addressed by the system.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.8089547753334045,
+     "numeric": 0.827187716960907,
+     "overall": 0.8065844178199768,
+     "objectives": 0.8142610192298889,
+     "methodology": 0.7313781976699829
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.6940661072731018,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 2,
+   "scores": {
+    "claim_support": 0.2863246202468872,
+    "methodology_fit": 0.25835904479026794,
+    "overall_coherence": 0.30428290367126465,
+    "numeric_consistency": 0.44494760036468506,
+    "objectives_alignment": 0.331691175699234
+   },
+   "index_a": 0,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "introduction",
+   "section_b": "recommendation",
+   "pair_score": 0.2921249469121297,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "The system compares manuscripts to templates and displays coherence scores and recommendations.",
+     "b_says": "It lists database tables for recommendations, citations, notifications, subscriptions, and network design."
+    },
+    "link_summary": "The \"introduction\" section outlines the AI coherence tool, and the \"recommendation\" section details its database tables and network design.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.28632453083992004,
+     "numeric": 0.4449475109577179,
+     "overall": 0.3042827844619751,
+     "objectives": 0.33169102668762207,
+     "methodology": 0.25835898518562317
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.4760310649871826,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 3,
+   "scores": {
+    "claim_support": 0.8617949485778809,
+    "methodology_fit": 0.8426564335823059,
+    "overall_coherence": 0.8989936709403992,
+    "numeric_consistency": 0.8844690918922424,
+    "objectives_alignment": 0.8716257214546204
+   },
+   "index_a": 1,
+   "index_b": 2,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "rationale of the study",
+   "section_b": "objectives of the study",
+   "pair_score": 0.8586923678716024,
+   "explanation": null,
+   "pair_weight": 0.7351707816123962,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 4,
+   "scores": {
+    "claim_support": 0.12684299051761627,
+    "methodology_fit": 0.1078680157661438,
+    "overall_coherence": 0.10808899253606796,
+    "numeric_consistency": 0.20220018923282623,
+    "objectives_alignment": 0.13176436722278595
+   },
+   "index_a": 1,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "rationale of the study",
+   "section_b": "recommendation",
+   "pair_score": 0.12215845783551534,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "Resync evaluates research manuscripts to detect inconsistencies and reduce manual review effort.",
+     "b_says": "The Recommendation table stores suggestions generated by Resync to help address manuscript inconsistencies."
+    },
+    "link_summary": "The \"rationale of the study\" section and the \"recommendation\" section discuss different parts of the research without any logical contradiction.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.12684296071529388,
+     "numeric": 0.20220021903514862,
+     "overall": 0.10808899253606796,
+     "objectives": 0.13176435232162476,
+     "methodology": 0.10786803811788559
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.3794819414615631,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 5,
+   "scores": {
+    "claim_support": 0.8075814247131348,
+    "methodology_fit": 0.7703381180763245,
+    "overall_coherence": 0.8483198881149292,
+    "numeric_consistency": 0.8592376112937927,
+    "objectives_alignment": 0.8252477049827576
+   },
+   "index_a": 2,
+   "index_b": 3,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "objectives of the study",
+   "section_b": "scope and limitations of the study",
+   "pair_score": 0.8010557492574056,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "aims to develop Resync to evaluate manuscript consistency and coherence",
+     "b_says": "covers the development and implementation of Resync to evaluate manuscript flow and coherence"
+    },
+    "link_summary": "The scope and limitations of the study section covers all the specific goals set by the objectives of the study section.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.8075814247131348,
+     "numeric": 0.8592376112937927,
+     "overall": 0.8483198881149292,
+     "objectives": 0.8252477049827576,
+     "methodology": 0.7703381180763245
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.7231211066246033,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 6,
+   "scores": {
+    "claim_support": 0.8616104125976562,
+    "methodology_fit": 0.8163207769393921,
+    "overall_coherence": 0.8888694047927856,
+    "numeric_consistency": 0.8954373002052307,
+    "objectives_alignment": 0.8784326314926147
+   },
+   "index_a": 2,
+   "index_b": 7,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "objectives of the study",
+   "section_b": "research methodology",
+   "pair_score": 0.8521212736765543,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "aims to develop Resync, an AI-powered system for web and mobile platforms",
+     "b_says": "presents steps, considerations, tools, frameworks, and AI models for building Resync"
+    },
+    "link_summary": "The research methodology section successfully covers the development approach, tools, and platforms needed to build Resync as outlined in the objectives of the study section.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.8616104125976562,
+     "numeric": 0.8954373002052307,
+     "overall": 0.8888694047927856,
+     "objectives": 0.8784326314926147,
+     "methodology": 0.8163207769393921
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.7466732263565063,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 7,
+   "scores": {
+    "claim_support": 0.5704866647720337,
+    "methodology_fit": 0.530900776386261,
+    "overall_coherence": 0.6333503127098083,
+    "numeric_consistency": 0.7173215746879578,
+    "objectives_alignment": 0.6025132536888123
+   },
+   "index_a": 2,
+   "index_b": 8,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "objectives of the study",
+   "section_b": "software engineering methodology",
+   "pair_score": 0.567966898282369,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "aims to develop Resync to evaluate research manuscript consistency.",
+     "b_says": "outlines the phases to develop Resync using the Agile Methodology."
+    },
+    "link_summary": "The objectives of the study section and the software engineering methodology section match well.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.5704866647720337,
+     "numeric": 0.7173215746879578,
+     "overall": 0.6333503127098083,
+     "objectives": 0.6025132536888123,
+     "methodology": 0.530900776386261
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.631158709526062,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 8,
+   "scores": {
+    "claim_support": 0.8429832458496094,
+    "methodology_fit": 0.7964264154434204,
+    "overall_coherence": 0.8723856806755066,
+    "numeric_consistency": 0.8777279853820801,
+    "objectives_alignment": 0.8535634279251099
+   },
+   "index_a": 2,
+   "index_b": 9,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "objectives of the study",
+   "section_b": "analysis-design phase",
+   "pair_score": 0.8309910297393799,
+   "explanation": null,
+   "pair_weight": 0.7535539269447327,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 9,
+   "scores": {
+    "claim_support": 0.5233256220817566,
+    "methodology_fit": 0.5094947218894958,
+    "overall_coherence": 0.6107825040817261,
+    "numeric_consistency": 0.6860674023628235,
+    "objectives_alignment": 0.5957334041595459
+   },
+   "index_a": 2,
+   "index_b": 10,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "objectives of the study",
+   "section_b": "user interface design",
+   "pair_score": 0.5428512493769327,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "develop a multi-platform application that understands the logical flow and content organization",
+     "b_says": "The following figures presented here are the User Interface Design of Resync"
+    },
+    "link_summary": "The user interface design successfully builds the screens and pages needed to support the system aims.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.5233256220817566,
+     "numeric": 0.6860674023628235,
+     "overall": 0.6107825040817261,
+     "objectives": 0.5957334041595459,
+     "methodology": 0.5094947218894958
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.6074891090393066,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 10,
+   "scores": {
+    "claim_support": 0.40694519877433777,
+    "methodology_fit": 0.3772095739841461,
+    "overall_coherence": 0.4562814235687256,
+    "numeric_consistency": 0.5623703002929688,
+    "objectives_alignment": 0.4362366199493408
+   },
+   "index_a": 2,
+   "index_b": 11,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "objectives of the study",
+   "section_b": "database design",
+   "pair_score": 0.4067971309026082,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "aims to develop Resync, an AI-powered system evaluating research manuscript consistency",
+     "b_says": "details the database schema supporting user entities, manuscripts, and analysis runs"
+    },
+    "link_summary": "The \"objectives of the study\" section outlines the goals for Resync, and the \"database design\" section details the data structures supporting them.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.40694546699523926,
+     "numeric": 0.5623705387115479,
+     "overall": 0.45628172159194946,
+     "objectives": 0.4362369477748871,
+     "methodology": 0.3772099018096924
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.5721169114112854,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 11,
+   "scores": {
+    "claim_support": 0.26758506894111633,
+    "methodology_fit": 0.22322100400924683,
+    "overall_coherence": 0.27442288398742676,
+    "numeric_consistency": 0.41844412684440613,
+    "objectives_alignment": 0.2869117558002472
+   },
+   "index_a": 2,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "objectives of the study",
+   "section_b": "recommendation",
+   "pair_score": 0.25923927625020343,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "aims to develop Resync for evaluating research manuscript consistency and coherence",
+     "b_says": "stores suggestions and references generated by Resync alongside network and technology details"
+    },
+    "link_summary": "The objectives of the study section outlines the system goals, while the recommendation section details database tables and network design.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.26758506894111633,
+     "numeric": 0.41844412684440613,
+     "overall": 0.27442288398742676,
+     "objectives": 0.2869117558002472,
+     "methodology": 0.22322098910808563
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.4926756024360657,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 12,
+   "scores": {
+    "claim_support": 0.9109667539596558,
+    "methodology_fit": 0.8720877766609192,
+    "overall_coherence": 0.9246132373809814,
+    "numeric_consistency": 0.9180883169174194,
+    "objectives_alignment": 0.9074113965034485
+   },
+   "index_a": 3,
+   "index_b": 4,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "scope and limitations of the study",
+   "section_b": "theoretical background",
+   "pair_score": 0.8968219757080078,
+   "explanation": null,
+   "pair_weight": 0.7817074060440063,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 13,
+   "scores": {
+    "claim_support": 0.7696865200996399,
+    "methodology_fit": 0.7386245727539062,
+    "overall_coherence": 0.8074462413787842,
+    "numeric_consistency": 0.7925128936767578,
+    "objectives_alignment": 0.7792184948921204
+   },
+   "index_a": 4,
+   "index_b": 5,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "theoretical background",
+   "section_b": "related literature",
+   "pair_score": 0.7625098625818888,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "It uses semantic embedding and context-aware theories to ground the automated thesis evaluation system.",
+     "b_says": "It reviews how large language models and semantic embeddings perform these exact evaluation tasks."
+    },
+    "link_summary": "The theoretical background and the related literature connect well as the literature expands on the stated semantic embedding and AI evaluation theories.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.7696864604949951,
+     "numeric": 0.7925127744674683,
+     "overall": 0.8074461221694946,
+     "objectives": 0.779218316078186,
+     "methodology": 0.7386244535446167
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.6703171730041504,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 14,
+   "scores": {
+    "claim_support": 0.25723686814308167,
+    "methodology_fit": 0.22907966375350952,
+    "overall_coherence": 0.26412561535835266,
+    "numeric_consistency": 0.4099562168121338,
+    "objectives_alignment": 0.2809920012950897
+   },
+   "index_a": 4,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "theoretical background",
+   "section_b": "recommendation",
+   "pair_score": 0.2557695110638936,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "Resync anchors its design to Information Processing Theory, Constructivist Theory, and Automation Theory.",
+     "b_says": "The Recommendation table stores the suggestions generated by Resync to help researchers address inconsistencies."
+    },
+    "link_summary": "The \"theoretical background\" section and the \"recommendation\" section address different aspects of the study without any logical clash.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.25723695755004883,
+     "numeric": 0.40995627641677856,
+     "overall": 0.26412561535835266,
+     "objectives": 0.2809920310974121,
+     "methodology": 0.2290796935558319
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.48811274766921997,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 15,
+   "scores": {
+    "claim_support": 0.3211100101470947,
+    "methodology_fit": 0.31822243332862854,
+    "overall_coherence": 0.37952476739883423,
+    "numeric_consistency": 0.4598267376422882,
+    "objectives_alignment": 0.365729421377182
+   },
+   "index_a": 5,
+   "index_b": 6,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "related literature",
+   "section_b": "related studies",
+   "pair_score": 0.3350206216176351,
+   "explanation": {
+    "bridges": [
+     {
+      "section": "related literature",
+      "sentence": "Evaluating existing academic software helps clarify how automated tools can address these localized writing and evaluation challenges.",
+      "placement": "end"
+     },
+     {
+      "section": "related studies",
+      "sentence": "Various platforms currently exist that check submitted papers for originality, grammar, and structural consistency before defense.",
+      "placement": "start"
+     }
+    ],
+    "severity": "None",
+    "comparison": {
+     "a_says": "Resync directly contributes to making capstone evaluation more accessible, structured, and responsive.",
+     "b_says": "Turnitin is an academic integrity platform used by universities worldwide to check submitted papers."
+    },
+    "link_summary": "The related literature ends on addressing academic writing challenges, and related studies begins by reviewing existing tools.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.3211101293563843,
+     "numeric": 0.45982682704925537,
+     "overall": 0.37952491641044617,
+     "objectives": 0.36572960019111633,
+     "methodology": 0.3182225227355957
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.5059968829154968,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "delta": 0.0359,
+      "sentence": "The relevance of these writing challenges is especially pronounced when analyzing the bilingual communication patterns of local student researchers."
+     }
+    ],
+    "section_b": [
+     {
+      "delta": 0.0887,
+      "sentence": "Turnitin is an academic integrity platform used by universities worldwide to check submitted papers against a large database of academic publications and web sources (Turnitin, 2024)."
+     },
+     {
+      "delta": 0.0551,
+      "sentence": "Similarly, iThenticate, developed by Clarivate Analytics, is widely used in research publishing and academic institutions to ensure originality in scholarly manuscripts."
+     },
+     {
+      "delta": 0.0454,
+      "sentence": "The platform compares a submitted document against its repository and produces a similarity report that flags matching or paraphrased text, helping institutions verify originality before a paper is accepted or defended."
+     }
+    ]
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 16,
+   "scores": {
+    "claim_support": 0.8459489941596985,
+    "methodology_fit": 0.8000398278236389,
+    "overall_coherence": 0.8646444082260132,
+    "numeric_consistency": 0.8791022300720215,
+    "objectives_alignment": 0.8625699281692505
+   },
+   "index_a": 6,
+   "index_b": 7,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "related studies",
+   "section_b": "research methodology",
+   "pair_score": 0.8361862500508627,
+   "explanation": null,
+   "pair_weight": 0.7207185626029968,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 17,
+   "scores": {
+    "claim_support": 0.6136695742607117,
+    "methodology_fit": 0.5502760410308838,
+    "overall_coherence": 0.6569663882255554,
+    "numeric_consistency": 0.7219846248626709,
+    "objectives_alignment": 0.6255390644073486
+   },
+   "index_a": 7,
+   "index_b": 8,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "research methodology",
+   "section_b": "software engineering methodology",
+   "pair_score": 0.5964948932329813,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "Resync uses AI models to detect manuscript inconsistencies.",
+     "b_says": "Resync will be developed using the Agile Methodology."
+    },
+    "link_summary": "The \"research methodology\" section introduces the Resync system, and the \"software engineering methodology\" section details its agile development phases.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.6136699318885803,
+     "numeric": 0.72198486328125,
+     "overall": 0.6569668054580688,
+     "objectives": 0.6255395412445068,
+     "methodology": 0.5502763986587524
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.6215126514434814,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 18,
+   "scores": {
+    "claim_support": 0.30378007888793945,
+    "methodology_fit": 0.25394967198371887,
+    "overall_coherence": 0.30987611413002014,
+    "numeric_consistency": 0.4402032494544983,
+    "objectives_alignment": 0.32085326313972473
+   },
+   "index_a": 7,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "research methodology",
+   "section_b": "recommendation",
+   "pair_score": 0.292861004670461,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "It explains the system's intended purpose, overall design, and development approach.",
+     "b_says": "The Recommendation table stores suggestions and the network design covers infrastructure planning."
+    },
+    "link_summary": "The research methodology section sets up the overall system design, while the recommendation section details database tables and network architecture.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.3037801682949066,
+     "numeric": 0.44020333886146545,
+     "overall": 0.3098762035369873,
+     "objectives": 0.3208533227443695,
+     "methodology": 0.25394967198371887
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.47747698426246643,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 19,
+   "scores": {
+    "claim_support": 0.7683378458023071,
+    "methodology_fit": 0.7002965211868286,
+    "overall_coherence": 0.7707691788673401,
+    "numeric_consistency": 0.8305908441543579,
+    "objectives_alignment": 0.7805026173591614
+   },
+   "index_a": 8,
+   "index_b": 9,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "software engineering methodology",
+   "section_b": "analysis-design phase",
+   "pair_score": 0.749712328116099,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "The Gantt chart provides a visual timeline of the Resync app's development phases.",
+     "b_says": "During the Analysis-Design phase, researchers analyze system requirements and prepare overall designs."
+    },
+    "link_summary": "The \"software engineering methodology\" section concludes with project timeline and diagram overviews, and the \"analysis-design phase\" section details the system requirements and technical designs.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.7683376669883728,
+     "numeric": 0.8305907845497131,
+     "overall": 0.7707690596580505,
+     "objectives": 0.7805025577545166,
+     "methodology": 0.7002964019775391
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.7123701572418213,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 20,
+   "scores": {
+    "claim_support": 0.5979132652282715,
+    "methodology_fit": 0.5098429322242737,
+    "overall_coherence": 0.6058793663978577,
+    "numeric_consistency": 0.6764532923698425,
+    "objectives_alignment": 0.5791345238685608
+   },
+   "index_a": 8,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "software engineering methodology",
+   "section_b": "recommendation",
+   "pair_score": 0.5622969071070353,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "Resync will be developed using the Agile Methodology through short iterative cycles.",
+     "b_says": "The Recommendation table stores the suggestions generated by Resync to help researchers."
+    },
+    "link_summary": "The software engineering methodology section and the recommendation section connect logically as the project moves from planning to system design and database tables.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.5979132652282715,
+     "numeric": 0.6764532923698425,
+     "overall": 0.6058793663978577,
+     "objectives": 0.5791345238685608,
+     "methodology": 0.5098429322242737
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.5658390522003174,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 21,
+   "scores": {
+    "claim_support": 0.7283797264099121,
+    "methodology_fit": 0.7070901393890381,
+    "overall_coherence": 0.7919126749038696,
+    "numeric_consistency": 0.8181517720222473,
+    "objectives_alignment": 0.7685912847518921
+   },
+   "index_a": 9,
+   "index_b": 10,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "analysis-design phase",
+   "section_b": "user interface design",
+   "pair_score": 0.7346870501836141,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "The analysis-design phase section lists the user interface design among the developed diagrams and plans.",
+     "b_says": "The user interface design section presents the splash art, onboarding, auth, and dashboard screens."
+    },
+    "link_summary": "The analysis-design phase section introduces the system design artifacts, and the user interface design section shows the screens.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.7283796668052673,
+     "numeric": 0.8181516528129578,
+     "overall": 0.7919126749038696,
+     "objectives": 0.7685911059379578,
+     "methodology": 0.7070900797843933
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.659142255783081,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 22,
+   "scores": {
+    "claim_support": 0.38372862339019775,
+    "methodology_fit": 0.33331337571144104,
+    "overall_coherence": 0.3910753130912781,
+    "numeric_consistency": 0.5264492034912109,
+    "objectives_alignment": 0.41502898931503296
+   },
+   "index_a": 9,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "analysis-design phase",
+   "section_b": "recommendation",
+   "pair_score": 0.37735699613889057,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "The analysis-design phase prepares the overall design and database structures of Resync.",
+     "b_says": "The Recommendation table stores the suggestions generated by Resync to help researchers address inconsistencies."
+    },
+    "link_summary": "The \"analysis-design phase\" section and the \"recommendation\" section are consistent with one another.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.3837284445762634,
+     "numeric": 0.5264490842819214,
+     "overall": 0.391075074672699,
+     "objectives": 0.41502881050109863,
+     "methodology": 0.3333132266998291
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.519767165184021,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 23,
+   "scores": {
+    "claim_support": 0.6974123120307922,
+    "methodology_fit": 0.6675419807434082,
+    "overall_coherence": 0.7307087182998657,
+    "numeric_consistency": 0.7533249855041504,
+    "objectives_alignment": 0.7115287780761719
+   },
+   "index_a": 10,
+   "index_b": 11,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "user interface design",
+   "section_b": "database design",
+   "pair_score": 0.6921610236167908,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "The \"user interface design\" section details screens for onboarding, dashboards, scans, and archives.",
+     "b_says": "The \"database design\" section details tables for users, manuscripts, analysis runs, and subscriptions."
+    },
+    "link_summary": "The \"user interface design\" section covers app screens and user flows, and the \"database design\" section covers the underlying data structures.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.6974124908447266,
+     "numeric": 0.7533251047134399,
+     "overall": 0.7307089567184448,
+     "objectives": 0.711529016494751,
+     "methodology": 0.6675421595573425
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.6288818120956421,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 24,
+   "scores": {
+    "claim_support": 0.4889066219329834,
+    "methodology_fit": 0.411704957485199,
+    "overall_coherence": 0.4968831539154053,
+    "numeric_consistency": 0.5578901767730713,
+    "objectives_alignment": 0.4632473886013031
+   },
+   "index_a": 10,
+   "index_b": 12,
+   "adjacent": false,
+   "severity": "None",
+   "section_a": "user interface design",
+   "section_b": "recommendation",
+   "pair_score": 0.4546196560064952,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "focuses on the mobile app's user interface design and screen layouts",
+     "b_says": "details the database recommendation tables, network design, and technology stack"
+    },
+    "link_summary": "The two sections cover different parts of the manuscript without any logical contradictions.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.4889066219329834,
+     "numeric": 0.5578901767730713,
+     "overall": 0.4968831539154053,
+     "objectives": 0.4632473886013031,
+     "methodology": 0.411704957485199
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.5286904573440552,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  },
+  {
+   "order": 25,
+   "scores": {
+    "claim_support": 0.6803346872329712,
+    "methodology_fit": 0.6002594828605652,
+    "overall_coherence": 0.6926442980766296,
+    "numeric_consistency": 0.7399401068687439,
+    "objectives_alignment": 0.6575689315795898
+   },
+   "index_a": 11,
+   "index_b": 12,
+   "adjacent": true,
+   "severity": "None",
+   "section_a": "database design",
+   "section_b": "recommendation",
+   "pair_score": 0.6460543672243754,
+   "explanation": {
+    "bridges": [],
+    "severity": "None",
+    "comparison": {
+     "a_says": "It lists the database tables and entity relationships for the system.",
+     "b_says": "It explains how recommendation records store suggestions for manuscript issues."
+    },
+    "link_summary": "The database design section finishes explaining the data tables, and the recommendation section starts detailing how recommendations work.",
+    "reference_list": [],
+    "recommendations": [],
+    "coherence_scores": {
+     "claims": 0.6803346872329712,
+     "numeric": 0.7399401068687439,
+     "overall": 0.6926443576812744,
+     "objectives": 0.6575689315795898,
+     "methodology": 0.6002594828605652
+    },
+    "failed_dimension": "none",
+    "highlighted_inconsistencies": []
+   },
+   "pair_weight": 0.6110001802444458,
+   "skipped_reason": null,
+   "failed_dimension": "none",
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "numeric_applicable": false
+  }
+ ],
+ "recommendations": [
+  {
+   "id": "r-15-1",
+   "kind": "add",
+   "issue": "",
+   "section": "related literature",
+   "category": "methodology",
+   "placement": "end",
+   "section_a": "related literature",
+   "section_b": "related studies",
+   "pair_order": 15,
+   "original_sentence": null,
+   "recommendation_id": "ec65658d-2ba4-4327-b80a-2efc93efe9ec",
+   "recommendation_text": "Evaluating existing academic software helps clarify how automated tools can address these localized writing and evaluation challenges.",
+   "recommended_revision": "Evaluating existing academic software helps clarify how automated tools can address these localized writing and evaluation challenges.",
+   "recommendation_priority": "High"
+  },
+  {
+   "id": "r-15-2",
+   "kind": "add",
+   "issue": "",
+   "section": "related studies",
+   "category": "methodology",
+   "placement": "start",
+   "section_a": "related literature",
+   "section_b": "related studies",
+   "pair_order": 15,
+   "original_sentence": null,
+   "recommendation_id": "1339c156-38a9-4dcb-b903-46ae692bf532",
+   "recommendation_text": "Various platforms currently exist that check submitted papers for originality, grammar, and structural consistency before defense.",
+   "recommended_revision": "Various platforms currently exist that check submitted papers for originality, grammar, and structural consistency before defense.",
+   "recommendation_priority": "High"
+  }
+ ],
+ "score_breakdown": {
+  "band": "Strong",
+  "dimensions": {
+   "claim_support": 0.7067,
+   "methodology_fit": 0.6584,
+   "numeric_consistency": null,
+   "objectives_alignment": 0.7296
+  },
+  "overall_score": 96.0,
+  "citation_detail": {
+   "total_entries": 25,
+   "cross_match_score": 0.822,
+   "well_formed_ratio": 1.0,
+   "link_resolution_rate": 0.896
+  },
+  "dimension_weights": {
+   "claim_support": 0.3333333333333333,
+   "methodology_fit": 0.3333333333333333,
+   "numeric_consistency": 0.0,
+   "objectives_alignment": 0.3333333333333333
+  },
+  "dimension_breakdown": {
+   "logical_support": {
+    "flow": {
+     "items": 12,
+     "passed": 11
+    },
+    "cross": {
+     "items": 13,
+     "passed": 13
+    },
+    "items": 25,
+    "pairs": 25,
+    "score": 95.83,
+    "halves": true,
+    "issues": 0,
+    "passed": 24,
+    "penalty": 0,
+    "baseline": null,
+    "failures": [
+     {
+      "order": 15,
+      "rating": 0.3211,
+      "reason": "loose_link",
+      "severity": null,
+      "section_a": "related literature",
+      "section_b": "related studies"
+     }
+    ],
+    "deductions": []
+   },
+   "context_alignment": {
+    "flow": {
+     "items": 12,
+     "passed": 11
+    },
+    "cross": {
+     "items": 13,
+     "passed": 13
+    },
+    "items": 25,
+    "pairs": 25,
+    "score": 95.83,
+    "halves": true,
+    "issues": 0,
+    "passed": 24,
+    "penalty": 0,
+    "baseline": null,
+    "failures": [
+     {
+      "order": 15,
+      "rating": 0.3657,
+      "reason": "loose_link",
+      "severity": null,
+      "section_a": "related literature",
+      "section_b": "related studies"
+     }
+    ],
+    "deductions": []
+   },
+   "evidence_consistency": {
+    "flow": {
+     "items": 0,
+     "passed": 0
+    },
+    "cross": {
+     "items": 0,
+     "passed": 0
+    },
+    "items": 0,
+    "pairs": 0,
+    "score": "N/A",
+    "halves": false,
+    "issues": 0,
+    "passed": 0,
+    "penalty": 0,
+    "baseline": null,
+    "failures": [],
+    "deductions": []
+   },
+   "operational_alignment": {
+    "flow": {
+     "items": 12,
+     "passed": 11
+    },
+    "cross": {
+     "items": 13,
+     "passed": 13
+    },
+    "items": 25,
+    "pairs": 25,
+    "score": 95.83,
+    "halves": true,
+    "issues": 0,
+    "passed": 24,
+    "penalty": 0,
+    "baseline": null,
+    "failures": [
+     {
+      "order": 15,
+      "rating": 0.3182,
+      "reason": "loose_link",
+      "severity": null,
+      "section_a": "related literature",
+      "section_b": "related studies"
+     }
+    ],
+    "deductions": []
+   }
+  },
+  "citation_integrity_score": 90.49,
+  "cross_chapter_coherence_score": 96.0
+ },
+ "manuscript_title": "ReSync: An AI-Powered Capstone Manuscript Alignment and Inconsistency Detection System",
+ "rescan_unchanged": false,
+ "ai_text_indicator": {
+  "disclaimer": "Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features (sentence-length uniformity, lexical diversity, transition-phrase density, opening-word repetition, and sentence-embedding self-similarity) -- it cannot verify authorship and cannot detect real generative-model watermarks (e.g. Google SynthID), which are cryptographic signals embedded at the token-sampling level and are not recoverable from output text by any third party without the issuing model's own detection service. Formal academic prose already exhibits many of these same surface features, so well-written human capstone chapters can score in the 40-60 range; this indicator must never be used to block a submission or as a plagiarism/integrity charge on its own.",
+  "overall_score": 31.8,
+  "section_scores": {
+   "introduction": 32.5,
+   "recommendation": 28.5,
+   "database design": 21.2,
+   "related studies": 27.0,
+   "related literature": 30.2,
+   "research methodology": 40.7,
+   "analysis-design phase": 50.4,
+   "user interface design": 31.5,
+   "rationale of the study": 38.6,
+   "theoretical background": 36.9,
+   "objectives of the study": null,
+   "software engineering methodology": 22.2,
+   "scope and limitations of the study": 22.0
+  },
+  "flagged_sections": [
+   "analysis-design phase"
+  ]
+ },
+ "citations_audited": 25,
+ "credits_remaining": 4,
+ "sections_analyzed": [
+  "introduction",
+  "rationale of the study",
+  "objectives of the study",
+  "scope and limitations of the study",
+  "theoretical background",
+  "related literature",
+  "related studies",
+  "research methodology",
+  "software engineering methodology",
+  "analysis-design phase",
+  "user interface design",
+  "database design",
+  "recommendation"
+ ],
+ "dimension_breakdown": {
+  "logical_support": {
+   "flow": {
+    "items": 12,
+    "passed": 11
+   },
+   "cross": {
+    "items": 13,
+    "passed": 13
+   },
+   "items": 25,
+   "pairs": 25,
+   "score": 95.83,
+   "halves": true,
+   "issues": 0,
+   "passed": 24,
+   "penalty": 0,
+   "baseline": null,
+   "failures": [
+    {
+     "order": 15,
+     "rating": 0.3211,
+     "reason": "loose_link",
+     "severity": null,
+     "section_a": "related literature",
+     "section_b": "related studies"
+    }
+   ],
+   "deductions": []
+  },
+  "context_alignment": {
+   "flow": {
+    "items": 12,
+    "passed": 11
+   },
+   "cross": {
+    "items": 13,
+    "passed": 13
+   },
+   "items": 25,
+   "pairs": 25,
+   "score": 95.83,
+   "halves": true,
+   "issues": 0,
+   "passed": 24,
+   "penalty": 0,
+   "baseline": null,
+   "failures": [
+    {
+     "order": 15,
+     "rating": 0.3657,
+     "reason": "loose_link",
+     "severity": null,
+     "section_a": "related literature",
+     "section_b": "related studies"
+    }
+   ],
+   "deductions": []
+  },
+  "evidence_consistency": {
+   "flow": {
+    "items": 0,
+    "passed": 0
+   },
+   "cross": {
+    "items": 0,
+    "passed": 0
+   },
+   "items": 0,
+   "pairs": 0,
+   "score": "N/A",
+   "halves": false,
+   "issues": 0,
+   "passed": 0,
+   "penalty": 0,
+   "baseline": null,
+   "failures": [],
+   "deductions": []
+  },
+  "operational_alignment": {
+   "flow": {
+    "items": 12,
+    "passed": 11
+   },
+   "cross": {
+    "items": 13,
+    "passed": 13
+   },
+   "items": 25,
+   "pairs": 25,
+   "score": 95.83,
+   "halves": true,
+   "issues": 0,
+   "passed": 24,
+   "penalty": 0,
+   "baseline": null,
+   "failures": [
+    {
+     "order": 15,
+     "rating": 0.3182,
+     "reason": "loose_link",
+     "severity": null,
+     "section_a": "related literature",
+     "section_b": "related studies"
+    }
+   ],
+   "deductions": []
+  }
+ },
+ "manuscript_sections": [
+  {
+   "name": "introduction",
+   "text": "Research writing influences the research competency and academic preparedness of the student researchers during their academic courses, and at the same time puts an evaluative burden on the advisers and the panelists who evaluate the quality of each research manuscript. Despite the apparent improvements, research writing can still suffer from generic and logical problems in terms of objectives that stray from problem statements and conclusions that lack support from survey and validation evidence, which tend to be undetected until the end of writing (Xue, 2024).\nThe real challenge for the students is that they typically don't realize that their objectives no longer align with their problem statement, or that their results don't have the data backing until it is time for consultation or defense, when it costs much more to fix the manuscript. The burden is the same for advisers and panelists: Manual, section-by-section review is time-consuming and expensive to ensure that each section of a manuscript is reviewed properly, particularly when dealing with high advising loads and increasing submission volumes that have been demonstrated to reduce review quality (Thakkar et al., 2025).\nTo address these review challenges, the research team proposes Resync, an AI-powered system that uses natural language processing to evaluate the coherence and consistency of research manuscripts. The system compares the uploaded manuscript to the corresponding template to determine where the manuscript should include sections, it then analyzes the manuscript overall to determine the areas of logical and coherence gaps in the manuscript and displays a Coherence Score, an Overall Assessment and the Recommendations to correct the detected gaps. Resync is designed to ensure that the logical and evidentiary consistency is validated for a research manuscript.\nResync is intended to be beneficial for all those who engage in the research process. Student researchers are able to identify inconsistencies earlier in the process, before consultation or submission, thereby cutting down revision cycles. Advisers have more time to spend on substance, and less time on manual checks. Panelists are able to walk into a defense with manuscripts that have already undergone AI-assisted coherence checking, allowing them to focus their evaluation on the depth and quality of the research rather than flagging basic inconsistencies. All these benefits help to build stronger and more defensible research outcomes."
+  },
+  {
+   "name": "rationale of the study",
+   "text": "This research is motivated by the challenging nature of manually verifying, checking, and aligning complex, non-linear relationships among multiple chapters of a research manuscript (Kashyap et al., 2023). Traditional manual, line-by-line checking often misses out on capturing key issues of inconsistency and weak correlation across sections early in the writing process (Tan & D'Souza, 2026).  This diagnostic failure may lead student drafts to be susceptible to logical inconsistencies that could not be detected, including research objectives that are not aligned with the main problem statement and conclusions that are based on research findings, but not on empirical data (Xue, 2024). Hence, the high volume of manual and repetitive reviews causes high cognitive load and acute mental fatigue for the adviser and panelists to evaluate these documents within tight institutional deadlines (Chikhi et al., 2022; Kunasegaran et al., 2023). A delayed and systematic anomaly detection process causes student writing communities to be stuck in inefficient writing routines, resulting in high manuscript rejection rates and delayed corrective measures (Ngo et al., 2022).\nResync, the proposed study, directly seeks to solve these operational inefficiencies, supporting manual review processes that are slow and subjective with a consistent, AI-assisted digital workspace. The system uses natural language processing to assess the coherence of a manuscript, comparing its sections against one another to identify logical inconsistencies early.\nCurrent automated writing evaluation (AWE) tools have barely considered macro-level structural coherence and have concentrated on micro-level mechanics such as grammar (Xue, 2024; Rahimi et al., 2024). Resync is designed to solve this problem by resolving macro-level dependencies which significantly decreases review turnaround times, speeds up draft progress, and brings back review quality under heavy advising loads (Fleckenstein et al., 2023; Thakkar et al., 2025). This systematic pre-screening process frees up the time and cognitive load of faculty members who are supposed to review manuscripts so that they can focus on substantive rather than repetitive logical checks, and provides a consistent view of manuscript consistency to defense panelists (Chikhi et al., 2022; Thakkar et al., 2025).\nIn addition to the time saving, implementing Resync directly addresses the actual cost savings from the traditional, paper-based drafting and feedback process. Student researchers are burdened with numerous expenses, especially in resource-poor regional higher education centers such as Cebu, where they must print their paper drafts several times to get them reviewed manually. Logical inconsistencies between sections often force students to repeatedly print and revise their papers, as these inconsistencies go undocumented until the final oral defense, which is both costly and time-consuming (Trinidad et al., 2025). The Resync feature removes this material waste as a digital ‘pre-submission’ check point. The system validates the manuscript's overall consistency before printing, helping researchers catch coherence issues that could otherwise go undetected until later stages, reducing the financial resources wasted on premature printing (Kashyap et al., 2023). This automated pre-screening process helps student researchers economically and streamlines the research writing process.\nThe study is crucial for educational and institutional institutions that are looking for digital transformation. The continued disparity in the output and the assessment of the quality of research work carried out by the students at the local universities and the assessment done by the institutions seriously restricts the capacity of the local universities to produce rigorous, consistent and high quality research output (Da Silva, 2022 and Ngo et al., 2022). Traditional administrative reviews are lacking in timely and coordinated support, leaving thesis revision cycles long and student graduation delays (Hesselberg et al., 2023; Trinidad et al., 2025). By providing a localized, context-aware digital system that delivers real-time structural diagnostics and automated revision recommendations, Resync bridges the gap between student writing practices and formal institutional standards. Furthermore, by documenting the system's performance and design boundaries, this study serves as a vital methodological model for future researchers and developers seeking to design context-aware educational technologies."
+  },
+  {
+   "name": "objectives of the study",
+   "text": "This study aims to develop Resync, an AI-powered system accessible through both web and mobile platforms, designed to evaluate the consistency and coherence of research manuscript outputs submitted by researchers.\nSpecifically, this study pursues the following objectives:\nto gather data on the common logical inconsistencies and coherence issues encountered by students, advisers, and panelists when reviewing research manuscripts;\nto develop a multi-platform application that understands the logical flow and content organization of research manuscripts using natural language processing;\nto implement document correlation across sections within a manuscript to detect contextual and logical inconsistency  between research sections;\nto implement a Coherence Scoring that reflects the Overall Assessment of the manuscript's logical consistency based on the cross-section correlation; and\nto provide recommendations, supported by explainable AI, that guide researchers in addressing the logical inconsistencies identified in their manuscripts."
+  },
+  {
+   "name": "scope and limitations of the study",
+   "text": "This study covers the development and implementation of Resync, a web and mobile platform that uses natural language processing to evaluate the logical flow and coherence of research manuscripts. Researchers submit their manuscripts through publicly shared Google Docs links or direct file uploads. The system accepts English-language, single-column, text-based research manuscripts submitted through either method. Resync correlates content across the sections of a manuscript to detect contextual and logical inconsistencies, and evaluates how each citation is used and referenced throughout the manuscript. For external references, the system checks only whether the cited source exists and is publicly accessible; sources that are inaccessible or unavailable are flagged accordingly. Resync generates a Coherence Score, an Overall Assessment of the manuscript's logical consistency, and explainable AI-supported suggestions to guide researchers in addressing identified inconsistencies. Its outputs serve as decision-support tools, with the final interpretation and evaluation remaining the responsibility of the adviser or panelist. The findings aim to reflect broader academic conditions, as research manuscript inconsistencies are a common concern across higher education institutions in the Philippines.\nThis study does not assess Resync's effect on defense outcomes or panel scores, or changes in researchers' writing behavior over time. The system requires a stable internet connection, and the quality of that connection directly affects the speed and reliability of document processing and result generation. It accepts submissions only as publicly shared Google Docs links or uploaded document files and does not process handwritten manuscripts, image-only or scanned files, multi-column layouts, or private files. Citation validation is limited to checking whether a source is publicly accessible, and while the system attempts to verify the existence and accessibility of cited references through public sources, results are not guaranteed to be fully accurate, as AI systems may inconsistently identify or interpret citation accessibility. Accuracy may vary with a document's clarity and formatting. Resync detects inconsistencies in how the sections of a manuscript correlate and align with one another, and does not perform plagiarism checking or verify the factual accuracy of the claims, data, or content presented in the manuscript. Institutional adoption, integration with university grading systems, and factors such as digital literacy or device availability are outside the scope of this study.\nSignificance of the Study\nThe study brings multiple benefits to various stakeholders involved in or affected by the development and implementation of Resync.\nStudent Researchers. Students taking up thesis or capstone manuscript research will be the main beneficiaries. Resync's cross-section document analysis, AI-driven coherence evaluation, and automated inconsistency reporting will support researchers in reviewing their own work. This will help identify logical and coherence issues in the manuscript early, allowing researchers to make timely, informed decisions when revising their work.\nAdvisers. Capstone advisers will benefit from Resync without directly using the system themselves. Because researchers can address inconsistencies before consultations using Resync, advisers receive more coherent and logically consistent manuscripts, allowing them to focus their time on providing deeper academic guidance rather than identifying inconsistencies and logical issues.\nPanelists. Defense panelists will also be able to benefit from Resync, but not as users of the system. By the time the manuscripts they review have been AI-assisted coherence evaluated by the researcher using Resync, they will be more coherent, consistent and defensible. This enables the panelist(s) to have a more streamlined and targeted evaluation at the defence.\nAcademic Institutions. Although not the direct daily users of the \"Resync\", higher education institutions will benefit from its indirect effects on research production. The platform supports the improvement of research output quality in institutional databases or local libraries with well-structured and well-drafted research outputs.\nResearchers. The researchers developing the “Resync” will have valuable experience and skills to help both their academic and professional development. It places the researchers in a position to be partners of technological innovation in educational technology and to be the advocates of the application of digital tools in the management of institutional research.\nFuture Researchers. The study offers valuable insights and methodologies that can be used by researchers and developers in the field of educational technology and Natural Language Processing (NLP). It will stimulate new development of integrated tools for logical coherence analysis, cross-section document validation, and academic checking for specific sections.\nFlow of the Study\nThis diagram below shows the study's different inputs, processes, and outputs. The procedure involves submitting research manuscripts through publicly shared Google Docs links or file upload, correlating content across sections to detect contextual and logical inconsistencies, and formulating a Coherence Score to achieve the desired outcome.\nINPUT \t\t\tPROCESS\t\t\tOUTPUT\nThe process phase follows the Agile Methodology, which includes the stages of planning, requirement analysis, designing, development, testing, deployment and review. During these stages, the system is developed and refined to analyze research manuscripts, correlate content across sections, detect contextual and logical inconsistencies, and formulate coherence assessments.\nThe output phase is the development of Resync: An AI-Powered Research Manuscript Coherence and Inconsistency Detection System. The system provides automated manuscript analysis, detects contextual and logical inconsistencies across manuscript sections, formulates a Coherence Score based on cross-section correlation, and offers recommendations supported by explainable AI to guide researchers in improving the logical consistency of their research manuscripts.\nDefinition of Terms\nCapstone Adviser. This refers to the faculty member assigned to guide and supervise student researchers throughout the development of their capstone manuscript.\nCitation Validation. This refers to the process of verifying whether the references cited in a research manuscript are publicly accessible. The proposed system checks only publicly available references and notifies users when a cited source cannot be accessed.\nCoherence Score. This refers to the numerical score generated by Resync that indicates the overall coherence of a research manuscript after comparing its sections and its manuscript template.\nCorrelation. This refers to the degree to which ideas, concepts, and content across different sections of a research manuscript relate to and support one another. In this study, Resync evaluates correlation by comparing the content of each section against the structure and expected content defined in the manuscript template, forming the basis for the Coherence Score.\nDecision-Support Output. This refers to the Coherence Score, Overall Assessment, inconsistency reports, and recommendations generated by Resync. These outputs are intended to assist, rather than replace, the judgment of advisers and panelists during manuscript evaluation.\nExplainable AI (XAI). This refers to a set of artificial intelligence methods and techniques that make a model's outputs and decision-making processes interpretable to human users. In this study, Explainable AI serves as the operational framework for generating Resync's diagnostic reports, ensuring that each flagged inconsistency is not an unexplained output but is instead accompanied by transparent justifications specifically detailing what the logical gap is, why it violates structural coherence, and providing an actionable recommendation to fix the draft.\nInconsistency Detection. This refers to the feature of Resync that identifies contradictions, redundancies, irrelevant content, and other inconsistencies within a manuscript or between the manuscript and its manuscript template.\nInconsistency Report. This refers to the system-generated report that presents the inconsistencies identified during manuscript analysis, including issues related to coherence, redundancy, relevance, and reference accessibility.\nManuscript Template. This refers to the structural format required by a researcher's institution for organizing a capstone manuscript, including the required chapters and sections. Within the proposed system, researchers may upload their manuscript template so that Resync can reference the expected content of each section and correlate ideas across the manuscript accordingly.\nNatural Language Processing (NLP). This refers to a branch of artificial intelligence that enables computers to process, understand, and analyze human language. In this study, NLP is used by Resync to analyze research manuscripts and compare them with its manuscript template.\nOverall Assessment. This refers to the summary evaluation generated by Resync after analyzing the research manuscript. It provides an overall interpretation of the manuscript's coherence and consistency based on the system's analysis.\nPanelist. This refers to a faculty member or expert assigned to evaluate the validity, coherence, consistency, and overall quality of a capstone manuscript during its oral defense.\nRecommendation Generation. This refers to the feature of Resync that produces recommendations based on the inconsistencies detected during manuscript analysis. These recommendations are intended to guide student researchers in improving the coherence and consistency of their manuscripts.\nResearcher. This refers to the primary user of Resync — an individual who submits a research manuscript for analysis. Researchers upload their manuscript along with its corresponding manuscript template, allowing the system to correlate content across sections, detect inconsistencies, and generate a Coherence Score, Overall Assessment, and recommendations to guide them in revising their work\nResearch Manuscript. This refers to the written research output submitted by student researchers as a requirement for their degree program. It consists of interconnected sections, including the title, statement of the problem, objectives, methodology, findings, conclusions, and other supporting documents analyzed by the proposed system.\nResync. This refers to the AI-powered Research Manuscript Coherence and Inconsistency Detection System developed in this study. It analyzes a research manuscript against its manuscript template to evaluate the correlation of content across sections, detect inconsistencies, verify publicly accessible references, generate a Coherence Score and Overall Assessment, and provide recommendations for manuscript improvement.\nSections. Refer to the distinct parts that comprise a research manuscript, such as the introduction, review of related literature, methodology, results and discussion, and conclusion. In the context of Resync, sections serve as the primary units of analysis through which the system evaluates the logical consistency and coherence of the manuscript by correlating content across each part.\nCHAPTER II"
+  },
+  {
+   "name": "theoretical background",
+   "text": "This study is anchored to the Information Processing Theory, introduced by George Miller in 1956, which describes how both humans and machines receive, process, store, and retrieve information in a structured and systematic manner. The theory likens the cognitive process to a computer system, wherein incoming data is encoded, processed through a series of operations, and stored for future retrieval and use. In the context of Resync, this theory provides the foundational basis for how the system receives submitted research manuscripts as input, processes their textual content through natural language processing, compares sections for correlation and consistency, and retrieves structured outputs in the form of an Coherence Score, Overall Assessment, and Recommendations. Miller (1956) asserts that information must pass through a series of processing stages before it can be meaningfully interpreted and acted upon. For Resync, these stages mirror the system's pipeline of document intake, NLP-based comparison, inconsistency detection, and report generation, ensuring that manuscript evaluation is performed systematically and objectively rather than relying solely on manual human review. This shift in computational processing is particularly vital because human evaluators often face cognitive constraints and mental fatigue when manually reviewing lengthy manuscripts for extended periods (Chikhi et al., 2022; Kunasegaran et al., 2023).\nSupporting the Information Processing Theory, the Constructivist Theory, developed by Jean Piaget and later expanded by Lev Vygotsky, suggests that learners actively construct knowledge and improve their understanding through experience, reflection, and meaningful feedback. Vygotskian constructivism and his concept of the Zone of Proximal Development (ZPD) further emphasize that learners benefit most when they receive guided support that bridges the gap between what they currently know and what they are capable of achieving. In relation to Resync, this theory justifies the system's Inconsistency Report and Recommendations output, which serves as a structured feedback mechanism for student researchers. Rather than simply flagging errors, Resync provides actionable guidance that encourages students to reflect on their manuscript's weaknesses and actively revise their work before final submission or oral defense. Constructivism adds an educational layer to the system's purpose by explaining how students' engagement with automated feedback can lead to meaningful improvement in research quality and writing consistency. This is supported by contemporary educational research, which demonstrates that structured rubrics function as evaluative support that significantly enhance student writing quality, academic performance, and self-efficacy (Panadero et al., 2023; Chen & Gong, 2025).\nAnother theory that supports the proposed system is the Automation Theory, which explains how repetitive, rule-based, and time-consuming human tasks can be systematically delegated to machines to achieve faster, more consistent, and more reliable results. In academic settings, the manual review of research manuscripts is a labor-intensive process that requires advisers and panelists to individually examine each section of a submitted document for consistency, and coherence — a task that is both time-consuming and susceptible to human error and subjective judgment. For Resync, Automation Theory justifies the replacement of this manual review process with an AI-powered system capable of automatically comparing submitted documents, detecting inconsistency  between sections, and generating standardized evaluation reports. As the volume of research manuscript submissions in academic institutions continues to grow, automation provides a scalable and objective solution that reduces the burden on academic reviewers while ensuring that students receive consistent and timely feedback on the quality of their research outputs. This shift is critical within regional Philippine higher education institutions, where overextended advisory systems, fragmented institutional resources, and heavy faculty workloads make automated writing evaluation systems necessary to optimize the thesis mentoring cycle (Co, 2025; Trinidad et al., 2025).\nIn addition to these cognitive and educational frameworks, the proposed system is underpinned by the Semantic Embedding and Semantic Similarity Theory. This framework defines the mathematical and linguistic basis for how artificial intelligence represents and calculates textual meaning. In modern natural language processing, words, sentences, and  paragraphs are projected into high-dimensional vector spaces as dense semantic embeddings (Seo et al., 2025). These mathematical representations allow AI systems to go beyond simple keyword matching and calculate cosine similarity scores between distinct manuscript sections, thereby determining how closely the core concepts correlate (Rokade et al., 2025). For Resync, Semantic Embedding Theory provides the direct algorithm logic used to compare and mathematically score the conceptual coherence between non-contiguous document sections, such as verifying if the stated research objectives in Chapter I correlate with the concluded findings in Chapter V.\nComplementing semantic similarity is the Context-Aware Theory, which outlines how an AI system interprets language based on the surrounding structure and operational scope of a document. In academic writing, coherence is defined by the \"symmetry of specificity,\" which dictates that the level of detail, focus, and operational terminology must remain symmetrically balanced across all chapters (Eriksson, 2023). Under Context-Aware Theory, text must be processed as a continuous, structural chain of logical correspondence rather than as isolated sentences (Islamov & Obraztsov, 2026; Plaatjies & Pretorius, 2026). For Resync, this theory justifies the multi-agent parsing architecture that analyzes the document’s global context, ensuring that the operational scope defined in the Title is systematically maintained and addressed in the Problem Statement, Objectives, and Methodology.\nThese theories underpin the foundational principles of Resync, shaping the development of its features and its intended impact. Information Processing Theory (Miller, 1956; Chikhi et al., 2022) ensures that the system is designed around a structured and logical pipeline for receiving, analyzing, and outputting manuscript evaluation results. Constructivism Theory (Piaget; Vygotsky) strengthens this foundation by addressing the educational purpose of the system's feedback mechanism, ensuring that the generated recommendations actively support student learning and manuscript improvement (Panadero et al., 2023). Automation Theory provides the justification for replacing manual, inconsistent human review with a reliable and scalable AI-powered evaluation process (Co, 2025; Trinidad et al., 2025). Furthermore, Semantic Embedding Theory (Seo et al., 2025; Rokade et al., 2025) and Context-Aware Theory (Eriksson, 2023; Islamov & Obraztsov, 2026) provide the mathematical and structural logic necessary to parse textual meaning and verify cross-section logical flow. By integrating these five theories into its framework, Resync aims to become an academically grounded and technically sound solution that is not only functional and objective but also genuinely supportive of capstone students, advisers, and panelists within Philippine higher education institutions."
+  },
+  {
+   "name": "related literature",
+   "text": "Large language models (LLMs) are increasingly integrated into educational settings to perform evaluative tasks and provide structured, criteria-based writing feedback (Seo et al., 2025). Rather than functioning as generic text generators, these models are capable of rating written outputs and checking document coherence with a reasonable degree of consistency under structured, constraint-bound conditions. However, the reliability of these automated judgments depends heavily on the specific evaluation criteria, model selection, and prompt design utilized. This necessitates the development of a highly structured, domain-specific evaluation system that operates under explicit rubrics to generate valid coherence assessments and constructive revision recommendations rather than generic text outputs.\nResync's Coherence Score is computed through a semantic embedding approach rather than direct language-model reasoning. Following the two-stage method demonstrated by Siino (2024) encoding text with the all-mpnet-base-v2 Sentence Transformer and comparing the resulting vectors through cosine similarity  Resync converts each manuscript section into a dense embedding and mathematically measures its semantic correlation with related sections, producing the numerical Coherence Score. This same model-and-method pairing was applied by Siino (2024) to score semantic relatedness between sentence pairs at SemEval-2024, achieving a Spearman correlation of 0.808 for English test data, which supports cosine similarity over MPNet embeddings as a validated method for quantifying textual relatedness at this granularity.\nSeparately, Google Gemini 2.5 Pro performs the reasoning layer of the system: detecting logical misalignments across sections and generating Explainable AI (XAI) recommendations that justify each flagged inconsistency. This reasoning-based evaluation aligns with the G-Eval framework (Liu et al., 2023), which uses large language models with chain-of-thought prompting and a form-filling paradigm to assess text quality  supporting Gemini's role in explaining detected inconsistencies rather than in generating the Coherence Score itself.\nTo transition from subjective manuscript evaluation to objective, standardized assessment, systems must analyze text based on a continuous chain of logical correspondence across chapters. Islamov and Obraztsov (2026) developed a 16-step expert-verification algorithm that models academic consistency as a structural network linking key document nodes, tracing the logical flow from the Topic to the Problem, Goal, Tasks, Hypothesis, and Conclusion. By mapping these transitions, this algorithm provides a systematic method to verify that each component directly supports the preceding section, ensuring whole-manuscript integrity. Implementing this verification logic allows Resync to systematically audit the logical flow between a student's research objectives, methodology, and conclusions.\nAI systems, particularly large language models, often function as “black boxes,” producing accurate results without clearly explaining how those results were generated. According to Ortigossa et al. (2024), this lack of transparency makes it difficult for users to determine whether an output is reliable or influenced by hidden bias. Explainable AI (XAI) addresses this issue by making AI-generated outputs more understandable. Ortigossa et al. (2024) distinguish interpretability, where a model's reasoning is directly understandable, from explainability, which uses additional methods to clarify why a specific output was produced. This principle is applied in Resync. Instead of presenting only a Coherence Score, the system also provides an Overall Assessment and specific Recommendations that explain detected inconsistencies and suggest improvements. These features make the AI's outputs more transparent and support informed decision-making by researchers, advisers, and panelists.\nThe integration of automated evaluation rubrics aligns closely with constructivist learning theory, where structured feedback serves as a critical cognitive scaffold to support self-regulated learning. Panadero et al. (2023) demonstrated through a meta-analytic review that rubrics act as evaluative scaffolds that significantly improve academic performance and student self-efficacy, achieving a moderate pooled effect size (g = 0.45). By presenting clear, rubric-driven diagnostic feedback, Resync does not merely edit text but scaffolds the student's writing process within their Zone of Proximal Development. This interaction prompts student researchers to actively reconstruct their research design, facilitating self-regulated learning and deeper cognitive engagement during the revision process.\nThis automated, scaffolded support is particularly critical in the Philippine educational landscape, where student researchers face severe difficulties maintaining structural consistency and managing the thesis writing lifecycle under overextended advisory systems (Trinidad et al., 2025). Fragmented institutional support, structural time-management issues, and cognitive strain often prevent students from maintaining a logical flow between their research questions and methodologies. These challenges are made worse by manual proofreading and the high number of students assigned to each adviser, causing repeated revisions where errors may only be noticed near the final defense.\nThe relevance of these writing challenges is especially pronounced when analyzing the bilingual communication patterns of local student researchers. Olitres (2023) investigated the linguistic and academic communication challenges specific to Cebuano-Visayan bilinguals in Philippine educational settings, noting that students frequently encounter writing difficulties when producing academic work in English as a second language. This local context directly influences the types of structural errors and logical inconsistency that occur in draft manuscripts. By addressing these localized academic writing challenges within a unified web application, Resync directly contributes to making capstone evaluation more accessible, structured, and responsive to the regional higher education environment."
+  },
+  {
+   "name": "related studies",
+   "text": "Turnitin is an academic integrity platform used by universities worldwide to check submitted papers against a large database of academic publications and web sources (Turnitin, 2024). The platform compares a submitted document against its repository and produces a similarity report that flags matching or paraphrased text, helping institutions verify originality before a paper is accepted or defended. While effective at detecting copied content, Turnitin does not examine whether a manuscript's internal sections, such as its objectives, problem statement, and conclusions, are logically consistent with one another; its review is limited to textual originality rather than structural or evidentiary coherence.\nSimilarly, iThenticate, developed by Clarivate Analytics, is widely used in research publishing and academic institutions to ensure originality in scholarly manuscripts. It scans documents against academic journals, publications, and web content to identify potential plagiarism (Clarivate Analytics, n.d.). While it is highly effective in detecting textual overlap, iThenticate does not perform semantic analysis or assess whether the research arguments are structurally consistent across sections of a manuscript.\nIn terms of writing enhancement, Grammarly is a widely deployed AI-powered writing assistant that provides real-time grammar correction, style improvement, and clarity enhancement (Grammarly Inc., n.d.). It is commonly used by students and professionals to improve writing quality. However, Grammarly operates primarily at the sentence and paragraph level and does not evaluate research-level consistency, such as correlation between research objectives, data analysis, and conclusions.\nBeyond grammar-level tools, Paperpal, developed by Editage, is an AI-powered academic writing and manuscript-checking tool used by researchers globally to prepare papers for journal submission (Paperpal, 2024). The tool strengthens a manuscript's structure and flow through AI-generated outlines, contextual recommendations, and consistency checks, and runs over 30 submission-readiness checks covering language, references, structure, and journal compliance before submission. Its consistency-checking feature specifically flags different variations of stylistic elements used throughout a manuscript, identifying where the same term, format, or convention is written inconsistently across sections (Paperpal, 2024). While this shows that an AI tool can already detect internal inconsistencies within a single manuscript, Paperpal's checks focus on accuracy and consistency in numbers, facts, data, symbols, tables, and figures within the document itself rather than comparing the manuscript against separate external documents, such as validation board results or survey data, to verify whether its claims are actually supported by outside evidence.\nA more advanced approach to manuscript review is offered by Enago Read (formerly RAxter), an AI-powered peer review platform built around a structured, AI-assisted workspace (Enago Read, 2026). It combines human reviewers with AI-generated insights, using a Copilot interface for querying the manuscript and an LLM Roundtable design to cross-check model outputs and reduce hallucinated feedback. This positions Enago Read as a structured review workspace rather than a simple drafting tool. However, its review still centers on the manuscript as a single document checked against general peer-review checkpoints, not against separate external materials such as validation board results or survey data.\nTaken together, these tools reveal a consistent pattern: each one strengthens a different piece of the manuscript review process, originality, grammar, internal stylistic consistency, or peer-review depth, but none of them verifies whether a manuscript's own claims are actually supported by the evidence submitted alongside it. This gap is precisely what Resync is built to close. By checking a research manuscript as a whole against its supporting documents and validating citations against public sources, Resync extends beyond what existing global tools currently offer, addressing a layer of manuscript quality that remains largely unchecked by automated means.\nComparative Matrix\nThis comparative matrix section also provides an overview of related studies and literature findings from similar research studies that are related to or show similarities with the current proposed study, Resync.\nCOMPARATIVE MATRIX\nCOMPARATIVE MATRIX cont'd\nCOMPARATIVE MATRIX cont'd\nTables 1.1 to 1.3 present a comparative analysis framework used to evaluate and contrast several existing academic writing and research support systems, including Enago Read, Grammarly, iThenticate, Paperpal, and Turnitin. This matrix provides a structured overview of each system in terms of features, limitations, platform compatibility, support mechanisms, and overall functionality. It serves as a basis for identifying gaps in current tools and supporting the development of the proposed system, Resync.\nExisting systems such as Turnitin and iThenticate primarily focus on plagiarism detection and similarity checking by comparing submitted documents against academic repositories and online sources. Grammarly and Paperpal, meanwhile, are designed to improve writing quality by offering grammar correction, sentence refinement, and academic writing recommendations. Enago Read supports literature review and document comprehension, but it is limited to single-document analysis and does not evaluate the relationships between different parts of a research manuscript. Although these tools are useful for academic writing support, they do not assess whether the components of a capstone study are logically aligned and consistent as a whole.\nClear differences exist between these systems and the proposed Resync. Unlike existing tools that focus on plagiarism detection, writing enhancement, or literature management, Resync is specifically designed to evaluate the coherence and consistency of capstone manuscript components such as the Statement of the Problem, Objectives of the Study, Survey Results, Validation Board, Scope and Limitations, and other related sections. It determines whether these parts are logically connected and whether each section supports the overall structure of the research study. Resync distinguishes itself by providing a focused approach to manuscript validation centered on structural coherence and logical correlation rather than surface-level writing corrections. By identifying inconsistencies, missing connections, and misaligned components across the research manuscript, the system aims to help students and researchers produce well-structured, consistent, and logically sound capstone studies."
+  },
+  {
+   "name": "research methodology",
+   "text": "This section presents the steps and considerations behind building the proposed system, Resync: An AI-Powered Research Manuscript Correlation and Inconsistency Detection System. It explains the system's intended purpose , its overall design, and the development approach the research team followed in building it. This section also identifies the specific tools, frameworks, and AI models used to build the system.\nResync is designed to benefit anyone involved in the academic research process. By enabling early detection of logical and coherence gaps in research manuscripts, the system supports researchers in producing more sound and well-developed work, helps advisers focus on substantive academic guidance, and allows panelists to conduct more focused and meaningful evaluations."
+  },
+  {
+   "name": "software engineering methodology",
+   "text": "Resync will be developed using the Agile Methodology. This approach is suited to the system, since its core function, using the manuscript template to guide how the AI checks the correlation of content across the manuscript's sections and detect misalignments, requires repeated testing and refinement before it can reliably produce an accurate Coherence Score and Overall Assessment. Developing Resync through short, iterative cycles allows the research team to identify and correct flaws in the comparison process early, rather than discovering them only after the system has been fully built. .\nPlanning Phase. The team gathers data on the inconsistencies and validation issues encountered by researhers, advisers, and panelists when reviewing research manuscripts and related documents, through surveys and interviews. This data forms the basis of the system's requirements, ensuring that Resync is built around actual review concerns rather than assumptions.\nDesign Phase. Using the requirements established during planning, the team outlines how Resync will function, including how the system uses the manuscript template to determine the expected content of each section, how it correlates the manuscript's actual content against that expected content to detect misalignments, and how the Coherence Score, Overall Assessment, and Recommendations are presented to the  researcher.\nDevelopment Phase. The team implements the design into a working system, developing the features that allow Resync to analyze manuscript content using natural language processing, use the manuscript template to guide the correlation of content across manuscript sections and detect misalignments, validate citations against public sources, and generate recommendations supported by explainable AI. .\nTesting Phase. The team verifies that Resync's features function correctly together, ensuring that the system accurately detects misalignments and produces a Coherence Score that reflects an accurate Overall Assessment. Issues identified during testing are corrected before proceeding further.\nDeployment Phase. Resync is prepared and released for pilot testing on both web and mobile platforms, with basic guidance provided to help researchers use the system, and with advisers and panelists able to review its output on already pre-checked manuscripts.\nReview Phase. The team gathers feedback from pilot users to assess Resync's performance, using their input to identify areas for improvement in future iterations of the system\nAGILE SPRINT PLAN\nAGILE SPRINT PLAN cont'd\nAGILE SPRINT PLAN cont'd\nAGILE SPRINT PLAN cont'd\nAGILE SPRINT PLAN cont'd\nAGILE SPRINT PLAN cont'd\nAGILE SPRINT PLAN cont'd\nAGILE SPRINT PLAN cont'd\nAGILE SPRINT PLAN cont’d\nAGILE SPRINT PLAN cont’d\nAGILE SPRINT PLAN cont’d\nAGILE SPRINT PLAN cont’d\nAGILE SPRINT PLAN cont’d\nAGILE SPRINT PLAN cont’d\nAGILE SPRINT PLAN cont’d\nAGILE SPRINT PLAN  cont’d\nAGILE SPRINT PLAN cont’d\nPlanning-Initiation Phase\nIn this phase, the project’s goals, scope, and requirements will be defined and clarified. This involves creating a Business Model Canvas to evaluate the business concept of Resync, a program  to illustrate user interactions with the system, and a validation board to identify the core problem and establish a solution that addresses the needs of the researchers. Additionally, a Gantt chart will be used to outline the project tasks and their corresponding timelines, while a functional decomposition diagram will break down the major system processes into smaller and more manageable components. These planning tools will serve as the foundation for the systematic development of Resync as an AI-powered research manuscript coherence and inconsistency detection system.\nBusiness Model Canvas\nThe Business Model Canvas of Resync presents the strategic components necessary for the development, delivery, and sustainability of the proposed AI-powered research manuscript coherence and inconsistency detection system. The model identifies the key stakeholders involved in the system’s implementation, the major activities and resources required for its operation, the value it offers to its intended users, and the possible channels, costs, and revenue mechanisms associated with its deployment. As an educational technology solution, Resync creates value by helping researchers, advisers, and panelists identify inconsistencies and unsupported claims across research manuscripts and supporting documents through automated analysis, thereby improving manuscript quality and reducing the burden of manual review.\nBUSINESS MODEL CANVAS\nBUSINESS MODEL CANVAS cont’d\nBUSINESS MODEL CANVAS\nTables 4.1, 4.2, and 4.3 visualize the operational and strategic framework of \"Resync\", an AI-powered research manuscript coherence and inconsistency detection system designed to assist researchers. Resync offers automated manuscript checking by detecting inconsistencies, identifying misalignments across sections, and generating alignment scores and revision recommendations to improve the quality and coherence of research papers. Through its web and mobile application platform, the system enables users to review manuscripts more efficiently before consultation, submission, or final defense. The platform is supported by partnerships with academic institutions, research advisers, panelists, developers, and AI service providers, while its core resources include AI/NLP models, manuscript analysis engines, cloud infrastructure and evaluation criteria. Its key activities involve system development, AI model training, pilot testing, data preparation, feature integration, and performance monitoring. To sustain operations, Resync follows a cost structure covering system development, cloud services, AI model training, maintenance, testing, and security, while potential revenue may be generated through subscriptions. Altogether, the Business Model Canvas demonstrates how Resync can deliver scalable and technology-driven support for improving research manuscript quality in academic settings.\nProgram\nThis section presents the program  of Resync: An AI-Powered Research Manuscript Correlation and Inconsistency Detection System. It illustrates the sequence of processes performed by the system, from user registration and login to manuscript submission, AI-powered document analysis, and the generation of the Coherence Score, Overall Assessment, and recommendations. This also shows the process of revising and re-scanning manuscripts, as well as viewing previous scan results and managing user profiles. It serves as a visual representation of how the system operates, helping to explain the interaction between the researcher and the proposed system while ensuring that each process is carried out in a logical and organized manner\nValidation Board (Stages 1 and 2)\nThis section presents the validation board, a strategic tool used in the development process to systematically test and validate assumptions about a product or service. It helps teams identify the riskiest assumptions, design experiments to test these assumptions, and gather data to inform decision-making.\nVALIDATION BOARD\nVALIDATION BOARD cont'd\nVALIDATION BOARD cont'd\nVALIDATION BOARD cont'd\nVALIDATION BOARD cont'd\nVALIDATION BOARD cont'd\nExperiment 1. Student researchers — Resync's primary users — face persistent difficulty in keeping a capstone or research manuscript correlated and consistent across its title, objectives, methodology, findings, and conclusions, as well as across related documents such as the proposal, manuscript, and defense presentation. Because manuscripts are written over several months and often divided among group members, sections can drift out of sync, and correlations are typically caught only through slow manual re-reading, adviser consultation, or generic grammar-checking tools that do not evaluate the whole manuscript/research. The proposed solution is \"Resync,\" an AI-powered system that automatically compares manuscript sections, computes a Correlation Score reflecting overall correlation, and generates an Inconsistency Report that flags mismatched sections and explains the likely issue. The pilot survey involved 33 respondents — researchers across multiple colleges — gathering feedback on the perceived need for the system and the usefulness of its core features. Success was measured by the proportion of respondents who saw a need for the system and who rated its proposed features as useful. The results — 90.9% affirming the need for the system, 90.9%–93.9% rating its core features as useful, and 93.9% likely or very likely to use or recommend it — validate demand among Resync's primary users and will guide refinement of its detection features ahead of full development.\nExperiment 2. Defense panelists, while not primary users of Resync, are nonetheless affected by the same underlying problem: they must manually verify that a capstone manuscript's objectives, methodology, findings, and conclusions remain correlated and internally consistent, often across many defenses per term, using only manual reading, cross-referencing, and general rubrics. As a secondary, optional extension of Resync's core capability, the proposed solution adds a pre-defense readiness that automatically detects misaligned objectives and methodology, checks cross-chapter consistency of terminology, validates completeness, analyzes logical flow between chapters, compares the manuscript against the approved proposal, and checks citation/reference consistency. The pilot key informant interview involved a defense panelist with over 40 capstone defense evaluations across 3–4 years of service, gathering feedback as an affected stakeholder — rather than as a primary user — on the perceived challenge of manual verification, the frequency of post-defense revisions due to correlation issues, and the perceived need for and benefits of an AI-powered readiness report. The results — a \"Very Challenging\" rating for manual verification, manuscripts \"Often\" requiring major revisions after a defense, a \"Strongly Agree\" rating for the system's need, and agreement on all proposed evaluation benefits and checker features — corroborate demand for a panelist-facing readiness report as a secondary module and will guide its prioritization ahead of full development.\nExperiment 3. Capstone advisers, likewise not primary users of Resync, experience a parallel — and by this account even more pronounced — version of the same problem as affected stakeholders: repeatedly checking whether a manuscript remains aligned across chapters and revision cycles for every group they advise, relying mainly on manual reading. As a secondary, optional extension of Resync's core capability, the proposed solution adds automatic detection of misaligned objectives and methodology, cross-chapter terminology consistency checking, checklist-based completeness validation, suggested corrective feedback, version comparison to track changes across drafts, and a summary report. The pilot key informant interview involved an adviser with 5 or more years of advising experience and more than 20-40 groups advised in total, gathering feedback as an affected stakeholder — rather than as a primary user — on the perceived challenge of manual verification, the frequency of manuscript inconsistencies and revision cycles required, and the perceived need for and benefits of an AI-powered checker. The results — an \"Extremely Challenging\" rating for manual verification, manuscripts \"Often\" showing inconsistencies and typically requiring 3–4 revision cycles, a \"Strongly Agree\" rating for the system's need, and strong support for corrective-feedback and summary-report features — corroborate demand for an adviser-facing module and will guide its prioritization ahead of full development.\nGantt Chart\nThis figure provides a visual timeline of the Resync app’s development phases, from planning to deployment. It outlines key tasks, their durations, and dependencies to ensure efficient project tracking and on-time delivery.\nGANTT CHART\nGANTT CHART cont'd\nGANTT CHART cont'd\nThis section illustrates the project timeline, detailing specific tasks and their corresponding durations in a horizontal bar visualization, which enables the researchers to systematically organize, monitor, and align various developmental activities. It provides a structured overview of the study’s status, enhances internal communication, and ensures that all necessary technical requirements are finalized according to the established schedule. Within the Agile framework, the Gantt chart remains essential for managing the methodology’s sequential phases, allowing for the precise representation and continuous tracking of every development stage.\nFunctional Decomposition Diagram\nThis section presents the Functional Decomposition Diagram (FDD), which illustrates the hierarchical breakdown of the system's major functions into smaller components, providing a clear view of how the proposed system operates."
+  },
+  {
+   "name": "analysis-design phase",
+   "text": "During the Analysis-Design phase, the researchers analyze the system requirements and prepare the overall design of Resync: An AI-Powered Research Manuscript Coherence and Inconsistency Detection System. The system requirements are identified through the review of related literature, survey analysis, and information gathered from student researchers, research advisers, and panelists to better understand the challenges they encounter during the research process. The collected information is used to determine the features and functions of the proposed system. Based on these requirements, the researchers develop the Program , Functional Decomposition Diagram, Use Case Diagram, Data Flow Diagram (DFD), Entity Relationship Diagram (ERD), User Interface Design, Storyboard, Database Design, Network Design, and System Architecture. These designs serve as the foundation for developing the system's core features, including manuscript submission, AI-powered coherence and inconsistency detection, reference validation, and the generation of the Coherence Score, Overall Assessment, and recommendations.\nUse Case Diagram\nThis section presents the use case diagram, which provides a visual representation of the system's functional requirements and proposed system. For Resync: An AI-Powered Research Manuscript Coherence and Inconsistency Detection System, the diagram illustrates how researchers interact with the platform to upload and analyze research manuscripts, review AI-generated reports, provide feedback, and monitor the manuscript evaluation process."
+  },
+  {
+   "name": "user interface design",
+   "text": "The following figures presented here are the User Interface Design of \"Resync\", showing the initial design on how the application would look and its functionalities. The User Interface’s layout, color scheme and experience are made to tailor the best user experience.\nThe Splash Art Page serves as the initial loading screen of the Resync mobile application. It displays the system logo and name, along with the tagline \"Coherence Synchronization Portal,\" providing researchers with a visual introduction to the platform upon launch.\nThe Onboarding Pages introduce first-time users to the core features of Resync through a series of three screens. The first screen, \"Align Your Research,\" highlights the system's ability to detect objective-to-methodology drift within a manuscript. The second screen, \"Understand Every Correction,\" presents the explainable AI-driven revision suggestions the system generates for detected conflicts and contradictions. The third screen, \"Defend with Confidence,\" showcases the Coherence Index feature, which tracks a manuscript's structural compliance over time. Researchers may navigate through the screens using the Next button or skip directly to the main page.\nThe Auth Page serves as the main entry point of the Resync application. It displays the system's sample analysis results, including a Coherence Score and a summary of detected inconsistencies across manuscript sections. From this page, researchers may choose to create a free account or sign in to an existing account. .\nThe Register Page allows new users to create a Resync account by providing their full name, email address, password, institution or organization, and professional role. Once the required fields are completed, researchers may tap the \"Create Account & Register\" button to proceed with account creation and gain access to the system.\nThe Sign-In Page allows existing users to access their Resync account by entering their registered email address and password. Upon successful authentication, researchers are redirected to their dashboard, where they can manage their manuscripts and view their analysis results.\nThe Dashboard Page serves as the main landing screen of the Resync mobile application upon login. It displays the system logo and a prompt card that guides student researchers to begin their manuscript analysis. The Manuscript Metrics section shows the Integrity Score, Issues Flagged, and Citations Checked, which remain blank until the first scan is performed. A prominent Upload a Chapter to Begin button is provided at the bottom to initiate the scanning process. The bottom navigation bar provides access to the Dashboard, New Scan, History, and Profile pages.\nThe Scan Page presents the first step of the three-step Coherence Scan Engine. Student researchers are prompted to choose how they would like to submit their manuscript for analysis — either Per Chapter, which allows scanning of individual sections of the draft separately, or Whole Manuscript, which analyzes the entire draft document at once. A Return to Dashboard button is also provided at the bottom for researchers who wish to cancel and return to the main screen.\nThe History Page, labeled Manuscript Archive, displays a list of all previously scanned manuscripts stored on the device. Each entry shows the manuscript title, the scan label such as Final Review or Initial Scan, the date of the scan, and a color-coded score indicator reflecting the Coherence Score obtained during that analysis. Filter options at the top allow researchers to view All entries, High Score results, or those that Need Review. A Compare button is also available to allow side-by-side comparison of selected manuscript entries.\nThe Profile Page displays the personal account information of the student researcher currently logged into the system. It shows the researcher's name, role designation as Student Researcher, and their user credentials including Full Name, Email Address, and Academic Institution. An Edit Profile button is accessible at the top right of the User Credentials section to allow the researcher to update their account information as needed.\nThis figure presents student researchers to input a publicly shared Google Docs link of their manuscript. It includes a reminder to configure document sharing settings to Anyone with the Link, requires the selection of the Research Type as either Quantitative or Qualitative, and provides an optional field for supporting document details before proceeding to manuscript analysis.field\nThis figure provides an alternative method in case of no access to link, allowing the student researcher to upload their manuscript directly as a Word document file from their device, select the Research Type, and optionally attach supporting documents before initiating the scan.\nFigure X shows the Coherence Scan Engine (New Scan) interface of the Resync mobile application, acting as the application’s main ingestion point. The header consists of a gear for quick settings access and a large “Demo” button to run immediate mockups of one’s paper. Underneath, student researchers paste their manuscript’s public Google Docs link and choose whether their study is “Quantitative” or “Qualitative.” To accommodate their institution’s format, an optional card allows for the inclusion of their department’s style guidelines, whether via a Google Docs link or local upload. After the specifications have been provided, selecting the main “Analyze manuscript” button starts the backend AI-powered, asynchronous checking pipeline.\nThe Overview Screen displays the results of the manuscript analysis after scanning is completed. It presents a circular Coherence Score gauge showing the percentage score and its corresponding assessment label, such as Moderate Coherence. Below the score, an Executive Diagnosis section provides a narrative summary of the manuscript's overall condition, highlighting structural strengths and areas that require further revision. The Source Audit Properties section also displays the synchronized Google Docs link associated with the analyzed manuscript. Tabs at the top allow navigation to the Preview, Inconsistencies, and Suggestions sections.\nThe Preview Screen displays the extracted text of the submitted manuscript, allowing student researchers to scroll through their document content within the application. Areas of concern are color-coded based on the type of issue detected, with the highlight legend indicating three categories: Contradiction, Redundancy or Duplication, and Logic Gap. Researchers can tap on any highlighted text to jump directly to its detailed explanation card, enabling a more focused and efficient review of flagged sections.\nThe Inconsistencies Screen displays the specific cross-section misalignments detected by the system during manuscript analysis. Each inconsistency card identifies the two sections involved in the conflict, such as Section 1.2 Introduction connecting to Section 3.4 Methodology, and provides a brief description of the detected issue. A Recommended Correction is displayed within each card, offering a concise and actionable suggestion to resolve the identified inconsistency. A Show in Document button is also available to allow the researcher to locate the flagged section directly within the manuscript preview.\nThe Suggestion Screen presents a numbered list of improvement recommendations generated by the system based on the results of the manuscript analysis. Each suggestion entry is expandable and contains two components: a Diagnostic Rationale, which explains the reason behind the identified issue, and an Improvement Remedy, which provides a specific corrective action the student researcher should perform to address the problem. A Return to Companion Portal button is available at the bottom of the screen to navigate back to the main results view.\nThe Reference Screen is a dedicated tab within the manuscript analysis results that displays the citation validation results for the submitted manuscript. It shows whether the references cited within the manuscript are publicly accessible based on the system's citation checker. A Return to Companion Portal button is provided at the bottom of the screen for navigation back to the main results area.\nThe Settings Screen allows student researchers to manage their Resync account and preferences. It includes options to change the app theme (Light, Dark, or System Default), enable or disable push notifications and email alerts, manage security settings (Change Password, Two-Factor Authentication, and Clear Local Cache), access the Terms of Service, Privacy Policy, and Help and Support pages, and sign out of the application.\nThe Index Screen serves as the navigational overview of the Resync web application, presenting the list of accessible screens and features available to the student researcher. It provides a structured entry point that orients the user toward the system's core functionalities before proceeding to the registration or login process.\nThe Registration Screen allows new student researchers to create a Resync account by providing the necessary personal and academic information required to access the system.\nThe Login Screen provides the authentication entry point for registered student researchers, requiring the input of valid credentials to gain access to the Resync web application.\nThe Dashboard Screen is displayed upon the student researcher's initial login prior to any manuscript submission. It presents the Manuscript Metrics section with blank values for Integrity Score, Issues Flagged, and Citations Checked, and provides a prominent prompt directing the researcher to upload a document to begin the analysis process\nThe Google Docs Link Submission Screen prompts the student researcher to input a publicly shared Google Docs link of their manuscript. It includes a reminder to configure document sharing settings to Anyone with the Link, requires the selection of the Research Type as either Quantitative or Qualitative, and provides an optional field for supporting document details before proceeding to manuscript analysis.\nThe Word Document Upload Screen provides an alternative manuscript submission method, allowing the student researcher to upload their manuscript directly as a Word document file from their device, select the Research Type, and optionally attach supporting documents before initiating the scan.\nThe Upload Department Style Page is displayed below the screen after the student researcher submits their manuscript link or file, the student researcher uploads a there own department Style doc link to let ai analyze their own format.\nThe Document Processing Screen is displayed after the student researcher submits their manuscript link or file, indicating that the system is actively running the NLP-based coherence detection, inconsistency flagging, redundancy detection, and citation validation processes on the submitted document.\nThe Scan Report Screen presents the complete results of the manuscript analysis and serves as the main results container, providing the student researcher with navigational access to the Overview, Preview, Inconsistencies, Suggestions, References, and Duplication result tabs generated upon completion of the scan.\nThe Upload and Scan Page allows student researchers to submit their research manuscript and supporting documents for AI-powered analysis. The screen displays the rescanning process in progress, showing a loading indicator as the system re-reads the submitted Google Docs link and re-analyzes the manuscript content. On the right panel, the system simultaneously displays previously detected flags across the manuscript sections, including issues under the Scope and Objectives categories, along with the corresponding Suggested Actions that guide the researcher on what to address before the rescan is completed.\nThe No Changes Detected modal appears on the Upload and Scan Page when a researcher uploads a file for rescanning but the system detects that the submitted file has not been modified since the last analysis. Since the rescan feature requires the researcher to upload a new or revised version of their manuscript file, the system checks whether the uploaded file differs from the previously scanned version before proceeding. If no changes are found, this confirmation prompt is displayed to notify the researcher. The researcher may select Cancel to go back and upload a different file, or select Rescan Anyway to proceed with the analysis on the same file. This prompt ensures that rescans are intentional and that the system processes only updated manuscript versions whenever possible.\nThe Scan Results Page presents the full output of the AI analysis performed on a submitted manuscript. The page displays the scanned document content with highlighted text segments that correspond to detect inconsistencies, allowing researchers to locate specific problem areas directly within the manuscript. On the right panel, the system shows the Coherence Score, Duplication Similarity rating, and a list of Flags Detected, which categorize identified issues by section such as Scope and Objectives. The panel also includes Suggested Actions that provide explainable AI-generated recommendations for each detected inconsistency, along with a summary of the number of Issues Flagged, Citations Checked, and Citations Flagged across the entire manuscript.\nThe Manuscript Reports Archive Page displays all previous analysis reports generated for a researcher's submitted manuscripts. Each report card shows the manuscript title, the chapters covered, the date of analysis, and the corresponding Coherence Score. Researchers may expand a report card to view additional details such as the number of duplications, logic flags, and the manuscript link, and may click through to open the full analysis report for review. This page allows researchers to track the progress of their manuscript across multiple submission and rescan cycles.\nStoryboard\nThe storyboard is a powerful tool that summarizes the flow of the user experience in order. It provides a visual representation of the logical flow of the system to identify potential problems and ensure your app or website functions as intended.\nFigures 39 to 41  illustrate the storyboard of both mobile and web  for \"Resync's\" user . The user journey begins with a brief onboarding sequence, where the app introduces its core value propositions — aligning research, understanding corrections, and defending work with confidence, culminating in a sample coherence score to preview the tool's output.\nFrom there, new users are prompted to register while returning users can sign in directly, with authentication requiring an email and password or supported alternative sign-in methods. After account creation, users are guided to a welcome screen inviting them to scan their first chapter, and can also access and complete their academic profile with details such as full name, affiliation, and research focus.\nOnce past onboarding, users land on the dashboard, a central hub with bottom navigation to Dashboard, New Scan, History, and Profile. From the dashboard, users can initiate a new scan.\nThe system then processes the document and returns a coherence score alongside a categorized breakdown, including sections such as identified inconsistencies, recommended corrections, and source integrity findings.\nUsers can review this feedback in detail, integrate suggested edits, and generate a comparison report against prior drafts. Aside from initiating new scans, users can browse a Manuscript Archive listing past scans with their corresponding scores and timestamps, filter or search this history, and revisit any previous result. Users can also access a Settings screen to manage app themes, notification preferences, and security options such as password changes.\nThrough this sequence, \"Resync\" provides an integrated experience that connects manuscript scanning with structured coherence analysis, historical tracking, and account management, all within a single, researcher-focused mobile platform."
+  },
+  {
+   "name": "database design",
+   "text": "This section refers to the process of creating a detailed data structure for storing, managing, and organizing data in a database management system (DBMS). It involves designing the layout, relationships, and rules that govern how data is stored and accessed within the database.\nAt the center of the system is the user entity, which extends Supabase's built-in authentication layer and stores basic profile details, including the user's first and last name, email address, and notification preferences. Each user owns one or more manuscript entries, which capture the research paper's title, research type, upload mode, and status. A soft-delete timestamp (deleted_at) allows manuscripts to be archived without permanent data loss.\nEvery manuscript scan generates an analysis_run, which serves as the central hub of the AI evaluation process. It tracks the scan's status, timestamps, overall coherence score, and an optional style reference URL for dynamic format validation. Each analysis run produces three types of results: inconsistency records, which store the detected issue's type, severity, primary and conflicting section names, Explainable AI (XAI) justifications, suggested fixes, and character offsets for text highlighting in the UI; recommendation records, which capture broader improvement suggestions mapped to specific target sections with an assigned priority level; and citation records, which log the accessibility status of each bibliography reference verified by an asynchronous backend audit.\nThe subscription entity manages each user's plan tier, AI scan quota limits, and renewal dates to enforce the platform's freemium model. Linked to this is the pymt_txn entity, which serves as a ledger recording each upgrade payment's amount, status, and creation timestamp.\nThe notification entity stores push alert payloads, OneSignal IDs, and read statuses for in-app delivery, optionally linked to a specific analysis run for deep-link navigation. To support targeted push delivery, the user_device_token entity stores each registered device's OneSignal player ID and platform.\nThis ERD highlights the interconnected, highly normalized structure of Resync, where user accounts, manuscript submissions, AI analysis results, and subscription management work together to deliver an accurate and explainable manuscript evaluation experience across all platforms.\nData Dictionary\nThis data dictionary defines the column names, data types, field sizes, null constraints, and descriptions for all tables in the Resync database schema. Fields marked Not Null are required; fields marked Yes may be left empty.\nUSER\nUSER cont’d\nThe User table stores the account and profile information of all registered users within the Resync system. It serves as the central entity linked to manuscripts, analysis runs, subscriptions, notifications, payment transactions, and device tokens, enabling the system to associate all activities and records with the corresponding user.\nMANUSCRIPT\nMANUSCRIPT cont’d\nThe Manuscript table stores the details of each research manuscript submitted by a user for analysis. It records the manuscript's title, research type, upload mode, and status, and serves as the primary reference for the analysis runs performed against it.\nANALYSIS_RUN\nThe Analysis Run table records each instance of Resync's manuscript analysis process. It links a manuscript to the user who executed the analysis, tracks the run's status and timestamps, and stores the resulting coherence score, serving as the central hub that connects inconsistencies, citations, and recommendations to a specific analysis.\nINCONSISTENCY\nINCONSISTENCY cont’d\nThe Inconsistency table stores the individual contextual and logical inconsistencies detected during an analysis run. It records the type, severity, description, explanation, and suggested fix for each flagged issue, along with the specific manuscript sections and text locations involved."
+  },
+  {
+   "name": "recommendation",
+   "text": "RECOMMENDATION cont’d\nThe Recommendation table stores the suggestions generated by Resync to help researchers address inconsistencies identified in their manuscript. Each record is linked to an analysis run and specifies the target section, recommendation text, and priority level.\nCITATION\nThe Citation table stores the references extracted from a manuscript during an analysis run. It records the raw citation text, whether the source is publicly accessible, and when it was verified, supporting the system's citation validation feature.\nNOTIFICATION\nThe Notification table stores the alerts sent to users regarding events within the system, such as the completion of an analysis run or the detection of a new inconsistency. It tracks the notification's type, content, read status, and delivery details.\nSUBSCRIPTION\nThe subscription table stores the plan and billing status of a user's subscription to Resync. It tracks the user's AI usage quota, including the total allotted, the amount used, and when the quota resets.\nPYMT_TXN\nThe Payment Transaction table stores the records of payments made against a user's subscription. It tracks the transaction amount, status, and the date it was created.\nUSER_DEVICE_TOKEN\nUSER_DEVICE_TOKEN cont’d\nThe User Device Token table stores the device registration information used to deliver push notifications to a user. It records the device's platform and its associated OneSignal player identifier.\nNetwork design\nThis section covers the planning and design of Resync's network infrastructure, ensuring reliable connectivity between users, the backend server, and the database across both web and mobile platforms. It involves identifying the components needed for communication, evaluating connectivity requirements, and structuring how data flows from the user's device to the server and back. The network diagram illustrates the overall architecture, showing how users connect through the internet to the Resync backend, which processes requests and interacts with external AI services and the database to deliver coherence analysis results. This design serves as a guide for implementing and maintaining the system's actual network setup.\nNetwork Model\nA network model is a conceptual framework that describes the architecture, components, and interactions within a computer network. It outlines how different devices and services communicate with each other to achieve seamless connectivity and efficient data transfer.\nNetwork Topology\nThis section presents a visual illustration of the network topology, which represents how devices and components are integrated into a computer network. The topology diagram shows the different links between network nodes and helps in understanding the data flow, addressing mechanisms, and protocols for efficient data transfer.\nDevelopment/Construction/Build Phase\nDuring the Development/Construction/Build phase, the components required to implement Resync are developed and integrated. The system modules, database, AI models, software tools, and frameworks are configured to ensure that the proposed system functions according to the approved design and requirements.\nTechnology Stack Diagram\nThe table shown below is the technology stack diagram, which is the needed requirements and technology for the proposed system and is categorized as four sections; mobile application, web development, server and future development.\nTECHNOLOGY STACK\n\"Resync\", an AI-powered platform for evaluating research manuscript correlation and inconsistency detection, is developed using a structured and scalable technology stack tailored for academic use in the Philippines. The companion mobile application is built in Android Studio using Kotlin and Jetpack Compose. OneSignal is integrated into the app to deliver real-time, asynchronous push notifications for scan completions.\nAI functionalities are powered by a hybrid pipeline of advanced large language models and natural language processing (NLP) libraries. The spaCy library handles the initial manuscript parsing and text tokenization, preparing the data for the Sentence-Transformers framework, which deploys the all-mpnet-base-v2 model to calculate dense vector embeddings and mathematically measure cross-section semantic correlation. For the reasoning layer, Google Gemini 2.5 Pro performs deep semantic analysis to detect logical misalignments and generate Explainable AI (XAI) recommendations.\nThe backend infrastructure relies on Supabase for robust PostgreSQL relational data handling and secure user authentication. Core backend logic is handled in Python using the FastAPI framework. To facilitate seamless document ingestion without heavy file uploads, the server utilizes the Google Docs API to extract raw text directly from public shareable links. Additionally, the backend deploys Python's httpx library to asynchronously verify external reference URLs for citation validation, ensuring smooth communication between the frontend interfaces, the database, and the external AI layers.\nThe web component of \"Resync\", primarily serving as the main workspace for link submission and detailed report analysis, is built with React JS, HTML, Tailwind CSS, and JavaScript/TypeScript. It is deployed via Vercel to ensure highly responsive, dynamic interface delivery and seamless user control over document histories and evaluation reports. Looking ahead, future development includes expanding support to the iOS platform to broaden mobile accessibility and incorporating a Deep Analysis Pro Plan.\nSoftware Specification\nThis section presents the software that will be used, like the operating system, programming languages for both the front-end and backend of the application, platforms, and database requirements that will be used to develop the entire system of the Resync. It is similar to creating a blueprint or a set of instructions that researchers must follow to develop the program correctly. Before the construction process can commence, the researchers must create an accurate design that includes the layout of software specifications\nSOFTWARE SPECIFICATIONS\nSOFTWARE SPECIFICATIONS cont’d\nHardware Specifications\nThis section presents the hardware requirements needed to develop, deploy, and operate Resync: An AI-Powered Research Manuscript Coherence and Inconsistency Detection System. The specifications ensure that both desktop and mobile devices can efficiently process AI-powered document analysis, access publicly shared Google Docs links, and generate coherence reports and recommendations.\nHARDWARE SPECIFICATIONS\nHARDWARE SPECIFICATIONS cont’d\nProgram Specification\nThe program specification outlines the expected goals of the system and serves as a guideline for the development phase of the proposed system. It divides the application's functionalities into modules, and team members are assigned to work on these modules accordingly.\nList of Modules\nThe modules and features required to run the Resync system efficiently are outlined in this section. Different programmers are given the modules to build the different features.\nLIST OF MODULES\nLIST OF MODULES cont’d"
+  }
+ ],
+ "inconsistencies_found": 0,
+ "notification_dispatched": true,
+ "overall_coherence_score": 96.0
+}

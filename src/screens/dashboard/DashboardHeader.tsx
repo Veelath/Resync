@@ -30,19 +30,9 @@ export function DashboardHeader({ activeNav, setActiveNav, onNavigate, creditsLo
       <header className={`phase2-header sticky top-0 z-30 bg-white border-b ${activeNav === 'Academic Profile' ? 'phase2-header-profile' : ''}`}>
         <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 h-15 flex items-center gap-2 md:gap-4" style={{ height: 64 }}>
           <div className="flex items-center shrink-0">
-            <button type="button" aria-label="Home" onClick={() => onNavigate('home')} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]"><Logo header className={LOGO_HEADER_CLASS} /></button>
+            <button type="button" aria-label="Dashboard" onClick={() => { setActiveNav("Dashboard"); window.scrollTo({ top: 0 }); }} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]"><Logo header className={LOGO_HEADER_CLASS} /></button>
           </div>
-          <nav className="flex items-center gap-0.5 flex-1">
-            {(["Dashboard"] as const).map(label => (
-              <button key={label} onClick={() => setActiveNav(label as typeof activeNav)}
-                aria-label={label}
-                className="flex items-center gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1fcc]"
-                style={{ background: activeNav === label ? B : "transparent", color: activeNav === label ? "white" : "#6b7280", boxShadow: activeNav === label ? `0 2px 10px ${B}30` : "none" }}>
-                {label === "Dashboard" && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>}
-                <span className="hidden sm:block">{label}</span>
-              </button>
-            ))}
-          </nav>
+          <div className="flex-1" />
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <div aria-label={`Credits: ${creditsLoading ? "loading" : creditBalance ?? "unavailable"}`} className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:bg-gray-50 cursor-default"
               style={{ borderColor: `${B}20`, background: `${B}06`, color: B }}>

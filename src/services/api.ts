@@ -469,6 +469,8 @@ export async function confirmCreditCheckout(userId: string, pymtTxnId: string): 
 export interface ManuscriptOutline {
   title: string; words: number; pages: number; structure: 'headings' | 'structure' | 'split';
   sections: { name: string; words: number; role?: string | null }[]; excerpt: string[];
+  /** False when the document has no research-paper structure; paper_problem says why, in words for the student. */
+  looks_like_paper?: boolean; paper_problem?: string | null;
 }
 
 /** The sections a scan would compare, read before the scan so the person can check the paper is the right one. */

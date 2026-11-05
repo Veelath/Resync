@@ -39,3 +39,25 @@ export function emailError(value: string): string {
   }
   return '';
 }
+
+const KNOWN_MAIL_DOMAINS = new Set(['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'live.com']);
+const mailDomainChecks = new Map<string, Promise<boolean>>();
+
+/** True when the domain after the @ can receive mail (it publishes mail servers). Fails open if the lookup itself cannot run. */
+export function mailDomainAccepts(email: string): Promise<boolean> {
+  const domain = email.slice(email.lastIndexOf('@') + 1).trim().toLowerCase();
+  if (!domain || KNOWN_MAIL_DOMAINS.has(domain)) return Promise.resolve(true);
+  let check = mailDomainChecks.get(domain);
+  if (!check) {
+    check = fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=MX`)
+      .then(response => response.ok ? response.json() : null)
+      .then(result => {
+        if (!result) return true;
+        if (result.Status === 3) return false; // the domain does not exist
+        return Array.isArray(result.Answer) && result.Answer.length > 0 ? true : result.Status !== 0;
+      })
+      .catch(() => true);
+    mailDomainChecks.set(domain, check);
+  }
+  return check;
+}

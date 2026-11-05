@@ -76,7 +76,7 @@ export function levelOf(pair: ManuscriptFlowPair, hasItems: boolean): CardLevel 
 }
 
 /** One pair with a real issue: why, the lines involved, and the suggested edits. Shared by the list and the dimension view. */
-export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, onShowPlacement, revealId }: {
+export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, onShowPlacement, revealId, showAll = false }: {
   pair: ManuscriptFlowPair;
   items: RecommendationItem[];
   severity: CardLevel;
@@ -85,6 +85,8 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   /** Scrolls to where a new sentence belongs and marks the spot. */
   onShowPlacement?: (section: string, placement: Placement, sentence?: string) => void;
   revealId: string | null;
+  /** Show every step (the printed report has no 'show more' button). */
+  showAll?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const saysA = saysOf(pair, 'a');
   const saysB = saysOf(pair, 'b');
   const lines = items.length ? [] : (pair.explanation?.highlighted_inconsistencies ?? []).filter(item => item.quote);
-  const open = expanded || items.slice(VISIBLE_FIXES).some(item => item.id === revealId);
+  const open = showAll || expanded || items.slice(VISIBLE_FIXES).some(item => item.id === revealId);
   const hidden = items.length - VISIBLE_FIXES;
   const adds = items.filter(item => item.kind === 'add');
   const quick = items.length > 0 && adds.length === items.length;
@@ -166,7 +168,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   </section>;
 }
 
-export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, onShowPlacement, revealId, onlyOrders, mode = 'issues', rateLimited = false, score }: {
+export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, onShowPlacement, revealId, onlyOrders, mode = 'issues', rateLimited = false, score, showAll = false }: {
   items: RecommendationItem[];
   pairs: ManuscriptFlowPair[];
   linkedIds: Set<string>;
@@ -179,6 +181,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
   rateLimited?: boolean;
   /** Overall score, so an empty list can say why the score is not 100. */
   score?: number;
+  showAll?: boolean;
 }) {
   const rows = pairs
     .filter(pair => pair.scores.overall_coherence != null && (!onlyOrders || onlyOrders.has(pair.order)))
@@ -206,7 +209,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
           {falseAlarm && <p className="mt-0.5 flex items-start gap-1.5 text-xs font-semibold text-emerald-700"><svg aria-hidden="true" viewBox="0 0 20 20" className="mt-px size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="8" /><path d="M6.5 10.3l2.4 2.4 4.6-5" /></svg><span>Minor vocabulary difference detected. No action needed.</span></p>}
         </div>;
       }
-      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} onShowPlacement={onShowPlacement} revealId={revealId} /></Fragment>;
+      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll} /></Fragment>;
     })}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <p className="text-sm font-semibold text-amber-900">{rateLimited

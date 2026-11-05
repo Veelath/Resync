@@ -31,9 +31,7 @@ export function DashboardHome({ onNavigate, session, greeting, scanRunning = fal
   const [tourOpen, setTourOpen] = useState(() => !tourSeen());
   return <div className="phase2-dashboard">
     <OnboardingTour name={firstName} open={tourOpen} onClose={() => setTourOpen(false)} />
-    {scanRunning && onViewProgress
-      ? <button type="button" className="tour-replay tour-progress" onClick={onViewProgress}><span className="tour-progress-spin" aria-hidden="true" />View progress</button>
-      : !tourOpen && <button type="button" className="tour-replay" onClick={() => setTourOpen(true)}>Replay tour</button>}
+    {scanRunning && onViewProgress && <button type="button" className="tour-replay tour-progress" onClick={onViewProgress}><span className="tour-progress-spin" aria-hidden="true" />View progress</button>}
     <section className="phase2-hero"><div className="phase2-hero-inner">
       <div className="phase2-hero-grid">
         <div className="phase2-hero-copy">

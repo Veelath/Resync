@@ -160,6 +160,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [outline, setOutline] = useState<ManuscriptOutline | null>(null);
   const [outlineLoading, setOutlineLoading] = useState(false);
   const [outlineError, setOutlineError] = useState<string | null>(null);
+  // A document with no research-paper structure is not scanned (a school template can supply its own headings, so it is let through).
+  const notAPaper = outline?.looks_like_paper === false && !templateChapters.some(chapter => chapter.sections.length);
   const [pagesState, setPagesState] = useState<"idle" | "failed">("idle");
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const [linkDraft, setLinkDraft] = useState("");
@@ -362,6 +364,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   async function handleScan() {
+    if (notAPaper) return;
     if (!session?.user) { onNavigate("login"); return; }
     lastScanError = null;
     setScanError(null);
@@ -902,6 +905,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               </div>
             </div>
 
+            {notAPaper && !scanError && (
+              <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                <p style={{ margin: 0 }}>{outline?.paper_problem}</p>
+              </div>
+            )}
             {scanError && (
               <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
@@ -913,7 +922,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                 Choose a different document
               </button>
-              <button type="button" onClick={handleScan} disabled={isScanning || (mode === "file" ? !uploadedFile : !link.trim() || linkState === "loading")} className="uf-btn is-lg is-grow um-cta">
+              <button type="button" onClick={handleScan} disabled={isScanning || notAPaper || (mode === "file" ? !uploadedFile : !link.trim() || linkState === "loading")} className="uf-btn is-lg is-grow um-cta">
                 {isScanning ? "Scanning manuscript…" : "Yes, run coherence scan"}
                 {!isScanning && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
               </button>
