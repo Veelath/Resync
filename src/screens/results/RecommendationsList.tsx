@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import type { ManuscriptFlowPair } from '../../services/v7Result';
-import type { RecommendationCategory } from './categoryColors';
+import { categoryColors, type RecommendationCategory } from './categoryColors';
 import { plainText } from './helpers';
 import type { Placement } from '../../lib/placement';
 
@@ -87,55 +87,81 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   revealId: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const level = LEVELS[severity];
   const saysA = saysOf(pair, 'a');
   const saysB = saysOf(pair, 'b');
   const lines = items.length ? [] : (pair.explanation?.highlighted_inconsistencies ?? []).filter(item => item.quote);
   const open = expanded || items.slice(VISIBLE_FIXES).some(item => item.id === revealId);
   const hidden = items.length - VISIBLE_FIXES;
-  return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className={`rounded-xl border border-gray-200 border-l-4 ${level.bar} bg-white p-3 space-y-3`}>
-    <div className="flex items-start justify-between gap-2">
-      <h3 className="text-base font-bold leading-snug text-[#0b0f3d]">Your <span className="capitalize">{pair.section_a}</span> and your <span className="capitalize">{pair.section_b}</span> {level.verdict}.</h3>
-      <span className="flex shrink-0 flex-col items-end gap-1">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${level.chip}`}>{level.label}</span>
-        {pair.adjacent === false && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600" title="These two sections are not next to each other in your paper">Cross-chapter</span>}
+  const adds = items.filter(item => item.kind === 'add');
+  const quick = items.length > 0 && adds.length === items.length;
+  const categoryKey = items.map(item => item.category).find(Boolean);
+  const category = categoryKey ? categoryColors[categoryKey].label : null;
+  const title = severity === 'Suggestion' || quick
+    ? <>Connect your <span className="capitalize">{pair.section_a}</span> to your <span className="capitalize">{pair.section_b}</span></>
+    : <>Fix the mismatch between your <span className="capitalize">{pair.section_a}</span> and your <span className="capitalize">{pair.section_b}</span></>;
+  const tag = severity === 'Suggestion' ? { text: 'weak link', cls: 'text-amber-600' } : { text: level.label.toLowerCase(), cls: severity === 'Critical' ? 'text-rose-600' : severity === 'Moderate' ? 'text-orange-600' : 'text-sky-600' };
+  const chip = 'rounded-md bg-[#eeeefe] px-2 py-0.5 text-[11px] font-semibold capitalize text-[#2b25c8]';
+  const stepNumber = 'grid size-5 shrink-0 place-items-center rounded-full bg-[#eeeefe] text-[11px] font-bold text-[#2b25c8]';
+  const outlineButton = 'inline-flex items-center gap-1.5 rounded-xl border border-[#d9d7f7] bg-white px-4 py-2 text-xs font-bold text-[#2b25c8] hover:bg-[#f6f6ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b25c8]';
+  const copy = (id: string, text: string) => {
+    navigator.clipboard?.writeText(text).then(() => { setCopied(id); window.setTimeout(() => setCopied(current => current === id ? null : current), 1800); }).catch(() => undefined);
+  };
+  return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className="space-y-3 rounded-2xl border border-[#e3e1fa] bg-white p-4 shadow-[0_1px_3px_rgba(26,31,204,.06)]">
+    <div className="flex flex-wrap items-center gap-2">
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${quick ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-[#2b25c8]'}`}>
+        <span aria-hidden="true">✦</span>{quick ? `Quick fix · add ${adds.length} ${adds.length === 1 ? 'sentence' : 'sentences'}` : items.length ? `Edit ${items.length} ${items.length === 1 ? 'part' : 'parts'}` : 'Needs a look'}
       </span>
+      {category && <span className="text-[11px] font-medium text-gray-500">Category: {category}</span>}
+      {pair.adjacent === false && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600" title="These two sections are not next to each other in your paper">Cross-chapter</span>}
     </div>
-    <div>
-      <p className={`mb-1 text-xs font-bold uppercase tracking-wide ${severity === 'Suggestion' ? 'text-indigo-700' : 'text-rose-700'}`}>{severity === 'Suggestion' ? 'Why this is suggested' : 'Here’s why'}</p>
-      <p className="text-sm leading-snug text-[#303746]">{severity === 'Suggestion' ? 'No contradiction was found, but these two sections are only loosely linked. Adding the linking sentences below ties them together.' : problemOf(pair)}</p>
-      {severity !== 'Suggestion' && (saysA || saysB) && <ul className="mt-1.5 space-y-1 text-sm leading-snug text-[#303746]">
-        {saysA && <li className="flex gap-2"><span aria-hidden="true" className="text-gray-400">•</span><span><span className="font-semibold capitalize text-[#0b0f3d]">{pair.section_a}</span> says: {saysA}</span></li>}
-        {saysB && <li className="flex gap-2"><span aria-hidden="true" className="text-gray-400">•</span><span><span className="font-semibold capitalize text-[#0b0f3d]">{pair.section_b}</span> says: {saysB}</span></li>}
-      </ul>}
-      {lines.length > 0 && <ul className="mt-1.5 space-y-1">{lines.map((item, index) => <li key={index} className="rounded-md bg-[#f6f7fb] p-2 font-serif text-[13px] text-[#303746]"><span className="block font-sans text-xs font-semibold capitalize text-gray-600">In {item.section}</span>“{clip(plainText(item.quote), 160)}”</li>)}</ul>}
+    <h3 className="text-lg font-extrabold leading-snug text-[#0b0f3d]">{title}</h3>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className={chip}>{pair.section_a}</span>
+      <span className={`text-[11px] font-bold ${tag.cls}`}>— {tag.text}</span>
+      <span className={chip}>{pair.section_b}</span>
     </div>
+    <p className="text-sm leading-snug text-[#4b5275]">{severity === 'Suggestion'
+      ? 'These two parts sit side by side with nothing joining them, so a reader may feel a sudden jump. One short sentence can fix that.'
+      : problemOf(pair)}</p>
+    {severity !== 'Suggestion' && (saysA || saysB) && <ul className="space-y-1 text-sm leading-snug text-[#303746]">
+      {saysA && <li className="flex gap-2"><span aria-hidden="true" className="text-gray-400">•</span><span><span className="font-semibold capitalize text-[#0b0f3d]">{pair.section_a}</span> says: {saysA}</span></li>}
+      {saysB && <li className="flex gap-2"><span aria-hidden="true" className="text-gray-400">•</span><span><span className="font-semibold capitalize text-[#0b0f3d]">{pair.section_b}</span> says: {saysB}</span></li>}
+    </ul>}
+    {lines.length > 0 && <ul className="space-y-1">{lines.map((item, index) => <li key={index} className="rounded-md bg-[#f6f7fb] p-2 font-serif text-[13px] text-[#303746]"><span className="block font-sans text-xs font-semibold capitalize text-gray-600">In {item.section}</span>“{clip(plainText(item.quote), 160)}”</li>)}</ul>}
     {items.length > 0 && <div>
-      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#1a1fcc]">{severity === 'Suggestion' ? 'Sentences to add' : 'Suggested parts to edit'}</p>
-      <ol className="space-y-2">
-        {items.map((item, index) => <li key={item.id} id={`recommendation-${item.id}`} tabIndex={-1} hidden={index >= VISIBLE_FIXES && !open} className="scroll-mt-12 space-y-1 rounded-lg border border-[#dfe5f5] p-2.5 text-sm leading-snug text-[#303746]">
-          {item.kind === 'add'
-            ? <>
-                <p className="text-xs font-semibold text-gray-700">Add this as the <span className="font-extrabold text-[#1a1fcc]">{item.placement === 'start' ? 'FIRST' : 'LAST'} sentence</span> of the <span className="capitalize">{item.section}</span> section</p>
-                <p className="rounded-md bg-[#f6f7fb] p-2 font-serif text-[14px] text-[#303746]">“{plainText(item.revision)}”</p>
-                <p className="text-xs leading-snug text-gray-600">{item.placement === 'start'
-                  ? 'Put it at the very beginning of the section, before its first paragraph.'
-                  : 'Put it at the very end of the section, after its last paragraph.'}
-                  {item.anchor && <> {item.placement === 'start' ? 'It goes right before' : 'It goes right after'}: <span className="font-serif text-gray-700">“{item.anchor}”</span></>}</p>
-                {onShowPlacement && item.section && item.placement && <button type="button" onClick={() => onShowPlacement(item.section!, item.placement!, plainText(item.revision))}
-                  className="mt-0.5 inline-flex items-center gap-1.5 rounded-lg bg-[#1a1fcc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#1115a5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M6 13l6 6 6-6" /></svg>
-                  Go to this spot in your paper</button>}
-              </>
-            : <>
-                {item.section && <p className="text-xs font-semibold capitalize text-gray-600">In {item.section}</p>}
-                {item.quote ? <p className="font-serif text-[13px] text-gray-700">“{clip(item.quote, 140)}”</p> : null}
-                <p><span className="font-semibold text-[#1a1fcc]">Edit: </span>{plainText(item.revision)}</p>
-              </>}
-          {linkedIds.has(item.id) && <button type="button" onClick={() => onShowInManuscript(item.id)} className="text-xs font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">Show in manuscript</button>}
-        </li>)}
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">What to do</p>
+      <ol className="space-y-4">
+        {items.map((item, index) => {
+          const sentence = plainText(item.revision);
+          const where = item.placement === 'start' ? 'beginning' : 'end';
+          return <li key={item.id} id={`recommendation-${item.id}`} tabIndex={-1} hidden={index >= VISIBLE_FIXES && !open} className="scroll-mt-12 space-y-2.5 text-sm leading-snug text-[#303746]">
+            {item.kind === 'add'
+              ? <>
+                  <p className="flex items-start gap-2"><span className={stepNumber}>1</span><span>Go to the <strong className="text-[#0b0f3d]">{where} of <span className="capitalize">{item.section}</span></strong>.</span></p>
+                  <p className="flex items-start gap-2"><span className={stepNumber}>2</span><span>Add this sentence:</span></p>
+                  <p className="ml-7 rounded-lg border-l-4 border-emerald-500 bg-emerald-50 px-3 py-2.5 font-serif text-[14px] leading-relaxed text-[#0b3d1f]">{sentence}</p>
+                  {item.anchor && <p className="ml-7 text-xs text-gray-500">{item.placement === 'start' ? 'Right before' : 'Right after'}: <span className="font-serif text-gray-700">“{clip(item.anchor, 140)}”</span></p>}
+                  <div className="ml-7 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => copy(item.id, sentence)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#2b25c8] px-4 py-2 text-xs font-bold text-white hover:bg-[#1f1aa6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b25c8]">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></svg>
+                      {copied === item.id ? 'Copied!' : 'Copy sentence'}</button>
+                    {onShowPlacement && item.section && item.placement && <button type="button" onClick={() => onShowPlacement(item.section!, item.placement!, sentence)} className={outlineButton}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                      Show me where</button>}
+                  </div>
+                </>
+              : <>
+                  <p className="flex items-start gap-2"><span className={stepNumber}>1</span><span>{item.section ? <>Go to <strong className="capitalize text-[#0b0f3d]">{item.section}</strong> and find:</> : 'Find this part:'}</span></p>
+                  {item.quote ? <p className="ml-7 rounded-lg bg-[#f6f7fb] px-3 py-2 font-serif text-[13px] text-gray-700">“{clip(item.quote, 160)}”</p> : null}
+                  <p className="flex items-start gap-2"><span className={stepNumber}>2</span><span>{sentence}</span></p>
+                  {linkedIds.has(item.id) && <div className="ml-7"><button type="button" onClick={() => onShowInManuscript(item.id)} className={outlineButton}>Show me where</button></div>}
+                </>}
+          </li>;
+        })}
       </ol>
-      {hidden > 0 && <button type="button" aria-expanded={open} onClick={() => setExpanded(!open)} className="mt-1.5 text-xs font-semibold text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">{open ? 'Show fewer parts' : `Show ${hidden} more ${hidden === 1 ? 'part' : 'parts'} to edit`}</button>}
+      {hidden > 0 && <button type="button" aria-expanded={open} onClick={() => setExpanded(!open)} className="mt-2 text-xs font-semibold text-[#2b25c8] underline focus-visible:outline-2 focus-visible:outline-offset-2">{open ? 'Show fewer steps' : `Show ${hidden} more ${hidden === 1 ? 'step' : 'steps'}`}</button>}
     </div>}
   </section>;
 }

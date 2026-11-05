@@ -22,6 +22,8 @@ const WORD_MIME_TYPES = [
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
+import { slimDocx } from '../lib/slimDocx';
+
 const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
 const MAX_TEMPLATE_BYTES = 100 * 1024;
 const WORD_ACCEPT = ".doc,.docx," + WORD_MIME_TYPES.join(",");
@@ -180,13 +182,13 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     const timer = setTimeout(() => {
       let request = downloads.current.get(url);
       if (!request) {
-        request = downloadGoogleDoc(url);
+        request = downloadGoogleDoc(url).then(slimDocx);
         request.catch(() => downloads.current.delete(url));
         downloads.current.set(url, request);
       }
       request.then(file => { if (!cancelled) { setLinkFile(file); setLinkState("ready"); } })
         .catch(error => { if (!cancelled) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); } });
-    }, 600);
+    }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
   // Whichever document is in play: the uploaded Word file, or the Google Doc downloaded as one.
@@ -201,8 +203,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }, [outlineLoading, linkState]);
 
   useEffect(() => {
-    if (step !== 3) return;
     if (mode === "link" && linkState === "loading") return;
+    if (!activeFile && step !== 3) return;
     const source = activeFile ?? (mode === "link" ? link.trim() : null);
     if (!source) { setOutline(null); return; }
     let cancelled = false;
@@ -213,7 +215,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       .catch(error => { if (!cancelled) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); } })
       .finally(() => { if (!cancelled) setOutlineLoading(false); });
     return () => { cancelled = true; };
-  }, [step, mode, activeFile, link, linkState]);
+  }, [mode, activeFile, link, linkState]);
 
   // A new file gets a fresh try at drawing the pages (the results page's own viewer does the drawing).
   useEffect(() => { setPagesState('idle'); }, [activeFile]);
@@ -349,7 +351,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       return;
     }
     setScanError(null);
-    setUploadedFile(file);
+    slimDocx(file).then(setUploadedFile);
   }
 
   function handleResetTemplate() {

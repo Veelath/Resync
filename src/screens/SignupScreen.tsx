@@ -16,6 +16,10 @@ const LOCK_ICON = (
   <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
 );
 
+const USER_ICON = (
+  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4.5 20c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5" /></svg>
+);
+
 function FieldInput({ label, type = "text", value, onChange, placeholder, icon, required = true, error = "", onBlur, autoComplete }: {
   label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; icon?: React.ReactNode; required?: boolean;
   /** Shown under the field; empty means the value is fine. */
@@ -43,9 +47,15 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [pw2, setPw2] = useState("");
+  const [pw2Touched, setPw2Touched] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // After the account is created, the person must type the 6-digit code that was emailed to them.
+  const [codeStep, setCodeStep] = useState(false);
+  const [code, setCode] = useState("");
+  const [notice, setNotice] = useState("");
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
 
   // A field shows its problem once it has been left, or after a submit attempt.
@@ -53,11 +63,12 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   const touch = (field: string) => setTouched(current => ({ ...current, [field]: true }));
   const errors = { first: nameError(firstName, "First name"), middle: nameError(middleName, "Middle name", false), last: nameError(lastName, "Last name"), email: emailError(email) };
   const shown = (field: keyof typeof errors) => touched[field] ? errors[field] : "";
-  const canSubmit = !Object.values(errors).some(Boolean) && isPasswordValid(pw) && agreed && !loading;
+  const canSubmit = !Object.values(errors).some(Boolean) && isPasswordValid(pw) && pw2 === pw && agreed && !loading;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setTouched({ first: true, middle: true, last: true, email: true });
+    setPw2Touched(true);
     if (!canSubmit) return;
     setLoading(true);
     setError("");
@@ -66,7 +77,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     const trimmedLast = lastName.trim();
     const full_name = [trimmedFirst, trimmedMiddle, trimmedLast].filter(Boolean).join(" ").trim();
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: pw,
       options: {
@@ -81,9 +92,34 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     setLoading(false);
     if (error) {
       setError(error.message);
-    } else {
+    } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+      // Supabase hides whether an address is taken by returning a user with no identities.
+      setError("This email is already registered. Try signing in instead.");
+    } else if (data.session) {
+      // The project is not asking for email confirmation, so there is nothing to verify.
       onSignupSuccess?.();
+    } else {
+      setCodeStep(true);
+      setNotice(`We sent a 6-digit code to ${email.trim().toLowerCase()}.`);
     }
+  }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (code.length < 6 || loading) return;
+    setLoading(true);
+    setError("");
+    const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "signup" });
+    setLoading(false);
+    if (error) setError("That code is wrong or has expired. Check your email or ask for a new one.");
+    else onSignupSuccess?.();
+  }
+
+  async function resendCode() {
+    setError("");
+    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase() });
+    if (error) setError(error.message);
+    else setNotice("A new code is on its way. Check your inbox and spam folder.");
   }
 
   return (
@@ -95,6 +131,23 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
           <p className="text-[15px] text-[#4b5275] leading-relaxed">Free to use — no credit card required.</p>
         </div>
 
+        {codeStep ? (
+          <form onSubmit={verifyCode} noValidate className="space-y-4">
+            <p className="text-[15px] text-[#4b5275] leading-relaxed">{notice} Enter it below to confirm the address is yours.</p>
+            {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100" role="alert">{error}</div>}
+            <div className="space-y-2">
+              <label htmlFor="signup-code" className="auth-label">Verification code</label>
+              <input id="signup-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} placeholder="123456"
+                onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} className="auth-input" style={{ letterSpacing: "0.4em" }} />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <button type="submit" disabled={code.length < 6 || loading} className="auth-primary auth-focus" style={{ width: "auto", padding: "0 30px" }}>
+                {loading ? <><Spinner />Verifying…</> : "Verify and continue"}
+              </button>
+              <button type="button" onClick={resendCode} className="auth-link auth-focus px-1">Send a new code</button>
+            </div>
+          </form>
+        ) : (<>
         <button
           type="button"
           onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
@@ -111,10 +164,10 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
 
         <form onSubmit={submit} noValidate className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldInput label="First name" value={firstName} onChange={value => setFirstName(cleanNameInput(value))} onBlur={() => touch("first")} error={shown("first")} autoComplete="given-name" placeholder="Maria" required={true} />
-            <FieldInput label="Middle name (optional)" value={middleName} onChange={value => setMiddleName(cleanNameInput(value))} onBlur={() => touch("middle")} error={shown("middle")} autoComplete="additional-name" placeholder="Clara" required={false} />
+            <FieldInput label="First name" value={firstName} onChange={value => setFirstName(cleanNameInput(value))} onBlur={() => touch("first")} error={shown("first")} autoComplete="given-name" placeholder="Maria" required={true} icon={USER_ICON} />
+            <FieldInput label="Middle name (optional)" value={middleName} onChange={value => setMiddleName(cleanNameInput(value))} onBlur={() => touch("middle")} error={shown("middle")} autoComplete="additional-name" placeholder="Clara" required={false} icon={USER_ICON} />
           </div>
-          <FieldInput label="Last name" value={lastName} onChange={value => setLastName(cleanNameInput(value))} onBlur={() => touch("last")} error={shown("last")} autoComplete="family-name" placeholder="Santos" required={true} />
+          <FieldInput label="Last name" value={lastName} onChange={value => setLastName(cleanNameInput(value))} onBlur={() => touch("last")} error={shown("last")} autoComplete="family-name" placeholder="Santos" required={true} icon={USER_ICON} />
           <FieldInput label="Email address" type="email" value={email} onChange={setEmail} onBlur={() => touch("email")} error={shown("email")} autoComplete="email" placeholder="maria.santos@dlsu.edu.ph" icon={MAIL_ICON} />
 
           {/* password */}
@@ -129,8 +182,25 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                 <Eye open={showPw} />
               </button>
             </div>
-            <PasswordRequirements id="signup-password-requirements" password={pw} />
           </div>
+
+          {/* confirm password: always visible */}
+          {(
+            <div className="space-y-2">
+              <label htmlFor="signup-confirm-input" className="auth-label">Confirm password</label>
+              <div className="auth-field">
+                <span className="auth-field-icon" aria-hidden="true">{LOCK_ICON}</span>
+                <input id="signup-confirm-input" type={showPw ? "text" : "password"} value={pw2} onChange={e => setPw2(e.target.value)}
+                  onBlur={() => setPw2Touched(true)} placeholder="Re-enter your password" required autoComplete="new-password"
+                  aria-invalid={pw2Touched && pw2 !== pw} className="auth-input auth-input--icon"
+                  style={pw2Touched && pw2 !== pw ? { borderColor: "#e11d48" } : undefined} />
+              </div>
+              {pw2Touched && pw2 !== pw && <p role="alert" className="text-xs font-semibold text-rose-600">Passwords do not match.</p>}
+            </div>
+          )}
+
+          {/* the rules stay hidden until the person starts typing a password */}
+          {pw && <PasswordRequirements id="signup-password-requirements" password={pw} />}
 
           {/* terms */}
           <div className="flex items-start gap-3 w-full text-left select-none pt-1">
@@ -175,6 +245,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
             </p>
           </div>
         </form>
+        </>)}
 
         {legalModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
