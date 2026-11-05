@@ -5,16 +5,6 @@ type ProfileFields = { firstName: string; middleName: string; lastName: string; 
 type Academic = { university: string; program: string; yearLevel: string; researchTitle: string };
 
 const EMPTY_ACADEMIC: Academic = { university: '', program: '', yearLevel: '', researchTitle: '' };
-const academicKey = (userId?: string) => `resync_academic_${userId ?? 'guest'}`;
-
-function loadAcademic(userId?: string): Academic {
-  try {
-    const saved = JSON.parse(localStorage.getItem(academicKey(userId)) || '{}');
-    return { ...EMPTY_ACADEMIC, ...Object.fromEntries(Object.entries(saved).filter(([key, value]) => key in EMPTY_ACADEMIC && typeof value === 'string')) };
-  } catch {
-    return EMPTY_ACADEMIC;
-  }
-}
 
 function Field({ icon, label, value, editing, input, onAdd }: { icon: ReactNode; label: string; value: string; editing: boolean; input: ReactNode; onAdd: () => void }) {
   const empty = !value.trim();
@@ -42,18 +32,14 @@ const ICONS = {
   paper: svg('M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M9 13h6M9 17h4'),
 };
 
-export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profile, draft, setDraft, saveProfile, cancelEdit, avatarUrl, avatarError, handleAvatarFile, removeAvatar, userId, credits = null, scansRun = null, memberSince }: { setActiveNav: Dispatch<SetStateAction<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">>; editMode: boolean; setEditMode: Dispatch<SetStateAction<boolean>>; profile: ProfileFields; draft: ProfileFields; setDraft: Dispatch<SetStateAction<ProfileFields>>; saveProfile: () => void; cancelEdit: () => void; avatarUrl: string | null; avatarError: string; handleAvatarFile: (file: File) => Promise<void>; removeAvatar: () => void; userId?: string; credits?: number | null; scansRun?: number | null; memberSince?: string }) {
-  const [academic, setAcademic] = useState<Academic>(() => loadAcademic(userId));
+export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profile, draft, setDraft, saveProfile, cancelEdit, avatarUrl, avatarError, handleAvatarFile, removeAvatar, userId, credits = null, scansRun = null, memberSince, savedAcademic = EMPTY_ACADEMIC, notice = null }: { setActiveNav: Dispatch<SetStateAction<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">>; editMode: boolean; setEditMode: Dispatch<SetStateAction<boolean>>; profile: ProfileFields; draft: ProfileFields; setDraft: Dispatch<SetStateAction<ProfileFields>>; saveProfile: (academic: Academic) => void | Promise<void>; cancelEdit: () => void; avatarUrl: string | null; avatarError: string; handleAvatarFile: (file: File) => Promise<void>; removeAvatar: () => void; userId?: string; credits?: number | null; scansRun?: number | null; memberSince?: string; savedAcademic?: Academic; notice?: { kind: 'ok' | 'error'; text: string } | null }) {
+  const academic = savedAcademic;
   const [academicDraft, setAcademicDraft] = useState<Academic>(academic);
-  useEffect(() => { const loaded = loadAcademic(userId); setAcademic(loaded); setAcademicDraft(loaded); }, [userId]);
+  useEffect(() => { setAcademicDraft(savedAcademic); }, [savedAcademic, userId]);
 
   const startEdit = () => { setDraft(profile); setAcademicDraft(academic); setEditMode(true); };
   const cancel = () => { setAcademicDraft(academic); cancelEdit(); };
-  const save = () => {
-    setAcademic(academicDraft);
-    try { localStorage.setItem(academicKey(userId), JSON.stringify(academicDraft)); } catch { /* storage unavailable: the details last until the page is closed */ }
-    saveProfile();
-  };
+  const save = () => { void saveProfile(academicDraft); };
 
   const initials = profile.fullName.split(' ').filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'U';
   const filled = [profile.fullName, profile.email, profile.contactNumber, academic.university, academic.program, academic.yearLevel, academic.researchTitle].filter(value => value.trim()).length;
@@ -84,6 +70,8 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
             </div>
           )}
         </div>
+
+        {notice && <div role={notice.kind === 'error' ? 'alert' : 'status'} className={notice.kind === 'error' ? 'uf-error' : 'uf-ok-note'}>{notice.text}</div>}
 
         <div className="uf-profile">
           <div className="uf-card" style={{ overflow: 'hidden' }}>
@@ -153,7 +141,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
 
             <div className="uf-card" style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <div><b style={{ fontSize: 16.5 }}>Academic information</b><div style={{ fontSize: 12.5, color: '#7d7b9e' }}>Used on your manuscript reports · saved on this device</div></div>
+                <div><b style={{ fontSize: 16.5 }}>Academic information</b><div style={{ fontSize: 12.5, color: '#7d7b9e' }}>Used on your manuscript reports</div></div>
                 {!editMode && <button type="button" onClick={startEdit} className="uf-btn is-ghost is-sm">Edit</button>}
               </div>
               <div className="uf-fields two">

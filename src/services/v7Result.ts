@@ -90,6 +90,7 @@ export interface V7ScanResponse {
   overall_coherence_score: number;
   /** Set when the paper had no usual headings, saying how it was split into sections. */
   structure_note?: string | null;
+  rescan_unchanged?: boolean;
   dimension_breakdown?: DimensionBreakdown;
   sections_analyzed: string[];
   manuscript_flow: ManuscriptFlowPair[];

@@ -17,6 +17,7 @@ import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
 import { PAYMENT_EVENT } from './lib/paymentProof';
+import { resumeManuscriptScan } from './services/api';
 import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
 
 export default function App() {
@@ -46,7 +47,7 @@ export default function App() {
     const route = readRoute(pathname);
     let target = route.unknown ? (currentSession ? 'dashboard' : 'home') : route.screen;
     let path = route.unknown ? routePath(target) : pathname;
-    if (target === 'processing' && scanSettledRef.current) { target = 'dashboard'; path = '/dashboard'; }
+    if (target === 'processing' && scanSettledRef.current && !readActiveScan()) { target = 'dashboard'; path = '/dashboard'; }
     if (!currentSession && !route.sample && ['dashboard', 'upload', 'results'].includes(target)) {
       if (route.scanId) sessionStorage.setItem('resync_return_to', routePath('results', route.scanId));
       target = 'login'; path = '/login';
@@ -142,10 +143,10 @@ export default function App() {
     }
   }
 
-  function pushNotification(kind: AppNotification["kind"], title: string, message: string) {
+  function pushNotification(kind: AppNotification["kind"], title: string, message: string, scanId?: string) {
     // With alerts off the scan is still listed in the bell, but marked read and without a pop-up.
     const quiet = !notificationPrefsRef.current.alerts;
-    const item: AppNotification = { id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind, title, message, at: Date.now(), read: quiet };
+    const item: AppNotification = { id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind, title, message, at: Date.now(), read: quiet, ...(scanId ? { scanId } : {}) };
     setNotifications(prev => {
       const next = [item, ...prev].slice(0, 20);
       try { localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
@@ -175,7 +176,32 @@ export default function App() {
     });
   }
 
+  // A scan that was running when the page was refreshed keeps running on the server: pick it up again and tell the person when it ends.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (!session || resumedRef.current || scanRunRef.current > 0) return;   // a scan started on this page is already being followed
+    const running = readActiveScan();
+    if (!running || (running.userId && running.userId !== session.user.id)) return;
+    resumedRef.current = true;
+    scanSettledRef.current = false;
+    resumeManuscriptScan(running.id).then(result => {
+      setScanResult(result); setScanFile(null);
+      handleScanCompleted(result);
+      if (screenRef.current === 'processing') navigate("results", false, result.analysis_run_id);
+    }).catch(error => handleScanFailed(error instanceof Error ? error.message : "The scan did not finish."));
+  }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Each scan run gets one outcome (success or failure) so the sound and toast can never fire twice.
+  // The running scan's id is kept in this browser, so a refresh or a closed tab does not lose the scan.
+  const ACTIVE_SCAN_KEY = "resync_active_scan";
+  function rememberActiveScan(analysisRunId: string) {
+    try { localStorage.setItem(ACTIVE_SCAN_KEY, JSON.stringify({ id: analysisRunId, userId: sessionRef.current?.user?.id, at: Date.now() })); } catch { /* storage unavailable */ }
+  }
+  function clearActiveScan() { try { localStorage.removeItem(ACTIVE_SCAN_KEY); } catch { /* storage unavailable */ } }
+  function readActiveScan(): { id: string; userId?: string; at: number } | null {
+    try { const saved = JSON.parse(localStorage.getItem(ACTIVE_SCAN_KEY) || "null"); return saved?.id && Date.now() - saved.at < 30 * 60000 ? saved : null; } catch { return null; }
+  }
+
   function handleScanStart() {
     scanRunRef.current += 1;
     scanSettledRef.current = false;
@@ -197,18 +223,21 @@ export default function App() {
     return () => { cancelled = true; };
   }, [screen, isSampleMode, activeScanId, session, scanResult?.analysis_run_id]);
 
-  function handleScanCompleted() {
+  function handleScanCompleted(result?: { analysis_run_id?: string; rescan_unchanged?: boolean }) {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
+    clearActiveScan();
     const wantsSound = notificationPrefsRef.current.alerts && notificationPrefsRef.current.sound;
     const played = wantsSound ? playCompletionChime() : true;   // no sound wanted: nothing to be blocked
     setSoundBlocked(!played);
-    pushNotification("success", "Scan complete", "Your coherence report is ready to review.");
+    if (result?.rescan_unchanged) pushNotification("success", "No changes detected", "Your manuscript is the same as your last scan, so the report is unchanged.", result.analysis_run_id);
+    else pushNotification("success", "Scan complete", "Your coherence report is ready to review.", result?.analysis_run_id);
   }
 
   function handleScanFailed(message: string) {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
+    clearActiveScan();
     setSoundBlocked(false);
     pushNotification("error", "Scan did not finish", message);
   }
@@ -254,12 +283,12 @@ export default function App() {
       <ToastBanner
         toast={toast}
         soundBlocked={soundBlocked}
-        onView={scanResult && screen !== "results" ? () => { setToast(null); navigate("results"); } : undefined}
+        onView={toast?.kind === "success" && toast.scanId && !(screen === "results" && activeScanId === toast.scanId) ? () => { const id = toast.scanId; setToast(null); navigate("results", false, id); } : undefined}
         onEnableSound={enableSound}
         onClose={() => setToast(null)}
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(); navigate("results", false, result.analysis_run_id); }} />}
+      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={rememberActiveScan} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
         ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} />
@@ -270,7 +299,7 @@ export default function App() {
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={() => scanResult && navigate("results")} />}
+      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
     </div>
   );
 }

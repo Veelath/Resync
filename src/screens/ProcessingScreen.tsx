@@ -14,7 +14,7 @@ const steps = [
 const finalStep = { label: 'Generating AI Recommendations', detail: 'The AI is reviewing each pair of sections. This can take a little longer.' };
 const waitingStep = { label: 'Waiting in line', detail: 'Your scan will start as soon as the current scan is complete.' };
 
-export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: Screen) => void }) {
+export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [done, setDone] = useState(0);
   const status = useSyncExternalStore(subscribeScanStatus, getScanStatus);
   const isQueued = status?.queued === true;
@@ -85,8 +85,9 @@ export function ProcessingScreen({ onNavigate: _onNavigate }: { onNavigate: (s: 
 
         <p className="processing-screen__keep-open">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-          This can take a moment. Please do not close this tab.
+          This can take a moment. You can leave this page; we will tell you when your report is ready.
         </p>
+        <button type="button" className="processing-screen__leave" onClick={() => onNavigate('dashboard')}>Continue in background</button>
       </div>
     </main>
   );

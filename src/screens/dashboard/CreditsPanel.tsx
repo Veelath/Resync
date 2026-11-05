@@ -34,7 +34,7 @@ export function CreditsPanel({ creditsLoading, creditBalance, creditsUsed, histo
   const total = available !== null ? available + used : null;
   const usedShare = total ? Math.min(100, Math.max(2, Math.round((used / total) * 100))) : 2;
   const text = (value: number | null) => creditsLoading ? "…" : value !== null ? String(value) : "—";
-  const scans = history.filter(entry => entry.kind === "debit");
+  const purchases = history.filter(entry => entry.kind === "purchase");
 
   return (
     <main className="uf" style={{ minHeight: "auto", background: "transparent" }}>
@@ -116,20 +116,17 @@ export function CreditsPanel({ creditsLoading, creditBalance, creditsUsed, histo
 
         <div className="uf-card" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <b style={{ fontSize: 16 }}>Recent scans</b>
-            <span className="uf-pill">{scans.length} so far</span>
+            <b style={{ fontSize: 16 }}>Purchase history</b>
+            <span className="uf-pill">{purchases.length} {purchases.length === 1 ? "purchase" : "purchases"}</span>
           </div>
-          {scans.length === 0 ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, padding: "28px 0 18px", color: "#7d7b9e", fontSize: 14 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4" /></svg>
-              No scans yet. Your credit activity will appear here after your first scan.
-            </div>
+          {purchases.length === 0 ? (
+            <div style={{ padding: "22px 0 12px", textAlign: "center", color: "#7d7b9e", fontSize: 14 }}>No purchases yet. Credits you buy will be listed here.</div>
           ) : (
             <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0 }}>
-              {scans.slice(0, 8).map(entry => (
+              {purchases.slice(0, 8).map(entry => (
                 <li key={entry.ledger_id} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "12px 0", borderTop: "1px solid #eeedfb", fontSize: 14 }}>
-                  <span>{entry.note || "Coherence scan"}<span style={{ display: "block", fontSize: 12, color: "#7d7b9e" }}>{when(entry.created_at)}</span></span>
-                  <b style={{ color: "#5a5778", whiteSpace: "nowrap" }}>{entry.delta} credit · {entry.balance_after} left</b>
+                  <span>Bought credits<span style={{ display: "block", fontSize: 12, color: "#7d7b9e" }}>{when(entry.created_at)}</span></span>
+                  <b style={{ color: "#0b9f6e", whiteSpace: "nowrap" }}>+{entry.delta} credits · {entry.balance_after} total</b>
                 </li>
               ))}
             </ul>

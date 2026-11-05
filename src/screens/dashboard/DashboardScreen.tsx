@@ -15,10 +15,20 @@ import guidanceArtwork from "@/assets/guidance-reference.webp";
 import { Info } from "lucide-react";
 import type React from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { supabase } from '../../lib/supabase';
+import { emailError } from '../../lib/validation';
+import { isPasswordValid, passwordPolicyMessage } from '../../components/PasswordRequirements';
 import { announcePayment, payWithProof, PROOF_METHOD_LABEL, type ProofPayment } from '../../lib/paymentProof';
-import { getCreditBalance, getCreditHistory, createCreditCheckout, confirmCreditCheckout } from '../../services/api';
+import { getCreditBalance, getCreditHistory, purchaseCredits } from '../../services/api';
 
-export function DashboardScreen({ onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport, notificationPrefs = { alerts: true, sound: true }, onNotificationPrefsChange }: { notificationPrefs?: NotificationPrefs; onNotificationPrefsChange?: (prefs: NotificationPrefs) => void; onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: () => void }) {
+type AcademicInfo = { university: string; program: string; yearLevel: string; researchTitle: string };
+const readAcademic = (meta?: Record<string, unknown> | null): AcademicInfo => ({
+  university: String(meta?.university ?? ""), program: String(meta?.program ?? ""),
+  yearLevel: String(meta?.year_level ?? ""), researchTitle: String(meta?.research_title ?? ""),
+});
+const academicToMetadata = (info: AcademicInfo) => ({ university: info.university.trim(), program: info.program.trim(), year_level: info.yearLevel.trim(), research_title: info.researchTitle.trim() });
+
+export function DashboardScreen({ onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport, notificationPrefs = { alerts: true, sound: true }, onNotificationPrefsChange }: { notificationPrefs?: NotificationPrefs; onNotificationPrefsChange?: (prefs: NotificationPrefs) => void; onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: (scanId?: string) => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
@@ -68,11 +78,36 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
     lastName: initialResolved.lastName,
     fullName: initialResolved.fullName,
     email: session?.user?.email || '',
-    contactNumber: "",
+    contactNumber: String(session?.user?.user_metadata?.contact_number ?? ""),
   });
   const [draft, setDraft] = useState(profile);
-  function saveProfile() { setProfile(draft); setEditMode(false); }
-  function cancelEdit() { setDraft(profile); setEditMode(false); }
+  const [academicInfo, setAcademicInfo] = useState(() => readAcademic(session?.user?.user_metadata));
+  const [profileNotice, setProfileNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  useEffect(() => { setAcademicInfo(readAcademic(session?.user?.user_metadata)); }, [session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Saved to the account (not just this page), so the details are still there after a refresh or on another device.
+  async function saveProfile(nextAcademic: AcademicInfo) {
+    setProfileNotice(null);
+    const name = draft.fullName.trim().replace(/\s+/g, " ");
+    if (!name || /\d/.test(name)) { setProfileNotice({ kind: "error", text: "Enter your name using letters only." }); return; }
+    const contact = draft.contactNumber.trim();
+    if (contact && !/^\+?[\d\s()-]{7,20}$/.test(contact)) { setProfileNotice({ kind: "error", text: "Enter a valid contact number, for example 0917 123 4567." }); return; }
+    const email = draft.email.trim().toLowerCase();
+    const emailChanged = email !== profile.email.trim().toLowerCase();
+    const problem = emailChanged ? emailError(email) : null;
+    if (problem) { setProfileNotice({ kind: "error", text: problem }); return; }
+    const [first, ...rest] = name.split(" ");
+    const { error } = await supabase.auth.updateUser({
+      ...(emailChanged ? { email } : {}),
+      data: { full_name: name, first_name: first, middle_name: "", last_name: rest.join(" "), contact_number: contact, ...academicToMetadata(nextAcademic) },
+    });
+    if (error) { setProfileNotice({ kind: "error", text: /session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message || "We could not save your profile. Please try again." }); return; }
+    setProfile({ ...draft, fullName: name, firstName: first, middleName: "", lastName: rest.join(" "), contactNumber: contact, email: emailChanged ? profile.email : draft.email });
+    setAcademicInfo(nextAcademic);
+    setEditMode(false);
+    setProfileNotice({ kind: "ok", text: emailChanged ? "Profile saved. Check your new inbox to confirm the email change." : "Profile saved." });
+  }
+  function cancelEdit() { setDraft(profile); setEditMode(false); setProfileNotice(null); }
 
   useEffect(() => {
     if (session?.user) {
@@ -84,6 +119,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
         lastName: resolved.lastName || prev.lastName || '',
         fullName: resolved.fullName || prev.fullName || 'User',
         email: session.user.email || prev.email || '',
+        contactNumber: String(session.user.user_metadata?.contact_number ?? prev.contactNumber ?? ''),
       }));
     }
   }, [session]);
@@ -94,27 +130,24 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
   const [creditHistory, setCreditHistory] = useState<CreditActivity[]>([]);
   const [creditsLoading, setCreditsLoading] = useState(false);
 
+  // Balance, credits used and the purchase/scan history, read from the account.
+  async function refreshCredits() {
+    if (!session?.user?.id) return;
+    try {
+      const [bal, hist] = await Promise.all([getCreditBalance(session.user.id), getCreditHistory(session.user.id, 100)]);
+      setCreditBalance(bal.balance);
+      setCreditsUsed(hist.entries.filter(e => e.kind === 'debit').reduce((a, e) => a + Math.abs(e.delta), 0));
+      setCreditHistory(hist.entries);
+    } catch (e) {
+      console.error('credits fetch failed:', e);
+    }
+  }
+
   useEffect(() => {
     if (!session?.user?.id) return;
     setCreditsLoading(true);
-    Promise.all([
-      getCreditBalance(session.user.id),
-      getCreditHistory(session.user.id, 100),
-    ]).then(([bal, hist]) => {
-      setCreditBalance(bal.balance);
-      const used = hist.entries
-        .filter(e => e.kind === 'debit')
-        .reduce((a, e) => a + Math.abs(e.delta), 0);
-      setCreditsUsed(used);
-      setCreditHistory(hist.entries);
-    }).catch((e) => {
-      console.error('credits fetch failed:', e);
-      setCreditBalance(null);
-      setCreditsUsed(null);
-    }).finally(() => {
-      setCreditsLoading(false);
-    });
-  }, [session?.user?.id]);
+    refreshCredits().finally(() => setCreditsLoading(false));
+  }, [session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Credit purchase & mock checkout modal states
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
@@ -181,40 +214,26 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
     setCreditModalStep("processing");
     await new Promise(r => setTimeout(r, 2000));
 
+    if (!session?.user?.id) {
+      setPaymentError("Please sign in again before buying credits.");
+      setCreditModalStep("payment");
+      return;
+    }
     try {
-      if (session?.user?.id) {
-        const checkout = await createCreditCheckout(
-          session.user.id,
-          selectedPkg.credits,
-          selectedPkg.unitPrice,
-        );
-        const confirm = await confirmCreditCheckout(session.user.id, checkout.pymt_txn_id);
-        setCreditBalance(confirm.balance);
-        setReceiptRef(checkout.checkout_reference);
-        setReceiptTime(new Date());
-        setReceiptLast4(cardNumber.replace(/\s/g, "").slice(-4));
-        setReceiptAmount(checkout.amount);
-        setReceiptPkgId(selectedPkg.id);
-        console.log("Receipt verification: receiptAmount === checkout.amount", checkout.amount === checkout.amount, {
-          receiptAmount: checkout.amount,
-          checkoutAmount: checkout.amount,
-        });
-      } else {
-        setCreditBalance(prev => (prev ?? 0) + selectedPkg.credits);
-        setReceiptRef("SIM-" + Math.random().toString(36).substring(2, 10).toUpperCase());
-        setReceiptTime(new Date());
-        setReceiptLast4(cardNumber.replace(/\s/g, "").slice(-4));
-        setReceiptAmount(selectedPkg.price);
-        setReceiptPkgId(selectedPkg.id);
-      }
-    } catch (err) {
-      console.warn("Backend simulated checkout fallback:", err);
-      setCreditBalance(prev => (prev ?? 0) + selectedPkg.credits);
-      setReceiptRef("SIM-" + Math.random().toString(36).substring(2, 10).toUpperCase());
+      const checkout = await purchaseCredits(session.user.id, selectedPkg.credits, "card");
+      setCreditBalance(checkout.balance);
+      void refreshCredits();
+      setReceiptRef(checkout.checkout_reference);
       setReceiptTime(new Date());
       setReceiptLast4(cardNumber.replace(/\s/g, "").slice(-4));
-      setReceiptAmount(selectedPkg.price);
+      setReceiptAmount(checkout.amount);
       setReceiptPkgId(selectedPkg.id);
+    } catch (err) {
+      // A payment that did not go through must never add credits: say so and let the person try again.
+      console.error("Checkout failed:", err);
+      setPaymentError(err instanceof Error && err.message ? err.message : "Your purchase could not be completed. No credits were added. Please try again.");
+      setCreditModalStep("payment");
+      return;
     }
 
     setPurchasedCredits(selectedPkg.credits);
@@ -230,6 +249,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
     try {
       const { checkout, balance } = await payWithProof(session.user.id, selectedPkg, proof);
       setCreditBalance(balance);
+      void refreshCredits();
       setReceiptRef(checkout.checkout_reference);
       setReceiptTime(new Date());
       setReceiptAmount(checkout.amount);
@@ -255,30 +275,45 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
   const [pwErrorMsg, setPwErrorMsg] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
 
-  function handleUpdatePassword(e: React.FormEvent) {
+  async function handleUpdatePassword(e: React.FormEvent) {
     e.preventDefault();
     setPwErrorMsg("");
     setPwSuccessMsg("");
-    if (!currentPw) {
+    const signsInWithPassword = (session?.user?.app_metadata?.providers as string[] | undefined)?.includes("email") ?? true;
+    if (signsInWithPassword && !currentPw) {
       setPwErrorMsg("Please enter your current password.");
       return;
     }
-    if (newPw.length < 8) {
-      setPwErrorMsg("New password must be at least 8 characters long.");
+    if (!isPasswordValid(newPw)) {
+      setPwErrorMsg("Your new password needs at least 8 characters, with a lowercase letter, an uppercase letter, a number and a symbol.");
       return;
     }
     if (newPw !== confirmPw) {
       setPwErrorMsg("New passwords do not match.");
       return;
     }
+    if (signsInWithPassword && newPw === currentPw) {
+      setPwErrorMsg("Your new password must be different from the current one.");
+      return;
+    }
     setPwLoading(true);
-    setTimeout(() => {
-      setPwLoading(false);
+    try {
+      if (signsInWithPassword) {
+        const email = session?.user?.email;
+        const { error: wrong } = email ? await supabase.auth.signInWithPassword({ email, password: currentPw }) : { error: new Error("no email") };
+        if (wrong) { setPwErrorMsg("Your current password is incorrect."); return; }
+      }
+      const { error } = await supabase.auth.updateUser({ password: newPw });
+      if (error) { setPwErrorMsg(passwordPolicyMessage(error) ?? (/session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message) ?? "We could not update your password. Please try again."); return; }
       setPwSuccessMsg("Your password has been updated successfully.");
       setCurrentPw("");
       setNewPw("");
       setConfirmPw("");
-    }, 800);
+    } catch {
+      setPwErrorMsg("We could not reach the server. Check your connection and try again.");
+    } finally {
+      setPwLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -391,7 +426,7 @@ export function DashboardScreen({ onNavigate, session, onLogout, notifications =
         /* ═══════════════════════════════════════════════════
            ACADEMIC PROFILE VIEW (SIMPLIFIED)
         ═══════════════════════════════════════════════════ */
-        <AcademicProfileView userId={session?.user?.id} credits={creditBalance} scansRun={creditsUsed} memberSince={session?.user?.created_at} setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
+        <AcademicProfileView notice={profileNotice} savedAcademic={academicInfo} userId={session?.user?.id} credits={creditBalance} scansRun={creditsUsed} memberSince={session?.user?.created_at} setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
       ) : (<>
 <DashboardHome onNavigate={onNavigate} session={session} greeting={greeting} />
         <BackToTop />

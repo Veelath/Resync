@@ -6,6 +6,7 @@ import { AuthShell } from '../components/AuthShell';
 import type { Screen } from '../lib/appTypes';
 import { supabase } from '../lib/supabase';
 import { emailError } from '../lib/validation';
+import { isEmailRegistered } from '../services/api';
 
 export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate: (s: Screen) => void; onBack: () => void; onLoginSuccess?: () => void }) {
   const [email, setEmail] = useState("");
@@ -28,6 +29,17 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
     if (problem) { setForgotError(problem); return; }
     setForgotLoading(true);
     setForgotError("");
+    try {
+      if (!(await isEmailRegistered(forgotEmail.trim().toLowerCase()))) {
+        setForgotLoading(false);
+        setForgotError("Email not found. Check the address or sign up for a new account.");
+        return;
+      }
+    } catch (checkError) {
+      setForgotLoading(false);
+      setForgotError(checkError instanceof Error ? checkError.message : "We could not check that email right now. Please try again.");
+      return;
+    }
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), {
       redirectTo: window.location.origin + "/reset-password",
     });

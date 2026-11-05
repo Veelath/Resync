@@ -18,7 +18,7 @@ function ProofForm({ method, amount, credits, error, setError, onBack, onSubmit 
   function submit(event: FormEvent) {
     event.preventDefault();
     const problem = validateProof(method, referenceNumber, payerName, file);
-    if (problem || !file) { setError(problem ?? 'Upload a screenshot or PDF of your receipt.'); return; }
+    if (problem) { setError(problem); return; }
     setError('');
     void onSubmit({ method, referenceNumber, payerName, file });
   }
@@ -31,18 +31,18 @@ function ProofForm({ method, amount, credits, error, setError, onBack, onSubmit 
       {error && <div role="alert" className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">{error}</div>}
       <ol className="space-y-2 text-xs text-gray-600">
         <li><b className="text-gray-900">1. Pay ₱{amount.toLocaleString('en-PH')}</b> by {PROOF_METHOD_LABEL[method]} to <b className="text-gray-900">{account.to}</b>. {account.detail}</li>
-        <li><b className="text-gray-900">2. Fill in the details</b> from your receipt, then <b className="text-gray-900">3. upload it</b> below.</li>
+        <li><b className="text-gray-900">2. Add your receipt details</b> below if you like. This is a test purchase, so they are optional.</li>
       </ol>
       <div className="space-y-1">
-        <label htmlFor="proof-payer" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Name on the account you paid from</label>
+        <label htmlFor="proof-payer" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Name on the account you paid from (optional)</label>
         <input id="proof-payer" value={payerName} onChange={event => setPayerName(event.target.value)} placeholder="Juan Dela Cruz" className={field} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="proof-reference" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Reference number</label>
+        <label htmlFor="proof-reference" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Reference number (optional)</label>
         <input id="proof-reference" value={referenceNumber} onChange={event => setReferenceNumber(event.target.value)} placeholder="e.g. 1234 567 890" maxLength={40} className={`${field} font-mono`} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="proof-file" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Proof of payment</label>
+        <label htmlFor="proof-file" className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Proof of payment (optional)</label>
         <label htmlFor="proof-file" className="flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 bg-gray-50 px-4 py-5 text-center cursor-pointer">
           <span className="text-xs font-semibold text-gray-700">{file ? file.name : 'Choose a screenshot or PDF'}</span>
           <span className="text-[11px] text-gray-400">{file ? `${(file.size / 1024).toFixed(0)} KB` : `PNG, JPEG, WebP or PDF · up to ${PROOF_MAX_BYTES / 1024 / 1024} MB`}</span>
@@ -51,7 +51,7 @@ function ProofForm({ method, amount, credits, error, setError, onBack, onSubmit 
           onChange={event => { setFile(event.target.files?.[0] ?? null); setError(''); }} />
       </div>
       <button type="submit" className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white shadow-sm hover:opacity-90 cursor-pointer" style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}>
-        Submit proof and add {credits} credits (Simulated)
+        Add {credits} {credits === 1 ? 'credit' : 'credits'}
       </button>
     </form>
   );
@@ -81,10 +81,10 @@ export function PaymentModal({ receiptMethod, handleProofSubmit, creditBalance, 
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-600 shrink-0">
                   <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
-                DEMO MODE · Simulated Sandbox — no real card or bank is charged
+                Test mode · no money is charged. Your credits are added to your account for real.
               </span>
               <span className="text-[10px] uppercase tracking-wider bg-amber-200/60 px-2 py-0.5 rounded text-amber-900 font-bold">
-                Simulated Sandbox
+                Test mode
               </span>
             </div>
 
@@ -305,7 +305,7 @@ export function PaymentModal({ receiptMethod, handleProofSubmit, creditBalance, 
                     className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white transition-all shadow-sm flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
                     style={{ background: `linear-gradient(135deg, ${B}, ${BH})` }}
                   >
-                    Pay ₱{selectedPkg.price.toLocaleString('en-PH')} (Simulated)
+                    Buy {selectedPkg.credits} {selectedPkg.credits === 1 ? 'credit' : 'credits'} · ₱{selectedPkg.price.toLocaleString('en-PH')}
                   </button>
                 </div>
 
@@ -313,7 +313,7 @@ export function PaymentModal({ receiptMethod, handleProofSubmit, creditBalance, 
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-gray-400">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                   </svg>
-                  <span>Encrypted 256-bit Demo SSL · Test Card 4242</span>
+                  <span>Test mode · card details are not stored or sent</span>
                 </div>
               </form>
             )}
@@ -322,10 +322,10 @@ export function PaymentModal({ receiptMethod, handleProofSubmit, creditBalance, 
             {creditModalStep === "processing" && (
               <div className="p-10 flex flex-col items-center justify-center text-center space-y-4">
                 <div className="w-12 h-12 rounded-full border-4 border-blue-600 border-t-transparent animate-spin mb-2" />
-                <h4 className="text-base font-bold text-gray-900">Processing simulated transaction...</h4>
-                <p className="text-xs text-gray-400 max-w-xs">Contacting credit ledger provider...</p>
+                <h4 className="text-base font-bold text-gray-900">Adding your credits...</h4>
+                <p className="text-xs text-gray-400 max-w-xs">Recording your purchase...</p>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-semibold mono">
-                  Simulating instant payment confirmation
+                  Updating your balance
                 </div>
               </div>
             )}
@@ -359,7 +359,7 @@ export function PaymentModal({ receiptMethod, handleProofSubmit, creditBalance, 
                 </div>
                 <div>
                   <h4 className="text-xl font-bold text-gray-900">Payment Successful</h4>
-                  <p className="text-xs text-amber-700 font-medium mt-1">Simulated Sandbox — no real charge was made</p>
+                  <p className="text-xs text-amber-700 font-medium mt-1">Test mode — no money was charged</p>
                 </div>
 
                 {/* Receipt card */}

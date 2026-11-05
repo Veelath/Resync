@@ -57,6 +57,8 @@ export interface AITextIndicatorResponse {
 export interface ScanOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
+  /** Called once the server has accepted the scan, so it can be found again after a page refresh. */
+  onStarted?: (analysisRunId: string) => void;
 }
 
 /** Thrown when POST /api/scans/start returns 402 — the user has no scan
@@ -304,7 +306,12 @@ async function runManuscriptScan(
     throw new Error('Backend accepted the scan but returned no analysis_run_id.');
   }
 
-  // ---- 2. Poll until the job reaches a terminal state --------------------
+  options?.onStarted?.(analysisRunId);
+  return pollScanJob(analysisRunId, signal, deadline, timeoutMs);
+}
+
+/** Follow a scan that is already running on the server until it finishes. Used by the scan itself and by a page that was refreshed mid-scan. */
+async function pollScanJob(analysisRunId: string, signal: AbortSignal | undefined, deadline: number, timeoutMs: number): Promise<ScanResult> {
   let consecutiveFailures = 0;
 
   while (true) {
@@ -356,6 +363,15 @@ async function runManuscriptScan(
       throw new Error(job.error || 'The scan failed on the server.');
     }
     // status === 'processing' → keep polling
+  }
+}
+
+export async function resumeManuscriptScan(analysisRunId: string, options?: ScanOptions): Promise<ScanResult> {
+  const timeoutMs = options?.timeoutMs ?? 900000;
+  try {
+    return await pollScanJob(analysisRunId, options?.signal, Date.now() + timeoutMs, timeoutMs);
+  } finally {
+    setScanStatus(null);
   }
 }
 
@@ -472,6 +488,33 @@ export async function downloadGoogleDoc(docUrl: string): Promise<File> {
   if (!resp.ok) throw new Error(await extractErrorDetail(resp));
   const name = decodeURIComponent(resp.headers.get('X-Doc-Filename') || 'Google Doc.docx');
   return new File([await resp.blob()], name, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+/** Does this email belong to an account? Forgot password uses it to say "Email not found". */
+export async function isEmailRegistered(email: string): Promise<boolean> {
+  const resp = await fetch(`${API_BASE_URL}/api/auth/email-registered`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }),
+  });
+  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  return (await resp.json()).registered === true;
+}
+
+export interface PurchaseResult {
+  pymt_txn_id: string; checkout_reference: string; amount: number; credit_amount: number; balance: number; method: string;
+}
+
+/** Buy a credit package: the server records the transaction and adds the credits to the wallet. */
+export async function purchaseCredits(
+  userId: string, creditAmount: number, method: 'card' | 'gcash' | 'bank_transfer' = 'card',
+  proof?: { reference_number: string; payer_name?: string; file_name?: string; content_type: string; proof_data: string },
+): Promise<PurchaseResult> {
+  const resp = await fetch(`${API_BASE_URL}/api/credits/purchase`, {
+    method: 'POST',
+    headers: creditHeaders(userId, await authHeaders()),
+    body: JSON.stringify({ credit_amount: creditAmount, method, ...(proof ? { proof } : {}) }),
+  });
+  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  return resp.json();
 }
 
 export interface PaymentProofBody {

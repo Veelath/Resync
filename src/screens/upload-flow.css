@@ -343,14 +343,31 @@
 
 /* Confirm step: the real pages and the paper's structure */
 
-.uf-pages { position: relative; height: 600px; overflow-y: auto; border: 1px solid var(--uf-line); border-radius: 14px; background: #f3f2fb; box-shadow: 0 30px 50px -34px rgba(11, 10, 46, 0.5); }
+.uf-pages { position: relative; height: clamp(340px, calc(100vh - 340px), 600px); overflow-y: auto; border: 1px solid var(--uf-line); border-radius: 14px; background: #f3f2fb; box-shadow: 0 30px 50px -34px rgba(11, 10, 46, 0.5); }
 .uf-pages-note { margin: 0; padding: 24px; color: var(--uf-muted); font-size: 14px; }
 .uf-pages-host .docx-wrapper { background: transparent !important; padding: 12px 0 !important; }
 .uf-pages-host .docx-wrapper > section.docx { box-shadow: 0 1px 8px rgba(11, 15, 61, 0.18); margin-bottom: 12px !important; }
 
-.uf-outline { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
+.uf-outline { list-style: none; margin: 0; padding: 0; max-height: clamp(120px, calc(100vh - 560px), 300px); overflow-y: auto; }
 .uf-outline li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #eeedfb; font-size: 13.5px; }
 .uf-outline li:first-child { border-top: 0; }
 .uf-outline-n { display: flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; border-radius: 8px; background: #eeedff; color: var(--uf-brand); font-size: 12px; font-weight: 800; }
 .uf-outline-name { flex: 1; min-width: 0; font-weight: 700; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .uf-outline-w { flex: none; font-size: 12px; color: #7d7b9e; }
+
+.uf-ok-note { padding: 14px 16px; border-radius: 14px; background: #e3f8ef; border: 1px solid #b6ecd3; color: #0b6b4b; font-size: 14px; font-weight: 600; }
+
+/* Loading state for the document preview */
+
+.uf-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 280px; text-align: center; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+.uf-loading b { font-size: 17px; color: var(--uf-ink); }
+.uf-loading-step { font-size: 13.5px; color: var(--uf-muted); max-width: 30ch; line-height: 1.45; }
+.uf-spinner { width: 44px; height: 44px; border-radius: 50%; border: 4px solid #e1dffa; border-top-color: var(--uf-brand); animation: uf-spin 0.9s linear infinite; }
+.uf-skeleton { display: flex; flex-direction: column; gap: 9px; width: min(340px, 80%); margin-top: 14px; }
+.uf-skeleton i { display: block; height: 9px; border-radius: 6px; background: linear-gradient(90deg, #ecebf8 25%, #f7f6ff 50%, #ecebf8 75%); background-size: 200% 100%; animation: uf-shimmer 1.4s ease-in-out infinite; }
+@keyframes uf-spin { to { transform: rotate(360deg); } }
+@keyframes uf-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .uf-spinner, .uf-skeleton i { animation: none; } }
+
+/* The confirm buttons stay in view at the bottom of the window, however tall the page is */
+.uf-actionbar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 14px; max-width: 760px; padding: 14px 0 16px; background: linear-gradient(to bottom, rgba(245, 245, 254, 0), #f5f5fe 32%); }

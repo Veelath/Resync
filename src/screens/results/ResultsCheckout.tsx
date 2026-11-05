@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { createCreditCheckout, confirmCreditCheckout } from '../../services/api';
+import { purchaseCredits } from '../../services/api';
 import { CREDIT_PACKAGES } from '../dashboard/helpers';
 import { PaymentModal } from '../dashboard/PaymentModal';
 import { announcePayment, payWithProof, PROOF_METHOD_LABEL, type ProofPayment } from '../../lib/paymentProof';
@@ -31,9 +31,8 @@ export function ResultsCheckout({ userId, balance, onBalance, onClose }: { userI
     setError('');
     setStep('processing');
     try {
-      const checkout = await createCreditCheckout(userId, selectedPkg.credits, selectedPkg.unitPrice);
-      const confirmation = await confirmCreditCheckout(userId, checkout.pymt_txn_id);
-      onBalance(confirmation.balance);
+      const checkout = await purchaseCredits(userId, selectedPkg.credits, 'card');
+      onBalance(checkout.balance);
       setReceiptRef(checkout.checkout_reference);
       setReceiptTime(new Date());
       setReceiptLast4(digits.slice(-4));
@@ -43,7 +42,8 @@ export function ResultsCheckout({ userId, balance, onBalance, onClose }: { userI
       setStep('success');
       announcePayment(selectedPkg.credits, checkout.amount);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Checkout failed. Try again.');
+      console.error('Checkout failed:', cause);
+      setError(cause instanceof Error && cause.message ? cause.message : 'Your purchase could not be completed. No credits were added. Please try again.');
       setStep('payment');
     }
   }
