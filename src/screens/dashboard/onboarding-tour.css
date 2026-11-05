@@ -83,3 +83,8 @@
   .tour-detected{right:0}
 }
 @media (prefers-reduced-motion:reduce){.tour-overlay *,.tour-overlay{animation:none !important;transition:none !important}}
+
+.tour-progress{display:inline-flex;align-items:center;gap:10px}
+.tour-progress-spin{width:16px;height:16px;border-radius:50%;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;animation:tour-progress-spin .9s linear infinite}
+@keyframes tour-progress-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.tour-progress-spin{animation:none}}

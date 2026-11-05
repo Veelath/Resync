@@ -371,3 +371,9 @@
 
 /* The confirm buttons stay in view at the bottom of the window, however tall the page is */
 .uf-actionbar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 14px; max-width: 760px; padding: 14px 0 16px; background: linear-gradient(to bottom, rgba(245, 245, 254, 0), #f5f5fe 32%); }
+
+/* Dashboard banner while a scan is running */
+.uf-scanbar { --uf-brand: #2b25c8; --uf-ink: #0b0f3d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; max-width: 1240px; margin: 14px auto 0; padding: 12px 18px; border: 1px solid #c9cefc; border-radius: 16px; background: #eef0ff; color: #0b0f3d; font-size: 14px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+.uf-scanbar > span:nth-child(2) { flex: 1; min-width: 200px; }
+.uf-scanbar-spin { width: 20px; height: 20px; border-radius: 50%; border: 3px solid #cfd3fb; border-top-color: #2b25c8; animation: uf-spin 0.9s linear infinite; flex: none; }
+@media (prefers-reduced-motion: reduce) { .uf-scanbar-spin { animation: none; } }

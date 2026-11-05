@@ -18,6 +18,7 @@ import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
 import { PAYMENT_EVENT } from './lib/paymentProof';
 import { resumeManuscriptScan } from './services/api';
+import { askForDesktopAlerts, showDesktopAlert } from './components/ScanNotifications';
 import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanRunRef = useRef(0);
   const scanSettledRef = useRef(true);
+  const [scanRunning, setScanRunning] = useState(false);
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -184,6 +186,7 @@ export default function App() {
     if (!running || (running.userId && running.userId !== session.user.id)) return;
     resumedRef.current = true;
     scanSettledRef.current = false;
+    setScanRunning(true);
     resumeManuscriptScan(running.id).then(result => {
       setScanResult(result); setScanFile(null);
       handleScanCompleted(result);
@@ -203,6 +206,8 @@ export default function App() {
   }
 
   function handleScanStart() {
+    setScanRunning(true);
+    if (notificationPrefsRef.current.alerts) void askForDesktopAlerts();   // this runs inside the click that started the scan
     scanRunRef.current += 1;
     scanSettledRef.current = false;
     setScanResult(null);  // a rescan starts clean: the previous report and its recommendations are dropped
@@ -226,10 +231,13 @@ export default function App() {
   function handleScanCompleted(result?: { analysis_run_id?: string; rescan_unchanged?: boolean }) {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
+    setScanRunning(false);
     clearActiveScan();
     const wantsSound = notificationPrefsRef.current.alerts && notificationPrefsRef.current.sound;
     const played = wantsSound ? playCompletionChime() : true;   // no sound wanted: nothing to be blocked
     setSoundBlocked(!played);
+    const finishedId = result?.analysis_run_id;
+    if (notificationPrefsRef.current.alerts) showDesktopAlert(result?.rescan_unchanged ? "No changes detected" : "Your ReSync report is ready", result?.rescan_unchanged ? "Your manuscript is the same as your last scan." : "Your manuscript scan finished. Click to open the report.", () => { if (finishedId) navigate("results", false, finishedId); });
     if (result?.rescan_unchanged) pushNotification("success", "No changes detected", "Your manuscript is the same as your last scan, so the report is unchanged.", result.analysis_run_id);
     else pushNotification("success", "Scan complete", "Your coherence report is ready to review.", result?.analysis_run_id);
   }
@@ -237,8 +245,10 @@ export default function App() {
   function handleScanFailed(message: string) {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
+    setScanRunning(false);
     clearActiveScan();
     setSoundBlocked(false);
+    if (notificationPrefsRef.current.alerts) showDesktopAlert("Your ReSync scan did not finish", message);
     pushNotification("error", "Scan did not finish", message);
   }
 
@@ -299,7 +309,7 @@ export default function App() {
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
-      {screen === "dashboard" && <DashboardScreen onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
+      {screen === "dashboard" && <DashboardScreen scanRunning={scanRunning} onViewProgress={() => navigate("processing")} onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
     </div>
   );
 }

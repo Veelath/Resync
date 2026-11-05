@@ -3,6 +3,7 @@ import { Logo } from '../components/AppPrimitives';
 import { LottieLoader } from '../components/LottieLoader';
 import type { Screen } from '../lib/appTypes';
 import { getScanStatus, subscribeScanStatus } from '../services/api';
+import { askForDesktopAlerts, desktopAlertsState } from '../components/ScanNotifications';
 import './processing-screen.css';
 
 const steps = [
@@ -14,8 +15,17 @@ const steps = [
 const finalStep = { label: 'Generating AI Recommendations', detail: 'The AI is reviewing each pair of sections. This can take a little longer.' };
 const waitingStep = { label: 'Waiting in line', detail: 'Your scan will start as soon as the current scan is complete.' };
 
+/** Milliseconds since the running scan was accepted, from what the app remembers about it. */
+function elapsedSinceStart(): number {
+  try {
+    const saved = JSON.parse(localStorage.getItem('resync_active_scan') || 'null');
+    return saved?.at ? Math.max(0, Date.now() - saved.at) : 0;
+  } catch { return 0; }
+}
+
 export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
-  const [done, setDone] = useState(0);
+  const [done, setDone] = useState(() => { let sum = 0; const gone = elapsedSinceStart(); return steps.filter(step => (sum += step.dur) <= gone).length; });
+  const [alerts, setAlerts] = useState(desktopAlertsState);
   const status = useSyncExternalStore(subscribeScanStatus, getScanStatus);
   const isQueued = status?.queued === true;
   const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
@@ -24,10 +34,12 @@ export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => vo
   useEffect(() => {
     if (isQueued) return;
     const startingDone = done;
+    // Coming back to this page mid-scan continues from where the scan really is instead of starting over.
+    const alreadyElapsed = elapsedSinceStart();
     let elapsed = 0;
     const timers = steps.slice(startingDone).map((step, index) => {
       elapsed += step.dur;
-      return setTimeout(() => setDone(startingDone + index + 1), elapsed);
+      return setTimeout(() => setDone(startingDone + index + 1), Math.max(0, elapsed - (startingDone === 0 ? alreadyElapsed : 0)));
     });
     return () => timers.forEach(clearTimeout);
   }, [isQueued]);
@@ -88,6 +100,8 @@ export function ProcessingScreen({ onNavigate }: { onNavigate: (s: Screen) => vo
           This can take a moment. You can leave this page; we will tell you when your report is ready.
         </p>
         <button type="button" className="processing-screen__leave" onClick={() => onNavigate('dashboard')}>Continue in background</button>
+        {alerts === 'default' && <button type="button" className="processing-screen__link" onClick={() => { void askForDesktopAlerts().then(setAlerts); }}>Turn on computer notifications, so you hear about it even in another app</button>}
+        {alerts === 'denied' && <p className="processing-screen__keep-open" style={{ marginTop: 10 }}>Computer notifications are blocked for this site. Allow them in your browser's site settings to get alerts while you use other apps.</p>}
       </div>
     </main>
   );

@@ -16,14 +16,25 @@ export function clearPlacementMarker() {
   document.querySelectorAll(`.${MARKER_CLASS}`).forEach(element => element.remove());
 }
 
-function makeMarker(placement: Placement) {
+/** The spot for a new sentence: a green dashed box with a "+ Add this sentence here" label and the sentence itself. */
+function makeMarker(placement: Placement, sentence?: string) {
   const marker = document.createElement('div');
   marker.className = MARKER_CLASS;
   marker.tabIndex = -1;
   marker.setAttribute('role', 'note');
-  marker.textContent = placement === 'end' ? '＋ Add your new sentence here, as the last sentence of this section' : '＋ Add your new sentence here, as the first sentence of this section';
-  marker.style.cssText = 'margin:10px 0;padding:8px 12px;border:2px dashed #2b25c8;border-radius:10px;background:#eeedff;color:#1a1fcc;'
-    + "font:700 13px 'Plus Jakarta Sans',system-ui,sans-serif;text-align:center;line-height:1.4;zoom:1;";
+  marker.title = placement === 'end' ? 'Add this as the last sentence of this section' : 'Add this as the first sentence of this section';
+  marker.style.cssText = 'margin:14px 0;padding:14px 16px;border:2px dashed #1fa84f;border-radius:16px;background:#eaf9ef;'
+    + 'box-shadow:0 10px 24px -18px rgba(31,168,79,.7);text-align:left;zoom:1;';
+  const label = document.createElement('span');
+  label.textContent = '+ Add this sentence here';
+  label.style.cssText = "display:inline-block;padding:4px 14px;border-radius:999px;background:#1fa84f;color:#fff;font:700 13px/1.4 'Plus Jakarta Sans',system-ui,sans-serif;";
+  marker.appendChild(label);
+  if (sentence) {
+    const text = document.createElement('p');
+    text.textContent = sentence;
+    text.style.cssText = "margin:10px 0 0;color:#1f2937;font:400 15px/1.6 Georgia,'Times New Roman',serif;text-align:left;text-indent:0;";
+    marker.appendChild(text);
+  }
   return marker;
 }
 
@@ -42,7 +53,7 @@ function isHeadingFor(element: Element, name: string) {
  * note (or null when the section is not on the page, for example when it is locked). Headings are searched in reading
  * order, and a heading only counts when real text follows it, so the table of contents is skipped.
  */
-export function markInDocx(root: HTMLElement, names: string[], index: number, placement: Placement): HTMLElement | null {
+export function markInDocx(root: HTMLElement, names: string[], index: number, placement: Placement, sentence?: string): HTMLElement | null {
   clearPlacementMarker();
   const paragraphs = Array.from(root.querySelectorAll('p, h1, h2, h3, h4, h5, h6')).filter(hasText);
   const positions: (number | null)[] = [];
@@ -59,7 +70,7 @@ export function markInDocx(root: HTMLElement, names: string[], index: number, pl
   }
   const heading = positions[index];
   if (heading === null || heading === undefined) return null;
-  const marker = makeMarker(placement);
+  const marker = makeMarker(placement, sentence);
   if (placement === 'start') {
     paragraphs[heading + 1].before(marker);
   } else {
@@ -72,12 +83,12 @@ export function markInDocx(root: HTMLElement, names: string[], index: number, pl
 }
 
 /** The same for the plain text view, where each section is its own element. */
-export function markInSection(section: Element | null, placement: Placement): HTMLElement | null {
+export function markInSection(section: Element | null, placement: Placement, sentence?: string): HTMLElement | null {
   clearPlacementMarker();
   if (!section) return null;
   const blocks = Array.from(section.querySelectorAll('p, .manuscript-compact-block')).filter(hasText);
   if (!blocks.length) return null;
-  const marker = makeMarker(placement);
+  const marker = makeMarker(placement, sentence);
   if (placement === 'start') blocks[0].before(marker); else blocks[blocks.length - 1].after(marker);
   return marker;
 }

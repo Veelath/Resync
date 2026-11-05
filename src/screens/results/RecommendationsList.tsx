@@ -83,7 +83,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   linkedIds: Set<string>;
   onShowInManuscript: (id: string) => void;
   /** Scrolls to where a new sentence belongs and marks the spot. */
-  onShowPlacement?: (section: string, placement: Placement) => void;
+  onShowPlacement?: (section: string, placement: Placement, sentence?: string) => void;
   revealId: string | null;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -122,7 +122,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
                   ? 'Put it at the very beginning of the section, before its first paragraph.'
                   : 'Put it at the very end of the section, after its last paragraph.'}
                   {item.anchor && <> {item.placement === 'start' ? 'It goes right before' : 'It goes right after'}: <span className="font-serif text-gray-700">“{item.anchor}”</span></>}</p>
-                {onShowPlacement && item.section && item.placement && <button type="button" onClick={() => onShowPlacement(item.section!, item.placement!)}
+                {onShowPlacement && item.section && item.placement && <button type="button" onClick={() => onShowPlacement(item.section!, item.placement!, plainText(item.revision))}
                   className="mt-0.5 inline-flex items-center gap-1.5 rounded-lg bg-[#1a1fcc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#1115a5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M6 13l6 6 6-6" /></svg>
                   Go to this spot in your paper</button>}
@@ -145,7 +145,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
   pairs: ManuscriptFlowPair[];
   linkedIds: Set<string>;
   onShowInManuscript: (id: string) => void;
-  onShowPlacement?: (section: string, placement: Placement) => void;
+  onShowPlacement?: (section: string, placement: Placement, sentence?: string) => void;
   revealId: string | null;
   onlyOrders?: Set<number>;
   /** 'issues' lists only pairs that need editing; 'clear' lists the pairs that need no action. */

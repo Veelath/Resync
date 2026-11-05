@@ -33,7 +33,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
   items?: RecommendationItem[];
   linkedIds?: Set<string>;
   onShowInManuscript?: (id: string) => void;
-  onShowPlacement?: (section: string, placement: Placement) => void;
+  onShowPlacement?: (section: string, placement: Placement, sentence?: string) => void;
   revealId?: string | null;
 }) {
   const breakdown = breakdownOf(result);
@@ -137,7 +137,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
           <div className="space-y-3">
             {tracedPairs.map(pair => <Fragment key={pair.order}><PairIssueCard pair={pair} items={items.filter(item => item.pair === pair.order)} severity={pair.severity as Severity}
               linkedIds={linkedIds ?? new Set<string>()} revealId={revealId} onShowInManuscript={id => { setOpenName(null); onShowInManuscript(id); }}
-              onShowPlacement={onShowPlacement && ((section, placement) => { setOpenName(null); onShowPlacement(section, placement); })} /></Fragment>)}
+              onShowPlacement={onShowPlacement && ((section, placement, sentence) => { setOpenName(null); onShowPlacement(section, placement, sentence); })} /></Fragment>)}
             {!tracedPairs.length && <p className="text-sm text-gray-500">No issues are recorded for this part.</p>}
           </div>
         </div>

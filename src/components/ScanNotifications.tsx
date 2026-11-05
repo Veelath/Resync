@@ -42,6 +42,27 @@ export function playCompletionChime(): boolean {
 
 export const NOTIFICATIONS_KEY = "resync_notifications";
 
+/** Notifications from the computer itself (the corner pop-up), which show even when another app is in front. */
+export const desktopAlertsSupported = () => typeof window !== "undefined" && "Notification" in window;
+export const desktopAlertsState = (): NotificationPermission | "unsupported" => desktopAlertsSupported() ? Notification.permission : "unsupported";
+
+/** Must be called from a click: browsers only show the permission prompt in answer to one. */
+export async function askForDesktopAlerts(): Promise<NotificationPermission | "unsupported"> {
+  if (!desktopAlertsSupported()) return "unsupported";
+  if (Notification.permission !== "default") return Notification.permission;
+  try { return await Notification.requestPermission(); } catch { return Notification.permission; }
+}
+
+/** Shows a computer notification when the person is not looking at Resync. Clicking it brings them back. */
+export function showDesktopAlert(title: string, body: string, onClick?: () => void) {
+  if (!desktopAlertsSupported() || Notification.permission !== "granted") return;
+  if (document.visibilityState === "visible" && document.hasFocus()) return;   // they are already here: the in-page pop-up is enough
+  try {
+    const alert = new Notification(title, { body, icon: "/favicon.png", tag: "resync-scan" });
+    alert.onclick = () => { window.focus(); alert.close(); onClick?.(); };
+  } catch { /* some browsers only allow notifications from a service worker */ }
+}
+
 /** What this browser shows when a scan finishes. Both are on until the person turns them off. */
 export type NotificationPrefs = { alerts: boolean; sound: boolean };
 export const NOTIFICATION_PREFS_KEY = "resync_notification_prefs";

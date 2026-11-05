@@ -152,12 +152,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   }
 
   // "Go to this spot": scrolls to where a new sentence belongs and leaves a visible note there until the next one.
-  function showPlacement(section: string, placement: Placement) {
+  function showPlacement(section: string, placement: Placement, sentence?: string) {
     const names = (result?.manuscript_sections ?? []).map(item => item.name);
     const index = names.findIndex(name => name.toLowerCase() === section.toLowerCase());
     const marker = index < 0 ? null : docxFile
-      ? markInDocx(document.querySelector<HTMLElement>('.docx-host .docx-main') ?? document.body, names, index, placement)
-      : markInSection(document.querySelector(`[data-section-index="${index}"]`), placement);
+      ? markInDocx(document.querySelector<HTMLElement>('.docx-host .docx-main') ?? document.body, names, index, placement, sentence)
+      : markInSection(document.querySelector(`[data-section-index="${index}"]`), placement, sentence);
     if (marker) {
       setPlacementMessage('');
       scrollToTarget(marker, 2400);

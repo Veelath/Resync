@@ -26,12 +26,14 @@ const guidance = [
   ['AI-Text Indicator', 'Review the text signal'],
 ];
 
-export function DashboardHome({ onNavigate, session, greeting }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: 'Good morning' | 'Good afternoon' | 'Good evening' }) {
+export function DashboardHome({ onNavigate, session, greeting, scanRunning = false, onViewProgress }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: 'Good morning' | 'Good afternoon' | 'Good evening'; scanRunning?: boolean; onViewProgress?: () => void }) {
   const firstName = session?.user?.user_metadata?.full_name?.split(' ')[0] || session?.user?.email?.split('@')[0] || 'there';
   const [tourOpen, setTourOpen] = useState(() => !tourSeen());
   return <div className="phase2-dashboard">
     <OnboardingTour name={firstName} open={tourOpen} onClose={() => setTourOpen(false)} />
-    {!tourOpen && <button type="button" className="tour-replay" onClick={() => setTourOpen(true)}>Replay tour</button>}
+    {scanRunning && onViewProgress
+      ? <button type="button" className="tour-replay tour-progress" onClick={onViewProgress}><span className="tour-progress-spin" aria-hidden="true" />View progress</button>
+      : !tourOpen && <button type="button" className="tour-replay" onClick={() => setTourOpen(true)}>Replay tour</button>}
     <section className="phase2-hero"><div className="phase2-hero-inner">
       <div className="phase2-hero-grid">
         <div className="phase2-hero-copy">
