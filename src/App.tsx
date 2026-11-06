@@ -196,10 +196,11 @@ export default function App() {
     scanSettledRef.current = false;
     setScanRunning(true);
     setScanStartedAt(running.at); setScanWords(running.words ?? null);
-    resumeManuscriptScan(running.id, { startedAt: running.at, onProcessing: () => navigate('processing') }).then(result => {
+    let resumedProcessing = false;
+    resumeManuscriptScan(running.id, { startedAt: running.at, onProcessing: () => { resumedProcessing = true; navigate('processing'); } }).then(result => {
       setScanResult(result); setScanFile(null);
       handleScanCompleted(result);
-      if (screenRef.current === 'processing') navigate("results", false, result.analysis_run_id);
+      if (!resumedProcessing || screenRef.current === 'processing') navigate("results", false, result.analysis_run_id);
     }).catch(error => handleScanFailed(error, true));
   }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -335,7 +336,7 @@ export default function App() {
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
-      {screen === "dashboard" && dashboardNotice && <div role="status" className="p-4 text-center bg-blue-50 text-blue-900">{dashboardNotice} <button type="button" onClick={() => setDashboardNotice(null)} aria-label="Dismiss notice">Dismiss</button></div>}
+      {screen === "dashboard" && dashboardNotice && <div role="status" className="p-4 text-center bg-blue-50 text-blue-900">{dashboardNotice} <button type="button" onClick={() => setDashboardNotice(null)} aria-label="Dismiss notice" className="rounded-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">Dismiss</button></div>}
       {screen === "dashboard" && <DashboardScreen scanRunning={scanRunning} onViewProgress={() => navigate("processing")} onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
     </div>
   );
