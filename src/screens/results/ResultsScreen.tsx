@@ -46,6 +46,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   const [manuscriptReason, setManuscriptReason] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('recommendations');
   const [revealId, setRevealId] = useState<string | null>(null);
+  // The finding that is open in the side panel (its pair's order), or null when the whole list shows.
+  const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
   // The student's own Word file, shown as written. It comes straight from the upload, or from this browser's storage
   // when a saved report is reopened; Google Docs links, old .doc files and sample reports use the text view instead.
@@ -139,6 +141,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     ...recommendations.flatMap(rec => {
       const pair = result.manuscript_flow.find(entry => entry.order === rec.pair);
       const tone = severityTones[(pair?.severity && pair.severity !== 'None' ? pair.severity : 'Moderate') as keyof typeof severityTones];
+      const edge = rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === rec.section)?.text, rec.placement === 'start' ? 'start' : 'end', 4000) : '';
+      if (rec.kind === 'add' && edge) return [{ id: rec.id, text: edge, background: '#ffe8a3', border: '#e0a53c', title: 'Click to see the finding', onClick: (id: string) => focusLinked('recommendation', id) }];
       return rec.quote && rec.kind !== 'add' ? [{ id: rec.id, text: rec.quote, ...tone, title: 'Click to see why this was flagged', onClick: (id: string) => focusLinked('recommendation', id) }] : [];
     }),
     ...result.manuscript_flow.flatMap(pair => (pair.explanation?.highlighted_inconsistencies ?? []).filter(item => item.quote).map((item, index) => ({
@@ -158,8 +162,30 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   }
 
   function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
-    if (kind === 'recommendation') { setActiveTab('recommendations'); setRevealId(id); }
+    if (kind === 'recommendation') {
+      setActiveTab('recommendations'); setRevealId(id);
+      const found = recommendations.find(item => item.id === id);
+      if (found) setSelectedOrder(found.pair);
+    }
     requestAnimationFrame(() => scrollToTarget(document.getElementById(`${kind}-${id}`)));
+  }
+
+  // The highlight of the open finding gets a ring, like the design.
+  useEffect(() => {
+    const ids = new Set(recommendations.filter(item => item.pair === selectedOrder).map(item => item.id));
+    document.querySelectorAll<HTMLElement>('.docx-host mark[data-highlight-for]').forEach(mark => {
+      if (selectedOrder != null && ids.has(mark.dataset.highlightFor ?? '')) mark.dataset.selected = 'true'; else delete mark.dataset.selected;
+    });
+  }); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Choosing a finding opens it and takes the reader to the matching spot in the paper.
+  function selectFinding(order: number) {
+    setActiveTab('recommendations');
+    setSelectedOrder(order);
+    const first = recommendations.find(item => item.pair === order);
+    if (!first) return;
+    if (linkedIds.has(first.id)) focusLinked('highlight', first.id);
+    else if (first.kind === 'add' && first.section && first.placement) showPlacement(first.section, first.placement, plainText(first.revision));
   }
 
   // "Go to this spot": scrolls to where a new sentence belongs and leaves a visible note there until the next one.
@@ -231,6 +257,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     </header>}
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[#e1dffa] bg-[#edecfb]/95 px-4 py-2.5 text-[13px] text-[#4c4a6b] backdrop-blur print:hidden">
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#ddf7e8] px-3 text-[12.5px] font-extrabold text-[#12703f]"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>Analysis complete</span>
+          <span>Overall assessment <b className="font-extrabold text-[#0b0f3d]">{displayBand} coherence</b> · {issueCount} {issueCount === 1 ? 'finding' : 'findings'}{result.manuscript_sections?.length ? ` across ${result.manuscript_sections.length} sections` : ''}</span>
+          {issueCount > 0 && <span className="hidden font-semibold text-[#7d7b9e] 2xl:inline">Click a highlight to see the finding.</span>}
+        </div>
         <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
           {docxFile ? <><DocxManuscript file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
@@ -241,22 +272,25 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
       </div>
       <aside tabIndex={0} aria-label="Analysis panel" className="results-scroll order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-2 lg:w-[clamp(380px,28vw,520px)] lg:rounded-none lg:shadow-none lg:overflow-y-auto print:hidden">
         <div>
-          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} />
+          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} hideBreakdown={selectedOrder != null && activeTab === 'recommendations'} />
             {result.rescan_unchanged && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900">No changes detected since your last scan of this manuscript, so this report matches the previous one.</p>}
             {result.structure_note && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-900 print:hidden">{result.structure_note}</p>}
+            {selectedOrder != null && activeTab === 'recommendations' && <button type="button" onClick={() => setSelectedOrder(null)} className="mx-4 mt-3 flex items-center gap-2 text-[13.5px] font-extrabold text-[#2b25c8] focus-visible:outline-2 focus-visible:outline-offset-2 print:hidden">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Back to all findings</button>}
             <div className="scrollbar-none flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-3 print:hidden" role="tablist" aria-label="Results tabs">
               {tabs.map((tab, index) => <button key={tab.id} type="button" role="tab" id={`results-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls="results-tab-panel" tabIndex={activeTab === tab.id ? 0 : -1}
-                onClick={() => setActiveTab(tab.id)} onKeyDown={event => {
+                onClick={() => { setActiveTab(tab.id); setSelectedOrder(null); }} onKeyDown={event => {
                   const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
                   if (next < 0) return;
                   event.preventDefault();
                   setActiveTab(tabs[next].id);
+                  setSelectedOrder(null);
                   document.getElementById(`results-tab-${tabs[next].id}`)?.focus();
                 }} className={`px-3 py-3 text-xs font-bold border-b-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] ${activeTab === tab.id ? 'border-[#1a1fcc] text-[#1a1fcc]' : 'border-transparent text-[#4b5563]'}`}>{tab.label}</button>)}
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} />
+                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
               </div>}
               {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} mode="clear" />}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}

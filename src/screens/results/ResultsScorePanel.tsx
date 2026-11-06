@@ -27,7 +27,7 @@ export function breakdownOf(result: V7ScanResponse): DimensionBreakdown {
   return legacy;
 }
 
-export function ResultsScorePanel({ result, large = false, items = [], linkedIds, onShowInManuscript, onShowPlacement, revealId = null }: {
+export function ResultsScorePanel({ result, large = false, items = [], linkedIds, onShowInManuscript, onShowPlacement, revealId = null, hideBreakdown = false }: {
   result: V7ScanResponse;
   large?: boolean;
   items?: RecommendationItem[];
@@ -35,6 +35,8 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
   onShowInManuscript?: (id: string) => void;
   onShowPlacement?: (section: string, placement: Placement, sentence?: string) => void;
   revealId?: string | null;
+  /** While one finding is open the score boxes step aside. */
+  hideBreakdown?: boolean;
 }) {
   const breakdown = breakdownOf(result);
   const overall = Math.round(result.overall_coherence_score);
@@ -85,7 +87,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
       {unreviewed > 0 && <p className="rp-note"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8v.01" /></svg><span>{isRateLimited(result.ai_synthesis?.review_status)
         ? provisionalMessage
         : `This score is provisional: ${unreviewed} section ${unreviewed === 1 ? 'pair' : 'pairs'} could not be reviewed, so ${unreviewed === 1 ? 'it is' : 'they are'} not counted. Scan again to retry.`}</span></p>}
-      <div className="w-full space-y-2" aria-label="Score breakdown">
+      {!hideBreakdown && <div className="w-full space-y-2" aria-label="Score breakdown">
         <p className="rp-label">Breakdown of your total score</p>
         <div className="grid grid-cols-2 gap-2.5">
           {DIMENSIONS.map(({ name, label, color, description }) => {
@@ -118,7 +120,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             </div>;
           })}
         </div>
-      </div>
+      </div>}
       {tip && (() => {
         const dimension = DIMENSIONS.find(item => item.name === tip.name)!;
         const entry = breakdown[tip.name];

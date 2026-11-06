@@ -347,13 +347,16 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       setScanError("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
       return;
     }
-    if (file.size > MAX_MANUSCRIPT_BYTES) {
-      setUploadedFile(null);
-      setScanError("This file is larger than 25 MB. Please upload a smaller Word document.");
-      return;
-    }
     setScanError(null);
-    slimDocx(file).then(setUploadedFile);
+    // Pictures are taken out first (they are not read), so a Word file full of images is judged by its size without them.
+    slimDocx(file).then(slim => {
+      if (slim.size > MAX_MANUSCRIPT_BYTES) {
+        setUploadedFile(null);
+        setScanError("This file is larger than 25 MB even without its pictures. Please upload a smaller Word document.");
+        return;
+      }
+      setUploadedFile(slim);
+    });
   }
 
   function handleResetTemplate() {

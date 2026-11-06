@@ -76,7 +76,7 @@ export function levelOf(pair: ManuscriptFlowPair, hasItems: boolean): CardLevel 
 }
 
 /** One pair with a real issue: why, the lines involved, and the suggested edits. Shared by the list and the dimension view. */
-export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, onShowPlacement, revealId, showAll = false }: {
+export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, onShowPlacement, revealId, showAll = false, selected = false, onSelect }: {
   pair: ManuscriptFlowPair;
   items: RecommendationItem[];
   severity: CardLevel;
@@ -87,6 +87,9 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   revealId: string | null;
   /** Show every step (the printed report has no 'show more' button). */
   showAll?: boolean;
+  /** In the list a card starts closed; choosing it opens it and shows where it is in the paper. Without onSelect it is always open. */
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -110,10 +113,11 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const copy = (id: string, text: string) => {
     navigator.clipboard?.writeText(text).then(() => { setCopied(id); window.setTimeout(() => setCopied(current => current === id ? null : current), 1800); }).catch(() => undefined);
   };
-  return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className="space-y-3 rounded-2xl border border-[#e3e1fa] bg-white p-4 shadow-[0_1px_3px_rgba(26,31,204,.06)]">
+  const collapsible = !!onSelect;
+  const head = <>
     <div className="flex flex-wrap items-center gap-2">
-      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${quick ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-[#2b25c8]'}`}>
-        <span aria-hidden="true">✦</span>{quick ? `Quick fix · add ${adds.length} ${adds.length === 1 ? 'sentence' : 'sentences'}` : items.length ? `Edit ${items.length} ${items.length === 1 ? 'part' : 'parts'}` : 'Needs a look'}
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${items.length && items.length <= 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-[#2b25c8]'}`}>
+        <span aria-hidden="true">✦</span>{!items.length ? 'Needs a look' : items.length <= 2 ? `Quick fix · ${quick ? `add ${adds.length} ${adds.length === 1 ? 'sentence' : 'sentences'}` : `change ${items.length} ${items.length === 1 ? 'part' : 'parts'}`}` : `${items.length} fixes`}
       </span>
       {category && <span className="text-[11px] font-medium text-gray-500">Category: {category}</span>}
       {pair.adjacent === false && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600" title="These two sections are not next to each other in your paper">Cross-chapter</span>}
@@ -124,6 +128,19 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
       <span className={`text-[11px] font-bold ${tag.cls}`}>— {tag.text}</span>
       <span className={chip}>{pair.section_b}</span>
     </div>
+  </>;
+  const frame = `space-y-3 rounded-2xl border bg-white p-4 ${collapsible && selected ? 'border-[#2b25c8] shadow-[0_0_0_3px_rgba(43,37,200,.14)]' : 'border-[#e3e1fa] shadow-[0_1px_3px_rgba(26,31,204,.06)]'}`;
+  if (collapsible && !selected) {
+    return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className={`${frame} cursor-pointer transition hover:-translate-y-px hover:border-[#b9b6f2]`}>
+      <div role="button" tabIndex={0} aria-expanded="false" onClick={onSelect} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(); } }} className="space-y-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2b25c8]">
+        {head}
+        <span className="block text-[13px] font-extrabold text-[#2b25c8]">Show me where →</span>
+      </div>
+    </section>;
+  }
+  return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className={frame}>
+    {head}
+    <div className="space-y-3 border-t border-[#eeedfb] pt-3">
     <p className="text-sm leading-snug text-[#4b5275]">{severity === 'Suggestion'
       ? 'These two parts sit side by side with nothing joining them, so a reader may feel a sudden jump. One short sentence can fix that.'
       : problemOf(pair)}</p>
@@ -149,7 +166,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
                     <button type="button" onClick={() => copy(item.id, sentence)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#2b25c8] px-4 py-2 text-xs font-bold text-white hover:bg-[#1f1aa6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b25c8]">
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></svg>
                       {copied === item.id ? 'Copied!' : 'Copy sentence'}</button>
-                    {onShowPlacement && item.section && item.placement && <button type="button" onClick={() => onShowPlacement(item.section!, item.placement!, sentence)} className={outlineButton}>
+                    {(linkedIds.has(item.id) || (onShowPlacement && item.section && item.placement)) && <button type="button" onClick={() => linkedIds.has(item.id) ? onShowInManuscript(item.id) : onShowPlacement?.(item.section!, item.placement!, sentence)} className={outlineButton}>
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
                       Show me where</button>}
                   </div>
@@ -165,10 +182,11 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
       </ol>
       {hidden > 0 && <button type="button" aria-expanded={open} onClick={() => setExpanded(!open)} className="mt-2 text-xs font-semibold text-[#2b25c8] underline focus-visible:outline-2 focus-visible:outline-offset-2">{open ? 'Show fewer steps' : `Show ${hidden} more ${hidden === 1 ? 'step' : 'steps'}`}</button>}
     </div>}
+    </div>
   </section>;
 }
 
-export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, onShowPlacement, revealId, onlyOrders, mode = 'issues', rateLimited = false, score, showAll = false }: {
+export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, onShowPlacement, revealId, onlyOrders, mode = 'issues', rateLimited = false, score, showAll = false, selectedOrder = null, onSelect }: {
   items: RecommendationItem[];
   pairs: ManuscriptFlowPair[];
   linkedIds: Set<string>;
@@ -182,6 +200,9 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
   /** Overall score, so an empty list can say why the score is not 100. */
   score?: number;
   showAll?: boolean;
+  /** The finding that is open (null: all closed) and what to do when one is chosen. */
+  selectedOrder?: number | null;
+  onSelect?: (order: number) => void;
 }) {
   const rows = pairs
     .filter(pair => pair.scores.overall_coherence != null && (!onlyOrders || onlyOrders.has(pair.order)))
@@ -190,6 +211,8 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
       return { pair, pairItems, severity: levelOf(pair, pairItems.length > 0) };
     })
     .filter(row => mode === 'issues' ? row.severity !== null && row.severity !== 'None' : row.severity === 'None');
+  // The open finding comes first, like a card lifted out of the list.
+  if (selectedOrder != null) rows.sort((a, b) => Number(b.pair.order === selectedOrder) - Number(a.pair.order === selectedOrder));
   // Pairs the AI could not judge are not "fine": they are shown with the recommendations as something still to do.
   const unreviewed = pairs
     .filter(pair => pair.scores.overall_coherence != null && (!onlyOrders || onlyOrders.has(pair.order)))
@@ -209,7 +232,8 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
           {falseAlarm && <p className="mt-0.5 flex items-start gap-1.5 text-xs font-semibold text-emerald-700"><svg aria-hidden="true" viewBox="0 0 20 20" className="mt-px size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="8" /><path d="M6.5 10.3l2.4 2.4 4.6-5" /></svg><span>Minor vocabulary difference detected. No action needed.</span></p>}
         </div>;
       }
-      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll} /></Fragment>;
+      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll}
+        selected={selectedOrder === pair.order} onSelect={onSelect && (() => onSelect(pair.order))} /></Fragment>;
     })}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <p className="text-sm font-semibold text-amber-900">{rateLimited

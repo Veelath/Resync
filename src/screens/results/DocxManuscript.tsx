@@ -19,6 +19,7 @@ const HOST_CSS = `
 @media (max-width: 760px) { .docx-rail { display: none; } }
 .docx-host mark { transition: box-shadow .15s; }
 .docx-host mark:hover { box-shadow: 0 0 0 2px rgba(26, 31, 204, .35); }
+.docx-host mark[data-selected] { box-shadow: 0 0 0 3px rgba(43, 37, 200, .35); }
 `;
 
 // Only the writing is compared, so tables, pictures and diagrams are removed. The text keeps Word's own formatting.
