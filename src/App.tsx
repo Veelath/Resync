@@ -261,7 +261,7 @@ export default function App() {
     const outcome = error instanceof ScanOutcome ? error : new ScanOutcome('We could not start this scan. Please try again.', '', 'failed');
     setScanOutcome(outcome);
     if (recovered && outcome.kind === 'info') navigate('processing');
-    if (outcome.kind === 'info' && Date.now() - scanStartedAt >= 3 * 60 * 60 * 1000) clearActiveScan();
+    if (outcome.kind === 'info' && outcome.message === 'We cannot confirm this scan. Open your dashboard later or start it again.') clearActiveScan();
     if (outcome.kind === 'failed') {
       if (recovered) { setDashboardNotice(outcome.message); navigate('dashboard'); }
       if (!outcome.scanId || shouldNotifyFailure(notificationsRef.current, outcome.scanId)) {

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { backoffMs, waitState, notFoundIsFinal, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
+import { backoffMs, waitState, notFoundIsFinal, safeScanMessage, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
 import { supabase } from '../lib/supabase.js';
 import { adaptScanResult, type ScanResult } from './v7Result';
 
@@ -117,15 +117,9 @@ function readScanStatus(job: unknown): ScanStatusNotice | null {
     ? record.estimated_wait_seconds
     : null;
   const queued = queuePosition !== null;
-  const waitMinutes = estimatedWaitSeconds === null ? null : Math.max(1, Math.ceil(estimatedWaitSeconds / 60));
-  const fallbackMessage = queued
-    ? queuePosition >= 2
-      ? `You are #${queuePosition} in line. Your scan will start in about ${waitMinutes ?? 'a few'} minutes.`
-      : `You're next in line. Another scan is running, so yours will take a little longer than usual${waitMinutes === null ? '' : ` (about ${waitMinutes} minutes)`}.`
-    : '';
 
   return {
-    message: message || (queued ? fallbackMessage : ''),
+    message: safeScanMessage(message),
     elapsedSeconds: typeof record.elapsed_seconds === 'number' ? record.elapsed_seconds : null,
     level: record.status_message_level === 'wait' ? 'wait' : 'info',
     queued,
@@ -330,12 +324,14 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
     if (response?.status === 404) {
       if (notFoundIsFinal(Date.now(), startedAt)) throw new ScanOutcome(NOT_FOUND_MESSAGE, id, 'info');
       failures = 0; unreachableSince = null; delay = 5000;
+      onProcessing?.(); onProcessing = undefined;
       setScanStatus({ ...lastStatus, reconnecting: false, info: undefined });
       continue;
     }
     if (!response || response.status === 429 || response.status >= 500) {
       unreachableSince ??= requestStartedAt;
       delay = backoffMs(++failures);
+      onProcessing?.(); onProcessing = undefined;
       setScanStatus({ ...lastStatus, reconnecting: true, info: waitState(Date.now(), startedAt, unreachableSince) === 'unreachable' ? UNREACHABLE_MESSAGE : undefined });
       continue;
     }
@@ -344,7 +340,7 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
     if (job.status === 'completed' && job.result) return adaptScanResult(job.result);
     if (job.status === 'failed') {
       const raw = typeof job.error === 'string' ? job.error : '';
-      const message = /(?:\b[0-9a-f]{8}-[0-9a-f-]{27,}\b|traceback|exception|\bhttp\s*\d{3}\b)/i.test(raw) ? '' : raw.replace(/ If it keeps happening, tell us this scan number: [^.]+\./i, '');
+      const message = safeScanMessage(raw);
       throw new ScanOutcome(message || 'We could not finish this scan. Please try again.', id, 'failed', job.failure_kind);
     }
     onProcessing?.(); onProcessing = undefined;
@@ -354,6 +350,7 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
 }
 
 export async function resumeManuscriptScan(analysisRunId: string, options?: ScanOptions): Promise<ScanResult> {
+  setScanStatus(null);
   return pollScanJob(analysisRunId, options?.signal, options?.startedAt ?? Date.now(), options?.onProcessing);
 }
 

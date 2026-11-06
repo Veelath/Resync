@@ -13,5 +13,6 @@ export const queueText = (position: number, seconds: number | null) => `Your sca
 export const isLongRunning = (elapsedMs: number, words?: number | null, serverSeconds?: number | null) => Math.max(elapsedMs, (serverSeconds ?? 0) * 1000) >= (words != null ? 4 * 60000 + words / 5000 * 60000 : 8 * 60000);
 export const failureTitle = (kind?: string | null) => ({ interrupted: 'Scan interrupted', timeout: 'Scan stopped', refused: 'Document not accepted', error: 'Scan could not be finished' }[kind ?? ''] ?? 'Scan could not be finished');
 export const isDocx = (name: string) => /\.docx$/i.test(name);
+export const safeScanMessage = (message: string) => /(?:\b[0-9a-f]{8}-[0-9a-f-]{27,}\b|traceback|\b\w*(?:exception|error)\s*:|\bhttp\s*\d{3}\b|\b(?:status|code)\s*[:=]?\s*[45]\d{2}\b|the job may still be running)/i.test(message) ? '' : message.replace(/ If it keeps happening, tell us this scan number: [^.]+\./i, '');
 export const shouldNotifyFailure = (notifications: {kind: string; scanId?: string}[], id: string) => !notifications.some(n => n.kind === 'error' && n.scanId === id);
 export const canResume = (saved: {id?: string; at?: number; userId?: string} | null, userId: string, now: number) => !!saved?.id && typeof saved.at === 'number' && now - saved.at >= 0 && now - saved.at < MAX_POLL_MS && (!saved.userId || saved.userId === userId);

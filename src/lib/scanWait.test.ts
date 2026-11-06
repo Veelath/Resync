@@ -1,6 +1,6 @@
 ﻿import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { backoffMs, waitState, notFoundIsFinal, queueText, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, MAX_POLL_MS } from './scanWait';
+import { backoffMs, waitState, notFoundIsFinal, queueText, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, safeScanMessage, MAX_POLL_MS } from './scanWait';
 test('backoff caps at thirty seconds', () => assert.deepEqual([1,2,3,4,5].map(backoffMs), [5000,10000,20000,30000,30000]));
 test('unreachable is information and ceiling stops polling', () => { assert.equal(waitState(600000, 0, 0), 'unreachable'); assert.equal(waitState(MAX_POLL_MS, 0, 0), 'ceiling'); });
 test('404 has a sixty second grace period', () => { assert.equal(notFoundIsFinal(59999, 0), false); assert.equal(notFoundIsFinal(60000, 0), true); });
@@ -10,3 +10,5 @@ test('failure titles include fallback', () => { assert.equal(failureTitle('inter
 test('failure notification is once per scan', () => { assert.equal(shouldNotifyFailure([{kind:'error', scanId:'a'}], 'a'), false); assert.equal(shouldNotifyFailure([{kind:'success', scanId:'a'}], 'a'), true); });
 test('recovery requires unexpired matching scan', () => { assert.equal(canResume({id:'a',at:0,userId:'u'}, 'u', MAX_POLL_MS - 1), true); assert.equal(canResume({id:'a',at:0,userId:'u'}, 'u', MAX_POLL_MS), false); assert.equal(canResume({id:'a',at:0,userId:'v'}, 'u', 1), false); });
 test('accepts only docx extensions case insensitively', () => { assert.equal(isDocx('Paper.DOCX'), true); assert.equal(isDocx('Paper.doc'), false); assert.equal(isDocx('Paper.pdf'), false); });
+test('hides technical legacy messages and scan numbers', () => { assert.equal(safeScanMessage('ValueError: failed'), ''); assert.equal(safeScanMessage('HTTP 500'), ''); assert.equal(safeScanMessage('the job may still be running'), ''); assert.equal(safeScanMessage('We could not finish this scan. Please try again. If it keeps happening, tell us this scan number: 12345678.'), 'We could not finish this scan. Please try again.'); });
+test('recovery rejects missing and future scan records', () => { assert.equal(canResume(null, 'u', 1), false); assert.equal(canResume({id:'a',at:2,userId:'u'}, 'u', 1), false); });
