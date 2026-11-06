@@ -22,12 +22,13 @@ const WORD_MIME_TYPES = [
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
+import { isDocx, DOCX_MESSAGE } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
 
 const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
 const MAX_TEMPLATE_BYTES = 100 * 1024;
-const WORD_ACCEPT = ".doc,.docx," + WORD_MIME_TYPES.join(",");
-const TEMPLATE_ACCEPT = WORD_ACCEPT + ",.txt,text/plain";
+const WORD_ACCEPT = ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const TEMPLATE_ACCEPT = ".doc,.docx," + WORD_MIME_TYPES.join(",") + ",.txt,text/plain";
 
 // Word documents only (.doc / .docx): checks the extension and, when the browser reports one, the MIME type.
 function isWordFile(file: File): boolean {
@@ -52,7 +53,7 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
     const text = el.textContent?.trim() || '';
     if (!text) continue;
 
-    const isParagraphHeader = tag === 'p' && 
+    const isParagraphHeader = tag === 'p' &&
       (text.toUpperCase().startsWith('CHAPTER') || /^\d+\.\s/.test(text));
 
     if (tag === 'h1' || isParagraphHeader) {
@@ -113,7 +114,7 @@ async function readDocInfo(file: File): Promise<DocInfo | null> {
     let used = 0;
     for (const paragraph of body) {
       if (paragraph.length < 40 && excerpt.length === 0) continue;
-      const clipped = paragraph.length > 420 ? `${paragraph.slice(0, 420).trimEnd()}…` : paragraph;
+      const clipped = paragraph.length > 420 ? `${paragraph.slice(0, 420).trimEnd()}â€¦` : paragraph;
       excerpt.push(clipped);
       used += clipped.length;
       if (used > 1100 || excerpt.length >= 6) break;
@@ -127,7 +128,7 @@ async function readDocInfo(file: File): Promise<DocInfo | null> {
 
 let lastScanError: string | null = null;
 
-export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: () => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (message: string) => void }) {
+export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
@@ -137,7 +138,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [link, setLink] = useState("");
   const [scanError, setScanError] = useState<string | null>(lastScanError);
   const [isScanning, setIsScanning] = useState(false);
-  
+
   const [customTemplateFile, setCustomTemplateFile] = useState<File | null>(null);
   const [templateParseError, setTemplateParseError] = useState<string | null>(null);
   const customTemplateInputRef = useRef<HTMLInputElement>(null);
@@ -342,9 +343,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
   function acceptManuscriptFile(file: File) {
     lastScanError = null;
-    if (!isWordFile(file)) {
+    if (!isDocx(file.name)) {
       setUploadedFile(null);
-      setScanError("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+      setScanError(DOCX_MESSAGE);
       return;
     }
     setScanError(null);
@@ -381,8 +382,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         if (uploadedFile.size === 0) {
           throw new Error("The uploaded document appears to be empty or contains no extractable text.");
         }
-        if (!isWordFile(uploadedFile)) {
-          throw new Error("Unsupported file type. Please upload a Word document (.doc or .docx) or paste a Google Docs link.");
+        if (!isDocx(uploadedFile.name)) {
+          throw new Error(DOCX_MESSAGE);
         }
         if (uploadedFile.size > MAX_MANUSCRIPT_BYTES) {
           throw new Error("This file is larger than 25 MB. Please upload a smaller Word document.");
@@ -393,7 +394,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         }
       }
 
-      onScanStart?.();
+      onScanStart?.(outline?.words ?? docInfo?.words ?? null);
       onNavigate("processing");
       navigatedToProcessing = true;
 
@@ -410,13 +411,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
-      onScanFailed?.(errMsg);
-      lastScanError = errMsg;
-      setScanError(errMsg);
+      onScanFailed?.(e);
+      lastScanError = navigatedToProcessing ? null : errMsg;
+      setScanError(navigatedToProcessing ? null : errMsg);
       setIsScanning(false);
-      if (navigatedToProcessing) {
-        onNavigate("upload");
-      }
+
     }
   }
 
@@ -501,7 +500,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
           <div key="step1" className="um-panel flex flex-col gap-[22px]">
             <div className="uf-head">
               <div>
-                <div className="uf-eb">Step 1 · Chapter template (optional)</div>
+                <div className="uf-eb">Step 1 Â· Chapter template (optional)</div>
                 <h1 className="uf-h1">Optional chapter template</h1>
                 <p className="uf-sub">Attach, edit or load a saved template if you need specific headings. Skip to use headings detected from your manuscript.</p>
               </div>
@@ -589,7 +588,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <div className="inline-flex items-center gap-1.5">
                           <input
                             autoFocus
-                            placeholder="Section heading name…"
+                            placeholder="Section heading nameâ€¦"
                             value={newSectionText}
                             onChange={e => setNewSectionText(e.target.value)}
                             onKeyDown={e => {
@@ -639,7 +638,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <button type="button" className={`uf-dz ${customTemplateFile ? "has-file" : ""}`} onClick={() => customTemplateInputRef.current?.click()} style={{ font: "inherit", color: "inherit" }}>
                     <span className="uf-up um-float"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg></span>
                     <b style={{ fontSize: 16 }}>{customTemplateFile ? customTemplateFile.name : "Attach your school's template"}</b>
-                    <span style={{ fontSize: 13.5, color: "#6b6890" }}>{customTemplateFile ? "Click to replace this file" : "Syllabus or format document · .doc, .docx or .txt"}</span>
+                    <span style={{ fontSize: 13.5, color: "#6b6890" }}>{customTemplateFile ? "Click to replace this file" : "Syllabus or format document Â· .doc, .docx or .txt"}</span>
                   </button>
                   {templateParseError && <p style={{ margin: 0, fontSize: 12.5, color: "#b7791f" }}>{templateParseError}</p>}
                   <input ref={customTemplateInputRef} type="file" accept={TEMPLATE_ACCEPT} className="hidden"
@@ -681,7 +680,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         {step === 2 && (
           <div key="step2" className="um-panel flex flex-col gap-[22px]">
             <div>
-              <div className="uf-eb">Step 2 · Manuscript intake</div>
+              <div className="uf-eb">Step 2 Â· Manuscript intake</div>
               <h1 className="uf-h1">Upload manuscript</h1>
               <p className="uf-sub">Upload a Word document or add a Google Docs link. Resync uses your template headings if you chose them in Step 1; otherwise it detects sections.</p>
             </div>
@@ -692,7 +691,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <div className="uf-eb is-muted">Manuscript source</div>
                   <div className="uf-src">
                     {([
-                      ["file", "Upload Word file", ".doc, .docx · max 25 MB", "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"],
+                      ["file", "Upload Word file", ".doc, .docx Â· max 25 MB", "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"],
                       ["link", "Google Docs", "Shared view link", "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"],
                     ] as [UploadMode, string, string, string][]).map(([m, label, sub, icon]) => (
                       <button key={m} type="button" aria-pressed={mode === m} className={`uf-sc ${mode === m ? "is-on" : ""}`}
@@ -719,13 +718,13 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <>
                           <span className="uf-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg></span>
                           <b style={{ fontSize: 16 }}>{uploadedFile.name}</b>
-                          <span style={{ fontSize: 13, color: "#6b6890" }}>{formatBytes(uploadedFile.size)} · click to replace this file</span>
+                          <span style={{ fontSize: 13, color: "#6b6890" }}>{formatBytes(uploadedFile.size)} Â· click to replace this file</span>
                         </>
                       ) : (
                         <>
                           <span className="uf-up um-float"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg></span>
-                          <b style={{ fontSize: 16 }}>Drop your .doc or .docx file here</b>
-                          <span style={{ fontSize: 13, color: "#6b6890" }}>or click to browse from device · max 25 MB</span>
+                          <b style={{ fontSize: 16 }}>Drop your .docx file here</b>
+                          <span style={{ fontSize: 13, color: "#6b6890" }}>or click to browse from device Â· max 25 MB</span>
                         </>
                       )}
                     </div>
@@ -735,12 +734,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <span className="uf-lab">Google Docs link</span>
                         <span className="uf-inp">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
-                          <input type="url" value={link} onChange={e => { setLink(e.target.value); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/…" />
+                          <input type="url" value={link} onChange={e => { setLink(e.target.value); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/â€¦" />
                         </span>
                       </label>
                       <div style={{ display: "flex", gap: 10, fontSize: 13, color: "#6b6890", alignItems: "flex-start" }}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="#2b25c8" strokeWidth="2" className="w-4 h-4 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-                        Set sharing to “Anyone with the link can view” so Resync can read it.
+                        Set sharing to â€œAnyone with the link can viewâ€ so Resync can read it.
                       </div>
                     </div>
                   )}
@@ -767,7 +766,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 </div>
                 {[
                   ["1", "Chapter template (optional)", "In Step 1, attach, edit or load saved headings. You can skip to use detected headings."],
-                  ["2", "Upload manuscript", ".doc or .docx under 25 MB, or a Google Docs link set to “Anyone with the link can view”."],
+                  ["2", "Upload manuscript", ".docx under 25 MB, or a Google Docs link set to â€œAnyone with the link can viewâ€."],
                   ["3", "Confirm your document", "Check the file name and preview, then run the scan. The preview is free; unlocking the full report costs 1 credit."],
                 ].map(([n, title, body]) => (
                   <div key={n} className="uf-card uf-side-step"><span className="uf-n">{n}</span><div><b>{title}</b><p>{body}</p></div></div>
@@ -781,7 +780,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
           <div key="step3" className="um-panel flex flex-col gap-5">
             <div className="uf-head">
               <div>
-                <div className="uf-eb">Step 3 · Confirm document</div>
+                <div className="uf-eb">Step 3 Â· Confirm document</div>
                 <h1 className="uf-h1">Is this the right document?</h1>
               </div>
               <div className="uf-toggle" role="group" aria-label="Manuscript source">
@@ -793,7 +792,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             <div className="uf-grid is-wide">
               <div className="uf-col" style={{ gap: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div className="uf-eb is-muted">{mode === "file" ? "Your paper · scroll to read it" : "Your Google Doc · scroll to read it"}</div>
+                  <div className="uf-eb is-muted">{mode === "file" ? "Your paper Â· scroll to read it" : "Your Google Doc Â· scroll to read it"}</div>
                 </div>
 
                 {activeFile && pagesState !== "failed" ? (
@@ -807,7 +806,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <span className="uf-spinner" aria-hidden="true" />
                         <b>{mode === "link" ? "Opening your Google Doc" : "Reading your document"}</b>
                         <span className="uf-loading-step">
-                          {outlineSeconds < 4 ? "Connecting…" : outlineSeconds < 10 ? "Fetching your manuscript…" : "Preparing your pages. Long papers take a little longer."}
+                          {outlineSeconds < 4 ? "Connectingâ€¦" : outlineSeconds < 10 ? "Fetching your manuscriptâ€¦" : "Preparing your pages. Long papers take a little longer."}
                         </span>
                         <span className="uf-skeleton" aria-hidden="true"><i style={{ width: "92%" }} /><i style={{ width: "78%" }} /><i style={{ width: "86%" }} /><i style={{ width: "54%" }} /></span>
                       </div>
@@ -839,7 +838,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     <div style={{ minWidth: 0 }}>
                       <b style={{ fontSize: 16.5, wordBreak: "break-word" }}>{fileLabel || "No document chosen"}</b>
                       <div style={{ fontSize: 11.5, color: "#6b6890", fontFamily: "ui-monospace, monospace" }}>
-                        {activeFile ? `${mode === "link" ? "Google Doc · " : ""}${formatBytes(activeFile.size)}${(outline?.words ?? docInfo?.words) ? ` · ~${(outline?.words ?? docInfo?.words ?? 0).toLocaleString("en-US")} words` : ""}` : mode === "link" ? "Google Docs link" : ""}
+                        {activeFile ? `${mode === "link" ? "Google Doc Â· " : ""}${formatBytes(activeFile.size)}${(outline?.words ?? docInfo?.words) ? ` Â· ~${(outline?.words ?? docInfo?.words ?? 0).toLocaleString("en-US")} words` : ""}` : mode === "link" ? "Google Docs link" : ""}
                       </div>
                     </div>
                   </div>
@@ -856,7 +855,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     <div className="uf-fld">
                       <span className="uf-lab">Edit the link</span>
                       <span className="uf-inp">
-                        <input type="url" aria-label="Google Docs link" value={linkDraft} onChange={e => setLinkDraft(e.target.value)} placeholder="https://docs.google.com/document/d/…" />
+                        <input type="url" aria-label="Google Docs link" value={linkDraft} onChange={e => setLinkDraft(e.target.value)} placeholder="https://docs.google.com/document/d/â€¦" />
                       </span>
                       <button type="button" className="uf-btn is-ghost is-sm" disabled={isScanning || !linkDraft.trim() || linkDraft.trim() === link.trim()}
                         onClick={() => {
@@ -873,7 +872,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     {outline && <span className="uf-pill">{outline.sections.length} {outline.sections.length === 1 ? "section" : "sections"}</span>}
                   </div>
                   {outlineLoading ? (
-                    <p style={{ margin: 0, fontSize: 13.5, color: "#6b6890" }}>Finding the sections the scan will compare…</p>
+                    <p style={{ margin: 0, fontSize: 13.5, color: "#6b6890" }}>Finding the sections the scan will compareâ€¦</p>
                   ) : outline ? (
                     <>
                       <ol className="uf-outline">
@@ -902,7 +901,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     <div className="uf-row"><span>Chapter template</span><b style={{ color: "#2b25c8" }}>{hasChapters ? "Custom" : "Auto-detect"}</b></div>
                     <div className="uf-row"><span>Scan preview</span><b style={{ color: "#0b9f6e" }}>Free</b></div>
                     <div className="uf-row"><span>Full report unlock</span><b>1 credit</b></div>
-                    <div className="uf-row"><span>Your credits</span><b>{creditBalance ?? "—"}</b></div>
+                    <div className="uf-row"><span>Your credits</span><b>{creditBalance ?? "â€”"}</b></div>
                   </div>
                 </div>
               </div>
@@ -926,7 +925,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 Choose a different document
               </button>
               <button type="button" onClick={handleScan} disabled={isScanning || notAPaper || (mode === "file" ? !uploadedFile : !link.trim() || linkState === "loading")} className="uf-btn is-lg is-grow um-cta">
-                {isScanning ? "Scanning manuscript…" : "Yes, run coherence scan"}
+                {isScanning ? "Scanning manuscriptâ€¦" : "Yes, run coherence scan"}
                 {!isScanning && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
               </button>
             </div>

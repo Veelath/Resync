@@ -1,0 +1,12 @@
+﻿import { test } from 'node:test';
+import { strict as assert } from 'node:assert';
+import { backoffMs, waitState, notFoundIsFinal, queueText, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, MAX_POLL_MS } from './scanWait';
+test('backoff caps at thirty seconds', () => assert.deepEqual([1,2,3,4,5].map(backoffMs), [5000,10000,20000,30000,30000]));
+test('unreachable is information and ceiling stops polling', () => { assert.equal(waitState(600000, 0, 0), 'unreachable'); assert.equal(waitState(MAX_POLL_MS, 0, 0), 'ceiling'); });
+test('404 has a sixty second grace period', () => { assert.equal(notFoundIsFinal(59999, 0), false); assert.equal(notFoundIsFinal(60000, 0), true); });
+test('queue estimate rounds up and may be absent', () => { assert.equal(queueText(2, 61), 'Your scan is number 2 in line. About 2 minutes before it starts. This is an estimate.'); assert.equal(queueText(1, null), 'Your scan is number 1 in line.'); });
+test('long threshold uses size, default and server elapsed', () => { assert.equal(isLongRunning(299999, 5000), false); assert.equal(isLongRunning(300000, 5000), true); assert.equal(isLongRunning(479999), false); assert.equal(isLongRunning(480000), true); assert.equal(isLongRunning(1000, null, 480), true); });
+test('failure titles include fallback', () => { assert.equal(failureTitle('interrupted'), 'Scan interrupted'); assert.equal(failureTitle('timeout'), 'Scan stopped'); assert.equal(failureTitle('refused'), 'Document not accepted'); assert.equal(failureTitle('error'), 'Scan could not be finished'); assert.equal(failureTitle(), 'Scan could not be finished'); });
+test('failure notification is once per scan', () => { assert.equal(shouldNotifyFailure([{kind:'error', scanId:'a'}], 'a'), false); assert.equal(shouldNotifyFailure([{kind:'success', scanId:'a'}], 'a'), true); });
+test('recovery requires unexpired matching scan', () => { assert.equal(canResume({id:'a',at:0,userId:'u'}, 'u', MAX_POLL_MS - 1), true); assert.equal(canResume({id:'a',at:0,userId:'u'}, 'u', MAX_POLL_MS), false); assert.equal(canResume({id:'a',at:0,userId:'v'}, 'u', 1), false); });
+test('accepts only docx extensions case insensitively', () => { assert.equal(isDocx('Paper.DOCX'), true); assert.equal(isDocx('Paper.doc'), false); assert.equal(isDocx('Paper.pdf'), false); });

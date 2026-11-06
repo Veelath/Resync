@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { backoffMs, waitState, notFoundIsFinal, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
 import { supabase } from '../lib/supabase.js';
 import { adaptScanResult, type ScanResult } from './v7Result';
 
@@ -56,9 +57,10 @@ export interface AITextIndicatorResponse {
 
 export interface ScanOptions {
   signal?: AbortSignal;
-  timeoutMs?: number;
+  startedAt?: number;
   /** Called once the server has accepted the scan, so it can be found again after a page refresh. */
   onStarted?: (analysisRunId: string) => void;
+  onProcessing?: () => void;
 }
 
 /** Thrown when POST /api/scans/start returns 402 — the user has no scan
@@ -80,19 +82,16 @@ export interface ScanStatusNotice {
   queued: boolean;
   queuePosition: number | null;
   estimatedWaitSeconds: number | null;
+  elapsedSeconds?: number | null;
+  reconnecting?: boolean;
+  info?: string;
+  failure?: { message: string; kind?: string; scanId: string };
 }
 
 let currentScanStatus: ScanStatusNotice | null = null;
 const scanStatusListeners = new Set<() => void>();
 
 function setScanStatus(next: ScanStatusNotice | null) {
-  if (
-    next?.message === currentScanStatus?.message &&
-    next?.level === currentScanStatus?.level &&
-    next?.queued === currentScanStatus?.queued &&
-    next?.queuePosition === currentScanStatus?.queuePosition &&
-    next?.estimatedWaitSeconds === currentScanStatus?.estimatedWaitSeconds
-  ) return;
   currentScanStatus = next;
   scanStatusListeners.forEach(listener => listener());
 }
@@ -124,23 +123,16 @@ function readScanStatus(job: unknown): ScanStatusNotice | null {
       ? `You are #${queuePosition} in line. Your scan will start in about ${waitMinutes ?? 'a few'} minutes.`
       : `You're next in line. Another scan is running, so yours will take a little longer than usual${waitMinutes === null ? '' : ` (about ${waitMinutes} minutes)`}.`
     : '';
-  if (!message && !queued) return null;
+
   return {
-    message: message || fallbackMessage,
+    message: message || (queued ? fallbackMessage : ''),
+    elapsedSeconds: typeof record.elapsed_seconds === 'number' ? record.elapsed_seconds : null,
     level: record.status_message_level === 'wait' ? 'wait' : 'info',
     queued,
     queuePosition,
     estimatedWaitSeconds,
   };
 }
-
-/** How long to wait between status polls while a scan job runs. */
-const POLL_INTERVAL_MS = 5000;
-
-/** Consecutive poll failures tolerated before giving up on a running job.
- * 12 * 5s = 60s -- enough to ride out a Render container restart, which
- * the previous 10s budget was too thin to survive. */
-const MAX_CONSECUTIVE_POLL_FAILURES = 12;
 
 /**
  * Extracts the most useful human-readable message from a failed response.
@@ -206,27 +198,20 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
  * misleading "blocked by CORS policy" message.
  *
  * The signature and return value are unchanged from the previous synchronous
- * implementation, so callers need no modification. `timeoutMs` now bounds the
- * whole job rather than a single request, hence the larger default.
+ * implementation, so callers need no modification.
  */
 export async function executeManuscriptScan(
   payload: ScanRequest,
   options?: ScanOptions
 ): Promise<ScanResult> {
   setScanStatus(null);
-  try {
-    return await runManuscriptScan(payload, options);
-  } finally {
-    setScanStatus(null);
-  }
+  return runManuscriptScan(payload, options);
 }
 
 async function runManuscriptScan(
   payload: ScanRequest,
   options?: ScanOptions
 ): Promise<ScanResult> {
-  const timeoutMs = options?.timeoutMs ?? 900000; // 15 min ceiling for the whole job
-  const deadline = Date.now() + timeoutMs;
   const signal = options?.signal;
 
   // ---- 1. Start the job (short request, safe through any proxy) ----------
@@ -307,72 +292,69 @@ async function runManuscriptScan(
   }
 
   options?.onStarted?.(analysisRunId);
-  return pollScanJob(analysisRunId, signal, deadline, timeoutMs);
+  return pollScanJob(analysisRunId, signal, Date.now());
 }
 
-/** Follow a scan that is already running on the server until it finishes. Used by the scan itself and by a page that was refreshed mid-scan. */
-async function pollScanJob(analysisRunId: string, signal: AbortSignal | undefined, deadline: number, timeoutMs: number): Promise<ScanResult> {
-  let consecutiveFailures = 0;
+export class ScanOutcome extends Error {
+  constructor(message: string, public scanId: string, public kind: string, public failureKind?: string) { super(message); }
+}
 
+/** Follow an accepted job without treating a lost connection as a failed scan. */
+async function pollScanJob(id: string, signal: AbortSignal | undefined, startedAt: number, onProcessing?: () => void): Promise<ScanResult> {
+  let failures = 0;
+  let unreachableSince: number | null = null;
+  let delay = 0;
+  let lastStatus: ScanStatusNotice = { message: '', level: 'info', queued: false, queuePosition: null, estimatedWaitSeconds: null };
   while (true) {
-    if (Date.now() > deadline) {
-      throw new Error(
-        `Scan timed out after ${Math.round(timeoutMs / 1000)}s. The job may still be running on the server (id: ${analysisRunId}).`
-      );
-    }
-
-    await sleep(POLL_INTERVAL_MS, signal);
-
-    let statusResponse: Response;
+    if (waitState(Date.now(), startedAt, unreachableSince) === 'ceiling') throw new ScanOutcome(CEILING_MESSAGE, id, 'info');
+    if (delay) await sleep(Math.min(delay, Math.max(0, startedAt + MAX_POLL_MS - Date.now())), signal);
+    if (Date.now() - startedAt >= MAX_POLL_MS) throw new ScanOutcome(CEILING_MESSAGE, id, 'info');
+    const requestStartedAt = Date.now();
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) controller.abort();
+    const timer = setTimeout(abort, Math.min(20000, Math.max(0, startedAt + MAX_POLL_MS - Date.now())));
+    let response: Response | undefined;
+    let job: any;
     try {
-      statusResponse = await fetch(`${API_BASE_URL}/api/scans/${analysisRunId}`, {
-        method: 'GET',
-        headers: await authHeaders(),
-        signal,
-      });
-    } catch (netErr: any) {
-      if (netErr?.name === 'AbortError' || signal?.aborted) {
-        throw new Error('Scan was cancelled.');
-      }
-      // A blip while the job runs shouldn't discard a scan already in
-      // progress server-side — retry a few times before surfacing it.
-      if (++consecutiveFailures >= MAX_CONSECUTIVE_POLL_FAILURES) {
-        throw new Error(
-          `Lost connection to the backend while the scan was running (id: ${analysisRunId}). (${netErr?.message || 'Network error'})`
-        );
-      }
+      response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(id)}`, { headers: await authHeaders(), signal: controller.signal });
+      if (response.ok) job = await response.json();
+    } catch {
+      response = undefined;
+      if (signal?.aborted) throw new Error('Scan was cancelled.');
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', abort);
+    }
+    if (response?.status === 404) {
+      if (notFoundIsFinal(Date.now(), startedAt)) throw new ScanOutcome(NOT_FOUND_MESSAGE, id, 'info');
+      failures = 0; unreachableSince = null; delay = 5000;
+      setScanStatus({ ...lastStatus, reconnecting: false, info: undefined });
       continue;
     }
-
-    if (!statusResponse.ok) {
-      if (++consecutiveFailures >= MAX_CONSECUTIVE_POLL_FAILURES) {
-        throw new Error(await extractErrorDetail(statusResponse));
-      }
+    if (!response || response.status === 429 || response.status >= 500) {
+      unreachableSince ??= requestStartedAt;
+      delay = backoffMs(++failures);
+      setScanStatus({ ...lastStatus, reconnecting: true, info: waitState(Date.now(), startedAt, unreachableSince) === 'unreachable' ? UNREACHABLE_MESSAGE : undefined });
       continue;
     }
-
-    consecutiveFailures = 0;
-    const job = await statusResponse.json();
-    // A long wait for the AI is not a failure: the notice is informational and never counted against the poll budget.
-    setScanStatus(job.status === 'completed' || job.status === 'failed' ? null : readScanStatus(job));
-
-    if (job.status === 'completed' && job.result) {
-      return adaptScanResult(job.result);
-    }
+    if (!response.ok) throw new ScanOutcome('We cannot confirm this scan. Please check your dashboard again.', id, 'info');
+    failures = 0; unreachableSince = null; delay = 5000;
+    if (job.status === 'completed' && job.result) return adaptScanResult(job.result);
     if (job.status === 'failed') {
-      throw new Error(job.error || 'The scan failed on the server.');
+      const raw = typeof job.error === 'string' ? job.error : '';
+      const message = /(?:\b[0-9a-f]{8}-[0-9a-f-]{27,}\b|traceback|exception|\bhttp\s*\d{3}\b)/i.test(raw) ? '' : raw.replace(/ If it keeps happening, tell us this scan number: [^.]+\./i, '');
+      throw new ScanOutcome(message || 'We could not finish this scan. Please try again.', id, 'failed', job.failure_kind);
     }
-    // status === 'processing' → keep polling
+    onProcessing?.(); onProcessing = undefined;
+    lastStatus = readScanStatus(job) ?? lastStatus;
+    setScanStatus(lastStatus);
   }
 }
 
 export async function resumeManuscriptScan(analysisRunId: string, options?: ScanOptions): Promise<ScanResult> {
-  const timeoutMs = options?.timeoutMs ?? 900000;
-  try {
-    return await pollScanJob(analysisRunId, options?.signal, Date.now() + timeoutMs, timeoutMs);
-  } finally {
-    setScanStatus(null);
-  }
+  return pollScanJob(analysisRunId, options?.signal, options?.startedAt ?? Date.now(), options?.onProcessing);
 }
 
 // ---------------------------------------------------------------------------

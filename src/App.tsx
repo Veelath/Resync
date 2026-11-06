@@ -17,7 +17,8 @@ import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
 import { PAYMENT_EVENT } from './lib/paymentProof';
-import { resumeManuscriptScan } from './services/api';
+import { resumeManuscriptScan, ScanOutcome } from './services/api';
+import { canResume, shouldNotifyFailure } from './lib/scanWait';
 import { askForDesktopAlerts, showDesktopAlert } from './components/ScanNotifications';
 import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
 
@@ -42,6 +43,13 @@ export default function App() {
   const scanRunRef = useRef(0);
   const scanSettledRef = useRef(true);
   const [scanRunning, setScanRunning] = useState(false);
+  const [scanOutcome, setScanOutcome] = useState<ScanOutcome | null>(null);
+  const [scanStartedAt, setScanStartedAt] = useState(Date.now());
+  const [scanWords, setScanWords] = useState<number | null>(null);
+  const scanWordsRef = useRef<number | null>(null);
+  const [dashboardNotice, setDashboardNotice] = useState<string | null>(null);
+  const notificationsRef = useRef(notifications);
+  notificationsRef.current = notifications;
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -183,29 +191,32 @@ export default function App() {
   useEffect(() => {
     if (!session || resumedRef.current || scanRunRef.current > 0) return;   // a scan started on this page is already being followed
     const running = readActiveScan();
-    if (!running || (running.userId && running.userId !== session.user.id)) return;
+    if (!running || !canResume(running, session.user.id, Date.now())) return;
     resumedRef.current = true;
     scanSettledRef.current = false;
     setScanRunning(true);
-    resumeManuscriptScan(running.id).then(result => {
+    setScanStartedAt(running.at); setScanWords(running.words ?? null);
+    resumeManuscriptScan(running.id, { startedAt: running.at, onProcessing: () => navigate('processing') }).then(result => {
       setScanResult(result); setScanFile(null);
       handleScanCompleted(result);
       if (screenRef.current === 'processing') navigate("results", false, result.analysis_run_id);
-    }).catch(error => handleScanFailed(error instanceof Error ? error.message : "The scan did not finish."));
+    }).catch(error => handleScanFailed(error, true));
   }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Each scan run gets one outcome (success or failure) so the sound and toast can never fire twice.
   // The running scan's id is kept in this browser, so a refresh or a closed tab does not lose the scan.
-  const ACTIVE_SCAN_KEY = "resync_active_scan";
+  const ACTIVE_SCAN_KEY = "resync-active-scan";
   function rememberActiveScan(analysisRunId: string) {
-    try { localStorage.setItem(ACTIVE_SCAN_KEY, JSON.stringify({ id: analysisRunId, userId: sessionRef.current?.user?.id, at: Date.now() })); } catch { /* storage unavailable */ }
+    const at = Date.now(); setScanStartedAt(at);
+    try { localStorage.setItem(ACTIVE_SCAN_KEY, JSON.stringify({ id: analysisRunId, userId: sessionRef.current?.user?.id, at, words: scanWordsRef.current })); } catch { /* storage unavailable */ }
   }
-  function clearActiveScan() { try { localStorage.removeItem(ACTIVE_SCAN_KEY); } catch { /* storage unavailable */ } }
-  function readActiveScan(): { id: string; userId?: string; at: number } | null {
-    try { const saved = JSON.parse(localStorage.getItem(ACTIVE_SCAN_KEY) || "null"); return saved?.id && Date.now() - saved.at < 30 * 60000 ? saved : null; } catch { return null; }
+  function clearActiveScan() { try { localStorage.removeItem(ACTIVE_SCAN_KEY); localStorage.removeItem("resync_active_scan"); } catch { /* storage unavailable */ } }
+  function readActiveScan(): { id: string; userId?: string; at: number; words?: number | null } | null {
+    try { const saved = JSON.parse(localStorage.getItem(ACTIVE_SCAN_KEY) || localStorage.getItem("resync_active_scan") || "null"); if (saved?.id && typeof saved.at === "number" && Date.now() - saved.at < 3 * 60 * 60 * 1000) return saved; localStorage.removeItem(ACTIVE_SCAN_KEY); localStorage.removeItem("resync_active_scan"); return null; } catch { return null; }
   }
 
-  function handleScanStart() {
+  function handleScanStart(words: number | null) {
+    setScanOutcome(null); setScanWords(words); scanWordsRef.current = words; setScanStartedAt(Date.now());
     setScanRunning(true);
     if (notificationPrefsRef.current.alerts) void askForDesktopAlerts();   // this runs inside the click that started the scan
     scanRunRef.current += 1;
@@ -242,14 +253,23 @@ export default function App() {
     else pushNotification("success", "Scan complete", "Your coherence report is ready to review.", result?.analysis_run_id);
   }
 
-  function handleScanFailed(message: string) {
+  function handleScanFailed(error: unknown, recovered = false) {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
     setScanRunning(false);
-    clearActiveScan();
     setSoundBlocked(false);
-    if (notificationPrefsRef.current.alerts) showDesktopAlert("Your ReSync scan did not finish", message);
-    pushNotification("error", "Scan did not finish", message);
+    const outcome = error instanceof ScanOutcome ? error : new ScanOutcome('We could not start this scan. Please try again.', '', 'failed');
+    setScanOutcome(outcome);
+    if (recovered && outcome.kind === 'info') navigate('processing');
+    if (outcome.kind === 'info' && Date.now() - scanStartedAt >= 3 * 60 * 60 * 1000) clearActiveScan();
+    if (outcome.kind === 'failed') {
+      if (recovered) { setDashboardNotice(outcome.message); navigate('dashboard'); }
+      if (!outcome.scanId || shouldNotifyFailure(notificationsRef.current, outcome.scanId)) {
+        if (notificationPrefsRef.current.alerts) showDesktopAlert("Your ReSync scan did not finish", outcome.message);
+        pushNotification("error", "Scan did not finish", outcome.message, outcome.scanId || undefined);
+      }
+      clearActiveScan();
+    }
   }
 
   function enableSound() {
@@ -299,7 +319,7 @@ export default function App() {
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
       {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={rememberActiveScan} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} />}
-      {screen === "processing" && <ProcessingScreen onNavigate={navigate} />}
+      {screen === "processing" && <ProcessingScreen onNavigate={navigate} outcome={scanOutcome} startedAt={scanStartedAt} words={scanWords} />}
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
         ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
@@ -309,6 +329,7 @@ export default function App() {
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
+      {screen === "dashboard" && dashboardNotice && <div role="status" className="p-4 text-center bg-blue-50 text-blue-900">{dashboardNotice} <button type="button" onClick={() => setDashboardNotice(null)} aria-label="Dismiss notice">Dismiss</button></div>}
       {screen === "dashboard" && <DashboardScreen scanRunning={scanRunning} onViewProgress={() => navigate("processing")} onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
     </div>
   );
