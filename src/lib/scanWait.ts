@@ -20,3 +20,38 @@ export const safeScanMessage = (message: string) => {
 };
 export const shouldNotifyFailure = (notifications: {kind: string; scanId?: string}[], id: string) => !notifications.some(n => n.kind === 'error' && n.scanId === id);
 export const canResume = (saved: {id?: string; at?: number; userId?: string} | null, userId: string, now: number) => !!saved?.id && typeof saved.at === 'number' && now - saved.at >= 0 && now - saved.at < MAX_POLL_MS && (!saved.userId || saved.userId === userId);
+
+export async function withRequestTimeout<T>(work: () => Promise<T>, controller: AbortController, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
+  try {
+    return await Promise.race([
+      work(),
+      new Promise<never>((_, reject) => {
+        onAbort = () => reject(new Error('Request cancelled'));
+        if (controller.signal.aborted) return onAbort();
+        controller.signal.addEventListener('abort', onAbort, { once: true });
+        timer = setTimeout(() => controller.abort(), ms);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+    if (onAbort) controller.signal.removeEventListener('abort', onAbort);
+  }
+}
+
+type NotifiedScan = { userId: string; id: string; at: number };
+export function rememberFailureNotification(storage: Pick<Storage, 'getItem' | 'setItem'>, userId: string, id: string, now: number): boolean {
+  try {
+    const value: unknown = JSON.parse(storage.getItem('resync-notified-scans') || '[]');
+    const entries: NotifiedScan[] = (Array.isArray(value) ? value : []).filter((entry): entry is NotifiedScan =>
+      typeof entry?.userId === 'string' && typeof entry?.id === 'string' && typeof entry?.at === 'number' &&
+      entry.at <= now && now - entry.at < 30 * 24 * 60 * 60 * 1000);
+    const found = entries.some(entry => entry.userId === userId && entry.id === id);
+    if (!found) entries.push({ userId, id, at: now });
+    storage.setItem('resync-notified-scans', JSON.stringify(entries.slice(-200)));
+    return !found;
+  } catch {
+    return true;
+  }
+}

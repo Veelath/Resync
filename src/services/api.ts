@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { backoffMs, waitState, notFoundIsFinal, safeScanMessage, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
+import { backoffMs, waitState, notFoundIsFinal, safeScanMessage, withRequestTimeout, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
 import { supabase } from '../lib/supabase.js';
 import { adaptScanResult, type ScanResult } from './v7Result';
 
@@ -308,17 +308,21 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) controller.abort();
-    const timer = setTimeout(abort, Math.min(20000, Math.max(0, startedAt + MAX_POLL_MS - Date.now())));
     let response: Response | undefined;
     let job: any;
     try {
-      response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(id)}`, { headers: await authHeaders(), signal: controller.signal });
-      if (response.ok) job = await response.json();
+      const result = await withRequestTimeout(async () => {
+        const headers = await authHeaders();
+        if (controller.signal.aborted) throw new Error('Request cancelled');
+        const response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(id)}`, { headers, signal: controller.signal });
+        return { response, job: response.ok ? await response.json() : undefined };
+      }, controller, Math.min(20000, Math.max(0, startedAt + MAX_POLL_MS - Date.now())));
+      response = result.response;
+      job = result.job;
     } catch {
       response = undefined;
       if (signal?.aborted) throw new Error('Scan was cancelled.');
     } finally {
-      clearTimeout(timer);
       signal?.removeEventListener('abort', abort);
     }
     if (response?.status === 404) {

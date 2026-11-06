@@ -16,7 +16,6 @@ export function ProcessingScreen({ onNavigate, outcome, startedAt, words }: { on
   const stage = steps[Math.min(steps.length - 1, Math.floor(Math.max(0, now - startedAt) / 30000))];
   const info = outcome?.kind === 'info' ? outcome.message : status?.info;
   return <main className="processing-screen">
-    <style>{`.scan-wait-pulse{animation:scan-wait-pulse 2s ease-in-out infinite}@keyframes scan-wait-pulse{50%{opacity:.35}}@media(prefers-reduced-motion:reduce){.scan-wait-pulse{animation:none}}`}</style>
     <div className="processing-screen__texture" aria-hidden="true" /><div className="processing-screen__glow" aria-hidden="true" />
     <div className="processing-screen__content">
       <div className="processing-screen__logo"><Logo className="processing-screen__logo-image" /></div>
@@ -26,7 +25,7 @@ export function ProcessingScreen({ onNavigate, outcome, startedAt, words }: { on
         {status?.message && <p>{status.message}</p>}
         {status?.reconnecting && <p role="status">Trying to reconnect to the server...</p>}
         {info && <section className="processing-screen__card" role="status"><p>{info}</p>{outcome && <button type="button" className="processing-screen__leave" style={{background: "#1a1fcc", color: "white"}} onClick={() => onNavigate('upload')}>Start again</button>}</section>}
-        {!outcome && !queued && <section className="processing-screen__card" aria-label="Scan progress"><div role="progressbar" aria-label="Manuscript analysis in progress" className="processing-screen__progress-track"><div className="processing-screen__progress-fill scan-wait-pulse" style={{width:'100%'}} /></div><p aria-live="polite">{stage}</p></section>}
+        {!outcome && !queued && <section className="processing-screen__card" role="status" aria-label="Scan progress"><div aria-hidden="true" className="processing-screen__progress-track"><div className="processing-screen__progress-fill" /></div><p>{stage}</p></section>}
         {long && !outcome && <p>This is taking longer than usual. Your scan is still running. You can leave this page; we will tell you when your report is ready.</p>}
         <button type="button" className="processing-screen__leave" onClick={() => onNavigate('dashboard')}>Continue in background</button>
       </>}

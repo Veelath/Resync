@@ -21,7 +21,7 @@ function StepOneArt() {
     <div className="tour-list">
       {sections.map((name, index) => <div key={name} className="tour-row"><span className="tour-mono">{String(index + 1).padStart(2, '0')}</span>{name}</div>)}
     </div>
-    <p className="tour-note">Reads .docx and .doc files</p>
+    <p className="tour-note">Reads .docx files</p>
   </div>;
 }
 

@@ -18,7 +18,7 @@ import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
 import { PAYMENT_EVENT } from './lib/paymentProof';
 import { resumeManuscriptScan, ScanOutcome } from './services/api';
-import { canResume, shouldNotifyFailure } from './lib/scanWait';
+import { canResume, shouldNotifyFailure, rememberFailureNotification } from './lib/scanWait';
 import { askForDesktopAlerts, showDesktopAlert } from './components/ScanNotifications';
 import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
 
@@ -264,7 +264,13 @@ export default function App() {
     if (outcome.kind === 'info' && outcome.message === 'We cannot confirm this scan. Open your dashboard later or start it again.') clearActiveScan();
     if (outcome.kind === 'failed') {
       if (recovered) { setDashboardNotice(outcome.message); navigate('dashboard'); }
-      if (!outcome.scanId || shouldNotifyFailure(notificationsRef.current, outcome.scanId)) {
+      const userId = sessionRef.current?.user.id;
+      const notInBell = !outcome.scanId || shouldNotifyFailure(notificationsRef.current, outcome.scanId);
+      let notInLedger = true;
+      if (outcome.scanId && userId) {
+        try { notInLedger = rememberFailureNotification(localStorage, userId, outcome.scanId, Date.now()); } catch { /* storage unavailable */ }
+      }
+      if (notInBell && notInLedger) {
         if (notificationPrefsRef.current.alerts) showDesktopAlert("Your ReSync scan did not finish", outcome.message);
         pushNotification("error", "Scan did not finish", outcome.message, outcome.scanId || undefined);
       }
