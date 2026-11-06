@@ -41,7 +41,7 @@
 .processing-screen__leave { margin-top: 14px; height: 44px; padding: 0 22px; border: 1px solid #c9cefc; border-radius: 12px; background: #fff; color: #1a1fcc; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
 .processing-screen__link { margin-top: 12px; padding: 6px 10px; border: 0; background: none; color: #1a1fcc; font: inherit; font-size: 13.5px; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .processing-screen__leave:hover { background: #eef0ff; }
-.processing-screen__leave:focus-visible { outline: 2px solid #1a1fcc; outline-offset: 2px; }
+.processing-screen__leave:focus { outline: 3px solid #1a1fcc; outline-offset: 2px; }
 .processing-screen__notice-dismiss { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #1a1fcc; cursor: pointer; }
 .processing-screen__notice-dismiss svg { width: 16px; height: 16px; }
 .processing-screen__notice-dismiss:hover { background: #dfe3ff; }
