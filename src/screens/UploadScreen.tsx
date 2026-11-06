@@ -208,7 +208,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   useEffect(() => {
     if (mode === "link" && linkState === "loading") return;
     if (!activeFile && step !== 3) return;
-    const source = activeFile ? (mode === "link" ? link.trim() : null);
+    const source = activeFile ?? (mode === "link" ? link.trim() : null);
     if (!source) { setOutline(null); return; }
     let cancelled = false;
     setOutlineLoading(true);
@@ -394,7 +394,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         }
       }
 
-      onScanStart?.(outline?.words ? docInfo?.words ? null);
+      onScanStart?.(outline?.words ?? docInfo?.words ?? null);
       onNavigate("processing");
       navigatedToProcessing = true;
 
@@ -402,12 +402,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       const scanFile = mode === "file" ? uploadedFile : linkFile;
       const result = await executeManuscriptScan({
         user_id: session.user.id,
-        file: scanFile ? undefined,
+        file: scanFile ?? undefined,
         doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
       }, { onStarted: onScanStarted });
-      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ? null);
+      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
@@ -442,7 +442,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   ];
   const stepName = ["Chapter Template", "Manuscript", "Confirm"][step - 1];
   const hasChapters = templateChapters.some(chapter => chapter.sections.length);
-  const fileLabel = mode === "file" ? uploadedFile?.name ? "" : linkFile?.name ? link.replace(/^https?:\/\//, "");
+  const fileLabel = mode === "file" ? uploadedFile?.name ?? "" : linkFile?.name ?? link.replace(/^https?:\/\//, "");
 
   // Step 2 -> 3: make sure there is something to confirm.
   function continueToConfirm() {
@@ -661,7 +661,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <div className="uf-rows">
                     <div className="uf-row"><span>Template</span><b style={{ color: "#2b25c8" }}>{hasChapters ? "Custom" : "Auto-detect"}</b></div>
                     <div className="uf-row"><span>Chapters</span><b>{templateChapters.length} {templateChapters.length === 1 ? "chapter" : "chapters"}</b></div>
-                    <div className="uf-row"><span>Total sections</span><b>{templateToc?.length ? 0} headings</b></div>
+                    <div className="uf-row"><span>Total sections</span><b>{templateToc?.length ?? 0} headings</b></div>
                     <div className="uf-row"><span>Scan preview</span><b style={{ color: "#0b9f6e" }}>Free</b></div>
                   </div>
                 </div>
@@ -811,7 +811,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <span className="uf-skeleton" aria-hidden="true"><i style={{ width: "92%" }} /><i style={{ width: "78%" }} /><i style={{ width: "86%" }} /><i style={{ width: "54%" }} /></span>
                       </div>
                     ) : mode === "link" && linkState === "failed" ? (
-                      <p style={{ color: "#8f1d36", fontWeight: 600 }}>{linkProblem ? "We could not open this Google Doc."} You can still run the scan, but there is no preview.</p>
+                      <p style={{ color: "#8f1d36", fontWeight: 600 }}>{linkProblem ?? "We could not open this Google Doc."} You can still run the scan, but there is no preview.</p>
                     ) : outline ? (
                       <>
                         {outline.title && <h3>{outline.title}</h3>}
@@ -823,7 +823,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         {docInfo.excerpt.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                       </>
                     ) : (
-                      <p style={{ color: "#6b6890" }}>{outlineError ? "We could not read a preview of this document, but it can still be scanned. Check the name on the right."}</p>
+                      <p style={{ color: "#6b6890" }}>{outlineError ?? "We could not read a preview of this document, but it can still be scanned. Check the name on the right."}</p>
                     )}
                   </div>
                 )}
@@ -838,7 +838,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     <div style={{ minWidth: 0 }}>
                       <b style={{ fontSize: 16.5, wordBreak: "break-word" }}>{fileLabel || "No document chosen"}</b>
                       <div style={{ fontSize: 11.5, color: "#6b6890", fontFamily: "ui-monospace, monospace" }}>
-                        {activeFile ? `${mode === "link" ? "Google Doc · " : ""}${formatBytes(activeFile.size)}${(outline?.words ? docInfo?.words) ? ` · ~${(outline?.words ? docInfo?.words ? 0).toLocaleString("en-US")} words` : ""}` : mode === "link" ? "Google Docs link" : ""}
+                        {activeFile ? `${mode === "link" ? "Google Doc · " : ""}${formatBytes(activeFile.size)}${(outline?.words ?? docInfo?.words) ? ` · ~${(outline?.words ?? docInfo?.words ?? 0).toLocaleString("en-US")} words` : ""}` : mode === "link" ? "Google Docs link" : ""}
                       </div>
                     </div>
                   </div>
@@ -901,7 +901,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     <div className="uf-row"><span>Chapter template</span><b style={{ color: "#2b25c8" }}>{hasChapters ? "Custom" : "Auto-detect"}</b></div>
                     <div className="uf-row"><span>Scan preview</span><b style={{ color: "#0b9f6e" }}>Free</b></div>
                     <div className="uf-row"><span>Full report unlock</span><b>1 credit</b></div>
-                    <div className="uf-row"><span>Your credits</span><b>{creditBalance ? "—"}</b></div>
+                    <div className="uf-row"><span>Your credits</span><b>{creditBalance ?? "—"}</b></div>
                   </div>
                 </div>
               </div>
