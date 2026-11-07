@@ -16,6 +16,9 @@ export function subscribeSessionEnded(listener: () => void): () => void {
   return () => { sessionEndedListeners.delete(listener); };
 }
 export function notifySessionEnded() { sessionEndedListeners.forEach(listener => listener()); }
+export function checkAuthError(error: { status?: number; code?: string; message?: string } | null) {
+  if (error && (error.status === 401 || error.code === 'session_not_found' || /session.*(missing|expired|not found)/i.test(error.message ?? ''))) notifySessionEnded();
+}
 async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const response = await fetch(input, init);
   if (response.status === 401) notifySessionEnded();

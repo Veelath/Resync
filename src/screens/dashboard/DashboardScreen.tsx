@@ -1,3 +1,4 @@
+import { checkAuthError } from '../../services/api';
 import '../upload-flow.css';
 import { CreditsPanel, type CreditActivity } from './CreditsPanel';
 import { ChangePasswordCard } from './ChangePasswordCard';
@@ -101,7 +102,7 @@ export function DashboardScreen({ scanRunning = false, onViewProgress, onNavigat
       ...(emailChanged ? { email } : {}),
       data: { full_name: name, first_name: first, middle_name: "", last_name: rest.join(" "), contact_number: contact, ...academicToMetadata(nextAcademic) },
     });
-    if (error) { setProfileNotice({ kind: "error", text: /session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message || "We could not save your profile. Please try again." }); return; }
+    if (error) { checkAuthError(error); setProfileNotice({ kind: "error", text: /session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message || "We could not save your profile. Please try again." }); return; }
     setProfile({ ...draft, fullName: name, firstName: first, middleName: "", lastName: rest.join(" "), contactNumber: contact, email: emailChanged ? profile.email : draft.email });
     setAcademicInfo(nextAcademic);
     setEditMode(false);
@@ -304,7 +305,7 @@ export function DashboardScreen({ scanRunning = false, onViewProgress, onNavigat
         if (wrong) { setPwErrorMsg("Your current password is incorrect."); return; }
       }
       const { error } = await supabase.auth.updateUser({ password: newPw });
-      if (error) { setPwErrorMsg(passwordPolicyMessage(error) ?? (/session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message) ?? "We could not update your password. Please try again."); return; }
+      if (error) { checkAuthError(error); setPwErrorMsg(passwordPolicyMessage(error) ?? (/session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message) ?? "We could not update your password. Please try again."); return; }
       setPwSuccessMsg("Your password has been updated successfully.");
       setCurrentPw("");
       setNewPw("");
