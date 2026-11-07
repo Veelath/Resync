@@ -7,7 +7,7 @@ import { executeManuscriptScan, getCreditBalance, getManuscriptOutline, download
 import './upload-motion.css';
 import './upload-flow.css';
 import { UploadTour, uploadTourSeen } from './UploadTour';
-import { DocxManuscript } from './results/DocxManuscript';
+import { previewParagraphs } from '../lib/previewParagraphs';
 
 type UploadMode = "file" | "link";
 
@@ -163,7 +163,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [outlineError, setOutlineError] = useState<string | null>(null);
   // A document with no research-paper structure is not scanned (a school template can supply its own headings, so it is let through).
   const notAPaper = outline?.looks_like_paper === false && !templateChapters.some(chapter => chapter.sections.length);
-  const [pagesState, setPagesState] = useState<"idle" | "failed">("idle");
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const [linkDraft, setLinkDraft] = useState("");
   useEffect(() => { setLinkDraft(link); }, [link, step]);
@@ -219,9 +218,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       .finally(() => { if (!cancelled) setOutlineLoading(false); });
     return () => { cancelled = true; };
   }, [mode, activeFile, link, linkState]);
-
-  // A new file gets a fresh try at drawing the pages (the results page's own viewer does the drawing).
-  useEffect(() => { setPagesState('idle'); }, [activeFile]);
 
   // Credits left, for the "credits after scan" line on the confirm step.
   useEffect(() => {
@@ -804,11 +800,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <div className="uf-eb is-muted">{mode === "file" ? "Your paper · scroll to read it" : "Your Google Doc · scroll to read it"}</div>
                 </div>
 
-                {activeFile && pagesState !== "failed" ? (
-                  <div className="uf-pages" aria-label="Your manuscript, as the report will show it">
-                    <DocxManuscript file={activeFile} highlights={[]} locked={false} onLinked={() => {}} onFailed={() => setPagesState("failed")} />
-                  </div>
-                ) : (
                   <div className="uf-paper" style={{ height: "auto", minHeight: 320, maxHeight: 560, overflowY: "auto" }} aria-label="Structure of your manuscript">
                     {linkState === "loading" || outlineLoading ? (
                       <div className="uf-loading" role="status" aria-live="polite">
@@ -824,18 +815,18 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     ) : outline ? (
                       <>
                         {outline.title && <h3>{outline.title}</h3>}
-                        {outline.excerpt.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                        {previewParagraphs(outline.excerpt).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                       </>
                     ) : docInfo ? (
                       <>
                         {docInfo.title && <h3>{docInfo.title}</h3>}
-                        {docInfo.excerpt.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                        {previewParagraphs(docInfo.excerpt).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                       </>
                     ) : (
                       <p style={{ color: "#6b6890" }}>{outlineError ?? "We could not read a preview of this document, but it can still be scanned. Check the name on the right."}</p>
                     )}
                   </div>
-                )}
+                <p className="text-sm text-slate-700">Preview shows the first part of your document. The scan reads all of it.</p>
               </div>
 
               <div className="uf-col">
