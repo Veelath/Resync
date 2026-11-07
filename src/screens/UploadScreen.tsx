@@ -4,7 +4,7 @@ import type React from 'react';
 import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
-import { executeManuscriptScan, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
+import { executeManuscriptScan, ScanLimitError, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
 import './upload-motion.css';
 import './upload-flow.css';
 import { UploadTour, uploadTourSeen } from './UploadTour';
@@ -192,7 +192,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         downloads.current.set(url, request);
       }
       request.then(file => { if (!cancelled && current()) { setLinkFile(file); setLinkState("ready"); } })
-        .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); } });
+        .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); if (error instanceof ScanLimitError) setScanError(error.message); } });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -218,7 +218,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setOutlineError(null);
     getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() })
       .then(result => { if (!cancelled && current()) setOutline(result); })
-      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); } })
+      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); if (error instanceof ScanLimitError) setScanError(error.message); } })
       .finally(() => { if (!cancelled && current()) setOutlineLoading(false); });
     return () => { cancelled = true; };
   }, [mode, activeFile, link, linkState]);
@@ -397,7 +397,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         }
       }
 
-      onScanStart?.(outline?.words ?? docInfo?.words ?? null);
 
       // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
       const scanFile = mode === "file" ? uploadedFile : linkFile;
@@ -407,12 +406,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: id => { onScanStarted?.(id); navigatedToProcessing = true; onNavigate("processing"); } });
+      }, { onStarted: id => { onScanStart?.(outline?.words ?? docInfo?.words ?? null); onScanStarted?.(id); navigatedToProcessing = true; onNavigate("processing"); } });
       if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
-      onScanFailed?.(e);
+      if (navigatedToProcessing) onScanFailed?.(e);
       lastScanError = navigatedToProcessing ? null : errMsg;
       setScanError(navigatedToProcessing ? null : errMsg);
       setIsScanning(false);
@@ -459,7 +458,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     lastScanError = null;
     if (mode === "file" && !uploadedFile) { setScanError("Please select a manuscript file to upload."); return; }
     if (mode === "link" && (!link.trim() || !link.includes("docs.google.com"))) { setScanError("Please provide a valid Google Docs link."); return; }
-    setScanError(null);
+    if (!linkProblem && !outlineError) setScanError(null);
     setStep(3);
   }
 

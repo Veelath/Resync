@@ -172,6 +172,16 @@ async function extractErrorDetail(response: Response): Promise<string> {
   return errorDetail;
 }
 
+export class ScanLimitError extends Error {}
+async function responseError(response: Response): Promise<Error> {
+  if (response.status === 429 || response.status === 413) {
+    let body: unknown;
+    try { body = await response.json(); } catch { /* use safe fallback */ }
+    return new ScanLimitError(limitErrorMessage(body));
+  }
+  return new Error(await extractErrorDetail(response));
+}
+
 /** Resolves after `ms`, or rejects early if `signal` aborts. */
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -276,11 +286,6 @@ async function runManuscriptScan(
     );
   }
 
-  if (startResponse.status === 429 || startResponse.status === 413) {
-    let body: unknown;
-    try { body = await startResponse.json(); } catch { /* use the safe fallback */ }
-    throw new Error(limitErrorMessage(body));
-  }
   if (startResponse.status === 404) {
     throw new Error(
       `This backend does not expose POST /api/scans/start. Restart the FastAPI server so it picks up the async scan endpoints.`
@@ -297,7 +302,7 @@ async function runManuscriptScan(
     throw new InsufficientCreditsError(balance);
   }
   if (!startResponse.ok) {
-    throw new Error(await extractErrorDetail(startResponse));
+    throw await responseError(startResponse);
   }
 
   const { analysis_run_id: analysisRunId } = await startResponse.json();
@@ -481,7 +486,7 @@ export async function getManuscriptOutline(source: { file: File } | { docUrl: st
   const form = new FormData();
   if ('file' in source) form.append('file', source.file); else form.append('doc_url', source.docUrl);
   const resp = await apiFetch(`${API_BASE_URL}/api/manuscripts/outline`, { method: 'POST', headers: await authHeaders(), body: form });
-  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  if (!resp.ok) throw await responseError(resp);
   return resp.json();
 }
 
@@ -490,7 +495,7 @@ export async function downloadGoogleDoc(docUrl: string): Promise<File> {
   const form = new FormData();
   form.append('doc_url', docUrl);
   const resp = await apiFetch(`${API_BASE_URL}/api/manuscripts/google-docx`, { method: 'POST', headers: await authHeaders(), body: form });
-  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  if (!resp.ok) throw await responseError(resp);
   const name = decodeURIComponent(resp.headers.get('X-Doc-Filename') || 'Google Doc.docx');
   return new File([await resp.blob()], name, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }
