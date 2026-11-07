@@ -275,8 +275,8 @@
 
 .uf-paper { position: relative; overflow: hidden; background: #fff; border: 1px solid var(--uf-line); border-radius: 12px; box-shadow: 0 30px 50px -34px rgba(11, 10, 46, 0.5); height: 420px; padding: 36px 56px; }
 .uf-paper::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; background: linear-gradient(transparent, #fff); }
-.uf-paper p { margin: 0 0 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 13.5px; line-height: 1.65; color: #2e2c52; }
-.uf-paper h3 { margin: 0 0 14px; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+.uf-paper > p { margin: 0 0 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 13.5px; line-height: 1.65; color: #2e2c52; }
+.uf-paper > h3 { margin: 0 0 14px; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
 .uf-error { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: #fff1f3; border: 1px solid #f6c6d0; color: #8f1d36; font-size: 14px; font-weight: 600; }
 
 @media (max-width: 1000px) {
@@ -377,3 +377,5 @@
 .uf-scanbar > span:nth-child(2) { flex: 1; min-width: 200px; }
 .uf-scanbar-spin { width: 20px; height: 20px; border-radius: 50%; border: 3px solid #cfd3fb; border-top-color: #2b25c8; animation: uf-spin 0.9s linear infinite; flex: none; }
 @media (prefers-reduced-motion: reduce) { .uf-scanbar-spin { animation: none; } }
+
+.uf-paper:focus-visible { outline: 3px solid #2b25c8; outline-offset: 3px; }

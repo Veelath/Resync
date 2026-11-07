@@ -9,6 +9,8 @@ import './upload-motion.css';
 import './upload-flow.css';
 import { UploadTour, uploadTourSeen } from './UploadTour';
 import { previewParagraphs } from '../lib/previewParagraphs';
+import { DocxPreview } from '../components/DocxPreview';
+import { canShowWordPreview } from '../lib/docxPreview';
 
 type UploadMode = "file" | "link";
 
@@ -198,6 +200,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
   // Whichever document is in play: the uploaded Word file, or the Google Doc downloaded as one.
   const activeFile = mode === "file" ? uploadedFile : linkFile;
+  const [previewFailed, setPreviewFailed] = useState<File | null>(null);
 
   // Seconds spent waiting for the document, so a slow Google reply does not look like a frozen page.
   const [outlineSeconds, setOutlineSeconds] = useState(0);
@@ -802,11 +805,13 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             <div className="uf-grid is-wide">
               <div className="uf-col" style={{ gap: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div className="uf-eb is-muted">{mode === "file" ? "Your paper · scroll to read it" : "Your Google Doc · scroll to read it"}</div>
+                  <div className="uf-eb is-muted">{mode === "file" ? "Your paper" : "Your Google Doc"}</div>
                 </div>
 
-                  <div className="uf-paper" style={{ height: "auto", minHeight: 320, maxHeight: 560, overflowY: "auto" }} aria-label="Structure of your manuscript">
-                    {linkState === "loading" || outlineLoading ? (
+                  <div className="uf-paper" style={{ height: "auto", minHeight: 320, maxHeight: 560, overflow: "auto" }} role="region" tabIndex={0} aria-label="Document preview">
+                    {canShowWordPreview(activeFile, previewFailed) && activeFile ? (
+                      <DocxPreview file={activeFile} onFailed={() => setPreviewFailed(activeFile)} />
+                    ) : linkState === "loading" || outlineLoading ? (
                       <div className="uf-loading" role="status" aria-live="polite">
                         <span className="uf-spinner" aria-hidden="true" />
                         <b>{mode === "link" ? "Opening your Google Doc" : "Reading your document"}</b>
@@ -819,19 +824,20 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       <p style={{ color: "#8f1d36", fontWeight: 600 }}>{linkProblem ?? "We could not open this Google Doc."} You can still run the scan, but there is no preview.</p>
                     ) : outline ? (
                       <>
+                        <b>Simplified preview</b>
                         {outline.title && <h3>{outline.title}</h3>}
                         {previewParagraphs(outline.excerpt).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                       </>
                     ) : docInfo ? (
                       <>
+                        <b>Simplified preview</b>
                         {docInfo.title && <h3>{docInfo.title}</h3>}
                         {previewParagraphs(docInfo.excerpt).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                       </>
                     ) : (
-                      <p style={{ color: "#6b6890" }}>{outlineError ?? "We could not read a preview of this document, but it can still be scanned. Check the name on the right."}</p>
+                      <p style={{ color: "#514d72" }}><b>Simplified preview</b><br />{outlineError ?? "We could not read a preview of this document, but it can still be scanned. Check the name on the right."}</p>
                     )}
                   </div>
-                <p className="text-sm text-slate-700">Preview shows the first part of your document. The scan reads all of it.</p>
               </div>
 
               <div className="uf-col">
