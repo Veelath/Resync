@@ -77,4 +77,3 @@ export function DashboardHome({ onNavigate, session, greeting, scanRunning = fal
     </div>
   </div>;
 }
-
