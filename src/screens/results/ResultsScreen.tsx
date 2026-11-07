@@ -184,8 +184,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     setSelectedOrder(order);
     const first = recommendations.find(item => item.pair === order);
     if (!first) return;
-    if (linkedIds.has(first.id)) focusLinked('highlight', first.id);
+    if (linkedIds.has(first.id) && document.getElementById(`highlight-${first.id}`)) focusLinked('highlight', first.id);
     else if (first.kind === 'add' && first.section && first.placement) showPlacement(first.section, first.placement, plainText(first.revision));
+    else {
+      setPlacementMessage('We could not find that passage in the preview. You can still read the recommendation.');
+      window.setTimeout(() => setPlacementMessage(''), 6000);
+    }
   }
 
   // "Go to this spot": scrolls to where a new sentence belongs and leaves a visible note there until the next one.
