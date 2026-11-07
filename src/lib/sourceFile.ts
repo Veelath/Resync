@@ -60,3 +60,18 @@ export async function loadSourceFile(scanId: string): Promise<File | null> {
     return null;
   }
 }
+
+export async function clearAllSourceFiles(): Promise<void> {
+  try {
+    const db = await open();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
+        for (const name of Array.from(db.objectStoreNames)) tx.objectStore(name).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    } finally { db.close(); }
+  } catch { /* IndexedDB may be unavailable. */ }
+}

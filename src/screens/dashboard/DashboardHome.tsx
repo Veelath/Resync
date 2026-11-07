@@ -2,7 +2,7 @@ import { ArrowRight, Download, FileText, Link2, MessageSquare, PanelsTopLeft, Sc
 import { useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import type { Screen } from '../../lib/appTypes';
-import { OnboardingTour, tourSeen } from './OnboardingTour';
+import { OnboardingTour } from './OnboardingTour';
 import './dashboard-design.css';
 
 const steps = [
@@ -28,9 +28,10 @@ const guidance = [
 
 export function DashboardHome({ onNavigate, session, greeting, scanRunning = false, onViewProgress }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: 'Good morning' | 'Good afternoon' | 'Good evening'; scanRunning?: boolean; onViewProgress?: () => void }) {
   const firstName = session?.user?.user_metadata?.full_name?.split(' ')[0] || session?.user?.email?.split('@')[0] || 'there';
-  const [tourOpen, setTourOpen] = useState(() => !tourSeen());
+  const [tourOpen, setTourOpen] = useState(false);
   return <div className="phase2-dashboard">
     <OnboardingTour name={firstName} open={tourOpen} onClose={() => setTourOpen(false)} />
+    <button type="button" className="tour-replay" onClick={() => setTourOpen(true)}>Replay tour</button>
     {scanRunning && onViewProgress && <button type="button" className="tour-replay tour-progress" onClick={onViewProgress}><span className="tour-progress-spin" aria-hidden="true" />View progress</button>}
     <section className="phase2-hero"><div className="phase2-hero-inner">
       <div className="phase2-hero-grid">
@@ -76,3 +77,4 @@ export function DashboardHome({ onNavigate, session, greeting, scanRunning = fal
     </div>
   </div>;
 }
+

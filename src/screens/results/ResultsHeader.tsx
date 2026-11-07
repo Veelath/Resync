@@ -15,6 +15,7 @@ export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle }: { 
             Home
           </button>
         )}
+        {isSample && <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-900">Sample report</span>}
         <span className="rp-slash hidden md:block" aria-hidden="true">/</span>
         <span className="rp-crumb hidden md:block">{displayTitle}</span>
         {!isSample && (
@@ -30,6 +31,7 @@ export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle }: { 
           </div>
         )}
       </div>
+      <p className="px-4 pb-2 text-sm text-slate-700">References and very short sections are not compared.</p>
     </nav>
   );
 }

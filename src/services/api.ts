@@ -1,3 +1,4 @@
+import { limitErrorMessage } from '../lib/limitErrorMessage';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +9,22 @@ import { supabase } from '../lib/supabase.js';
 import { adaptScanResult, type ScanResult } from './v7Result';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
+
+const sessionEndedListeners = new Set<() => void>();
+export function subscribeSessionEnded(listener: () => void): () => void {
+  sessionEndedListeners.add(listener);
+  return () => { sessionEndedListeners.delete(listener); };
+}
+export function notifySessionEnded() { sessionEndedListeners.forEach(listener => listener()); }
+export function checkAuthError(error: { status?: number; code?: string; message?: string } | null) {
+  if (error && (error.status === 401 || error.code === 'session_not_found' || /session.*(missing|expired|not found)/i.test(error.message ?? ''))) notifySessionEnded();
+}
+async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const response = await fetch(input, init);
+  if (response.status === 401) notifySessionEnded();
+  return response;
+}
+
 
 /**
  * The backend now verifies the caller's Supabase session server-side and
@@ -20,6 +37,7 @@ export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localh
 export async function authHeaders(extra?: Record<string, string>): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
+  if (!token) notifySessionEnded();
   return {
     ...extra,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -157,6 +175,16 @@ async function extractErrorDetail(response: Response): Promise<string> {
   return errorDetail;
 }
 
+export class ScanLimitError extends Error {}
+async function responseError(response: Response): Promise<Error> {
+  if (response.status === 429 || response.status === 413) {
+    let body: unknown;
+    try { body = await response.json(); } catch { /* use safe fallback */ }
+    return new ScanLimitError(limitErrorMessage(body));
+  }
+  return new Error(await extractErrorDetail(response));
+}
+
 /** Resolves after `ms`, or rejects early if `signal` aborts. */
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -228,7 +256,7 @@ async function runManuscriptScan(
         formData.append('style_reference_url', payload.style_reference_url);
       }
 
-      startResponse = await fetch(`${API_BASE_URL}/api/scans/upload`, {
+      startResponse = await apiFetch(`${API_BASE_URL}/api/scans/upload`, {
         method: 'POST',
         headers: await authHeaders(),
         body: formData,
@@ -244,7 +272,7 @@ async function runManuscriptScan(
         style_reference_url: payload.style_reference_url,
       };
 
-      startResponse = await fetch(`${API_BASE_URL}/api/scans/start`, {
+      startResponse = await apiFetch(`${API_BASE_URL}/api/scans/start`, {
         method: 'POST',
         headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(jsonPayload),
@@ -277,7 +305,7 @@ async function runManuscriptScan(
     throw new InsufficientCreditsError(balance);
   }
   if (!startResponse.ok) {
-    throw new Error(await extractErrorDetail(startResponse));
+    throw await responseError(startResponse);
   }
 
   const { analysis_run_id: analysisRunId } = await startResponse.json();
@@ -314,7 +342,7 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
       const result = await withRequestTimeout(async () => {
         const headers = await authHeaders();
         if (controller.signal.aborted) throw new Error('Request cancelled');
-        const response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(id)}`, { headers, signal: controller.signal });
+        const response = await apiFetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(id)}`, { headers, signal: controller.signal });
         return { response, job: response.ok ? await response.json() : undefined };
       }, controller, Math.min(20000, Math.max(0, startedAt + MAX_POLL_MS - Date.now())));
       response = result.response;
@@ -399,7 +427,7 @@ function creditHeaders(userId: string, authorization: HeadersInit): HeadersInit 
 }
 
 export async function getCreditBalance(userId: string): Promise<CreditBalanceResponse> {
-  const resp = await fetch(`${API_BASE_URL}/api/credits/balance`, {
+  const resp = await apiFetch(`${API_BASE_URL}/api/credits/balance`, {
     headers: creditHeaders(userId, await authHeaders()),
   });
   if (!resp.ok) throw new Error(await extractErrorDetail(resp));
@@ -407,7 +435,7 @@ export async function getCreditBalance(userId: string): Promise<CreditBalanceRes
 }
 
 export async function unlockScan(analysisRunId: string): Promise<{ unlocked: true; charged: boolean; credits_remaining: number | null }> {
-  const response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}/unlock`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}/unlock`, {
     method: 'POST', headers: await authHeaders(),
   });
   if (!response.ok) throw new Error(await extractErrorDetail(response));
@@ -415,7 +443,7 @@ export async function unlockScan(analysisRunId: string): Promise<{ unlocked: tru
 }
 
 export async function getScanResult(analysisRunId: string): Promise<ScanResult> {
-  const response = await fetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}`, { headers: await authHeaders() });
+  const response = await apiFetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}`, { headers: await authHeaders() });
   if (!response.ok) throw new Error(await extractErrorDetail(response));
   const body = await response.json();
   if (body.status !== 'completed' || !body.result) throw new Error('The full report is not ready. Refresh and try again.');
@@ -427,7 +455,7 @@ export async function createCreditCheckout(
   creditAmount: number,
   unitPrice?: number,
 ): Promise<CheckoutResponse> {
-  const resp = await fetch(`${API_BASE_URL}/api/credits/checkout`, {
+  const resp = await apiFetch(`${API_BASE_URL}/api/credits/checkout`, {
     method: 'POST',
     headers: creditHeaders(userId, await authHeaders()),
     body: JSON.stringify({
@@ -440,7 +468,7 @@ export async function createCreditCheckout(
 }
 
 export async function confirmCreditCheckout(userId: string, pymtTxnId: string): Promise<ConfirmCheckoutResponse> {
-  const resp = await fetch(`${API_BASE_URL}/api/credits/confirm`, {
+  const resp = await apiFetch(`${API_BASE_URL}/api/credits/confirm`, {
     method: 'POST',
     headers: creditHeaders(userId, await authHeaders()),
     body: JSON.stringify({ pymt_txn_id: pymtTxnId }),
@@ -460,8 +488,8 @@ export interface ManuscriptOutline {
 export async function getManuscriptOutline(source: { file: File } | { docUrl: string }): Promise<ManuscriptOutline> {
   const form = new FormData();
   if ('file' in source) form.append('file', source.file); else form.append('doc_url', source.docUrl);
-  const resp = await fetch(`${API_BASE_URL}/api/manuscripts/outline`, { method: 'POST', headers: await authHeaders(), body: form });
-  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  const resp = await apiFetch(`${API_BASE_URL}/api/manuscripts/outline`, { method: 'POST', headers: await authHeaders(), body: form });
+  if (!resp.ok) throw await responseError(resp);
   return resp.json();
 }
 
@@ -469,8 +497,8 @@ export async function getManuscriptOutline(source: { file: File } | { docUrl: st
 export async function downloadGoogleDoc(docUrl: string): Promise<File> {
   const form = new FormData();
   form.append('doc_url', docUrl);
-  const resp = await fetch(`${API_BASE_URL}/api/manuscripts/google-docx`, { method: 'POST', headers: await authHeaders(), body: form });
-  if (!resp.ok) throw new Error(await extractErrorDetail(resp));
+  const resp = await apiFetch(`${API_BASE_URL}/api/manuscripts/google-docx`, { method: 'POST', headers: await authHeaders(), body: form });
+  if (!resp.ok) throw await responseError(resp);
   const name = decodeURIComponent(resp.headers.get('X-Doc-Filename') || 'Google Doc.docx');
   return new File([await resp.blob()], name, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }
@@ -493,7 +521,7 @@ export async function purchaseCredits(
   userId: string, creditAmount: number, method: 'card' | 'gcash' | 'bank_transfer' = 'card',
   proof?: { reference_number: string; payer_name?: string; file_name?: string; content_type: string; proof_data: string },
 ): Promise<PurchaseResult> {
-  const resp = await fetch(`${API_BASE_URL}/api/credits/purchase`, {
+  const resp = await apiFetch(`${API_BASE_URL}/api/credits/purchase`, {
     method: 'POST',
     headers: creditHeaders(userId, await authHeaders()),
     body: JSON.stringify({ credit_amount: creditAmount, method, ...(proof ? { proof } : {}) }),
@@ -507,7 +535,7 @@ export interface PaymentProofBody {
 }
 
 export async function uploadPaymentProof(userId: string, body: PaymentProofBody): Promise<{ status: string; proof_id: string }> {
-  const resp = await fetch(`${API_BASE_URL}/api/credits/proof`, {
+  const resp = await apiFetch(`${API_BASE_URL}/api/credits/proof`, {
     method: 'POST',
     headers: creditHeaders(userId, await authHeaders()),
     body: JSON.stringify(body),
@@ -517,7 +545,7 @@ export async function uploadPaymentProof(userId: string, body: PaymentProofBody)
 }
 
 export async function getCreditHistory(userId: string, limit = 50): Promise<CreditHistoryResponse> {
-  const resp = await fetch(`${API_BASE_URL}/api/credits/history?limit=${limit}`, {
+  const resp = await apiFetch(`${API_BASE_URL}/api/credits/history?limit=${limit}`, {
     headers: creditHeaders(userId, await authHeaders()),
   });
   if (!resp.ok) throw new Error(await extractErrorDetail(resp));
@@ -539,7 +567,7 @@ export async function fetchManuscript(analysisRunId: string): Promise<Manuscript
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
     const request = (async () => {
-      const response = await fetch(`${API_BASE_URL}/api/scans/${analysisRunId}/manuscript`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/scans/${analysisRunId}/manuscript`, {
         method: 'GET',
         headers: await authHeaders(),
         signal: controller.signal,

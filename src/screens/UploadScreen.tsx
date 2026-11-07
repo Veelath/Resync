@@ -1,13 +1,14 @@
+import { createRequestToken } from '../lib/requestToken';
 import { useState, useEffect, useRef, Fragment } from "react";
 import type React from 'react';
 import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
-import { executeManuscriptScan, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
+import { executeManuscriptScan, ScanLimitError, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
 import './upload-motion.css';
 import './upload-flow.css';
 import { UploadTour, uploadTourSeen } from './UploadTour';
-import { DocxManuscript } from './results/DocxManuscript';
+import { previewParagraphs } from '../lib/previewParagraphs';
 
 type UploadMode = "file" | "link";
 
@@ -133,6 +134,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
+  const sourceToken = useRef(createRequestToken());
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [link, setLink] = useState("");
@@ -163,7 +165,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [outlineError, setOutlineError] = useState<string | null>(null);
   // A document with no research-paper structure is not scanned (a school template can supply its own headings, so it is let through).
   const notAPaper = outline?.looks_like_paper === false && !templateChapters.some(chapter => chapter.sections.length);
-  const [pagesState, setPagesState] = useState<"idle" | "failed">("idle");
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const [linkDraft, setLinkDraft] = useState("");
   useEffect(() => { setLinkDraft(link); }, [link, step]);
@@ -181,6 +182,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     const url = link.trim();
     if (mode !== "link" || !session?.user || !googleLink(url)) { setLinkState("idle"); return; }
     let cancelled = false;
+    const current = sourceToken.current.current();
     setLinkState("loading");
     const timer = setTimeout(() => {
       let request = downloads.current.get(url);
@@ -189,8 +191,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         request.catch(() => downloads.current.delete(url));
         downloads.current.set(url, request);
       }
-      request.then(file => { if (!cancelled) { setLinkFile(file); setLinkState("ready"); } })
-        .catch(error => { if (!cancelled) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); } });
+      request.then(file => { if (!cancelled && current()) { setLinkFile(file); setLinkState("ready"); } })
+        .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); if (error instanceof ScanLimitError) setScanError(error.message); } });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -211,17 +213,15 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     const source = activeFile ?? (mode === "link" ? link.trim() : null);
     if (!source) { setOutline(null); return; }
     let cancelled = false;
+    const current = sourceToken.current.current();
     setOutlineLoading(true);
     setOutlineError(null);
     getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() })
-      .then(result => { if (!cancelled) setOutline(result); })
-      .catch(error => { if (!cancelled) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); } })
-      .finally(() => { if (!cancelled) setOutlineLoading(false); });
+      .then(result => { if (!cancelled && current()) setOutline(result); })
+      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); if (error instanceof ScanLimitError) setScanError(error.message); } })
+      .finally(() => { if (!cancelled && current()) setOutlineLoading(false); });
     return () => { cancelled = true; };
   }, [mode, activeFile, link, linkState]);
-
-  // A new file gets a fresh try at drawing the pages (the results page's own viewer does the drawing).
-  useEffect(() => { setPagesState('idle'); }, [activeFile]);
 
   // Credits left, for the "credits after scan" line on the confirm step.
   useEffect(() => {
@@ -342,6 +342,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   function acceptManuscriptFile(file: File) {
+    sourceToken.current.invalidate();
+    const current = sourceToken.current.current();
     lastScanError = null;
     if (!isDocx(file.name)) {
       setUploadedFile(null);
@@ -351,6 +353,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setScanError(null);
     // Pictures are taken out first (they are not read), so a Word file full of images is judged by its size without them.
     slimDocx(file).then(slim => {
+      if (!current()) return;
       if (slim.size > MAX_MANUSCRIPT_BYTES) {
         setUploadedFile(null);
         setScanError("This file is larger than 25 MB even without its pictures. Please upload a smaller Word document.");
@@ -394,9 +397,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         }
       }
 
-      onScanStart?.(outline?.words ?? docInfo?.words ?? null);
-      onNavigate("processing");
-      navigatedToProcessing = true;
 
       // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
       const scanFile = mode === "file" ? uploadedFile : linkFile;
@@ -406,12 +406,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: onScanStarted });
+      }, { onStarted: id => { onScanStart?.(outline?.words ?? docInfo?.words ?? null); onScanStarted?.(id); navigatedToProcessing = true; onNavigate("processing"); } });
       if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
-      onScanFailed?.(e);
+      if (navigatedToProcessing) onScanFailed?.(e);
       lastScanError = navigatedToProcessing ? null : errMsg;
       setScanError(navigatedToProcessing ? null : errMsg);
       setIsScanning(false);
@@ -444,12 +444,21 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const hasChapters = templateChapters.some(chapter => chapter.sections.length);
   const fileLabel = mode === "file" ? uploadedFile?.name ?? "" : linkFile?.name ?? link.replace(/^https?:\/\//, "");
 
+  function removeSource() {
+    sourceToken.current.invalidate();
+    setUploadedFile(null); setLink(""); setLinkDraft(""); setLinkFile(null);
+    setOutline(null); setOutlineError(null); setOutlineLoading(false); setDocInfo(null);
+    setLinkProblem(null); setLinkState("idle"); setScanError(null); lastScanError = null;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setStep(2);
+  }
+
   // Step 2 -> 3: make sure there is something to confirm.
   function continueToConfirm() {
     lastScanError = null;
     if (mode === "file" && !uploadedFile) { setScanError("Please select a manuscript file to upload."); return; }
     if (mode === "link" && (!link.trim() || !link.includes("docs.google.com"))) { setScanError("Please provide a valid Google Docs link."); return; }
-    setScanError(null);
+    if (!linkProblem && !outlineError) setScanError(null);
     setStep(3);
   }
 
@@ -743,6 +752,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       </div>
                     </div>
                   )}
+                  {(mode === "file" ? uploadedFile : link) && <button type="button" aria-label={mode === "file" ? "Remove this file" : "Remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">{String.fromCharCode(215)}</button>}
                 </div>
 
                 <div data-tour="run" className="uf-col" style={{ gap: 12 }}>
@@ -795,11 +805,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <div className="uf-eb is-muted">{mode === "file" ? "Your paper · scroll to read it" : "Your Google Doc · scroll to read it"}</div>
                 </div>
 
-                {activeFile && pagesState !== "failed" ? (
-                  <div className="uf-pages" aria-label="Your manuscript, as the report will show it">
-                    <DocxManuscript file={activeFile} highlights={[]} locked={false} onLinked={() => {}} onFailed={() => setPagesState("failed")} />
-                  </div>
-                ) : (
                   <div className="uf-paper" style={{ height: "auto", minHeight: 320, maxHeight: 560, overflowY: "auto" }} aria-label="Structure of your manuscript">
                     {linkState === "loading" || outlineLoading ? (
                       <div className="uf-loading" role="status" aria-live="polite">
@@ -815,18 +820,18 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     ) : outline ? (
                       <>
                         {outline.title && <h3>{outline.title}</h3>}
-                        {outline.excerpt.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                        {previewParagraphs(outline.excerpt).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                       </>
                     ) : docInfo ? (
                       <>
                         {docInfo.title && <h3>{docInfo.title}</h3>}
-                        {docInfo.excerpt.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                        {previewParagraphs(docInfo.excerpt).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                       </>
                     ) : (
                       <p style={{ color: "#6b6890" }}>{outlineError ?? "We could not read a preview of this document, but it can still be scanned. Check the name on the right."}</p>
                     )}
                   </div>
-                )}
+                <p className="text-sm text-slate-700">Preview shows the first part of your document. The scan reads all of it.</p>
               </div>
 
               <div className="uf-col">
@@ -843,6 +848,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     </div>
                   </div>
 
+                  <button type="button" aria-label={mode === "file" ? "Remove this file" : "Remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">{String.fromCharCode(215)}</button>
                   {mode === "file" ? (
                     <>
                       <button type="button" className="uf-btn is-ghost is-sm" disabled={isScanning} onClick={() => replaceInputRef.current?.click()}>
@@ -884,6 +890,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                           </li>
                         ))}
                       </ol>
+                      <p className="text-sm text-slate-700">References and very short sections are not compared.</p>
                       {outline.structure !== "headings" && (
                         <p style={{ margin: 0, fontSize: 12.5, color: "#8a5a12" }}>
                           {outline.structure === "split" ? "No headings found, so the scan will read it in equal parts." : "Headings were found by their shape, not their name."}

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
-import { saveSourceFile } from './lib/sourceFile';
+import { saveSourceFile, clearAllSourceFiles } from './lib/sourceFile';
 import { readRoute, routePath } from './lib/routes';
-import { getScanResult } from './services/api';
+import { getScanResult, subscribeSessionEnded, notifySessionEnded } from './services/api';
+import { createSignOutController } from './lib/signOutController';
 import type { Session } from '@supabase/supabase-js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
@@ -52,6 +53,26 @@ export default function App() {
   notificationsRef.current = notifications;
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [sessionEndedNotice, setSessionEndedNotice] = useState(false);
+  const signOutRef = useRef<ReturnType<typeof createSignOutController> | null>(null);
+  if (!signOutRef.current) signOutRef.current = createSignOutController(async () => {
+    clearActiveScan();
+    await clearAllSourceFiles();
+    await supabase.auth.signOut({ scope: 'local' });
+  }, ended => {
+    sessionRef.current = null;
+    setSession(null);
+    setSessionEndedNotice(ended);
+    const target = ended ? 'login' : 'home';
+    sessionStorage.setItem('resync_screen', target);
+    screenRef.current = target;
+    setScreen(target);
+    window.history.replaceState({ resync: { index: historyIndex.current } }, '', ended ? '/login' : '/');
+  });
+
+  useEffect(() => subscribeSessionEnded(() => {
+    if (sessionRef.current && !signOutRef.current?.busy()) void signOutRef.current?.run(true);
+  }), []);
 
   function showRoute(pathname: string, index: number, currentSession = sessionRef.current) {
     const route = readRoute(pathname);
@@ -93,8 +114,15 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const wasSignedIn = Boolean(sessionRef.current);
+      if (!session && signOutRef.current?.busy()) return;
+      if (!session && wasSignedIn) {
+        notifySessionEnded();
+        return;
+      }
       setSession(session);
       sessionRef.current = session;
+      if (session) { signOutRef.current?.reset(); setSessionEndedNotice(false); }
       if (event === 'PASSWORD_RECOVERY') {
         window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/reset-password');
         showRoute('/reset-password', historyIndex.current, session);
@@ -290,11 +318,7 @@ export default function App() {
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    sessionStorage.setItem('resync_screen', 'home');
-    screenRef.current = 'home';
-    setScreen('home');
-    window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/');
+    await signOutRef.current?.run(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -333,6 +357,7 @@ export default function App() {
             <p>{resultError || (activeScanId && scanResult?.analysis_run_id !== activeScanId ? 'Loading report…' : scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.')}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>
           </div>)}
+      {screen === "login" && sessionEndedNotice && <div role="alert" className="bg-blue-50 p-4 text-center text-blue-900">Your session has ended. Please sign in again.</div>}
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
@@ -341,6 +366,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

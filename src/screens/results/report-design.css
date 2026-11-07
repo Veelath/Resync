@@ -60,3 +60,6 @@
 @keyframes rp-shine{to{transform:translateX(120%)}}
 @media (max-width:480px){.rp-hero{flex-direction:column;align-items:flex-start}.rp-header-row{padding:8px 14px}}
 @media (prefers-reduced-motion:reduce){.rp-score *,.rp-unlock *,.results-screen [role="tab"]::after,.results-screen [role="tabpanel"]{animation:none !important;transition:none !important}}
+
+/* Keep long manuscript titles within the viewport. */
+.results-screen > header h1 { overflow-wrap: anywhere; }
