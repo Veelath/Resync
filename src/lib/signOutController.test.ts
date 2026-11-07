@@ -11,3 +11,10 @@ test('concurrent logout and session failures share cleanup and do not redirect t
   c.reset(); const next = c.run(true); await Promise.resolve(); resolve(); await next;
   assert.deepEqual(finished, [false, true]);
 });
+
+test('a cleanup failure does not navigate and can be retried', async () => {
+  let attempts = 0; let navigated = false;
+  const c = createSignOutController(async () => { if (++attempts === 1) throw Error('failed'); }, () => { navigated = true; });
+  await assert.rejects(c.run(true)); assert.equal(navigated, false);
+  await c.run(true); assert.equal(navigated, true);
+});
