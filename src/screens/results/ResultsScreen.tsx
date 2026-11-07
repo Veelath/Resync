@@ -302,7 +302,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
             </div>
         </div>
         {locked && <div className="rp-unlock print:hidden">
-          <p className="rp-unlock-title">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'recommendation' : 'recommendations'} in the full report</p>
+          <p className="rp-unlock-title">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'suggestion' : 'suggestions'} in the full report</p>
           {unlockControl}
         </div>}
       </aside>
