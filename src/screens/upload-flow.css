@@ -244,7 +244,7 @@
 
 .uf-inp:focus-within { border-color: var(--uf-brand); box-shadow: 0 0 0 4px rgba(43, 37, 200, 0.12); }
 .uf-inp input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 15px; color: var(--uf-ink); }
-.uf-inp input::placeholder { color: #9a98b8; }
+.uf-inp input::placeholder { color: #615e7e; }
 
 .uf-side-step { display: flex; gap: 14px; padding: 16px 18px; align-items: flex-start; }
 .uf-side-step .uf-n { display: flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--uf-brand); color: #fff; font-size: 13px; font-weight: 800; }
