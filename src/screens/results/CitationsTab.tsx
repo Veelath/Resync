@@ -63,7 +63,9 @@ export function CitationsTab({ citationFilter, setCitationFilter, displayedCitat
                     </p>
                     <p className="text-xs text-gray-500 mb-3">
                       {citationFilter
-                        ? `No citations are marked "${CITE_BADGE[citationFilter].label}".`
+                        ? citationFilter === 'private'
+                          ? 'No private citations or citations without a link to check.'
+                          : 'No citations are marked Accessible (Public).'
                         : `No citations were detected in this manuscript (${scan?.citations_audited ?? 0} sources audited).`}
                     </p>
                     {citationFilter && (

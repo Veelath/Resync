@@ -1,4 +1,4 @@
-﻿import type { Citation } from '../../data/sampleReport';
+import type { Citation } from '../../data/sampleReport';
 import type { CitationReport } from '../../services/api';
 
 // Explicit no-link status takes precedence over older accessible flags.
@@ -196,4 +196,3 @@ export function normalizeManuscriptPreview(text: string) {
   // Google Docs plain-text exports can start with a Roman-numeral page marker.
   return text.replace(/^\uFEFF?(?:(?:[ \t]*\r?\n)*[ \t]*(?:\d+|[ivxlcdm]+)[ \t]*(?:\r?\n)+)/i, '');
 }
-
