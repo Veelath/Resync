@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
-import { saveSourceFile } from './lib/sourceFile';
+import { saveSourceFile, clearAllSourceFiles } from './lib/sourceFile';
 import { readRoute, routePath } from './lib/routes';
 import { getScanResult } from './services/api';
 import type { Session } from '@supabase/supabase-js';
@@ -290,6 +290,8 @@ export default function App() {
   }
 
   async function handleLogout() {
+    clearActiveScan();
+    await clearAllSourceFiles();
     await supabase.auth.signOut({ scope: 'local' });
     sessionStorage.setItem('resync_screen', 'home');
     screenRef.current = 'home';
