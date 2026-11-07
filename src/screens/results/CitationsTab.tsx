@@ -39,7 +39,7 @@ export function CitationsTab({ citationFilter, setCitationFilter, displayedCitat
                   })}
                 </div>
 
-                <p className="text-xs text-gray-500">Accessible (Public) = anyone can open the source · Inaccessible (Private) = private, or needs permission or a login.</p>
+                <p className="text-xs text-gray-500">Accessible (Public) = anyone can open the source · Inaccessible (Private) = private, needs permission or a login, or has no link to check.</p>
 
                 {citationFilter && (
                   <div className="flex items-center justify-between px-3.5 py-2 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs">
@@ -83,7 +83,7 @@ export function CitationsTab({ citationFilter, setCitationFilter, displayedCitat
                         <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-5 shrink-0">{ci + 1}</span>
                         {renderCitation(cite)}
                         <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
-                          {CITE_BADGE[cite.status].label}
+                          {cite.noLink ? 'No link to check' : CITE_BADGE[cite.status].label}
                         </span>
                       </div>
                     ))}

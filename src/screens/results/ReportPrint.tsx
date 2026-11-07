@@ -2,9 +2,9 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { RecommendationsList, isRateLimited, type RecommendationItem } from './RecommendationsList';
 
-export interface PrintCitation { id: string; ref: string; url: string; status: string }
+export interface PrintCitation { id: string; ref: string; url: string; status: string; noLink?: boolean }
 
-const STATUS_LABEL: Record<string, string> = { public: 'public', private: 'private or not reachable' };
+const STATUS_LABEL: Record<string, string> = { public: 'Accessible (Public)', private: 'Inaccessible (Private)' };
 const noop = () => undefined;
 
 /**
@@ -54,9 +54,9 @@ export function ReportPrint({ result, title, items, citations, locked, lockedOrd
       : !citations.length
         ? <p>No citations were found.</p>
         : <>
-            <p>{citations.length} checked: {Object.entries(counts).map(([status, count]) => `${count} ${STATUS_LABEL[status] ?? status}`).join(', ')}.</p>
+            <p>{citations.length} checked: {(['public', 'private'] as const).map(status => `${counts[status] ?? 0} ${STATUS_LABEL[status]}`).join(', ')}.</p>
             <ol style={{ paddingLeft: 18, fontSize: 12 }}>{citations.map(citation => <li key={citation.id} style={{ marginBottom: 3, breakInside: 'avoid' }}>
-              {citation.ref} <em style={{ color: '#4b5275' }}>({STATUS_LABEL[citation.status] ?? citation.status})</em>
+              {citation.ref} <em style={{ color: '#4b5275' }}>({citation.noLink ? 'No link to check' : STATUS_LABEL[citation.status] ?? citation.status})</em>
             </li>)}</ol>
           </>}
   </div>;

@@ -13,7 +13,7 @@ import { ResultsScorePanel } from './ResultsScorePanel';
 import { ReportPrint } from './ReportPrint';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
-import { citationAccess, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
+import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
 import { clearPlacementMarker, edgeSentence, markInDocx, markInSection, type Placement } from '../../lib/placement';
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
@@ -212,7 +212,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   }
   const citations: Citation[] = result.citations.map((citation, index) => ({
     id: `cit-${index}`, ref: citationText(citation.citation_raw_reference_text), url: citation.citation_primary_link || '',
-    status: citationAccess(citation), title: citationText(citation.citation_crossref_title),
+    status: citationAccess(citation), noLink: citationHasNoLink(citation), title: citationText(citation.citation_crossref_title),
     authors: citationText(citation.citation_authors_parsed), year: citation.citation_year_parsed,
   }));
   const displayedCitations = citationFilter ? citations.filter(citation => citation.status === citationFilter) : citations;
@@ -240,12 +240,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   }
 
   function renderCitation(citation: Citation) {
+    const linkRange = citationLinkRange(citation.ref, citation.url);
     return <div className="flex-1 min-w-0 citation-text text-[13px] text-gray-800 leading-relaxed">
       {citation.title && !citationContains(citation.ref, citation.title) && <p className="font-bold">{citation.title}</p>}
       {citation.authors && !citationContains(citation.ref, citation.authors) && <p>{citation.authors}</p>}
       {citation.year && !citationContains(citation.ref, citation.year) && <p>{citation.year}</p>}
-      <p>{citation.ref}</p>
-      {/^https?:\/\//i.test(citation.url) && <a href={citation.url} target="_blank" rel="noopener noreferrer" className="text-indigo-700 hover:underline">{citation.url}</a>}
+      <p>{linkRange ? <>{citation.ref.slice(0, linkRange[0])}<a href={citation.url} target="_blank" rel="noopener noreferrer" className="text-indigo-700 hover:underline break-all">{citation.ref.slice(...linkRange)}</a>{citation.ref.slice(linkRange[1])}</> : citation.ref}</p>
+      {!linkRange && /^https?:\/\//i.test(citation.url) && <a href={citation.url} target="_blank" rel="noopener noreferrer" className="text-indigo-700 hover:underline break-all">{citation.url}</a>}
     </div>;
   }
 

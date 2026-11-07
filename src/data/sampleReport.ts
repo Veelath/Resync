@@ -6,6 +6,7 @@ export interface Citation {
   ref: string;
   url: string;
   status: 'public' | 'private';
+  noLink?: boolean;
   title?: string;
   authors?: string;
   year?: number | string;

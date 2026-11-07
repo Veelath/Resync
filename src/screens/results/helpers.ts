@@ -1,9 +1,16 @@
-import type { Citation } from '../../data/sampleReport';
+﻿import type { Citation } from '../../data/sampleReport';
 import type { CitationReport } from '../../services/api';
 
-// A citation is public only when its source could be reached without permission. Everything else
-// (paywalled, login/bot-walled, broken or unresolvable, or no link at all) is treated as private.
+// Explicit no-link status takes precedence over older accessible flags.
+export function citationHasNoLink(c: CitationReport): boolean {
+  const status = (c.citation_status || '').trim();
+  if (/^no[\s_-]*link$/i.test(status)) return true;
+  if (status) return false;
+  return !c.citation_primary_link?.trim() && !/(?:https?:\/\/|www\.|\b[\w-]+\.[a-z]{2,}(?:\/|\b)|\b10\.\d{4,9}\/|\bdoi\s*:)/i.test(c.citation_raw_reference_text || '');
+}
+
 export function citationAccess(c: CitationReport): Citation["status"] {
+  if (citationHasNoLink(c)) return "private";
   if (c.citation_is_accessible === true) return "public";
   if (c.citation_is_accessible === false) return "private";
   const s = c.citation_status || "";
@@ -11,6 +18,17 @@ export function citationAccess(c: CitationReport): Citation["status"] {
     return "public";
   }
   return "private";
+}
+
+export function citationLinkRange(reference: string, url: string): [number, number] | null {
+  if (!/^https?:\/\//i.test(url)) return null;
+  const doi = url.match(/10\.\d{4,9}\/\S+/i)?.[0];
+  const candidates = [url, url.replace(/^https?:\/\//i, ''), doi].filter((value): value is string => !!value);
+  for (const candidate of candidates) {
+    const index = reference.toLowerCase().indexOf(candidate.toLowerCase());
+    if (index >= 0) return [index, index + candidate.length];
+  }
+  return null;
 }
 
 
@@ -27,7 +45,7 @@ export function citationText(value: string = ""): string {
 
 export const CITE_BADGE: Record<Citation["status"], { label: string; badge: string; row: string }> = {
   public:  { label: "Accessible (Public)",  badge: "bg-emerald-100 text-emerald-700", row: "border-emerald-200 bg-surface-success" },
-  private: { label: "Inaccessible (Private)", badge: "bg-red-100 text-red-700",       row: "border-rose-200 bg-surface-error" },
+  private: { label: "Inaccessible (Private)", badge: "bg-red-100 text-red-800",       row: "border-rose-200 bg-surface-error" },
 };
 
 
@@ -41,37 +59,37 @@ export const CITE_BADGE: Record<Citation["status"], { label: string; badge: stri
 
 
 
-// ─── Tokens ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// ─── Primitives ───────────────────────────────────────────────────────────────
-
-
+// â”€â”€â”€ Primitives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 
 
 
-// ─── Animated keyword ─────────────────────────────────────────────────────────
-
-// ─── Product preview card (hero visual) ──────────────────────────────────────
-
-// ─── Home ─────────────────────────────────────────────────────────────────────
-
-// ─── Research Types & Optional Templates ──────────────────────────────────────
 
 
+// â”€â”€â”€ Animated keyword â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// â”€â”€â”€ Product preview card (hero visual) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// â”€â”€â”€ Home â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// â”€â”€â”€ Research Types & Optional Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 
-// ─── Processing ───────────────────────────────────────────────────────────────
 
-// ─── Results ──────────────────────────────────────────────────────────────────
-// ─── Results ──────────────────────────────────────────────────────────────────
+
+// â”€â”€â”€ Processing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// â”€â”€â”€ Results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ Results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const SECTION_STATUS = {
-  Present: { icon: '✓', color: 'text-emerald-700' },
-  Stub: { icon: '⚠', color: 'text-amber-800' },
-  Unassessed: { icon: '—', color: 'text-gray-600' },
+  Present: { icon: 'âœ“', color: 'text-emerald-700' },
+  Stub: { icon: 'âš ', color: 'text-amber-800' },
+  Unassessed: { icon: 'â€”', color: 'text-gray-600' },
 };
 export const STRENGTH_THRESHOLD = 70;
 export const FAIR_THRESHOLD = 50;
@@ -178,3 +196,4 @@ export function normalizeManuscriptPreview(text: string) {
   // Google Docs plain-text exports can start with a Roman-numeral page marker.
   return text.replace(/^\uFEFF?(?:(?:[ \t]*\r?\n)*[ \t]*(?:\d+|[ivxlcdm]+)[ \t]*(?:\r?\n)+)/i, '');
 }
+
