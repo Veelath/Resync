@@ -1,3 +1,4 @@
+import { createRequestToken } from '../lib/requestToken';
 import { useState, useEffect, useRef, Fragment } from "react";
 import type React from 'react';
 import type { Screen, DisplayScan } from '../lib/appTypes';
@@ -133,6 +134,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
   const [drag, setDrag] = useState(false);
+  const sourceToken = useRef(createRequestToken());
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [link, setLink] = useState("");
@@ -180,6 +182,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     const url = link.trim();
     if (mode !== "link" || !session?.user || !googleLink(url)) { setLinkState("idle"); return; }
     let cancelled = false;
+    const current = sourceToken.current.current();
     setLinkState("loading");
     const timer = setTimeout(() => {
       let request = downloads.current.get(url);
@@ -188,8 +191,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         request.catch(() => downloads.current.delete(url));
         downloads.current.set(url, request);
       }
-      request.then(file => { if (!cancelled) { setLinkFile(file); setLinkState("ready"); } })
-        .catch(error => { if (!cancelled) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); } });
+      request.then(file => { if (!cancelled && current()) { setLinkFile(file); setLinkState("ready"); } })
+        .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); } });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -210,12 +213,13 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     const source = activeFile ?? (mode === "link" ? link.trim() : null);
     if (!source) { setOutline(null); return; }
     let cancelled = false;
+    const current = sourceToken.current.current();
     setOutlineLoading(true);
     setOutlineError(null);
     getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() })
-      .then(result => { if (!cancelled) setOutline(result); })
-      .catch(error => { if (!cancelled) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); } })
-      .finally(() => { if (!cancelled) setOutlineLoading(false); });
+      .then(result => { if (!cancelled && current()) setOutline(result); })
+      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); } })
+      .finally(() => { if (!cancelled && current()) setOutlineLoading(false); });
     return () => { cancelled = true; };
   }, [mode, activeFile, link, linkState]);
 
@@ -338,6 +342,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   function acceptManuscriptFile(file: File) {
+    sourceToken.current.invalidate();
+    const current = sourceToken.current.current();
     lastScanError = null;
     if (!isDocx(file.name)) {
       setUploadedFile(null);
@@ -347,6 +353,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setScanError(null);
     // Pictures are taken out first (they are not read), so a Word file full of images is judged by its size without them.
     slimDocx(file).then(slim => {
+      if (!current()) return;
       if (slim.size > MAX_MANUSCRIPT_BYTES) {
         setUploadedFile(null);
         setScanError("This file is larger than 25 MB even without its pictures. Please upload a smaller Word document.");
@@ -439,6 +446,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const fileLabel = mode === "file" ? uploadedFile?.name ?? "" : linkFile?.name ?? link.replace(/^https?:\/\//, "");
 
   function removeSource() {
+    sourceToken.current.invalidate();
     setUploadedFile(null); setLink(""); setLinkDraft(""); setLinkFile(null);
     setOutline(null); setOutlineError(null); setOutlineLoading(false); setDocInfo(null);
     setLinkProblem(null); setLinkState("idle"); setScanError(null); lastScanError = null;
