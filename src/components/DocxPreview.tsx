@@ -75,7 +75,7 @@ export function DocxPreview({ file, onFailed }: { file: File; onFailed: () => vo
   }, [status]);
 
   return <>
-    <style>{`.confirm-docx-scroll:focus-visible { outline: 3px solid #2b25c8; outline-offset: -3px; } .confirm-docx .docx-wrapper { background: transparent !important; padding: 4px 0 !important; } .confirm-docx section.docx { box-shadow: 0 1px 8px rgba(11,15,61,.14); margin-bottom: 14px !important; }`}</style>
+    <style>{`.confirm-docx-scroll:focus-visible { outline: 3px solid #2b25c8; outline-offset: -3px; } .confirm-docx .docx-wrapper { background: transparent !important; padding: 4px 0 !important; width: max-content; min-width: 100%; } .confirm-docx section.docx { box-shadow: 0 1px 8px rgba(11,15,61,.14); margin-bottom: 14px !important; }`}</style>
     <div ref={styles} />
     {status === 'loading' && <p role="status">Opening your document...</p>}
     <div role="region" aria-label="Document preview" tabIndex={0} className="confirm-docx-scroll" style={{ maxHeight: 320, overflow: 'auto' }}>
