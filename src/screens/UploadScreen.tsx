@@ -391,8 +391,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       }
 
       onScanStart?.(outline?.words ?? docInfo?.words ?? null);
-      onNavigate("processing");
-      navigatedToProcessing = true;
 
       // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
       const scanFile = mode === "file" ? uploadedFile : linkFile;
@@ -402,7 +400,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: onScanStarted });
+      }, { onStarted: id => { onScanStarted?.(id); navigatedToProcessing = true; onNavigate("processing"); } });
       if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);

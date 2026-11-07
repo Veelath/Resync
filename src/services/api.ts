@@ -1,3 +1,4 @@
+import { limitErrorMessage } from '../lib/limitErrorMessage';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -261,6 +262,11 @@ async function runManuscriptScan(
     );
   }
 
+  if (startResponse.status === 429 || startResponse.status === 413) {
+    let body: unknown;
+    try { body = await startResponse.json(); } catch { /* use the safe fallback */ }
+    throw new Error(limitErrorMessage(body));
+  }
   if (startResponse.status === 404) {
     throw new Error(
       `This backend does not expose POST /api/scans/start. Restart the FastAPI server so it picks up the async scan endpoints.`
