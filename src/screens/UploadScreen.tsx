@@ -444,6 +444,14 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const hasChapters = templateChapters.some(chapter => chapter.sections.length);
   const fileLabel = mode === "file" ? uploadedFile?.name ?? "" : linkFile?.name ?? link.replace(/^https?:\/\//, "");
 
+  function removeSource() {
+    setUploadedFile(null); setLink(""); setLinkDraft(""); setLinkFile(null);
+    setOutline(null); setOutlineError(null); setOutlineLoading(false); setDocInfo(null);
+    setLinkProblem(null); setLinkState("idle"); setScanError(null); lastScanError = null;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setStep(2);
+  }
+
   // Step 2 -> 3: make sure there is something to confirm.
   function continueToConfirm() {
     lastScanError = null;
@@ -743,6 +751,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       </div>
                     </div>
                   )}
+                  {(mode === "file" ? uploadedFile : link) && <button type="button" aria-label={mode === "file" ? "Remove this file" : "Remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">?</button>}
                 </div>
 
                 <div data-tour="run" className="uf-col" style={{ gap: 12 }}>
@@ -843,6 +852,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     </div>
                   </div>
 
+                  <button type="button" aria-label={mode === "file" ? "Remove this file" : "Remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">?</button>
                   {mode === "file" ? (
                     <>
                       <button type="button" className="uf-btn is-ghost is-sm" disabled={isScanning} onClick={() => replaceInputRef.current?.click()}>
