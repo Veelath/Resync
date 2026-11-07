@@ -885,6 +885,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                           </li>
                         ))}
                       </ol>
+                      <p className="text-sm text-slate-700">References and very short sections are not compared.</p>
                       {outline.structure !== "headings" && (
                         <p style={{ margin: 0, fontSize: 12.5, color: "#8a5a12" }}>
                           {outline.structure === "split" ? "No headings found, so the scan will read it in equal parts." : "Headings were found by their shape, not their name."}
