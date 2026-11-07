@@ -3,7 +3,7 @@ import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
 import { saveSourceFile, clearAllSourceFiles } from './lib/sourceFile';
 import { readRoute, routePath } from './lib/routes';
-import { getScanResult } from './services/api';
+import { getScanResult, subscribeSessionEnded, notifySessionEnded } from './services/api';
 import type { Session } from '@supabase/supabase-js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
@@ -52,6 +52,22 @@ export default function App() {
   notificationsRef.current = notifications;
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [sessionEndedNotice, setSessionEndedNotice] = useState(false);
+  const signingOutRef = useRef(false);
+
+  useEffect(() => subscribeSessionEnded(() => {
+    if (!sessionRef.current || signingOutRef.current) return;
+    signingOutRef.current = true;
+    sessionRef.current = null;
+    setSession(null);
+    clearActiveScan();
+    void clearAllSourceFiles();
+    void supabase.auth.signOut({ scope: 'local' });
+    setSessionEndedNotice(true);
+    screenRef.current = 'login';
+    setScreen('login');
+    window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/login');
+  }), []);
 
   function showRoute(pathname: string, index: number, currentSession = sessionRef.current) {
     const route = readRoute(pathname);
@@ -93,8 +109,14 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const wasSignedIn = Boolean(sessionRef.current);
+      if (!session && wasSignedIn && !signingOutRef.current) {
+        notifySessionEnded();
+        return;
+      }
       setSession(session);
       sessionRef.current = session;
+      if (session) { signingOutRef.current = false; setSessionEndedNotice(false); }
       if (event === 'PASSWORD_RECOVERY') {
         window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/reset-password');
         showRoute('/reset-password', historyIndex.current, session);
@@ -290,6 +312,7 @@ export default function App() {
   }
 
   async function handleLogout() {
+    signingOutRef.current = true;
     clearActiveScan();
     await clearAllSourceFiles();
     await supabase.auth.signOut({ scope: 'local' });
@@ -335,6 +358,7 @@ export default function App() {
             <p>{resultError || (activeScanId && scanResult?.analysis_run_id !== activeScanId ? 'Loading report…' : scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.')}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>
           </div>)}
+      {screen === "login" && sessionEndedNotice && <div role="alert" className="bg-blue-50 p-4 text-center text-blue-900">Your session has ended. Please sign in again.</div>}
       {screen === "login" && <LoginScreen onNavigate={navigate} onBack={goBack} onLoginSuccess={handleLoginSuccess} />}
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
