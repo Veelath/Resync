@@ -138,6 +138,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [drag, setDrag] = useState(false);
   const sourceToken = useRef(createRequestToken());
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedPreviewFile, setUploadedPreviewFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [link, setLink] = useState("");
   const [scanError, setScanError] = useState<string | null>(lastScanError);
@@ -174,12 +175,14 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   // A Google Doc is downloaded as a Word file the moment a valid link is in, so a link then behaves exactly like an upload:
   // same preview, same sections, same scan, same highlighted report.
   const [linkFile, setLinkFile] = useState<File | null>(null);
+  const [linkPreviewFile, setLinkPreviewFile] = useState<File | null>(null);
   const [linkState, setLinkState] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const [linkProblem, setLinkProblem] = useState<string | null>(null);
-  const downloads = useRef(new Map<string, Promise<File>>());
+  const downloads = useRef(new Map<string, Promise<{ original: File; slim: File }>>());
   const googleLink = (url: string) => /docs\.google\.com\/document\/d\/[\w-]{10,}/.test(url);
   useEffect(() => {
     setLinkFile(null);
+    setLinkPreviewFile(null);
     setLinkProblem(null);
     const url = link.trim();
     if (mode !== "link" || !session?.user || !googleLink(url)) { setLinkState("idle"); return; }
@@ -189,17 +192,18 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     const timer = setTimeout(() => {
       let request = downloads.current.get(url);
       if (!request) {
-        request = downloadGoogleDoc(url).then(slimDocx);
+        request = downloadGoogleDoc(url).then(async original => ({ original, slim: await slimDocx(original) }));
         request.catch(() => downloads.current.delete(url));
         downloads.current.set(url, request);
       }
-      request.then(file => { if (!cancelled && current()) { setLinkFile(file); setLinkState("ready"); } })
+      request.then(({ original, slim }) => { if (!cancelled && current()) { setLinkPreviewFile(original); setLinkFile(slim); setLinkState("ready"); } })
         .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); if (error instanceof ScanLimitError) setScanError(error.message); } });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
   // Whichever document is in play: the uploaded Word file, or the Google Doc downloaded as one.
   const activeFile = mode === "file" ? uploadedFile : linkFile;
+  const previewFile = activeFile ? (mode === "file" ? uploadedPreviewFile : linkPreviewFile) : null;
   const [previewFailed, setPreviewFailed] = useState<File | null>(null);
 
   // Seconds spent waiting for the document, so a slow Google reply does not look like a frozen page.
@@ -347,6 +351,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   function acceptManuscriptFile(file: File) {
     sourceToken.current.invalidate();
     const current = sourceToken.current.current();
+    setUploadedPreviewFile(null);
     lastScanError = null;
     if (!isDocx(file.name)) {
       setUploadedFile(null);
@@ -362,6 +367,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         setScanError("This file is larger than 25 MB even without its pictures. Please upload a smaller Word document.");
         return;
       }
+      setUploadedPreviewFile(file);
       setUploadedFile(slim);
     });
   }
@@ -449,7 +455,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
   function removeSource() {
     sourceToken.current.invalidate();
-    setUploadedFile(null); setLink(""); setLinkDraft(""); setLinkFile(null);
+    setUploadedFile(null); setUploadedPreviewFile(null); setLink(""); setLinkDraft(""); setLinkFile(null); setLinkPreviewFile(null);
     setOutline(null); setOutlineError(null); setOutlineLoading(false); setDocInfo(null);
     setLinkProblem(null); setLinkState("idle"); setScanError(null); lastScanError = null;
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -808,9 +814,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <div className="uf-eb is-muted">{mode === "file" ? "Your paper" : "Your Google Doc"}</div>
                 </div>
 
-                  <div className="uf-paper" style={{ height: "auto", minHeight: 320, maxHeight: 560, overflow: "auto" }} role="region" tabIndex={0} aria-label="Document preview">
-                    {canShowWordPreview(activeFile, previewFailed) && activeFile ? (
-                      <DocxPreview file={activeFile} onFailed={() => setPreviewFailed(activeFile)} />
+                  <div className="uf-paper" style={{ height: "auto", minHeight: 320, maxHeight: 560, overflow: canShowWordPreview(previewFile, previewFailed) ? "clip" : "auto" }} role={canShowWordPreview(previewFile, previewFailed) ? undefined : "region"} tabIndex={canShowWordPreview(previewFile, previewFailed) ? undefined : 0} aria-label={canShowWordPreview(previewFile, previewFailed) ? undefined : "Simplified document preview"}>
+                    {canShowWordPreview(previewFile, previewFailed) && previewFile ? (
+                      <DocxPreview file={previewFile} onFailed={() => setPreviewFailed(previewFile)} />
                     ) : linkState === "loading" || outlineLoading ? (
                       <div className="uf-loading" role="status" aria-live="polite">
                         <span className="uf-spinner" aria-hidden="true" />

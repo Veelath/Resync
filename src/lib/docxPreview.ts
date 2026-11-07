@@ -5,6 +5,23 @@ export const MAX_ELEMENTS = 1500;
 export const canShowWordPreview = (file: File | null, failed: File | null) => file !== null && file !== failed;
 export const nextBudget = (n: number) => Math.min(MAX_ELEMENTS, n * 2);
 
+export function createPreviewGuard(onTimeout: () => void, delay = 4000) {
+  let active = true;
+  const started = performance.now();
+  const timer = setTimeout(() => { if (active) { active = false; onTimeout(); } }, delay);
+  return {
+    finish: () => {
+      if (!active) return false;
+      active = false;
+      clearTimeout(timer);
+      if (performance.now() - started >= delay) { onTimeout(); return false; }
+      return true;
+    },
+    cancel: () => { active = false; clearTimeout(timer); },
+    isActive: () => active,
+  };
+}
+
 // XML is scanned in a worker; elements are never split, including tables.
 export function trimDocument(xml: string, limit: number) {
   const body = /<w:body(?:\s[^>]*)?>/.exec(xml);
@@ -40,7 +57,7 @@ export async function preparePreview(zip: JSZip, xml: string, budget: number) {
   const trimmed = trimDocument(xml, budget);
   const copy = new JSZip();
   let mediaBytes = 0;
-  const placeholder = Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,0,0,0,13,73,68,65,84,8,215,99,184,113,227,198,127,0,7,25,3,27,224,134,111,137,0,0,0,0,73,69,78,68,174,66,96,130]);
+  const placeholder = Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,2,0,0,0,144,119,83,222,0,0,0,12,73,68,65,84,120,156,99,56,112,224,0,0,4,132,2,65,225,141,175,39,0,0,0,0,73,69,78,68,174,66,96,130]);
   for (const [name, entry] of Object.entries(zip.files)) {
     if (entry.dir) continue;
     if (name === 'word/document.xml') { copy.file(name, trimmed.xml); continue; }

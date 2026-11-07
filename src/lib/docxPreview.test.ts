@@ -1,7 +1,7 @@
 ﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import JSZip from 'jszip';
-import { trimDocument, nextBudget, preparePreview, canShowWordPreview } from './docxPreview';
+import { trimDocument, nextBudget, preparePreview, canShowWordPreview, createPreviewGuard } from './docxPreview';
 
 const wrap = (body: string) => `<w:document xmlns:w="word"><w:body>${body}<w:sectPr><w:pgSz/></w:sectPr></w:body></w:document>`;
 const p = (text: string) => `<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`;
@@ -50,4 +50,34 @@ test('falls back only when the current file is unavailable or failed', () => {
   assert.equal(canShowWordPreview(null, null), false);
   assert.equal(canShowWordPreview(file, file), false);
   assert.equal(canShowWordPreview(file, other), true);
+});
+
+
+test('guard fires on timeout and ignores late completion', async () => {
+  let failures = 0;
+  const guard = createPreviewGuard(() => failures++, 10);
+  await new Promise(resolve => setTimeout(resolve, 30));
+  assert.equal(failures, 1);
+  assert.equal(guard.finish(), false);
+});
+
+test('guard cancellation prevents timeout and late completion', async () => {
+  let failures = 0;
+  const guard = createPreviewGuard(() => failures++, 10);
+  guard.cancel();
+  await new Promise(resolve => setTimeout(resolve, 30));
+  assert.equal(failures, 0);
+  assert.equal(guard.finish(), false);
+});
+
+test('aggregate media budget keeps only the first two megabytes', async () => {
+  const original = new JSZip();
+  const xml = wrap(p('text'));
+  original.file('word/document.xml', xml);
+  for (let i = 0; i < 8; i++) original.file(`word/media/${i}.png`, new Uint8Array(280000));
+  const zip = await JSZip.loadAsync(await original.generateAsync({ type: 'uint8array' }));
+  const result = await preparePreview(zip, xml, 150);
+  const view = await JSZip.loadAsync(result.bytes);
+  assert.equal((await view.file('word/media/6.png')!.async('uint8array')).length, 280000);
+  assert.ok((await view.file('word/media/7.png')!.async('uint8array')).length < 100);
 });
