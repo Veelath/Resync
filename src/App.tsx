@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase';
 import { saveSourceFile, clearAllSourceFiles } from './lib/sourceFile';
 import { readRoute, routePath } from './lib/routes';
 import { getScanResult, subscribeSessionEnded, notifySessionEnded } from './services/api';
+import { createSignOutController } from './lib/signOutController';
 import type { Session } from '@supabase/supabase-js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
@@ -53,20 +54,24 @@ export default function App() {
   const [isSampleMode, setIsSampleMode] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionEndedNotice, setSessionEndedNotice] = useState(false);
-  const signingOutRef = useRef(false);
-
-  useEffect(() => subscribeSessionEnded(() => {
-    if (!sessionRef.current || signingOutRef.current) return;
-    signingOutRef.current = true;
+  const signOutRef = useRef<ReturnType<typeof createSignOutController> | null>(null);
+  if (!signOutRef.current) signOutRef.current = createSignOutController(async () => {
+    clearActiveScan();
+    await clearAllSourceFiles();
+    await supabase.auth.signOut({ scope: 'local' });
+  }, ended => {
     sessionRef.current = null;
     setSession(null);
-    clearActiveScan();
-    void clearAllSourceFiles();
-    void supabase.auth.signOut({ scope: 'local' });
-    setSessionEndedNotice(true);
-    screenRef.current = 'login';
-    setScreen('login');
-    window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/login');
+    setSessionEndedNotice(ended);
+    const target = ended ? 'login' : 'home';
+    sessionStorage.setItem('resync_screen', target);
+    screenRef.current = target;
+    setScreen(target);
+    window.history.replaceState({ resync: { index: historyIndex.current } }, '', ended ? '/login' : '/');
+  });
+
+  useEffect(() => subscribeSessionEnded(() => {
+    if (sessionRef.current && !signOutRef.current?.busy()) void signOutRef.current?.run(true);
   }), []);
 
   function showRoute(pathname: string, index: number, currentSession = sessionRef.current) {
@@ -110,13 +115,13 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const wasSignedIn = Boolean(sessionRef.current);
-      if (!session && wasSignedIn && !signingOutRef.current) {
+      if (!session && wasSignedIn && !signOutRef.current?.busy()) {
         notifySessionEnded();
         return;
       }
       setSession(session);
       sessionRef.current = session;
-      if (session) { signingOutRef.current = false; setSessionEndedNotice(false); }
+      if (session) { signOutRef.current?.reset(); setSessionEndedNotice(false); }
       if (event === 'PASSWORD_RECOVERY') {
         window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/reset-password');
         showRoute('/reset-password', historyIndex.current, session);
@@ -312,14 +317,7 @@ export default function App() {
   }
 
   async function handleLogout() {
-    signingOutRef.current = true;
-    clearActiveScan();
-    await clearAllSourceFiles();
-    await supabase.auth.signOut({ scope: 'local' });
-    sessionStorage.setItem('resync_screen', 'home');
-    screenRef.current = 'home';
-    setScreen('home');
-    window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/');
+    await signOutRef.current?.run(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
