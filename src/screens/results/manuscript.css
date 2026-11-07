@@ -18,3 +18,9 @@
 @media (prefers-reduced-motion: reduce) {
   .manuscript-highlight.result-focus, .results-screen .result-focus { animation: none; }
 }
+.manuscript-table-region { max-width: 100%; overflow-x: auto; margin: 0 0 1.5em; }
+.manuscript-table-region:focus-visible { outline: 3px solid #1a1fcc; outline-offset: 3px; }
+.manuscript-table-region table { border-collapse: collapse; min-width: 100%; width: max-content; }
+.manuscript-table-region th, .manuscript-table-region td { border: 1px solid #1a1fcc; padding: .45em .65em; text-align: left; vertical-align: top; min-width: 5em; max-width: 20em; }
+.manuscript-table-region th { background: #eef0ff; font-weight: 600; }
+.manuscript-table-region tr:nth-child(even) { background: #eef0ff; }

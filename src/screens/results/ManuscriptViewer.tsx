@@ -1,8 +1,9 @@
 import type { V7ScanResponse } from '../../services/v7Result';
-import type React from 'react';
+import React from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { matchedRecommendations, recommendationRanges } from './highlights';
 import { inconsistencyTone, severityOf, severityTones } from './RecommendationsList';
+import { manuscriptBlocks, sectionHeading, hasTableHeader } from '../../lib/manuscriptBlocks';
 import './manuscript.css';
 
 export function AlignmentLegend() {
@@ -36,11 +37,10 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
       const text = section.text ?? '';
       const ranges = recommendationRanges(section, linked);
       return <section key={`${index}-${section.name}`} data-section-index={index} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
-        <PaperHeading name={section.name} />
+        <PaperHeading name={sectionHeading(section)} />
         {section.text != null && (() => {
-          const lines = [...text.matchAll(/[^\r\n]+/g)];
-          const renderLine = (match: RegExpMatchArray) => {
-            const start = match.index!;
+          const renderLine = (match: RegExpMatchArray, base = 0) => {
+            const start = base + match.index!;
             const end = start + match[0].length;
             const pieces: React.ReactNode[] = [];
             let cursor = start;
@@ -57,6 +57,8 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
             pieces.push(text.slice(cursor, end));
             return pieces;
           };
+          const renderParagraphs = (body: string, base: number) => {
+          const lines = [...body.matchAll(/[^\r\n]+/g)];
           const rendered: React.ReactNode[] = [];
           for (let line = 0; line < lines.length;) {
             let end = line;
@@ -64,14 +66,34 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
               !/[.!?;:]$/.test(lines[end][0].trim()) &&
               (end === line || lines[end].index! - (lines[end - 1].index! + lines[end - 1][0].length) <= 2)) end++;
             if (end - line >= 3) {
-              rendered.push(<div key={line} className="manuscript-compact-block">{lines.slice(line, end).map((item, offset) => <p key={line + offset}>{renderLine(item)}</p>)}</div>);
+              rendered.push(<div key={line} className="manuscript-compact-block">{lines.slice(line, end).map((item, offset) => <p key={line + offset}>{base < 0 ? item[0] : renderLine(item, base)}</p>)}</div>);
               line = end;
             } else {
-              rendered.push(<p key={line}>{renderLine(lines[line])}</p>);
+              rendered.push(<p key={line}>{base < 0 ? lines[line][0] : renderLine(lines[line], base)}</p>);
               line++;
             }
           }
           return rendered;
+          };
+          const blocks = manuscriptBlocks(section);
+          if (blocks === null) return renderParagraphs(text, 0);
+          let cursor = 0;
+          const locate = (value: string) => {
+            const at = value ? text.indexOf(value, cursor) : -1;
+            if (at >= 0) cursor = at + value.length;
+            return at;
+          };
+          return blocks.map((block, blockIndex) => {
+            if (block.type === 'paragraph') return <React.Fragment key={blockIndex}>{renderParagraphs(block.text, locate(block.text))}</React.Fragment>;
+            const header = hasTableHeader(block.rows);
+            return <div className="manuscript-table-region" role="region" tabIndex={0} aria-label={`Table in ${sectionHeading(section)}; scroll horizontally to see all columns`} key={blockIndex}>
+              <table><tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => {
+                const at = locate(cell);
+                const content = at < 0 ? cell : renderLine(Object.assign([cell], { index: 0 }) as unknown as RegExpMatchArray, at);
+                return header && rowIndex === 0 ? <th scope="col" key={cellIndex}>{content}</th> : <td key={cellIndex}>{content}</td>;
+              })}</tr>)}</tbody></table>
+            </div>;
+          });
         })()}
       </section>;
     })}
