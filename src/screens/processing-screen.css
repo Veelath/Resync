@@ -1,4 +1,4 @@
-﻿.processing-screen { position: relative; display: grid; place-items: center; width: 100%; min-height: 100vh; min-height: 100dvh; overflow-x: clip; padding: 24px 0; color: #0b0f3d; background: linear-gradient(180deg, #eef0ff 0%, #fafaff 46%, #fff 100%); }
+.processing-screen { position: relative; display: grid; place-items: center; width: 100%; min-height: 100vh; min-height: 100dvh; overflow-x: clip; padding: 24px 0; color: #0b0f3d; background: linear-gradient(180deg, #eef0ff 0%, #fafaff 46%, #fff 100%); }
 .processing-screen__texture, .processing-screen__glow { position: absolute; inset: 0; pointer-events: none; }
 .processing-screen__texture { background-image: radial-gradient(#1a1fcc20 1.2px, transparent 1.2px); background-size: 30px 30px; mask-image: radial-gradient(ellipse at 50% 32%, #000 0%, transparent 70%); }
 .processing-screen__glow { left: 50%; top: -300px; width: 1000px; height: 1000px; margin-left: -500px; border-radius: 50%; background: radial-gradient(circle, #1a1fcc24, transparent 65%); }
@@ -87,4 +87,3 @@
   .processing-screen__orbit { animation: none; }
   .processing-screen__notice { animation: none; }
 }
-
