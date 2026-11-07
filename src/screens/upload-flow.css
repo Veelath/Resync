@@ -172,7 +172,7 @@
   min-height: 190px;
   padding: 24px;
   text-align: center;
-  border: 2px dashed #c9c7ee;
+  border: 2px dashed #6b6890;
   border-radius: 20px;
   background: linear-gradient(180deg, #fafaff, #f3f2ff);
   cursor: pointer;
@@ -201,7 +201,7 @@
   gap: 14px;
   min-width: 0;
   padding: 16px 18px;
-  border: 1.5px solid #e1dffa;
+  border: 1.5px solid #6b6890;
   border-radius: 18px;
   background: #fff;
   font: inherit;
@@ -211,7 +211,7 @@
   transition: all 0.2s;
 }
 
-.uf-sc:hover { border-color: #b9b6ee; }
+.uf-sc:hover { border-color: var(--uf-brand); }
 .uf-sc.is-on { border-color: var(--uf-brand); background: #f4f3ff; box-shadow: 0 0 0 4px rgba(43, 37, 200, 0.1); }
 .uf-sc b { font-size: 15px; display: block; }
 
@@ -221,7 +221,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid #cfcde6;
+  border: 2px solid #6b6890;
 }
 
 .uf-sc.is-on .uf-rd { border-color: var(--uf-brand); }
@@ -237,7 +237,7 @@
   height: 50px;
   padding: 0 15px;
   background: #fff;
-  border: 1px solid #dad8f2;
+  border: 1px solid #6b6890;
   border-radius: 13px;
   color: #8b89ad;
 }
