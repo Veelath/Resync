@@ -115,7 +115,8 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const wasSignedIn = Boolean(sessionRef.current);
-      if (!session && wasSignedIn && !signOutRef.current?.busy()) {
+      if (!session && signOutRef.current?.busy()) return;
+      if (!session && wasSignedIn) {
         notifySessionEnded();
         return;
       }
