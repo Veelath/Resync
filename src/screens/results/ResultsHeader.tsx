@@ -31,7 +31,7 @@ export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle }: { 
           </div>
         )}
       </div>
-      <p className="px-4 pb-2 text-sm text-slate-700">References and very short sections are not compared.</p>
+
     </nav>
   );
 }
