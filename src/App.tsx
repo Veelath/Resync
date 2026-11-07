@@ -290,7 +290,7 @@ export default function App() {
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     sessionStorage.setItem('resync_screen', 'home');
     screenRef.current = 'home';
     setScreen('home');
@@ -341,6 +341,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
