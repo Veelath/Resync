@@ -77,8 +77,14 @@ export function DocxPreview({ file, onFailed }: { file: File; onFailed: () => vo
   return <>
     <style>{`.confirm-docx-scroll:focus-visible { outline: 3px solid #2b25c8; outline-offset: -3px; } .confirm-docx .docx-wrapper { background: transparent !important; padding: 4px 0 !important; width: max-content; min-width: 100%; } .confirm-docx section.docx { box-shadow: 0 1px 8px rgba(11,15,61,.14); margin-bottom: 14px !important; }`}</style>
     <div ref={styles} />
-    {status === 'loading' && <p role="status">Opening your document...</p>}
-    <div role="region" aria-label="Document preview" tabIndex={0} className="confirm-docx-scroll" style={{ maxHeight: 320, overflow: 'auto' }}>
+    {status === 'loading' && !hasContent && <div className="uf-loading" role="status" aria-live="polite">
+      <span className="uf-spinner" aria-hidden="true" />
+      <b>Reading your document</b>
+      <span className="uf-loading-step">Preparing your pages. Long papers take a little longer.</span>
+      <span className="uf-skeleton" aria-hidden="true"><i style={{ width: '92%' }} /><i style={{ width: '78%' }} /><i style={{ width: '86%' }} /><i style={{ width: '54%' }} /></span>
+    </div>}
+    {status === 'loading' && hasContent && <p role="status">Opening more pages...</p>}
+    <div role="region" aria-label="Document preview" tabIndex={0} className="confirm-docx-scroll" style={{ maxHeight: hasContent ? 320 : 0, overflow: 'auto' }}>
       <div className="confirm-docx" ref={host} style={{ zoom: scale, visibility: hasContent ? 'visible' : 'hidden' }} />
     </div>
     {hasContent && <>

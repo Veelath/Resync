@@ -4,11 +4,13 @@ export type DimensionKey = 'objectives_alignment' | 'methodology_fit' | 'numeric
 export type DimensionName = 'context_alignment' | 'operational_alignment' | 'evidence_consistency' | 'logical_support';
 export interface DimensionDeduction { order: number | null; section_a: string; section_b: string; severity: 'Critical' | 'Moderate' | 'Minor'; points: number }
 /** One failed check: a pair of sections that did not pass a category, because the AI review quoted a contradiction or because neighbors were only loosely linked (`rating` is the model's 0 to 1 rating). */
-export interface DimensionFailure { order: number | null; section_a: string; section_b: string; reason: 'contradiction' | 'loose_link'; severity: 'Critical' | 'Moderate' | 'Minor' | null; rating: number }
+export interface DimensionFailure { order: number | null; section_a: string; section_b: string; reason: 'contradiction' | 'loose_link'; severity: 'Critical' | 'Moderate' | 'Minor' | null; rating: number; /** Points this check earned out of 1, and which kind of check it was. Missing in older reports. */ credit?: number; kind?: 'flow' | 'cross' }
 /** `score` is the percentage of the category's checks that passed. Reports saved before checks were counted carry `baseline`/`penalty` instead of `items`/`passed`/`failures`. */
 /** Checks of one kind: how many there were and how many passed. */
-export interface CheckCount { items: number; passed: number }
-export type DimensionBreakdown = Record<DimensionName, { score: number | 'N/A'; items?: number; passed?: number; /** True when flow and chapter checks are weighed as two halves; with too few checks they are pooled. */ halves?: boolean; flow?: CheckCount; cross?: CheckCount; failures?: DimensionFailure[]; baseline?: number | null; penalty: number; issues?: number; pairs?: number; deductions?: DimensionDeduction[] }>;
+export interface CheckCount { items: number; passed: number; /** Points earned by these checks: 1 for a pass, partial credit for a failed one. Missing in older reports. */ credit?: number }
+/** Every check is worth one point. */
+export interface CheckPoints { perfect: number; partial: number; zero: number; earned: number; total: number }
+export type DimensionBreakdown = Record<DimensionName, { score: number | 'N/A'; items?: number; passed?: number; /** True when flow and chapter checks are weighed as two halves; with too few checks they are pooled. */ halves?: boolean; flow?: CheckCount; cross?: CheckCount; points?: CheckPoints; /** 'balanced' = flow and chapters each count half; otherwise only one kind of check existed. */ basis?: 'balanced' | 'flow_only' | 'chapters_only' | null; /** A kind of check had fewer than 3 checks, so one check moves this score a lot. */ limited?: boolean; /** Checks that rest on the model's rating alone because the AI review did not finish. */ estimated?: number; failures?: DimensionFailure[]; baseline?: number | null; penalty: number; issues?: number; pairs?: number; deductions?: DimensionDeduction[] }>;
 export type PairScores = Record<DimensionKey | 'overall_coherence', number | null>;
 
 export interface ManuscriptFlowPair {
@@ -97,7 +99,7 @@ export interface V7ScanResponse {
   inconsistencies_found: number;
   inconsistencies: V7Inconsistency[];
   recommendations: V7Recommendation[];
-  ai_synthesis: { summary: string | null; strongest_pair: PairPointer | null; weakest_pair: PairPointer | null; review_status?: { status: 'complete' | 'partial' | 'daily_limit'; unreviewed: number } };
+  ai_synthesis: { summary: string | null; strongest_pair: PairPointer | null; weakest_pair: PairPointer | null; review_status?: { status: 'complete' | 'partial' | 'daily_limit'; unreviewed: number; /** complete: every weak pair was AI-reviewed. degraded: some were not. incomplete: under half were, so the score is an ML-only estimate. Missing in older reports. */ analysis?: 'complete' | 'degraded' | 'incomplete'; basis?: 'ai_verified' | 'mixed' | 'ml_estimate'; reviewed?: number; needs_review?: number; whole_paper_check?: 'ran' | 'skipped'; unverified?: number } };
   citations_audited: number;
   citations: CitationReport[];
   score_breakdown: {

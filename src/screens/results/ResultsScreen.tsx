@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
-import { loadSourceFile } from '../../lib/sourceFile';
+import { loadSourceFile, saveSourceFile } from '../../lib/sourceFile';
 import type { HighlightSpec } from '../../lib/docxHighlight';
 import { DocxManuscript } from './DocxManuscript';
 import { fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
@@ -53,10 +53,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   // when a saved report is reopened; Google Docs links, old .doc files and sample reports use the text view instead.
   const [storedFile, setStoredFile] = useState<File | null>(null);
   const [docxFailed, setDocxFailed] = useState(false);
+  // A report opened where its Word file was never saved (another browser, another address) can be pointed at the original file once.
+  const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
   const scanId = result?.analysis_run_id;
   useEffect(() => {
     setDocxFailed(false);
+    setPickedFile(null);
     setDocxLinked(null);
     if (sourceFile || isSample || !scanId) { setStoredFile(null); return; }
     let cancelled = false;
@@ -73,7 +76,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
       .catch(() => { if (!cancelled) setSampleFile(null); });
     return () => { cancelled = true; };
   }, [isSample]);
-  const docxFile = docxFailed ? null : isSample ? sampleFile : [sourceFile, storedFile].find(file => file && /\.docx$/i.test(file.name)) ?? null;
+  const docxFile = docxFailed ? null : isSample ? sampleFile : [sourceFile, storedFile, pickedFile].find(file => file && /\.docx$/i.test(file.name)) ?? null;
 
   useEffect(() => {
     if (!isGoogleDoc) { setManuscriptText(null); setManuscriptLoading(false); return; }
@@ -124,7 +127,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   const displayTitle = isSample ? SAMPLE_REPORT.manuscript_title : usableTitle(result.manuscript_title)
     || usableTitle(extractDisplayTitle(manuscriptText))
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
-  const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
   const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
@@ -262,12 +264,16 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     </header>}
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
-        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[#e1dffa] bg-[#edecfb]/95 px-4 py-2.5 text-[13px] text-[#4c4a6b] backdrop-blur print:hidden">
-          <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#ddf7e8] px-3 text-[12.5px] font-extrabold text-[#12703f]"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>Analysis complete</span>
-          <span>Overall assessment <b className="font-extrabold text-[#0b0f3d]">{displayBand} coherence</b> · {issueCount} {issueCount === 1 ? 'finding' : 'findings'}{result.manuscript_sections?.length ? ` across ${result.manuscript_sections.length} sections` : ''}</span>
-          {issueCount > 0 && <span className="hidden font-semibold text-[#7d7b9e] 2xl:inline">Click a highlight to see the finding.</span>}
-          <span className="basis-full text-center text-slate-700">References and very short sections are not compared.</span>
-        </div>
+        {!docxFile && !isSample && scanId && <div className="flex flex-wrap items-center justify-center gap-3 border-b border-[#e1dffa] bg-[#fff8e6] px-4 py-2.5 text-[13px] text-[#6b4e00] print:hidden">
+          <span>{docxFailed ? 'Your Word file could not be drawn here.' : 'This browser does not have your Word file, so the text is shown without its original layout.'}</span>
+          <label className="cursor-pointer rounded-full bg-[#1a1fcc] px-3.5 py-1.5 text-[12.5px] font-extrabold text-white focus-within:outline-2 focus-within:outline-offset-2">Show my Word file
+            <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={event => {
+              const file = event.target.files?.[0]; event.target.value = '';
+              if (!file || !/\.docx$/i.test(file.name)) return;
+              setDocxFailed(false); setPickedFile(file); void saveSourceFile(scanId, file);
+            }} />
+          </label>
+        </div>}
         <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
           {docxFile ? <><DocxManuscript file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>

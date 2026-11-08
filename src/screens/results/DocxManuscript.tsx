@@ -8,7 +8,7 @@ const HOST_CSS = `
 .docx-host .docx-wrapper > section.docx { box-shadow: 0 1px 8px rgba(11, 15, 61, .14); margin-bottom: 14px !important; }
 .docx-host.docx-with-rail { display: flex; align-items: flex-start; }
 .docx-main { flex: 1; min-width: 0; }
-.docx-rail { position: sticky; top: 0; flex: none; align-self: flex-start; width: 92px; max-height: 100vh; overflow-y: auto; padding: 22px 0 28px; display: flex; flex-direction: column; align-items: center; gap: 24px; background: rgba(255, 255, 255, .6); border-right: 1px solid #e1dffa; margin-right: 8px; scrollbar-width: none; overscroll-behavior: contain; }
+.docx-rail { position: sticky; top: 0; flex: none; align-self: flex-start; width: 92px; max-height: 100vh; overflow-y: auto; padding: 22px 0 28px; display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(255, 255, 255, .6); border-right: 1px solid #e1dffa; margin-right: 8px; scrollbar-width: none; overscroll-behavior: contain; }
 .docx-rail::-webkit-scrollbar { display: none; }
 .docx-thumb { position: relative; flex: none; width: 56px; height: 74px; border-radius: 7px; background: #fff; border: 1.5px solid #dad8f2; padding: 11px 9px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; }
 .docx-thumb:hover { transform: translateY(-2px); }
@@ -21,20 +21,6 @@ const HOST_CSS = `
 .docx-host mark:hover { box-shadow: 0 0 0 2px rgba(26, 31, 204, .35); }
 .docx-host mark[data-selected] { box-shadow: 0 0 0 3px rgba(43, 37, 200, .35); }
 `;
-
-// Only the writing is compared, so tables, pictures and diagrams are removed. The text keeps Word's own formatting.
-function keepTextOnly(root: HTMLElement) {
-  const visual = 'table, img, svg, canvas, object, embed, video, audio';
-  // A paragraph that held only a picture would leave a blank gap behind, so it goes too.
-  root.querySelectorAll('p').forEach(paragraph => {
-    if (paragraph.querySelector(visual) && !paragraph.textContent?.trim()) paragraph.remove();
-  });
-  root.querySelectorAll(visual).forEach(element => element.remove());
-  // pages that were only a table or a figure
-  root.querySelectorAll('section.docx').forEach(page => {
-    if (!page.textContent?.trim()) page.remove();
-  });
-}
 
 /** The student's uploaded Word file, drawn as it looks in Word, with the recommended sentences highlighted. */
 export function DocxManuscript({ file, highlights, locked, secondSection, onLinked, onFailed }: {
@@ -72,7 +58,6 @@ export function DocxManuscript({ file, highlights, locked, secondSection, onLink
       renderFootnotes: true, renderEndnotes: true, useBase64URL: true,
     }).then(() => {
       if (cancelled) return;
-      keepTextOnly(rendered);
       if (locked) {
         const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
         const target = normalize(secondSection ?? '');
@@ -85,7 +70,6 @@ export function DocxManuscript({ file, highlights, locked, secondSection, onLink
         withheld.setStartBefore(heading);
         withheld.setEndAfter(rendered.lastChild);
         withheld.deleteContents();
-        keepTextOnly(rendered);
       }
       styleRef.current?.replaceChildren(...styles.childNodes);
       body.replaceChildren(...rendered.childNodes);
@@ -196,7 +180,7 @@ export function DocxManuscript({ file, highlights, locked, secondSection, onLink
     <div ref={styleRef} />
     {status === 'ready' && pageCount > 1 && <nav ref={railRef} className="docx-rail print:hidden" aria-label="Pages">
       {Array.from({ length: pageCount }, (_, index) => <button key={index} type="button" onClick={() => goToPage(index)} aria-label={`Go to page ${index + 1}`} aria-current={index === activePage ? 'page' : undefined} className={`docx-thumb ${index === activePage ? 'on' : ''}`}>
-        <span /><span /><span style={{ width: '60%' }} /><span /><em>{index + 1}</em>
+        <span /><span /><span style={{ width: '60%' }} /><span />
       </button>)}
     </nav>}
     <div ref={outerRef} className="docx-main">

@@ -4,6 +4,7 @@ import type React from 'react';
 import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
+import { saveSourceFile } from "../lib/sourceFile";
 import { executeManuscriptScan, ScanLimitError, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
 import './upload-motion.css';
 import './upload-flow.css';
@@ -409,14 +410,18 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
       // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
       const scanFile = mode === "file" ? uploadedFile : linkFile;
+      // The server gets the slimmed copy (pictures swapped for tiny placeholders, so the upload stays light), but the report shows
+      // the original file exactly as the student wrote it, pictures included.
+      const original = mode === "file" ? uploadedPreviewFile : linkPreviewFile;
+      const shownFile = original && original.size <= 50 * 1024 * 1024 ? original : scanFile;
       const result = await executeManuscriptScan({
         user_id: session.user.id,
         file: scanFile ?? undefined,
         doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: id => { onScanStart?.(outline?.words ?? docInfo?.words ?? null); onScanStarted?.(id); navigatedToProcessing = true; onNavigate("processing"); } });
-      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ?? null);
+      }, { onStarted: id => { if (shownFile) void saveSourceFile(id, shownFile); onScanStart?.(outline?.words ?? docInfo?.words ?? null); onScanStarted?.(id); navigatedToProcessing = true; onNavigate("processing"); } });
+      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, shownFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";

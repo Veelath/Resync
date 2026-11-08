@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import type { DimensionBreakdown, DimensionName } from '../../services/v7Result';
+import { BarLegend, HalfBar, formatPercent, formatPoints, groupName } from './ScoreExplainer';
 
-/** A category percentage with at most two decimals and no trailing zeros: 97.78, 100, 65.5. */
-export const formatPercent = (value: number) => String(Number(value.toFixed(2)));
+export { formatPercent, formatPoints };
 
 /**
- * The explanation shown when a score box is hovered or focused: how many of the category's checks passed, one dot per
- * check, and exactly which ones failed and why. It is drawn with fixed position so the scrolling side panel cannot clip it.
+ * The picture shown when a score box is hovered or focused: one little square per check (green = a full point, yellow = part of a
+ * point, red = none), then the sum. Clicking the box opens the full step-by-step story (ScoreExplainer). It is drawn with fixed
+ * position so the scrolling side panel cannot clip it.
  */
 export function PartTooltip({ label, description, color, name, entry, rect, clickable }: {
   label: string;
@@ -18,14 +19,13 @@ export function PartTooltip({ label, description, color, name, entry, rect, clic
   clickable: boolean;
 }) {
   const applicable = entry.score !== 'N/A';
-  const left = Math.min(Math.max(8, rect.left + rect.width / 2 - 144), window.innerWidth - 304);
+  const left = Math.min(Math.max(8, rect.left + rect.width / 2 - 160), window.innerWidth - 336);
   // Open on whichever side has more room and never taller than that room, scrolling inside if the explanation is long.
   const roomBelow = window.innerHeight - rect.bottom - 16;
   const roomAbove = rect.top - 16;
   const below = roomBelow >= 380 || roomBelow >= roomAbove;
   const position = below ? { top: rect.bottom + 8, maxHeight: roomBelow } : { bottom: window.innerHeight - rect.top + 8, maxHeight: roomAbove };
 
-  const SHOWN = 3;
   let body: ReactNode;
   if (!applicable) {
     body = <p className="mt-2">{name === 'evidence_consistency'
@@ -35,43 +35,49 @@ export function PartTooltip({ label, description, color, name, entry, rect, clic
     // A report saved before checks were counted.
     body = <p className="mt-2">This report was scored with an older method. Scan again to see how this score was made.</p>;
   } else {
-    const failures = entry.failures ?? [];
-    const halves = entry.halves ?? (!!entry.flow?.items && !!entry.cross?.items);   // flow and cross-chapter checks each count for half
+    const kinds = (['flow', 'cross'] as const).filter(kind => (entry[kind]?.items ?? 0) > 0);
+    const BASIS = {
+      flow: (n: number) => `The system found ${n} adjacent section connections in your manuscript.`,
+      cross: (n: number) => `The system evaluated ${n} critical far-apart pairs (e.g., Objectives vs. Conclusion).`,
+    };
+    const exact = kinds.every(kind => entry[kind]!.credit != null);
+    const pct = (kind: 'flow' | 'cross') => entry[kind]!.credit! / entry[kind]!.items * 100;
+    const total = kinds.reduce((sum, kind) => sum + entry[kind]!.items, 0);
     body = <>
-      {halves
-        ? <div className="mt-2.5 space-y-2">
-            {([["Flow between neighboring sections", entry.flow!], ["Chapters that should agree", entry.cross!]] as const).map(([title, count]) => <div key={title}>
-              <p className="flex items-baseline justify-between gap-2 text-[12.5px] font-semibold text-[#0b0f3d]"><span>{title}</span><span className="tabular-nums">{count.passed} out of {count.items} correct</span></p>
-              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-gray-200" role="img" aria-label={`${title}: ${count.passed} out of ${count.items} correct`}>
-                <div className="h-full rounded-full" style={{ width: `${count.passed / count.items * 100}%`, backgroundColor: color }} />
-              </div>
-            </div>)}
-            <p className="text-gray-500">Each counts for half of this score, so the many chapter checks cannot hide weak flow.</p>
-          </div>
-        : <>
-            <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-gray-200" role="img" aria-label={`${entry.passed} out of ${entry.items} correct`}>
-              <div className="h-full rounded-full" style={{ width: `${entry.passed / entry.items * 100}%`, backgroundColor: color }} />
-            </div>
-            <p className="mt-1.5 text-[13px] font-semibold text-[#0b0f3d]">{entry.passed} out of {entry.items} correct</p>
-            <p className="text-gray-500">{name === 'evidence_consistency' ? 'Counts the pairs of sections that both contain numbers.' : 'Counts each pair of sections in your paper once.'}</p>
-          </>}
-      {failures.length > 0
-        ? <div className="mt-2">
-            <p className="font-semibold text-[#0b0f3d]">Why not 100%?</p>
-            <ul className="mt-1 space-y-1.5">{failures.slice(0, SHOWN).map((item, index) => <li key={index} className="flex gap-1.5">
-              <span aria-hidden="true" className={`mt-1.5 size-1.5 shrink-0 rounded-full ${item.reason === 'contradiction' ? 'bg-rose-600' : 'bg-gray-400'}`} />
-              <span><b className="capitalize text-[#0b0f3d]">{item.section_a}</b> and <b className="capitalize text-[#0b0f3d]">{item.section_b}</b> {item.reason === 'contradiction'
-                ? `disagree${item.severity ? ` (${item.severity.toLowerCase()})` : ''}.`
-                : 'do not connect well.'}</span>
-            </li>)}</ul>
-            {failures.length > SHOWN && <p className="mt-1 text-gray-500">and {failures.length - SHOWN} more.</p>}
-          </div>
-        : <p className="mt-2 font-semibold text-emerald-700">Everything checked out here.</p>}
-      {clickable && <p className="mt-2 font-semibold text-[#1a1fcc]">Click the box to see the details.</p>}
+      <div className="mt-2"><BarLegend unknown={!exact} /></div>
+      <div className="mt-2 space-y-3">
+        {kinds.map(kind => {
+          const half = entry[kind]!;
+          const none = (entry.failures ?? []).filter(item => item.kind === kind && item.credit === 0).length;
+          return <div key={kind}>
+            <p className="text-[13px] font-bold text-[#0b0f3d]">{groupName(name, kind)}: {half.passed} out of {half.items}</p>
+            <div className="mt-1"><HalfBar name={name} entry={entry} kind={kind} slim /></div>
+            <p className="mt-1"><b>Basis:</b> {BASIS[kind](half.items)}</p>
+            <p><b>Result:</b> {half.passed} got full points. The rest got partial points.{none ? ` (${none} got none.)` : ''}</p>
+          </div>;
+        })}
+      </div>
+      <div className="mt-3 rounded-lg bg-gray-50 px-2.5 py-2">
+        <p className="font-bold text-[#0b0f3d]">How are these computed</p>
+        <p className="mt-1 tabular-nums">Total Checks = {kinds.map(kind => entry[kind]!.items).join(' + ')}{kinds.length > 1 ? ` = ${total}` : ''}</p>
+        {exact && kinds.map(kind => <p key={kind} className="tabular-nums">{groupName(name, kind)} = {formatPoints(entry[kind]!.credit!)} points ÷ {entry[kind]!.items} = {formatPercent(pct(kind))}%</p>)}
+        {kinds.length === 2
+          ? <p className="mt-1 font-bold tabular-nums text-[#0b0f3d]">{exact
+              ? `Category Score = (${formatPercent(pct('flow'))}% + ${formatPercent(pct('cross'))}%) ÷ 2 = ${formatPercent(entry.score as number)}%`
+              : `Category Score = (${groupName(name, 'flow')} % + ${groupName(name, 'cross')} %) ÷ 2 = ${formatPercent(entry.score as number)}%`}</p>
+          : <p className="mt-1 font-bold tabular-nums text-[#0b0f3d]">Category Score = {formatPercent(entry.score as number)}%</p>}
+        {kinds.length === 2 && <p className="text-gray-500">50/50 weighting: each group counts for half.</p>}
+        {!exact && <p className="text-amber-900">Older report: part-points were not saved. Scan again to see the exact numbers.</p>}
+      </div>
+      {(entry.limited || !!entry.estimated) && <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-amber-900">
+        {entry.limited ? 'A group has under 3 checks: one check moves the score a lot. ' : ''}
+        {!!entry.estimated && `${entry.estimated} ${entry.estimated === 1 ? 'check uses' : 'checks use'} the model rating only (AI review unfinished).`}
+      </p>}
+      <p className="mt-2 font-semibold text-[#1a1fcc]">Click the box for the step-by-step view.</p>
     </>;
   }
 
-  return <div role="tooltip" style={{ position: 'fixed', left, width: 288, ...position }} className="z-50 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3.5 text-xs leading-snug text-gray-700 shadow-xl">
+  return <div role="tooltip" style={{ position: 'fixed', left, width: 320, ...position }} className="z-50 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3.5 text-xs leading-snug text-gray-700 shadow-xl">
     <div className="flex items-baseline justify-between gap-2">
       <p className="text-sm font-bold text-[#0b0f3d]">{label}</p>
       {applicable && <p className="shrink-0 text-sm font-bold tabular-nums text-[#0b0f3d]">{formatPercent(entry.score as number)}%</p>}

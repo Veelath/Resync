@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import type { DimensionBreakdown, DimensionKey, DimensionName, V7ScanResponse } from '../../services/v7Result';
 import { categoryColors } from './categoryColors';
 import { PartTooltip, formatPercent } from './PartTooltip';
+import { ScoreExplainer, groupName } from './ScoreExplainer';
 import type { Placement } from '../../lib/placement';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
@@ -42,6 +43,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
   const overall = Math.round(result.overall_coherence_score);
   const band = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
   const [openName, setOpenName] = useState<DimensionName | null>(null);
+  const [explainName, setExplainName] = useState<DimensionName | null>(null);   // the step-by-step story of how one score was made
   // Hovering or focusing a box explains where its score came from. It is drawn with fixed position so the scrolling
   // side panel cannot clip it.
   const [tip, setTip] = useState<{ name: DimensionName; rect: DOMRect } | null>(null);
@@ -86,7 +88,9 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
       </div>
       {unreviewed > 0 && <p className="rp-note"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8v.01" /></svg><span>{isRateLimited(result.ai_synthesis?.review_status)
         ? provisionalMessage
-        : `This score is provisional: ${unreviewed} section ${unreviewed === 1 ? 'pair' : 'pairs'} could not be reviewed, so ${unreviewed === 1 ? 'it is' : 'they are'} not counted. Scan again to retry.`}</span></p>}
+        : result.ai_synthesis?.review_status?.analysis === 'incomplete'
+          ? `This score is only an estimate from the model's ratings: the AI review could not finish for ${unreviewed} section ${unreviewed === 1 ? 'pair' : 'pairs'}, so it is not AI-verified. Scan again to retry.`
+          : `This score is provisional: ${unreviewed} section ${unreviewed === 1 ? 'pair' : 'pairs'} could not be AI-reviewed, so ${unreviewed === 1 ? 'its check uses' : 'their checks use'} the model's rating alone. Scan again to retry.`}</span></p>}
       {!hideBreakdown && <div className="w-full space-y-2" aria-label="Score breakdown">
         <p className="rp-label">Breakdown of your total score</p>
         <div className="grid grid-cols-2 gap-2.5">
@@ -97,13 +101,19 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             const issues = entry.issues;
             const canOpen = applicable && !!issues && !!onShowInManuscript;
             const caption = applicable ? null : name === 'evidence_consistency' ? 'No figures to compare' : 'Not enough text';
-            const checks = applicable && entry.items != null && entry.passed != null
-              ? ((entry.halves ?? (entry.flow?.items && entry.cross?.items)) ? `Flow ${entry.flow.passed}/${entry.flow.items} · Chapters ${entry.cross.passed}/${entry.cross.items}` : `${entry.passed} out of ${entry.items} correct`) : null;
+            const countLines: string[] = applicable && entry.items != null && entry.passed != null
+              ? ((entry.flow?.items || entry.cross?.items)
+                ? [entry.flow?.items ? `${groupName(name, 'flow')} ${entry.flow.passed}/${entry.flow.items}` : '', entry.cross?.items ? `${groupName(name, 'cross')} ${entry.cross.passed}/${entry.cross.items}` : ''].filter(Boolean)
+                : [`${entry.passed}/${entry.items} checks`]) : [];
+            const checks = countLines.join(' · ');
+            const explainable = applicable && entry.items != null && entry.passed != null;
             const title = `${description} ${applicable ? `${formatPercent(value)} percent${checks ? `, ${checks}` : ''}.` : 'Not applicable.'}`;
             return <div key={name} tabIndex={0} onMouseEnter={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onFocus={event => setTip({ name, rect: event.currentTarget.getBoundingClientRect() })} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)}
-              className="rp-card min-w-0 outline-none" role="group" aria-label={`${label}: ${applicable ? `${formatPercent(value)} percent` : 'Not applicable'}. ${title}`}>
+              onClick={() => { if (explainable) { setTip(null); setExplainName(name); } }}
+              onKeyDown={event => { if (explainable && (event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) { event.preventDefault(); setTip(null); setExplainName(name); } }}
+              className={`rp-card min-w-0 outline-none ${explainable ? 'cursor-pointer' : ''}`} role={explainable ? 'button' : 'group'} aria-haspopup={explainable ? 'dialog' : undefined} aria-label={`${label}: ${applicable ? `${formatPercent(value)} percent` : 'Not applicable'}. ${title}${explainable ? ' Press Enter to see how this score was made.' : ''}`}>
               <div className="flex flex-col gap-1 text-xs text-gray-700">
-                <div className="flex items-center gap-2">
+                <div className="flex min-h-[2.5rem] items-center gap-2">
                   <span className={`mt-1 size-2 shrink-0 rounded-full ${applicable ? '' : 'bg-gray-300'}`} style={applicable ? { backgroundColor: color } : undefined} aria-hidden="true" />
                   <span className="min-w-0 leading-tight">{label}</span>
                 </div>
@@ -112,10 +122,10 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
               <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-valuetext={applicable ? `${formatPercent(value)} percent` : 'Not applicable'}>
                 <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: applicable ? color : undefined }} />
               </div>
-              {checks && <p className="mt-1.5 text-[11px] text-gray-500">{checks}</p>}
+              {countLines.length > 0 && <p className="mt-1.5 text-[11px] leading-snug text-gray-500">{countLines.map(line => <span key={line} className="block">{line}</span>)}</p>}
               {caption && <p className="mt-2 text-[11px] text-gray-500">{caption}</p>}
               {applicable && !!issues && (canOpen
-                ? <button type="button" onClick={() => setOpenName(name)} className="mt-2 text-left text-[11px] font-semibold leading-snug text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">{issues} {issues === 1 ? 'issue' : 'issues'} detected. Click to view.</button>
+                ? <button type="button" onClick={event => { event.stopPropagation(); setOpenName(name); }} className="mt-2 text-left text-[11px] font-semibold leading-snug text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">{issues} {issues === 1 ? 'issue' : 'issues'} detected. Click to view.</button>
                 : <p className="mt-2 text-[11px] text-gray-600">{issues} {issues === 1 ? 'issue' : 'issues'} detected.</p>)}
             </div>;
           })}
@@ -126,6 +136,10 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
         const entry = breakdown[tip.name];
         return <PartTooltip label={dimension.label} description={dimension.description} color={dimension.color} name={dimension.name} entry={entry} rect={tip.rect}
           clickable={entry.score !== 'N/A' && !!entry.issues && !!onShowInManuscript} />;
+      })()}
+      {explainName && (() => {
+        const dimension = DIMENSIONS.find(item => item.name === explainName)!;
+        return <ScoreExplainer name={dimension.name} label={dimension.label} description={dimension.description} color={dimension.color} entry={breakdown[explainName]} onClose={() => setExplainName(null)} />;
       })()}
       {open && onShowInManuscript && <div role="dialog" aria-modal="true" aria-label={`${open.label} issues`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenName(null)}>
         <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-4 shadow-xl" onClick={event => event.stopPropagation()}>

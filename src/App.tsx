@@ -268,7 +268,7 @@ export default function App() {
     return () => { cancelled = true; };
   }, [screen, isSampleMode, activeScanId, session, scanResult?.analysis_run_id]);
 
-  function handleScanCompleted(result?: { analysis_run_id?: string; rescan_unchanged?: boolean }) {
+  function handleScanCompleted(result?: { analysis_run_id?: string; rescan_unchanged?: boolean; manuscript_title?: string | null }) {
     if (scanSettledRef.current) return;
     scanSettledRef.current = true;
     setScanRunning(false);
@@ -277,9 +277,11 @@ export default function App() {
     const played = wantsSound ? playCompletionChime() : true;   // no sound wanted: nothing to be blocked
     setSoundBlocked(!played);
     const finishedId = result?.analysis_run_id;
-    if (notificationPrefsRef.current.alerts) showDesktopAlert(result?.rescan_unchanged ? "No changes detected" : "Your ReSync report is ready", result?.rescan_unchanged ? "Your manuscript is the same as your last scan." : "Your manuscript scan finished. Click to open the report.", () => { if (finishedId) navigate("results", false, finishedId); });
+    const docName = (result?.manuscript_title ?? '').trim();   // the report is named after the uploaded document
+    const scanOf = docName ? `Your scan of "${docName}"` : 'Your manuscript scan';
+    if (notificationPrefsRef.current.alerts) showDesktopAlert(result?.rescan_unchanged ? "No changes detected" : "Scan successful", result?.rescan_unchanged ? `${scanOf} is the same as your last scan.` : `${scanOf} is successful. Click to view your report.`, () => { if (finishedId) navigate("results", false, finishedId); });
     if (result?.rescan_unchanged) pushNotification("success", "No changes detected", "Your manuscript is the same as your last scan, so the report is unchanged.", result.analysis_run_id);
-    else pushNotification("success", "Scan complete", "Your coherence report is ready to review.", result?.analysis_run_id);
+    else pushNotification("success", "Scan complete", `${scanOf} is successful. View your report.`, result?.analysis_run_id);
   }
 
   function handleScanFailed(error: unknown, recovered = false) {
