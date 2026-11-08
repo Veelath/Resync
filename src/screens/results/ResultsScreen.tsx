@@ -24,7 +24,7 @@ import './report-design.css';
 
 type Tab = 'recommendations' | 'clear' | 'citations';
 
-export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean; sourceFile?: File | null }) {
+export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, onScanUpdated }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean; sourceFile?: File | null; onScanUpdated?: (scan: V7ScanResponse) => void }) {
   const [currentScan, setCurrentScan] = useState(scan);
   const manuscriptScroll = useRef<HTMLDivElement>(null);
   const result = isSample ? SAMPLE_REPORT : currentScan;
@@ -33,6 +33,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   const [balance, setBalance] = useState<number | null>(null);
   const [buyCredits, setBuyCredits] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const unlockPending = useRef(false);
+  const unlockedId = useRef<string | null>(null);
   const [unlockError, setUnlockError] = useState('');
   const [unlockedToast, setUnlockedToast] = useState(false);
   const [placementMessage, setPlacementMessage] = useState('');
@@ -94,23 +96,28 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   if (!result) return null;
 
   async function handleUnlock() {
-    if (!result || unlocking) return;
-    if (balance === 0) { setBuyCredits(true); return; }
+    if (!result || !locked || unlockPending.current) return;
+    if (balance === 0 && unlockedId.current !== result.analysis_run_id) { setBuyCredits(true); return; }
+    unlockPending.current = true;
     setUnlocking(true);
     setUnlockError('');
     try {
-      const response = await unlockScan(result.analysis_run_id);
-      setBalance(response.credits_remaining);
+      if (unlockedId.current !== result.analysis_run_id) {
+        const response = await unlockScan(result.analysis_run_id);
+        unlockedId.current = result.analysis_run_id;
+        setBalance(response.credits_remaining);
+      }
       const full = await getScanResult(result.analysis_run_id);
       if (full.result_version !== 'v7') throw new Error('The full report is not ready. Refresh and try again.');
       setCurrentScan(full as V7ScanResponse);
+      onScanUpdated?.(full as V7ScanResponse);
       setUnlockedToast(true);
       window.setTimeout(() => setUnlockedToast(false), 4000);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unlock failed. Try again.';
       setUnlockError(message);
       if (/not enough credits/i.test(message)) setBalance(0);
-    } finally { setUnlocking(false); }
+    } finally { unlockPending.current = false; setUnlocking(false); }
   }
 
   const unlockControl = <div className="space-y-2">
@@ -124,7 +131,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
   const displayTitle = isSample ? SAMPLE_REPORT.manuscript_title : usableTitle(result.manuscript_title)
     || usableTitle(extractDisplayTitle(manuscriptText))
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
-  const displayBand = result.score_breakdown.band.toLowerCase().replace(/^./, letter => letter.toUpperCase());
   const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
@@ -256,18 +262,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile }
     {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
     <ReportPrint result={result} title={displayTitle} items={recommendations} citations={citations} locked={locked} lockedOrders={lockedOrders} />
-    {/* The Word copy already starts with the paper's own title, so the heading would only repeat it. */}
-    {!docxFile && <header className="print:hidden mx-auto w-full max-w-[1480px] px-4 pt-8 pb-5 sm:px-6 lg:max-w-none lg:shrink-0 lg:px-5">
-      <h1 className="max-w-4xl text-[28px] font-semibold leading-tight text-[#0b0f3d] sm:text-4xl" style={{ fontFamily: 'Source Serif 4, Georgia, serif' }}>{displayTitle}</h1>
-    </header>}
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
-        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[#e1dffa] bg-[#edecfb]/95 px-4 py-2.5 text-[13px] text-[#4c4a6b] backdrop-blur print:hidden">
-          <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#ddf7e8] px-3 text-[12.5px] font-extrabold text-[#12703f]"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>Analysis complete</span>
-          <span>Overall assessment <b className="font-extrabold text-[#0b0f3d]">{displayBand} coherence</b> · {issueCount} {issueCount === 1 ? 'finding' : 'findings'}{result.manuscript_sections?.length ? ` across ${result.manuscript_sections.length} sections` : ''}</span>
-          {issueCount > 0 && <span className="hidden font-semibold text-[#7d7b9e] 2xl:inline">Click a highlight to see the finding.</span>}
-          <span className="basis-full text-center text-slate-700">References and very short sections are not compared.</span>
-        </div>
+        <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
         <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
           {docxFile ? <><DocxManuscript file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>

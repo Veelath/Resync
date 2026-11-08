@@ -352,7 +352,7 @@ export default function App() {
       {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={rememberActiveScan} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} />}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} outcome={scanOutcome} startedAt={scanStartedAt} words={scanWords} />}
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
-        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} />
+        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} onScanUpdated={setScanResult} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
             <p>{resultError || (activeScanId && scanResult?.analysis_run_id !== activeScanId ? 'Loading report…' : scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.')}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>

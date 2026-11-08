@@ -94,8 +94,6 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             const entry = breakdown[name];
             const applicable = entry.score !== 'N/A';
             const value = applicable ? entry.score as number : 0;
-            const issues = entry.issues;
-            const canOpen = applicable && !!issues && !!onShowInManuscript;
             const caption = applicable ? null : name === 'evidence_consistency' ? 'No figures to compare' : 'Not enough text';
             const checks = applicable && entry.items != null && entry.passed != null
               ? ((entry.halves ?? (entry.flow?.items && entry.cross?.items)) ? `Flow ${entry.flow.passed}/${entry.flow.items} · Chapters ${entry.cross.passed}/${entry.cross.items}` : `${entry.passed} out of ${entry.items} correct`) : null;
@@ -114,9 +112,6 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
               </div>
               {checks && <p className="mt-1.5 text-[11px] text-gray-500">{checks}</p>}
               {caption && <p className="mt-2 text-[11px] text-gray-500">{caption}</p>}
-              {applicable && !!issues && (canOpen
-                ? <button type="button" onClick={() => setOpenName(name)} className="mt-2 text-left text-[11px] font-semibold leading-snug text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">{issues} {issues === 1 ? 'issue' : 'issues'} detected. Click to view.</button>
-                : <p className="mt-2 text-[11px] text-gray-600">{issues} {issues === 1 ? 'issue' : 'issues'} detected.</p>)}
             </div>;
           })}
         </div>
@@ -125,7 +120,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
         const dimension = DIMENSIONS.find(item => item.name === tip.name)!;
         const entry = breakdown[tip.name];
         return <PartTooltip label={dimension.label} description={dimension.description} color={dimension.color} name={dimension.name} entry={entry} rect={tip.rect}
-          clickable={entry.score !== 'N/A' && !!entry.issues && !!onShowInManuscript} />;
+          clickable={false} />;
       })()}
       {open && onShowInManuscript && <div role="dialog" aria-modal="true" aria-label={`${open.label} issues`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenName(null)}>
         <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-4 shadow-xl" onClick={event => event.stopPropagation()}>
