@@ -55,7 +55,7 @@ function isHeadingFor(element: Element, name: string) {
  */
 export function markInDocx(root: HTMLElement, names: string[], index: number, placement: Placement, sentence?: string): HTMLElement | null {
   clearPlacementMarker();
-  const paragraphs = Array.from(root.querySelectorAll('p, h1, h2, h3, h4, h5, h6')).filter(hasText);
+  const paragraphs = Array.from(root.querySelectorAll('p, h1, h2, h3, h4, h5, h6')).filter(element => !element.closest('table') && hasText(element));
   const positions: (number | null)[] = [];
   let from = 0;
   for (const name of names) {

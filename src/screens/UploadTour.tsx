@@ -81,7 +81,7 @@ export function UploadTour({ open, onStepChange, onClose }: { open: boolean; onS
       <p>{stop.text}</p>
       <div className="tour-dots" aria-hidden="true">{stops.map((_, i) => <span key={i} className={i === index ? 'on' : ''} />)}</div>
       <div className="tour-actions">
-        {last ? <span className="tour-replay-hint">Replay anytime.</span> : <button type="button" className="tour-skip ut-small" onClick={close}>Skip tour</button>}
+        {!last && <button type="button" className="tour-skip ut-small" onClick={close}>Skip tour</button>}
         <div className="tour-buttons">
           {index > 0 && <button type="button" className="tour-back ut-small" onClick={() => setIndex(index - 1)}>Back</button>}
           <button type="button" className="tour-next ut-small" autoFocus onClick={() => last ? close() : setIndex(index + 1)}>{last ? 'Got it' : 'Next'}<ArrowRight size={16} aria-hidden="true" /></button>

@@ -283,15 +283,12 @@ async function runManuscriptScan(
     if (netErr?.name === 'AbortError' || signal?.aborted) {
       throw new Error('Scan was cancelled.');
     }
-    const errorMsg = netErr?.message || 'Network error';
-    throw new Error(
-      `Could not connect to FastAPI backend at ${API_BASE_URL}. (${errorMsg})`
-    );
+    throw new Error('Could not connect. Please check your connection and try again.');
   }
 
   if (startResponse.status === 404) {
     throw new Error(
-      `This backend does not expose POST /api/scans/start. Restart the FastAPI server so it picks up the async scan endpoints.`
+      'We could not start this scan. Please try again.'
     );
   }
   if (startResponse.status === 402) {

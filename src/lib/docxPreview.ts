@@ -55,12 +55,16 @@ export function trimDocument(xml: string, limit: number) {
 
 export async function preparePreview(zip: JSZip, xml: string, budget: number) {
   const trimmed = trimDocument(xml, budget);
+  return { bytes: await archiveDocument(zip, trimmed.xml), truncated: trimmed.truncated };
+}
+
+export async function archiveDocument(zip: JSZip, xml: string) {
   const copy = new JSZip();
   let mediaBytes = 0;
   const placeholder = Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,2,0,0,0,144,119,83,222,0,0,0,12,73,68,65,84,120,156,99,56,112,224,0,0,4,132,2,65,225,141,175,39,0,0,0,0,73,69,78,68,174,66,96,130]);
   for (const [name, entry] of Object.entries(zip.files)) {
     if (entry.dir) continue;
-    if (name === 'word/document.xml') { copy.file(name, trimmed.xml); continue; }
+    if (name === 'word/document.xml') { copy.file(name, xml); continue; }
     if (/^word\/media\//i.test(name)) {
       const size = (entry as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize;
       if (size == null || size > 300000 || mediaBytes + size > 2000000) { copy.file(name, placeholder); continue; }
@@ -69,6 +73,6 @@ export async function preparePreview(zip: JSZip, xml: string, budget: number) {
     // Passing the compressed entry avoids inflating unrelated parts or large images.
     copy.file(name, (entry as unknown as { _data: Uint8Array })._data);
   }
-  return { bytes: await copy.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' }), truncated: trimmed.truncated };
+  return copy.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
 }
 

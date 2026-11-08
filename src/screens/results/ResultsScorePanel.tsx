@@ -98,8 +98,6 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
             const entry = breakdown[name];
             const applicable = entry.score !== 'N/A';
             const value = applicable ? entry.score as number : 0;
-            const issues = entry.issues;
-            const canOpen = applicable && !!issues && !!onShowInManuscript;
             const caption = applicable ? null : name === 'evidence_consistency' ? 'No figures to compare' : 'Not enough text';
             const countLines: string[] = applicable && entry.items != null && entry.passed != null
               ? ((entry.flow?.items || entry.cross?.items)
@@ -124,9 +122,6 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
               </div>
               {countLines.length > 0 && <p className="mt-1.5 text-[11px] leading-snug text-gray-500">{countLines.map(line => <span key={line} className="block">{line}</span>)}</p>}
               {caption && <p className="mt-2 text-[11px] text-gray-500">{caption}</p>}
-              {applicable && !!issues && (canOpen
-                ? <button type="button" onClick={event => { event.stopPropagation(); setOpenName(name); }} className="mt-2 text-left text-[11px] font-semibold leading-snug text-[#1a1fcc] underline focus-visible:outline-2 focus-visible:outline-offset-2">{issues} {issues === 1 ? 'issue' : 'issues'} detected. Click to view.</button>
-                : <p className="mt-2 text-[11px] text-gray-600">{issues} {issues === 1 ? 'issue' : 'issues'} detected.</p>)}
             </div>;
           })}
         </div>
@@ -135,7 +130,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
         const dimension = DIMENSIONS.find(item => item.name === tip.name)!;
         const entry = breakdown[tip.name];
         return <PartTooltip label={dimension.label} description={dimension.description} color={dimension.color} name={dimension.name} entry={entry} rect={tip.rect}
-          clickable={entry.score !== 'N/A' && !!entry.issues && !!onShowInManuscript} />;
+          clickable={false} />;
       })()}
       {explainName && (() => {
         const dimension = DIMENSIONS.find(item => item.name === explainName)!;
