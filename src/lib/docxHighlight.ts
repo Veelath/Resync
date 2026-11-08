@@ -74,7 +74,8 @@ export function highlightSentences(root: HTMLElement, specs: HighlightSpec[]): S
     for (const entry of indexed) {
       const at = entry.text.indexOf(needle);
       if (at < 0) continue;
-      wrap(entry.map.slice(at, at + needle.length), spec, true);
+      try { wrap(entry.map.slice(at, at + needle.length), spec, true); }
+      catch { Object.assign(entry, indexParagraph(entry.paragraph)); break; }
       found.add(spec.id);
       done.add(needle);
       // wrapping split this paragraph's text nodes, so index it again before another sentence is searched in it

@@ -4,6 +4,7 @@ import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
 import { loadSourceFile, saveSourceFile } from '../../lib/sourceFile';
 import type { HighlightSpec } from '../../lib/docxHighlight';
+import { DocxPreview } from '../../components/DocxPreview';
 import { DocxManuscript, type DocxManuscriptHandle } from './DocxManuscript';
 import { fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
 import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
@@ -56,12 +57,14 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
   // when a saved report is reopened; Google Docs links, old .doc files and sample reports use the text view instead.
   const [storedFile, setStoredFile] = useState<File | null>(null);
   const [docxFailed, setDocxFailed] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
   // A report opened where its Word file was never saved (another browser, another address) can be pointed at the original file once.
   const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
   const scanId = result?.analysis_run_id;
   useEffect(() => {
     setDocxFailed(false);
+    setPreviewFailed(false);
     setPickedFile(null);
     setDocxLinked(null);
     if (sourceFile || isSample || !scanId) { setStoredFile(null); return; }
@@ -79,7 +82,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
       .catch(() => { if (!cancelled) setSampleFile(null); });
     return () => { cancelled = true; };
   }, [isSample]);
-  const docxFile = docxFailed ? null : isSample ? sampleFile : [sourceFile, storedFile, pickedFile].find(file => file && /\.docx$/i.test(file.name)) ?? null;
+  const sourceDocx = isSample ? sampleFile : [sourceFile, storedFile, pickedFile].find(file => file && /\.docx$/i.test(file.name)) ?? null;
+  const docxFile = docxFailed ? null : sourceDocx;
+  const fallbackFile = !locked && docxFailed && !previewFailed ? sourceDocx : null;
 
   useEffect(() => {
     if (!isGoogleDoc) { setManuscriptText(null); setManuscriptLoading(false); return; }
@@ -126,7 +131,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
 
   const unlockControl = <div className="space-y-2">
     <button type="button" onClick={handleUnlock} disabled={unlocking} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white hover:bg-[#1115a5] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
-      {unlocking ? 'Unlockingâ€¦' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
+      {unlocking ? 'Unlocking…' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
     </button>
     <p className="text-center text-xs text-[#4b5563]">{balance == null ? 'Checking credit balance' : `You have ${balance} ${balance === 1 ? 'credit' : 'credits'}`}</p>
     {unlockError && <p role="alert" className="text-sm text-[#9f1239]">{unlockError} {balance === 0 ? 'Buy credits to continue.' : 'Try again.'}</p>}
@@ -279,19 +284,19 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     <ReportPrint result={result} title={displayTitle} items={recommendations} citations={citations} locked={locked} lockedOrders={lockedOrders} />
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
-        {!docxFile && !isSample && scanId && <div className="flex flex-wrap items-center justify-center gap-3 border-b border-[#e1dffa] bg-[#fff8e6] px-4 py-2.5 text-[13px] text-[#6b4e00] print:hidden">
-          <span>{docxFailed ? 'Your Word file could not be drawn here.' : 'This browser does not have your Word file, so the text is shown without its original layout.'}</span>
-          <label className="cursor-pointer rounded-full bg-[#1a1fcc] px-3.5 py-1.5 text-[12.5px] font-extrabold text-white focus-within:outline-2 focus-within:outline-offset-2">Show my Word file
+        {!docxFile && !fallbackFile && !isSample && scanId && <div className="flex flex-wrap items-center justify-center gap-3 border-b border-[#e1dffa] bg-[#fff8e6] px-4 py-2.5 text-[13px] text-[#6b4e00] print:hidden">
+          <span>{docxFailed && locked ? 'Showing the available manuscript text.' : docxFailed ? 'Your Word file could not be drawn here.' : 'This browser does not have your Word file, so the text is shown without its original layout.'}</span>
+          {!(locked && docxFailed) && <label className="cursor-pointer rounded-full bg-[#1a1fcc] px-3.5 py-1.5 text-[12.5px] font-extrabold text-white focus-within:outline-2 focus-within:outline-offset-2">Show my Word file
             <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={event => {
               const file = event.target.files?.[0]; event.target.value = '';
               if (!file || !/\.docx$/i.test(file.name)) return;
-              setDocxFailed(false); setPickedFile(file); void saveSourceFile(scanId, file);
+              setDocxFailed(false); setPreviewFailed(false); setPickedFile(file); void saveSourceFile(scanId, file);
             }} />
-          </label>
+          </label>}
         </div>}
         <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
-        <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
-          {docxFile ? <><DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript textâ€¦</p> : (manuscriptText
+        <div className={docxFile || fallbackFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
+          {docxFile ? <><DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : fallbackFile ? <DocxPreview file={fallbackFile} onFailed={() => setPreviewFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />
             : <div className="mx-auto flex max-w-[420px] flex-col items-center py-8 text-center"><ResultsScorePanel result={result} large /><p className="mt-5 text-sm leading-6 text-[#4b5563]">This report was created before manuscripts were stored, so the text can't be shown. Re-scan to see your manuscript with highlights.</p></div>)}

@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../../lib/docxPreview';
+import { lockedHeadingIndex } from './lockedHeading';
 import { highlightSentences, type HighlightSpec } from '../../lib/docxHighlight';
 
 // Scoped overrides: keep Word's own page look (fonts, margins, tables, images) but fit it into the results pane.
@@ -72,6 +73,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     let cancelled = false;
     const body = bodyRef.current;
     if (!body) return;
+    const fail = (reason: string) => { if (!cancelled) { console.warn('Word view:', reason); callbacks.current.onFailed(); } };
     setStatus('loading');
     body.replaceChildren();
     setLoadedPages(0);
@@ -85,7 +87,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
         pending = new Promise<boolean>(resolve => {
           worker.onmessage = async event => {
             if (cancelled) { resolve(false); return; }
-            if (event.data.error) { callbacks.current.onFailed(); resolve(false); return; }
+            if (event.data.error) { fail('worker'); resolve(false); return; }
             try {
               const rendered = document.createElement('div');
               const styles = document.createElement('div');
@@ -97,7 +99,8 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
               if (cancelled) { resolve(false); return; }
               keepTextOnly(rendered, false);
               if (next === 0) styleRef.current?.replaceChildren(...styles.childNodes);
-              const ids = highlightSentences(rendered, callbacks.current.highlights.filter(spec => !found.has(spec.id)));
+              let ids = new Set<string>();
+              try { ids = highlightSentences(rendered, callbacks.current.highlights.filter(spec => !found.has(spec.id))); } catch { /* Keep the rendered pages. */ }
               ids.forEach(id => found.add(id));
               body.append(...rendered.childNodes);
               callbacks.current.onLinked(new Set(found));
@@ -105,9 +108,9 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
               setTruncated(next < total);
               setStatus('ready');
               resolve(true);
-            } catch { callbacks.current.onFailed(); resolve(false); }
+            } catch { fail('render'); resolve(false); }
           };
-          worker.onerror = () => { if (!cancelled) callbacks.current.onFailed(); resolve(false); };
+          worker.onerror = () => { fail('worker'); resolve(false); };
           worker.postMessage({ file: next === 0 ? file : undefined, index: next });
         }).finally(() => { pending = null; });
         return pending;
@@ -120,11 +123,11 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     const rendered = document.createElement('div');
     const styles = document.createElement('div');
     const worker = new Worker(new URL('../../lib/docxPreview.worker.ts', import.meta.url), { type: 'module' });
-    const guard = createPreviewGuard(() => { worker.terminate(); if (!cancelled) callbacks.current.onFailed(); });
-    worker.onerror = () => { guard.cancel(); worker.terminate(); if (!cancelled) callbacks.current.onFailed(); };
+    const guard = createPreviewGuard(() => { worker.terminate(); fail('timeout'); });
+    worker.onerror = () => { guard.cancel(); worker.terminate(); fail('worker'); };
     worker.onmessage = async event => {
       if (cancelled || !guard.isActive()) return;
-      if (event.data.error) { guard.cancel(); worker.terminate(); callbacks.current.onFailed(); return; }
+      if (event.data.error) { guard.cancel(); worker.terminate(); fail('worker'); return; }
       try {
         await renderAsync(event.data.bytes, rendered, styles, {
           className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
@@ -134,15 +137,15 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       if (cancelled || !guard.finish()) return;
       worker.terminate();
       setTruncated(event.data.truncated);
+      if (locked && [...rendered.querySelectorAll('table p, table h1, table h2, table h3, table h4, table h5, table h6')].some(element =>
+        lockedHeadingIndex([element.textContent ?? ''], secondSection ?? '') !== -1
+      )) { fail('locked-heading'); return; }
       keepTextOnly(rendered, locked);
       if (locked) {
-        const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
-        const target = normalize(secondSection ?? '');
-        const heading = target && [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].find(element => {
-          const text = normalize(element.textContent ?? '');
-          return text === target || (text.endsWith(` ${target}`) && /^chapter\s+(?:\d+|[ivxlcdm]+)\b/.test(text));
-        });
-        if (!heading || !rendered.lastChild) { callbacks.current.onFailed(); return; }
+        const paragraphs = [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table'));
+        const index = lockedHeadingIndex(paragraphs.map(element => element.textContent ?? ''), secondSection ?? '');
+        const heading = paragraphs[index];
+        if (!heading || !rendered.lastChild) { fail('locked-heading'); return; }
         const withheld = document.createRange();
         withheld.setStartBefore(heading);
         withheld.setEndAfter(rendered.lastChild);
@@ -152,13 +155,12 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       styleRef.current?.replaceChildren(...styles.childNodes);
       body.replaceChildren(...rendered.childNodes);
       const specs = callbacks.current.highlights;
-      callbacks.current.onLinked(highlightSentences(body, specs));
+      try { callbacks.current.onLinked(highlightSentences(body, specs)); } catch { /* Keep the rendered pages. */ }
       setActivePage(0);
       setStatus('ready');
-      } catch (error) {
+      } catch {
         guard.cancel(); worker.terminate();
-        console.error('Could not draw the uploaded document', error);
-        if (!cancelled) callbacks.current.onFailed();
+        fail('render');
       }
     };
     worker.postMessage({ file, budget });

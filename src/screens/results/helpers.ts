@@ -89,7 +89,7 @@ export const CITE_BADGE: Record<Citation["status"], { label: string; badge: stri
 export const SECTION_STATUS = {
   Present: { icon: 'âœ“', color: 'text-emerald-700' },
   Stub: { icon: 'âš ', color: 'text-amber-800' },
-  Unassessed: { icon: 'â€”', color: 'text-gray-600' },
+  Unassessed: { icon: '—', color: 'text-gray-600' },
 };
 export const STRENGTH_THRESHOLD = 70;
 export const FAIR_THRESHOLD = 50;
