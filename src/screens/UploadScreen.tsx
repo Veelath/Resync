@@ -413,6 +413,10 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       const scanFile = mode === "file" ? uploadedFile : linkFile;
       onScanStart?.(outline?.words ?? docInfo?.words ?? null);
       onNavigate("processing");
+      await new Promise<void>(resolve => {
+        const fallback = setTimeout(resolve, 100);
+        requestAnimationFrame(() => requestAnimationFrame(() => { clearTimeout(fallback); setTimeout(resolve, 0); }));
+      });
       const result = await executeManuscriptScan({
         user_id: session.user.id,
         file: scanFile ?? undefined,
@@ -476,6 +480,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     if (!linkProblem && !outlineError) setScanError(null);
     setStep(3);
   }
+
+  if (isScanning) return <div role="status">Sending your manuscript...</div>;
 
   return (
     <div className="uf upload-motion" style={{ ["--um-brand" as string]: B }}>
