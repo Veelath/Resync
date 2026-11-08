@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../../lib/docxPreview';
 import { highlightSentences, type HighlightSpec } from '../../lib/docxHighlight';
@@ -32,26 +32,28 @@ function keepTextOnly(root: HTMLElement, locked: boolean) {
     if (paragraph.querySelector(visual) && !paragraph.textContent?.trim()) paragraph.remove();
   });
   root.querySelectorAll(visual).forEach(element => element.remove());
+  root.querySelectorAll('table').forEach(table => { table.tabIndex = 0; table.setAttribute('aria-label', 'Table; scroll horizontally to see all columns'); });
   // pages that were only a table or a figure
   root.querySelectorAll('section.docx').forEach(page => {
     if (!page.textContent?.trim()) page.remove();
   });
 }
 
+export interface DocxManuscriptHandle { loadNext: () => Promise<boolean> }
+
 /** The student's uploaded Word file, drawn as it looks in Word, with the recommended sentences highlighted. */
-export function DocxManuscript({ file, highlights, locked, secondSection, onLinked, onFailed }: {
-  file: File;
-  highlights: HighlightSpec[];
-  locked: boolean;
-  secondSection?: string;
-  onLinked: (ids: Set<string>) => void;
-  onFailed: () => void;
-}) {
+export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
+  file: File; highlights: HighlightSpec[]; locked: boolean; secondSection?: string;
+  onLinked: (ids: Set<string>) => void; onFailed: () => void;
+}>(function DocxManuscript({ file, highlights, locked, secondSection, onLinked, onFailed }, ref) {
   const outerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLElement>(null);
+  const loadNextRef = useRef<() => Promise<boolean>>(async () => false);
+  useImperativeHandle(ref, () => ({ loadNext: () => loadNextRef.current() }), []);
   const [budget, setBudget] = useState(INITIAL_ELEMENTS);
+  const [loadedPages, setLoadedPages] = useState(0);
   const [truncated, setTruncated] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');
   const [scale, setScale] = useState(1);
@@ -68,6 +70,49 @@ export function DocxManuscript({ file, highlights, locked, secondSection, onLink
     if (!body) return;
     setStatus('loading');
     body.replaceChildren();
+    setLoadedPages(0);
+    if (!locked) {
+      const worker = new Worker(new URL('../../lib/docxPages.worker.ts', import.meta.url), { type: 'module' });
+      let next = 0, total = 1, pending: Promise<boolean> | null = null;
+      const found = new Set<string>();
+      const loadNext = (): Promise<boolean> => {
+        if (cancelled || next >= total) return Promise.resolve(false);
+        if (pending) return pending;
+        pending = new Promise<boolean>(resolve => {
+          worker.onmessage = async event => {
+            if (cancelled) { resolve(false); return; }
+            if (event.data.error) { callbacks.current.onFailed(); resolve(false); return; }
+            try {
+              const rendered = document.createElement('div');
+              const styles = document.createElement('div');
+              await renderAsync(event.data.bytes, rendered, styles, {
+                className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
+                breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
+                renderFootnotes: true, renderEndnotes: true, useBase64URL: true,
+              });
+              if (cancelled) { resolve(false); return; }
+              keepTextOnly(rendered, false);
+              if (next === 0) styleRef.current?.replaceChildren(...styles.childNodes);
+              const ids = highlightSentences(rendered, callbacks.current.highlights.filter(spec => !found.has(spec.id)));
+              ids.forEach(id => found.add(id));
+              body.append(...rendered.childNodes);
+              callbacks.current.onLinked(new Set(found));
+              next++; total = event.data.total; setLoadedPages(next);
+              setTruncated(next < total);
+              setStatus('ready');
+              resolve(true);
+            } catch { callbacks.current.onFailed(); resolve(false); }
+          };
+          worker.onerror = () => { if (!cancelled) callbacks.current.onFailed(); resolve(false); };
+          worker.postMessage({ file: next === 0 ? file : undefined, index: next });
+        }).finally(() => { pending = null; });
+        return pending;
+      };
+      loadNextRef.current = loadNext;
+      void loadNext();
+      return () => { cancelled = true; loadNextRef.current = async () => false; worker.terminate(); };
+    }
+    loadNextRef.current = async () => false;
     const rendered = document.createElement('div');
     const styles = document.createElement('div');
     const worker = new Worker(new URL('../../lib/docxPreview.worker.ts', import.meta.url), { type: 'module' });
@@ -146,7 +191,7 @@ export function DocxManuscript({ file, highlights, locked, secondSection, onLink
     if (status !== 'ready') return;
     const metrics = pageMetrics();
     if (metrics) setPageCount(Math.max(1, Math.round(metrics.height / metrics.step)));
-  }, [status, scale]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, scale, loadedPages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // On wide screens the manuscript pane scrolls by itself; on narrow ones the whole page does. Find whichever moves now.
   const scrollerOf = (): HTMLElement | null => {
@@ -218,9 +263,8 @@ export function DocxManuscript({ file, highlights, locked, secondSection, onLink
     <div ref={outerRef} className="docx-main">
       {status === 'loading' && <p className="py-6 text-center text-sm text-gray-500" role="status">Opening your manuscript as you uploaded it…</p>}
       <div ref={bodyRef} style={{ zoom: scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
-      {status === 'ready' && truncated && budget < MAX_ELEMENTS && <button type="button" onClick={() => setBudget(nextBudget(budget))}>Show more</button>}
-      {/* shortcut: very long documents stop at the preview limit, upgrade to paged rendering for the full document. */}
-      {status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>Only the first pages are shown.</p>}
+      {status === 'ready' && truncated && (locked ? budget < MAX_ELEMENTS : true) && <button type="button" className="uf-btn is-ghost is-sm" onClick={() => locked ? setBudget(nextBudget(budget)) : void loadNextRef.current()}>Show more</button>}
+      {locked && status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>Only the first pages are shown.</p>}
     </div>
   </div>;
-}
+});
