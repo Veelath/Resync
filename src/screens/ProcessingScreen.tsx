@@ -24,16 +24,6 @@ export function ProcessingScreen({ onNavigate, outcome, startedAt, words, sendin
   const active = sending ? { label: 'Sending your manuscript', detail: 'Please keep this page open while your manuscript is sent.' } : queued ? { label: 'Waiting in line', detail: queueText(status!.queuePosition!, status!.estimatedWaitSeconds) } : { label: 'Your scan is in progress', detail: 'We will let you know when your report is ready.' };
   const info = sending ? null : outcome?.kind === 'info' ? outcome.message : status?.info;
 
-  if (sending) return <main className="processing-screen">
-    <div className="processing-screen__content">
-      <div className="processing-screen__logo"><Logo className="processing-screen__logo-image" /></div>
-      <h1>Sending your manuscript</h1>
-      <section className="processing-screen__card" role="status">
-        <div className="processing-screen__active-step"><div className="processing-screen__step-copy"><strong>Sending your manuscript</strong><span>Please keep this page open while your manuscript is sent.</span></div><span className="processing-screen__spinner" aria-hidden="true" /></div>
-      </section>
-    </div>
-  </main>;
-
   return <main className="processing-screen">
     <div className="processing-screen__texture" aria-hidden="true" /><div className="processing-screen__glow" aria-hidden="true" />
     <div className="processing-screen__content">

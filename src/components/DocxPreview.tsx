@@ -3,7 +3,7 @@ import { renderAsync } from 'docx-preview';
 import { createRequestToken } from '../lib/requestToken';
 import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../lib/docxPreview';
 
-export function DocxPreview({ file, onFailed }: { file: File; onFailed: () => void }) {
+export function DocxPreview({ file, onFailed, autoLoad = false }: { file: File; onFailed: () => void; autoLoad?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const styles = useRef<HTMLDivElement>(null);
   const worker = useRef<Worker | null>(null);
@@ -54,13 +54,14 @@ export function DocxPreview({ file, onFailed }: { file: File; onFailed: () => vo
         setHasContent(true);
         setTruncated(event.data.truncated);
         setStatus('ready');
+        if (autoLoad && event.data.truncated && budget < MAX_ELEMENTS) setTimeout(() => { if (current()) setBudget(nextBudget(budget)); }, 0);
       } catch { guard.cancel(); fail(); }
     };
     instance.onerror = () => { guard.cancel(); fail(); };
     instance.postMessage({ file: loaded.current ? undefined : file, budget });
     loaded.current = true;
     return () => { guard.cancel(); token.current.invalidate(); };
-  }, [file, budget]);
+  }, [file, budget, autoLoad]);
 
   useEffect(() => {
     const outer = host.current?.parentElement;
@@ -89,7 +90,8 @@ export function DocxPreview({ file, onFailed }: { file: File; onFailed: () => vo
     </div>
     {hasContent && <>
       <p style={{ color: '#334155', fontSize: 14 }}>{truncated ? 'Showing the first pages of your document. The scan reads all of it.' : 'Your whole document is shown.'}</p>
-      {truncated && budget < MAX_ELEMENTS && <button type="button" className="uf-btn is-ghost is-sm" disabled={status === 'loading'} onClick={() => { setStatus('loading'); setBudget(nextBudget(budget)); }}>Show more</button>}
+      {autoLoad && truncated && budget >= MAX_ELEMENTS && <p>The rest cannot be shown here.</p>}
+      {!autoLoad && truncated && budget < MAX_ELEMENTS && <button type="button" className="uf-btn is-ghost is-sm" disabled={status === 'loading'} onClick={() => { setStatus('loading'); setBudget(nextBudget(budget)); }}>Show more</button>}
     </>}
   </>;
 }

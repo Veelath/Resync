@@ -77,48 +77,6 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     setStatus('loading');
     body.replaceChildren();
     setLoadedPages(0);
-    if (!locked) {
-      const worker = new Worker(new URL('../../lib/docxPages.worker.ts', import.meta.url), { type: 'module' });
-      let next = 0, total = 1, pending: Promise<boolean> | null = null;
-      const found = new Set<string>();
-      const loadNext = (): Promise<boolean> => {
-        if (cancelled || next >= total) return Promise.resolve(false);
-        if (pending) return pending;
-        pending = new Promise<boolean>(resolve => {
-          worker.onmessage = async event => {
-            if (cancelled) { resolve(false); return; }
-            if (event.data.error) { fail('worker'); resolve(false); return; }
-            try {
-              const rendered = document.createElement('div');
-              const styles = document.createElement('div');
-              await renderAsync(event.data.bytes, rendered, styles, {
-                className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
-                breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
-                renderFootnotes: true, renderEndnotes: true, useBase64URL: true,
-              });
-              if (cancelled) { resolve(false); return; }
-              keepTextOnly(rendered, false);
-              if (next === 0) styleRef.current?.replaceChildren(...styles.childNodes);
-              let ids = new Set<string>();
-              try { ids = highlightSentences(rendered, callbacks.current.highlights.filter(spec => !found.has(spec.id))); } catch { /* Keep the rendered pages. */ }
-              ids.forEach(id => found.add(id));
-              body.append(...rendered.childNodes);
-              callbacks.current.onLinked(new Set(found));
-              next++; total = event.data.total; setLoadedPages(next);
-              setTruncated(next < total);
-              setStatus('ready');
-              resolve(true);
-            } catch { fail('render'); resolve(false); }
-          };
-          worker.onerror = () => { fail('worker'); resolve(false); };
-          worker.postMessage({ file: next === 0 ? file : undefined, index: next });
-        }).finally(() => { pending = null; });
-        return pending;
-      };
-      loadNextRef.current = loadNext;
-      void loadNext();
-      return () => { cancelled = true; loadNextRef.current = async () => false; worker.terminate(); };
-    }
     loadNextRef.current = async () => false;
     const rendered = document.createElement('div');
     const styles = document.createElement('div');
@@ -132,7 +90,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
         await renderAsync(event.data.bytes, rendered, styles, {
           className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
           breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
-          renderFootnotes: true, renderEndnotes: true, useBase64URL: true,
+          renderFootnotes: false, renderEndnotes: false, useBase64URL: true,
         });
       if (cancelled || !guard.finish()) return;
       worker.terminate();
@@ -158,6 +116,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       try { callbacks.current.onLinked(highlightSentences(body, specs)); } catch { /* Keep the rendered pages. */ }
       setActivePage(0);
       setStatus('ready');
+      if (!locked && event.data.truncated && budget < MAX_ELEMENTS) setTimeout(() => { if (!cancelled) setBudget(nextBudget(budget)); }, 0);
       } catch {
         guard.cancel(); worker.terminate();
         fail('render');
@@ -269,8 +228,8 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     <div ref={outerRef} className="docx-main">
       {status === 'loading' && <p className="py-6 text-center text-sm text-gray-500" role="status">Opening your manuscript as you uploaded it…</p>}
       <div ref={bodyRef} style={{ zoom: scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
-      {status === 'ready' && truncated && (locked ? budget < MAX_ELEMENTS : true) && <button type="button" className="uf-btn is-ghost is-sm" onClick={() => locked ? setBudget(nextBudget(budget)) : void loadNextRef.current()}>Show more</button>}
-      {locked && status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>Only the first pages are shown.</p>}
+      {locked && status === 'ready' && truncated && budget < MAX_ELEMENTS && <button type="button" className="uf-btn is-ghost is-sm" onClick={() => setBudget(nextBudget(budget))}>Show more</button>}
+      {status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>The rest cannot be shown here.</p>}
     </div>
   </div>;
 });

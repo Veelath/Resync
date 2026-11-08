@@ -4,9 +4,10 @@ import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
 import { loadSourceFile, saveSourceFile } from '../../lib/sourceFile';
 import type { HighlightSpec } from '../../lib/docxHighlight';
+import { reviewUnfinished } from './reviewComplete';
 import { DocxPreview } from '../../components/DocxPreview';
 import { DocxManuscript, type DocxManuscriptHandle } from './DocxManuscript';
-import { fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
+import { downloadGoogleDoc, fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
 import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
@@ -56,6 +57,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
   // The student's own Word file, shown as written. It comes straight from the upload, or from this browser's storage
   // when a saved report is reopened; Google Docs links, old .doc files and sample reports use the text view instead.
   const [storedFile, setStoredFile] = useState<File | null>(null);
+  const [sourceLoading, setSourceLoading] = useState(!sourceFile && !isSample);
   const [docxFailed, setDocxFailed] = useState(false);
   const [previewFailed, setPreviewFailed] = useState(false);
   // A report opened where its Word file was never saved (another browser, another address) can be pointed at the original file once.
@@ -67,9 +69,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     setPreviewFailed(false);
     setPickedFile(null);
     setDocxLinked(null);
-    if (sourceFile || isSample || !scanId) { setStoredFile(null); return; }
+    if (sourceFile || isSample || !scanId) { setStoredFile(null); setSourceLoading(false); return; }
     let cancelled = false;
-    loadSourceFile(scanId).then(file => { if (!cancelled) setStoredFile(file); });
+    setSourceLoading(true);
+    loadSourceFile(scanId).then(async file => {
+      if (!cancelled && !file && isGoogleDoc && result?.doc_url) {
+        try { file = await downloadGoogleDoc(result.doc_url); if (!cancelled) void saveSourceFile(scanId, file); } catch { /* Keep the plain view. */ }
+      }
+      if (!cancelled) setStoredFile(file);
+    }).finally(() => { if (!cancelled) setSourceLoading(false); });
     return () => { cancelled = true; };
   }, [scanId, sourceFile, isSample]);
   // The sample report is a real Word file too, so it looks exactly like a student's own report: pages, highlights and all.
@@ -104,8 +112,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
 
   if (!result) return null;
 
+  const unfinished = locked && reviewUnfinished(result.ai_synthesis?.review_status);
   async function handleUnlock() {
-    if (!result || !locked || unlockPending.current) return;
+    if (!result || !locked || unfinished || unlockPending.current) return;
     if (balance === 0 && unlockedId.current !== result.analysis_run_id) { setBuyCredits(true); return; }
     unlockPending.current = true;
     setUnlocking(true);
@@ -129,7 +138,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     } finally { unlockPending.current = false; setUnlocking(false); }
   }
 
-  const unlockControl = <div className="space-y-2">
+  const unlockControl = unfinished ? <div className="space-y-2"><p className="text-sm text-[#4b5563]">The AI review did not finish, so this score is provisional. Scan again to retry.</p><button type="button" onClick={() => onNavigate('upload')} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white">Scan again</button></div> : <div className="space-y-2">
     <button type="button" onClick={handleUnlock} disabled={unlocking} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white hover:bg-[#1115a5] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
       {unlocking ? 'Unlocking…' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
     </button>
@@ -284,7 +293,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     <ReportPrint result={result} title={displayTitle} items={recommendations} citations={citations} locked={locked} lockedOrders={lockedOrders} />
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
-        {!docxFile && !fallbackFile && !isSample && scanId && <div className="flex flex-wrap items-center justify-center gap-3 border-b border-[#e1dffa] bg-[#fff8e6] px-4 py-2.5 text-[13px] text-[#6b4e00] print:hidden">
+        {!docxFile && !fallbackFile && !sourceLoading && !isSample && scanId && <div className="flex flex-wrap items-center justify-center gap-3 border-b border-[#e1dffa] bg-[#fff8e6] px-4 py-2.5 text-[13px] text-[#6b4e00] print:hidden">
           <span>{docxFailed && locked ? 'Showing the available manuscript text.' : docxFailed ? 'Your Word file could not be drawn here.' : 'This browser does not have your Word file, so the text is shown without its original layout.'}</span>
           {!(locked && docxFailed) && <label className="cursor-pointer rounded-full bg-[#1a1fcc] px-3.5 py-1.5 text-[12.5px] font-extrabold text-white focus-within:outline-2 focus-within:outline-offset-2">Show my Word file
             <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={event => {
@@ -296,7 +305,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
         </div>}
         <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
         <div className={docxFile || fallbackFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
-          {docxFile ? <><DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : fallbackFile ? <DocxPreview file={fallbackFile} onFailed={() => setPreviewFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
+          {sourceLoading && !sourceDocx ? <p role="status" className="text-sm text-gray-600">Opening your manuscript...</p> : docxFile ? <><DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : fallbackFile ? <DocxPreview file={fallbackFile} autoLoad onFailed={() => setPreviewFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript text…</p> : (manuscriptText
             ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
             : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />
             : <div className="mx-auto flex max-w-[420px] flex-col items-center py-8 text-center"><ResultsScorePanel result={result} large /><p className="mt-5 text-sm leading-6 text-[#4b5563]">This report was created before manuscripts were stored, so the text can't be shown. Re-scan to see your manuscript with highlights.</p></div>)}
