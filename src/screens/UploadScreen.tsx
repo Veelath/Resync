@@ -131,7 +131,7 @@ async function readDocInfo(file: File): Promise<DocInfo | null> {
 
 let lastScanError: string | null = null;
 
-export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void }) {
+export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed, onScanRejected }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void; onScanRejected?: () => void }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
@@ -143,6 +143,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [link, setLink] = useState("");
   const [scanError, setScanError] = useState<string | null>(lastScanError);
   const [isScanning, setIsScanning] = useState(false);
+  const scanningRef = useRef(false);
 
   const [customTemplateFile, setCustomTemplateFile] = useState<File | null>(null);
   const [templateParseError, setTemplateParseError] = useState<string | null>(null);
@@ -380,10 +381,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   async function handleScan() {
-    if (notAPaper) return;
+    if (notAPaper || scanningRef.current) return;
     if (!session?.user) { onNavigate("login"); return; }
     lastScanError = null;
     setScanError(null);
+    scanningRef.current = true;
     setIsScanning(true);
     let navigatedToProcessing = false;
     try {
@@ -409,20 +411,24 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
       // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
       const scanFile = mode === "file" ? uploadedFile : linkFile;
+      onScanStart?.(outline?.words ?? docInfo?.words ?? null);
+      onNavigate("processing");
       const result = await executeManuscriptScan({
         user_id: session.user.id,
         file: scanFile ?? undefined,
         doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: id => { onScanStart?.(outline?.words ?? docInfo?.words ?? null); onScanStarted?.(id); navigatedToProcessing = true; onNavigate("processing"); } });
+      }, { onStarted: id => { onScanStarted?.(id); navigatedToProcessing = true; } });
       if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, scanFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";
       if (navigatedToProcessing) onScanFailed?.(e);
+      else onScanRejected?.();
       lastScanError = navigatedToProcessing ? null : errMsg;
       setScanError(navigatedToProcessing ? null : errMsg);
+      scanningRef.current = false;
       setIsScanning(false);
 
     }
@@ -481,7 +487,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             {step > 1 ? `Back to Step ${step - 1}` : "Back"}
           </button>
           <div className="flex items-center gap-2">
-            <button type="button" className="ut-replay" onClick={() => setTourOpen(true)}>Replay tour</button>
             <span className="uf-pill tabular-nums">Step {step} of 4: {stepName}</span>
           </div>
         </div>

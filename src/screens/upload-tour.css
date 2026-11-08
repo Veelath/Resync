@@ -7,9 +7,6 @@
 .ut-card .tour-dots{margin-bottom:16px}
 .ut-small{height:44px !important;font-size:14.5px !important;border-radius:12px !important}
 .ut-small.tour-next,.ut-small.tour-back{padding:0 20px}
-.ut-replay{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border:0;border-radius:999px;background:#eeedff;color:#2b25c8;font:700 12.5px 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer}
-.ut-replay:hover{background:#e0deff}
-.ut-replay:focus-visible{outline:3px solid #7b76f0;outline-offset:2px}
 @keyframes ut-card{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes ut-pulse{0%,100%{box-shadow:0 0 0 9999px rgba(11,10,46,.58),0 0 0 3px #7b76f0}50%{box-shadow:0 0 0 9999px rgba(11,10,46,.58),0 0 0 7px rgba(123,118,240,.45)}}
 @media (prefers-reduced-motion:reduce){.ut-layer *{animation:none !important;transition:none !important}}

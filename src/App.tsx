@@ -44,6 +44,7 @@ export default function App() {
   const scanRunRef = useRef(0);
   const scanSettledRef = useRef(true);
   const [scanRunning, setScanRunning] = useState(false);
+  const [scanSending, setScanSending] = useState(false);
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome | null>(null);
   const [scanStartedAt, setScanStartedAt] = useState(Date.now());
   const [scanWords, setScanWords] = useState<number | null>(null);
@@ -247,6 +248,7 @@ export default function App() {
   function handleScanStart(words: number | null) {
     setScanOutcome(null); setScanWords(words); scanWordsRef.current = words; setScanStartedAt(Date.now());
     setScanRunning(true);
+    setScanSending(true);
     if (notificationPrefsRef.current.alerts) void askForDesktopAlerts();   // this runs inside the click that started the scan
     scanRunRef.current += 1;
     scanSettledRef.current = false;
@@ -349,8 +351,8 @@ export default function App() {
         onClose={() => setToast(null)}
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {screen === "upload" && <UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={rememberActiveScan} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} />}
-      {screen === "processing" && <ProcessingScreen onNavigate={navigate} outcome={scanOutcome} startedAt={scanStartedAt} words={scanWords} />}
+      {(screen === "upload" || scanRunning && scanSending) && <div hidden={screen !== "upload"}><UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={id => { setScanSending(false); rememberActiveScan(id); }} onScanRejected={() => { setScanSending(false); setScanRunning(false); scanSettledRef.current = true; navigate("upload"); }} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} /></div>}
+      {screen === "processing" && <ProcessingScreen onNavigate={navigate} outcome={scanOutcome} startedAt={scanStartedAt} words={scanWords} sending={scanSending} />}
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
         ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} onScanUpdated={setScanResult} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
