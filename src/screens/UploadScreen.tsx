@@ -12,7 +12,7 @@ import { UploadTour, uploadTourSeen } from './UploadTour';
 import { previewParagraphs } from '../lib/previewParagraphs';
 import { DocxPreview } from '../components/DocxPreview';
 import { canShowWordPreview } from '../lib/docxPreview';
-import { wordOutlineReady } from '../lib/uploadReadiness';
+import { wordOutlineReady, googleOutlineReady } from '../lib/uploadReadiness';
 
 type UploadMode = "file" | "link";
 
@@ -30,6 +30,7 @@ const WORD_MIME_TYPES = [
 import { isDocx, docxMessage } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
 
+const GOOGLE_READ_ERROR = "We could not open this Google document. Check the link and that sharing is set to 'Anyone with the link can view', then try again.";
 const WORD_READ_ERROR = 'This file could not be read as a Word document. Check that it is a real .docx file, or paste your Google Docs link instead.';
 
 const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
@@ -190,7 +191,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setLinkPreviewFile(null);
     setLinkProblem(null);
     const url = link.trim();
-    if (mode !== "link" || !session?.user || !googleLink(url)) { setLinkState("idle"); return; }
+    if (mode !== "link" || !session?.user || !url) { setLinkState("idle"); return; }
+    if (!googleLink(url)) { setLinkState("failed"); setLinkProblem(GOOGLE_READ_ERROR); return; }
     let cancelled = false;
     const current = sourceToken.current.current();
     setLinkState("loading");
@@ -202,7 +204,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         downloads.current.set(url, request);
       }
       request.then(({ original, slim }) => { if (!cancelled && current()) { setLinkPreviewFile(original); setLinkFile(slim); setLinkState("ready"); } })
-        .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof Error ? error.message : "We could not open this Google Doc."); if (error instanceof ScanLimitError) setScanError(error.message); } });
+        .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof ScanLimitError ? error.message : GOOGLE_READ_ERROR); if (error instanceof ScanLimitError) setScanError(error.message); } });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -220,7 +222,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }, [outlineLoading, linkState]);
 
   useEffect(() => {
-    if (mode === "link" && linkState === "loading") return;
+    if (mode === "link" && linkState !== "ready") return;
     if (!activeFile && step !== 3) return;
     const source = activeFile ?? (mode === "link" ? link.trim() : null);
     if (!source) { setOutline(null); return; }
@@ -231,7 +233,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setOutlineError(null);
     getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() })
       .then(result => { if (!cancelled && current()) setOutline(result); })
-      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(mode === "file" && !(error instanceof ScanLimitError) ? WORD_READ_ERROR : error instanceof Error ? error.message : "We could not read this document."); if (error instanceof ScanLimitError) setScanError(error.message); } })
+      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(error instanceof ScanLimitError ? error.message : mode === "file" ? WORD_READ_ERROR : GOOGLE_READ_ERROR); if (error instanceof ScanLimitError) setScanError(error.message); } })
       .finally(() => { if (!cancelled && current()) setOutlineLoading(false); });
     return () => { cancelled = true; };
   }, [mode, activeFile, link, linkState]);
@@ -389,7 +391,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   async function handleScan() {
-    if (notAPaper || scanningRef.current || (mode === "file" && !wordOutlineReady(outlineLoading, outlineError, !!outline))) return;
+    if (notAPaper || scanningRef.current || (mode === "file" ? !wordOutlineReady(outlineLoading, outlineError, !!outline) : !googleOutlineReady(linkState, outlineLoading, outlineError, !!outline))) return;
     if (!session?.user) { onNavigate("login"); return; }
     lastScanError = null;
     setScanError(null);
@@ -775,7 +777,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <span className="uf-lab">Google Docs link</span>
                         <span className="uf-inp">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
-                          <input type="url" value={link} onChange={e => { setLink(e.target.value); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/…" />
+                          <input type="url" value={link} onChange={e => { setLink(e.target.value); setOutline(null); setOutlineError(null); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/…" />
                         </span>
                       </label>
                       <div style={{ display: "flex", gap: 10, fontSize: 13, color: "#6b6890", alignItems: "flex-start" }}>
@@ -850,7 +852,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                         <span className="uf-skeleton" aria-hidden="true"><i style={{ width: "92%" }} /><i style={{ width: "78%" }} /><i style={{ width: "86%" }} /><i style={{ width: "54%" }} /></span>
                       </div>
                     ) : mode === "link" && linkState === "failed" ? (
-                      <p style={{ color: "#8f1d36", fontWeight: 600 }}>{linkProblem ?? "We could not open this Google Doc."} You can still run the scan, but there is no preview.</p>
+                      <p style={{ color: "#8f1d36", fontWeight: 600 }}>{linkProblem ?? GOOGLE_READ_ERROR}</p>
                     ) : outline ? (
                       <>
                         <b>Simplified preview</b>
@@ -901,7 +903,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       <button type="button" className="uf-btn is-ghost is-sm" disabled={isScanning || !linkDraft.trim() || linkDraft.trim() === link.trim()}
                         onClick={() => {
                           if (!linkDraft.includes("docs.google.com")) { setScanError("Please provide a valid Google Docs link."); return; }
-                          setScanError(null); setLink(linkDraft.trim());
+                          setScanError(null); setOutline(null); setOutlineError(null); setLink(linkDraft.trim());
                         }}>Update link</button>
                     </div>
                   )}
@@ -949,7 +951,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               </div>
             </div>
 
-            {mode === "file" && outlineError && !scanError && <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>{outlineError}</div>}
+            {((mode === "file" ? outlineError : linkProblem || outlineError) && !scanError) && <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>{mode === "file" ? outlineError : linkProblem || outlineError}</div>}
             {notAPaper && !scanError && (
               <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
@@ -967,7 +969,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                 Choose a different document
               </button>
-              <button type="button" onClick={handleScan} disabled={isScanning || notAPaper || (mode === "file" ? !uploadedFile || !wordOutlineReady(outlineLoading, outlineError, !!outline) : !link.trim() || linkState === "loading")} className="uf-btn is-lg is-grow um-cta">
+              <button type="button" onClick={handleScan} disabled={isScanning || notAPaper || (mode === "file" ? !uploadedFile || !wordOutlineReady(outlineLoading, outlineError, !!outline) : !link.trim() || !googleOutlineReady(linkState, outlineLoading, outlineError, !!outline))} className="uf-btn is-lg is-grow um-cta">
                 {isScanning ? "Scanning manuscript…" : "Yes, run coherence scan"}
                 {!isScanning && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
               </button>
