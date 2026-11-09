@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
-import { saveSourceFile, clearAllSourceFiles } from './lib/sourceFile';
+import { clearAllSourceFiles } from './lib/sourceFile';
 import { readRoute, routePath } from './lib/routes';
 import { getScanResult, subscribeSessionEnded, notifySessionEnded } from './services/api';
 import { createSignOutController } from './lib/signOutController';
@@ -30,7 +30,6 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const sessionRef = useRef<Session | null>(null);
   const [scanResult, setScanResult] = useState<DisplayScan | null>(null);
-  const [scanFile, setScanFile] = useState<File | null>(null);  // the uploaded Word file, so results can show it as written
   const [activeScanId, setActiveScanId] = useState<string | null>(null);
   const [resultError, setResultError] = useState('');
   const [notifications, setNotifications] = useState<AppNotification[]>(loadNotifications);
@@ -227,7 +226,7 @@ export default function App() {
     setScanStartedAt(running.at); setScanWords(running.words ?? null);
     let resumedProcessing = false;
     resumeManuscriptScan(running.id, { startedAt: running.at, onProcessing: () => { resumedProcessing = true; navigate('processing'); } }).then(result => {
-      setScanResult(result); setScanFile(null);
+      setScanResult(result);
       handleScanCompleted(result);
       if (!resumedProcessing || screenRef.current === 'processing') navigate("results", false, result.analysis_run_id);
     }).catch(error => handleScanFailed(error, true));
@@ -253,7 +252,7 @@ export default function App() {
     scanRunRef.current += 1;
     scanSettledRef.current = false;
     setScanResult(null);  // a rescan starts clean: the previous report and its recommendations are dropped
-    setScanFile(null);
+   
     setToast(null);
     unlockAudio();
   }
@@ -263,7 +262,7 @@ export default function App() {
     let cancelled = false;
     setResultError('');
     getScanResult(activeScanId).then(result => {
-      if (!cancelled) { setScanResult(result); setScanFile(null); }
+      if (!cancelled) { setScanResult(result); }
     }).catch(error => {
       if (!cancelled) setResultError(error instanceof Error ? error.message : 'Unable to load this report.');
     });
@@ -353,10 +352,10 @@ export default function App() {
         onClose={() => setToast(null)}
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {(screen === "upload" || scanRunning && scanSending) && <div hidden={screen !== "upload"}><UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={id => { setScanSending(false); rememberActiveScan(id); }} onScanRejected={() => { setScanSending(false); setScanRunning(false); scanSettledRef.current = true; navigate("upload"); }} onScanComplete={(result, file) => { setScanResult(result); setScanFile(file); if (file && result.analysis_run_id) void saveSourceFile(result.analysis_run_id, file); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} /></div>}
+      {(screen === "upload" || scanRunning && scanSending) && <div hidden={screen !== "upload"}><UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={id => { setScanSending(false); rememberActiveScan(id); }} onScanRejected={() => { setScanSending(false); setScanRunning(false); scanSettledRef.current = true; navigate("upload"); }} onScanComplete={result => { setScanResult(result); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} /></div>}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} outcome={scanOutcome} startedAt={scanStartedAt} words={scanWords} sending={scanSending} />}
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
-        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} sourceFile={scanFile} onScanUpdated={setScanResult} />
+        ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} onScanUpdated={setScanResult} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
             <p>{resultError || (activeScanId && scanResult?.analysis_run_id !== activeScanId ? 'Loading report…' : scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.')}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>

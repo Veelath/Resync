@@ -4,7 +4,6 @@ import type React from 'react';
 import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
-import { saveSourceFile } from "../lib/sourceFile";
 import { executeManuscriptScan, ScanLimitError, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
 import './upload-motion.css';
 import './upload-flow.css';
@@ -136,7 +135,7 @@ async function readDocInfo(file: File): Promise<DocInfo | null> {
 
 let lastScanError: string | null = null;
 
-export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed, onScanRejected }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan, sourceFile: File | null) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void; onScanRejected?: () => void }) {
+export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed, onScanRejected }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void; onScanRejected?: () => void }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
@@ -421,10 +420,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
       // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
       const scanFile = mode === "file" ? uploadedFile : linkFile;
-      // The server gets the slimmed copy (pictures swapped for tiny placeholders, so the upload stays light), but the report shows
-      // the original file exactly as the student wrote it, pictures included.
-      const original = mode === "file" ? uploadedPreviewFile : linkPreviewFile;
-      const shownFile = original && original.size <= 50 * 1024 * 1024 ? original : scanFile;
       onScanStart?.(outline?.words ?? docInfo?.words ?? null);
       onNavigate("processing");
       await new Promise<void>(resolve => {
@@ -437,8 +432,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         doc_url: mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: id => { if (shownFile) void saveSourceFile(id, shownFile); onScanStarted?.(id); navigatedToProcessing = true; } });
-      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, shownFile ?? null);
+      }, { onStarted: id => { onScanStarted?.(id); navigatedToProcessing = true; } });
+      if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc });
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
       const errMsg = e?.message || "The scan could not be completed.";

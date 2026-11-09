@@ -19,4 +19,3 @@ export interface Citation {
 export const SAMPLE_REPORT = sampleResult as unknown as V7ScanResponse;
 
 // Plain-text copy of the paper, for the text view used when the Word file cannot be drawn.
-export const SAMPLE_MANUSCRIPT = [SAMPLE_REPORT.manuscript_title, ...(SAMPLE_REPORT.manuscript_sections ?? []).map(section => `${section.name}\n${section.text ?? ''}`)].join('\n\n');
