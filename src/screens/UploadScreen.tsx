@@ -28,6 +28,7 @@ const WORD_MIME_TYPES = [
 ];
 import { isDocx, docxMessage } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
+import { FIRST_SCAN_FREE_ENABLED } from '../lib/featureFlags';
 
 const GOOGLE_READ_ERROR = "We could not open this Google document. Check the link and that sharing is set to 'Anyone with the link can view', then try again.";
 const WORD_READ_ERROR = 'This file could not be read as a Word document. Check that it is a real .docx file, or paste your Google Docs link instead.';
@@ -242,7 +243,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   useEffect(() => {
     if (!session?.user?.id) return;
     let cancelled = false;
-    getCreditBalance(session.user.id).then(result => { if (!cancelled) { setCreditBalance(result.balance); setFirstScanFree(result.first_scan_free === true); } }).catch(() => { if (!cancelled) setCreditBalance(null); });
+    getCreditBalance(session.user.id).then(result => { if (!cancelled) { setCreditBalance(result.balance); setFirstScanFree(FIRST_SCAN_FREE_ENABLED && result.first_scan_free === true); } }).catch(() => { if (!cancelled) setCreditBalance(null); });
     return () => { cancelled = true; };
   }, [session?.user?.id]);
 
