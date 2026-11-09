@@ -425,7 +425,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       const result = await executeManuscriptScan({
         user_id: session.user.id,
         file: scanFile ?? undefined,
-        doc_url: !scanFile && mode === "link" ? link : undefined,
+        doc_url: mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
       }, { onStarted: id => { if (shownFile) void saveSourceFile(id, shownFile); onScanStarted?.(id); navigatedToProcessing = true; } });

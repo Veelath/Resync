@@ -5,7 +5,7 @@ export const MAX_ELEMENTS = 1500;
 export const canShowWordPreview = (file: File | null, failed: File | null) => file !== null && file !== failed;
 export const nextBudget = (n: number) => Math.min(MAX_ELEMENTS, n * 2);
 
-export function createPreviewGuard(onTimeout: () => void, delay = 4000) {
+export function createPreviewGuard(onTimeout: () => void, delay = 8000) {
   let active = true;
   const started = performance.now();
   const timer = setTimeout(() => { if (active) { active = false; onTimeout(); } }, delay);
@@ -45,7 +45,7 @@ export function trimDocument(xml: string, limit: number) {
       if (/^<w:sectPr(?:\s|>|\/)/.test(element)) { section = element; continue; }
       if (!/^<w:(?:p|tbl)(?:\s|>|\/)/.test(element)) throw new Error('Unsupported document structure');
       const textLength = [...element.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)].reduce((n, m) => n + m[1].length, 0);
-      if (truncated || count >= limit || chars + textLength > 60000 * (limit / INITIAL_ELEMENTS) || element.length > 300000) { truncated = true; continue; }
+      if (truncated || count >= limit || chars + textLength > 60000 * (limit / INITIAL_ELEMENTS) || element.length > 300000 * (limit / INITIAL_ELEMENTS)) { truncated = true; continue; }
       chars += textLength; count++; cut = index + tag.length;
     }
   }

@@ -81,3 +81,15 @@ test('aggregate media budget keeps only the first two megabytes', async () => {
   assert.equal((await view.file('word/media/6.png')!.async('uint8array')).length, 280000);
   assert.ok((await view.file('word/media/7.png')!.async('uint8array')).length < 100);
 });
+
+test('larger budgets retain a large element and following content', () => {
+  const large = '<w:tbl>' + '<w:tr/>'.repeat(44000) + '</w:tbl>';
+  const xml = wrap(p('before') + large + p('after'));
+  const initial = trimDocument(xml, 150);
+  const maximum = trimDocument(xml, 1500);
+  assert.equal(initial.truncated, true);
+  assert.ok(!initial.xml.includes('after'));
+  assert.equal(maximum.truncated, false);
+  assert.ok(maximum.xml.includes(large));
+  assert.ok(maximum.xml.includes('after'));
+});

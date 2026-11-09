@@ -243,6 +243,7 @@ async function runManuscriptScan(
       const formData = new FormData();
       formData.append('file', payload.file);
       formData.append('user_id', payload.user_id);
+      if (payload.doc_url) formData.append('doc_url', payload.doc_url);
       if (payload.manuscript_title) {
         formData.append('manuscript_title', payload.manuscript_title);
       }
