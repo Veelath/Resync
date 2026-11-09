@@ -158,6 +158,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
           const sentence = plainText(item.revision);
           const where = item.placement === 'start' ? 'beginning' : 'end';
           return <li key={item.id} id={`recommendation-${item.id}`} tabIndex={-1} hidden={index >= VISIBLE_FIXES && !open} className="scroll-mt-12 space-y-2.5 text-sm leading-snug text-[#303746]">
+            {item.issue && <p className="rounded-lg bg-[#f6f7fb] px-3 py-2 text-[13px] text-[#4b5275]"><strong className="text-[#0b0f3d]">Why this matters:</strong> {plainText(item.issue)}</p>}
             {item.kind === 'add'
               ? <>
                   <p className="flex items-start gap-2"><span className={stepNumber}>1</span><span>Go to the <strong className="text-[#0b0f3d]">{where} of <span className="capitalize">{item.section}</span></strong>.</span></p>
