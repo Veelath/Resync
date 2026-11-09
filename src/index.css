@@ -232,6 +232,7 @@ html {
   .auth-page button[role="checkbox"]::after { content: ''; position: absolute; inset: -11px; }
   .uf nav > div > button, button[aria-label^="Notifications"], button[aria-label$="user account menu"], button[aria-label="Dismiss notification"] { min-width: 44px; min-height: 44px; }
   .lp-nav-links a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; }
+  .lp-brand, .lp-nav-cta, .lp-login, button[aria-label="Dashboard"], button[aria-label^="Back to top"] { min-height: 44px !important; }
   .uf button, .uf input:not([type="file"]) { min-height: 44px; }
   .min-h-screen > main > a[href="/"] { display: inline-flex; align-items: center; min-height: 44px; }
 }
