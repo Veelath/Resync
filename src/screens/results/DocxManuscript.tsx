@@ -19,6 +19,14 @@ const HOST_CSS = `
 .docx-thumb span { display: block; height: 3px; border-radius: 2px; background: #dad8f2; }
 .docx-thumb em { position: absolute; bottom: -17px; left: 0; right: 0; text-align: center; font-style: normal; font-size: 11px; font-weight: 700; color: #7d7b9e; }
 @media (max-width: 760px) { .docx-rail { display: none; } }
+.docx-narrow .docx-rail { display: none; }
+.docx-phone-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.docx-phone-controls button, .docx-phone-controls select { min-height: 44px; padding: 8px 12px; border: 1px solid #dad8f2; border-radius: 10px; background: #fff; color: #0b0f3d; font: 600 16px 'Plus Jakarta Sans', sans-serif; }
+.docx-phone-controls button[aria-pressed="true"] { background: #2b25c8; border-color: #2b25c8; color: #fff; }
+.docx-phone-controls :focus-visible { outline: 3px solid #7b76f0; outline-offset: 2px; }
+.docx-readable .docx-wrapper > section.docx { width: 100% !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; padding: 18px !important; }
+.docx-readable .docx-wrapper :is(p, li, td, th, span) { font-size: 16px !important; line-height: 1.55 !important; overflow-wrap: anywhere; }
+.docx-readable .docx-wrapper img { max-width: 100%; height: auto; }
 .docx-host table { display: block; max-width: 100%; overflow-x: auto; }
 .docx-host mark { transition: box-shadow .15s; }
 .docx-host mark:hover { box-shadow: 0 0 0 2px rgba(26, 31, 204, .35); }
@@ -62,6 +70,8 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
   const [truncated, setTruncated] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');
   const [scale, setScale] = useState(1);
+  const [narrow, setNarrow] = useState(false);
+  const [readable, setReadable] = useState(true);
   const [pageCount, setPageCount] = useState(0);
   const [activePage, setActivePage] = useState(0);
   // Handlers change every render; the document must not be redrawn for that, so they are read from a ref.
@@ -131,6 +141,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     const outer = outerRef.current;
     if (!outer || typeof ResizeObserver === 'undefined') return;
     const fit = () => {
+      setNarrow((outer.parentElement?.clientWidth ?? outer.clientWidth) < 760);
       const page = bodyRef.current?.querySelector<HTMLElement>('section.docx');
       if (!page) return;
       setScale(Math.min(1, (outer.clientWidth - 8) / page.offsetWidth));
@@ -139,7 +150,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     observer.observe(outer);
     fit();
     return () => observer.disconnect();
-  }, [status]);
+  }, [status, readable]);
 
   // Pages are counted the way Word would: the document is cut into sheet-sized pieces by height, because the file's own
   // page breaks can be few and far between. All sizes here are on-screen pixels, so they already include the zoom.
@@ -156,7 +167,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     if (status !== 'ready') return;
     const metrics = pageMetrics();
     if (metrics) setPageCount(Math.max(1, Math.round(metrics.height / metrics.step)));
-  }, [status, scale, loadedPages]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, scale, loadedPages, narrow, readable]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // On wide screens the manuscript pane scrolls by itself; on narrow ones the whole page does. Find whichever moves now.
   const scrollerOf = (): HTMLElement | null => {
@@ -217,7 +228,8 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     setActivePage(index);
   };
 
-  return <div className="docx-host docx-with-rail" aria-label="Your manuscript, as uploaded">
+  const readableView = narrow && readable;
+  return <div className={`docx-host docx-with-rail${narrow ? ' docx-narrow' : ''}${readableView ? ' docx-readable' : ''}`} aria-label="Your manuscript, as uploaded">
     <style>{HOST_CSS}</style>
     <div ref={styleRef} />
     {status === 'ready' && pageCount > 1 && <nav ref={railRef} className="docx-rail print:hidden" aria-label="Pages">
@@ -226,8 +238,15 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       </button>)}
     </nav>}
     <div ref={outerRef} className="docx-main">
+      {narrow && <div className="docx-phone-controls print:hidden" aria-label="Manuscript view">
+        <button type="button" aria-pressed={readable} onClick={() => setReadable(true)}>Readable text</button>
+        <button type="button" aria-pressed={!readable} onClick={() => setReadable(false)}>Word layout</button>
+        {!readable && pageCount > 1 && <select aria-label="Go to page" value={activePage} onChange={event => goToPage(Number(event.target.value))}>
+          {Array.from({ length: pageCount }, (_, index) => <option key={index} value={index}>Page {index + 1}</option>)}
+        </select>}
+      </div>}
       {status === 'loading' && <p className="py-6 text-center text-sm text-gray-500" role="status">Opening your manuscript as you uploaded it…</p>}
-      <div ref={bodyRef} style={{ zoom: scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
+      <div ref={bodyRef} style={{ zoom: readableView ? 1 : scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
       {locked && status === 'ready' && truncated && budget < MAX_ELEMENTS && <button type="button" className="uf-btn is-ghost is-sm" onClick={() => setBudget(nextBudget(budget))}>Show more</button>}
       {status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>The rest cannot be shown here.</p>}
     </div>

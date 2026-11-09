@@ -222,6 +222,20 @@ html {
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
+@media (max-width: 759px) {
+  input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size: 16px !important; }
+  .auth-eye { width: 44px; height: 44px; right: 6px; }
+  .auth-page [role="dialog"] .overflow-y-auto { font-size: 14px; }
+  .auth-page [role="dialog"] button { min-width: 44px; min-height: 44px; }
+  .auth-page [role="dialog"] p { font-size: 14px; }
+  .auth-page button[role="checkbox"] { position: relative; }
+  .auth-page button[role="checkbox"]::after { content: ''; position: absolute; inset: -11px; }
+  .uf nav > div > button, button[aria-label^="Notifications"], button[aria-label$="user account menu"], button[aria-label="Dismiss notification"] { min-width: 44px; min-height: 44px; }
+  .lp-nav-links a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; }
+  .uf button, .uf input:not([type="file"]) { min-height: 44px; }
+  .min-h-screen > main > a[href="/"] { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }

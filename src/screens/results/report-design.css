@@ -59,6 +59,14 @@
 @keyframes rp-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes rp-shine{to{transform:translateX(120%)}}
 @media (max-width:480px){.rp-hero{flex-direction:column;align-items:flex-start}.rp-header-row{padding:8px 14px}}
+@media (max-width:759px){
+  .results-screen [role="tablist"]{flex-wrap:wrap}
+  .results-screen [role="tab"]{min-height:44px}
+  .results-screen [role="tabpanel"] button{min-height:44px}
+  .rp-card p,.rp-card > div,.rp-hero-sub,.rp-note{font-size:14px !important}
+  .rp-unlock{position:static;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+  .rp-pill{min-height:44px}
+}
 @media (prefers-reduced-motion:reduce){.rp-score *,.rp-unlock *,.results-screen [role="tab"]::after,.results-screen [role="tabpanel"]{animation:none !important;transition:none !important}}
 
 /* Keep long manuscript titles within the viewport. */
