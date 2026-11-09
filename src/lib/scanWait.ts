@@ -5,7 +5,9 @@ export const RECONNECT_MESSAGE = 'Trying to reconnect to the server...';
 export const UNREACHABLE_MESSAGE = 'We cannot reach the server right now. Your scan may still be running. Check your dashboard again in a few minutes.';
 export const CEILING_MESSAGE = 'We cannot confirm this scan. Open your dashboard later or start it again.';
 export const NOT_FOUND_MESSAGE = 'We cannot find this scan. Please start it again.';
-export const DOCX_MESSAGE = 'Old .doc files cannot be read. Open it in Word, choose Save As > Word Document (.docx), then upload it again.';
+export const docxMessage = (name: string) => /\.doc$/i.test(name)
+  ? 'Old .doc files cannot be read. Open it in Word, choose Save As > Word Document (.docx), then upload it again.'
+  : 'Only Word .docx files or a Google Docs link are accepted.';
 export const backoffMs = (failures: number) => [5000, 10000, 20000, 30000][Math.min(Math.max(failures - 1, 0), 3)];
 export const waitState = (now: number, started: number, unreachableSince: number | null) => now - started >= MAX_POLL_MS ? 'ceiling' : unreachableSince !== null && now - unreachableSince >= UNREACHABLE_MS ? 'unreachable' : 'waiting';
 export const notFoundIsFinal = (now: number, started: number) => now - started >= NOT_FOUND_GRACE_MS;

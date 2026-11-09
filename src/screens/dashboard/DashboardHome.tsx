@@ -16,7 +16,7 @@ const outputs = [
   ['Verified Reference List', 'Public or private access status for every cited URL and DOI in your bibliography.'],
 ];
 const guidance = [
-  ['Digital Manuscripts', '.doc, .docx, Google Docs link'],
+  ['Digital Manuscripts', '.docx or Google Docs link'],
   ['Section Flow', 'Holistic manuscript analysis'],
   ['Single-Column Flow', 'Sequential reading order'],
   ['Direct Prose', 'Claims and conclusions'],
@@ -55,7 +55,7 @@ export function DashboardHome({ onNavigate, session, greeting, scanRunning = fal
         <span><Link2 size={17} />Holistic manuscript analysis</span>
         <span><MessageSquare size={17} />Citation accessibility checks</span>
         <span><Sparkles size={17} />AI-text indicator</span>
-        <strong><FileText size={17} />Word (.doc/.docx) &amp; Google Docs</strong>
+        <strong><FileText size={17} />Word (.docx) &amp; Google Docs</strong>
       </div>
     </div></section>
     <main className="phase2-process">

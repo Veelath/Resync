@@ -12,7 +12,7 @@ export function uploadTourSeen() {
 const stops: { step: 1 | 2; target: string; title: string; text: string }[] = [
   { step: 1, target: 'progress', title: 'Three quick steps', text: 'Pick your chapter headings first (optional), upload your manuscript, then confirm it is the right file. ReSync runs the scan after that.' },
   { step: 1, target: 'template', title: 'Optional chapter template', text: 'Have a school template? Attach it so ReSync uses your exact headings. Skip it and ReSync detects the sections for you.' },
-  { step: 2, target: 'source', title: 'Add your manuscript', text: 'Drop a Word file (.doc/.docx, up to 25 MB) or paste a Google Docs link set to “Anyone with the link can view”.' },
+  { step: 2, target: 'source', title: 'Add your manuscript', text: 'Drop a Word file (.docx, up to 25 MB) or paste a Google Docs link set to “Anyone with the link can view”.' },
   { step: 2, target: 'run', title: 'Confirm, then scan', text: 'Continue to check the file name and preview. Then the scan checks how every chapter connects, and your free preview opens. Unlocking the full report costs 1 credit.' },
 ];
 

@@ -26,7 +26,7 @@ const WORD_MIME_TYPES = [
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
-import { isDocx, DOCX_MESSAGE } from '../lib/scanWait';
+import { isDocx, docxMessage } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
 
 const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
@@ -325,7 +325,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     if (!isWordFile(file) && !isTextTemplate) {
       setCustomTemplateFile(null);
       setTemplateChapters([]);
-      setTemplateParseError('Unsupported template file. Please upload a Word document (.doc or .docx) or a text file (.txt).');
+      setTemplateParseError('Unsupported template file. Please upload a Word document (.docx) or a text file (.txt).');
       return;
     }
     if (file.size > MAX_TEMPLATE_BYTES) {
@@ -357,7 +357,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     lastScanError = null;
     if (!isDocx(file.name)) {
       setUploadedFile(null);
-      setScanError(DOCX_MESSAGE);
+      setScanError(docxMessage(file.name));
       return;
     }
     setScanError(null);
@@ -398,7 +398,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
           throw new Error("The uploaded document appears to be empty or contains no extractable text.");
         }
         if (!isDocx(uploadedFile.name)) {
-          throw new Error(DOCX_MESSAGE);
+          throw new Error(docxMessage(uploadedFile.name));
         }
         if (uploadedFile.size > MAX_MANUSCRIPT_BYTES) {
           throw new Error("This file is larger than 25 MB. Please upload a smaller Word document.");
@@ -672,7 +672,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <button type="button" className={`uf-dz ${customTemplateFile ? "has-file" : ""}`} onClick={() => customTemplateInputRef.current?.click()} style={{ font: "inherit", color: "inherit" }}>
                     <span className="uf-up um-float"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-6 h-6" aria-hidden="true"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg></span>
                     <b style={{ fontSize: 16 }}>{customTemplateFile ? customTemplateFile.name : "Attach your school's template"}</b>
-                    <span style={{ fontSize: 13.5, color: "#6b6890" }}>{customTemplateFile ? "Click to replace this file" : "Syllabus or format document · .doc, .docx or .txt"}</span>
+                    <span style={{ fontSize: 13.5, color: "#6b6890" }}>{customTemplateFile ? "Click to replace this file" : "Syllabus or format document · .docx or .txt"}</span>
                   </button>
                   {templateParseError && <p style={{ margin: 0, fontSize: 12.5, color: "#b7791f" }}>{templateParseError}</p>}
                   <input ref={customTemplateInputRef} type="file" accept={TEMPLATE_ACCEPT} className="hidden"
