@@ -4,7 +4,7 @@ import { limitErrorMessage } from '../lib/limitErrorMessage';
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { backoffMs, waitState, notFoundIsFinal, safeScanMessage, withRequestTimeout, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
+import { backoffMs, waitState, notFoundIsFinal, safeScanMessage, scanStatusMessage, withRequestTimeout, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
 import { supabase } from '../lib/supabase.js';
 import { adaptScanResult, type ScanResult } from './v7Result';
 
@@ -137,7 +137,7 @@ function readScanStatus(job: unknown): ScanStatusNotice | null {
   const queued = queuePosition !== null;
 
   return {
-    message: safeScanMessage(message),
+    message: scanStatusMessage(message),
     elapsedSeconds: typeof record.elapsed_seconds === 'number' ? record.elapsed_seconds : null,
     level: record.status_message_level === 'wait' ? 'wait' : 'info',
     queued,

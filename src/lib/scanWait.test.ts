@@ -1,6 +1,11 @@
 ﻿import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { backoffMs, waitState, notFoundIsFinal, queueText, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, docxMessage, safeScanMessage, MAX_POLL_MS, withRequestTimeout, rememberFailureNotification } from './scanWait';
+import { backoffMs, waitState, notFoundIsFinal, queueText, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, docxMessage, safeScanMessage, scanStatusMessage, MAX_POLL_MS, withRequestTimeout, rememberFailureNotification } from './scanWait';
+test('hides only the AI busy status notice', () => {
+  assert.equal(scanStatusMessage('The AI is busy right now, so your scan may take a little longer than usual.'), '');
+  assert.equal(scanStatusMessage('Please wait while the scan continues.'), 'Please wait while the scan continues.');
+  assert.equal(safeScanMessage('The scan could not finish.'), 'The scan could not finish.');
+});
 test('backoff caps at thirty seconds', () => assert.deepEqual([1,2,3,4,5].map(backoffMs), [5000,10000,20000,30000,30000]));
 test('unreachable is information and ceiling stops polling', () => { assert.equal(waitState(600000, 0, 0), 'unreachable'); assert.equal(waitState(MAX_POLL_MS, 0, 0), 'ceiling'); });
 test('404 has a sixty second grace period', () => { assert.equal(notFoundIsFinal(59999, 0), false); assert.equal(notFoundIsFinal(60000, 0), true); });

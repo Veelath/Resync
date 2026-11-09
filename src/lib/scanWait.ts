@@ -15,6 +15,7 @@ export const queueText = (position: number, seconds: number | null) => `Your sca
 export const isLongRunning = (elapsedMs: number, words?: number | null, serverSeconds?: number | null) => Math.max(elapsedMs, (serverSeconds ?? 0) * 1000) >= (words != null ? 4 * 60000 + words / 5000 * 60000 : 8 * 60000);
 export const failureTitle = (kind?: string | null) => ({ interrupted: 'Scan interrupted', timeout: 'Scan stopped', refused: 'Document not accepted', error: 'Scan could not be finished' }[kind ?? ''] ?? 'Scan could not be finished');
 export const isDocx = (name: string) => /\.docx$/i.test(name);
+export const scanStatusMessage = (message: string) => message.trim() === 'The AI is busy right now, so your scan may take a little longer than usual.' ? '' : safeScanMessage(message);
 export const safeScanMessage = (message: string) => {
   const cleaned = message.replace(/ If it keeps happening, tell us this scan number: [^.]+\./i, '');
   const technical = /(?:\b[0-9a-f]{8}-[0-9a-f-]{27,}\b|\b[0-9a-f]{16,}\b|\b(?:traceback|stack\s*trace|exception|error|failed to fetch|networkerror|aborterror|typeerror|referenceerror|syntaxerror|timeout(?:error)?|http|https?|api|backend|server returned|status|code|request|response|endpoint|database|supabase|postgres|sql|json|python|fastapi|socket|connection reset|errno|localhost)\b|\b[45]\d{2}\b|\b\w*(?:exception|error)\b|the job may still be running|[{}\[\]\\]|\b\w+\.py:\d+|\b\w+_\w+\b|https?:\/\/)/i;
