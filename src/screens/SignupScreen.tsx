@@ -292,7 +292,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                   <h3 className="text-base font-bold text-gray-900">
                     {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Last updated: October 2026</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Last updated: {legalModal === "terms" ? "October 2026" : "November 9, 2026"}</p>
                 </div>
                 <button
                   type="button"
@@ -335,11 +335,11 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">2. Manuscript Confidentiality & Data Protection</h4>
                     <p>
-                      Your manuscripts, research findings, and unpublished drafts are treated with strict confidentiality. Resync does not use your private manuscripts to train public generative models or distribute them to third parties without your explicit authorization.
+                      Manuscript text is sent to Google Gemini to produce findings and recommendations. During user testing, Gemini runs on Google's free tier, where Google may use submitted content to improve its products. We do not sell manuscripts.
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">3. Data Retention & Deletion</h4>
                     <p>
-                      Analysis data and scanned documents are stored securely using industry-standard encryption. You may request the deletion of your account and associated document data at any time through your account settings or by contacting support.
+                      Extracted manuscript text and scan results are stored to support your reports. The app does not currently provide a control to delete individual scans or accounts.
                     </p>
                   </>
                 )}
