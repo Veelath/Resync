@@ -390,6 +390,8 @@ export async function resumeManuscriptScan(analysisRunId: string, options?: Scan
 export interface CreditBalanceResponse {
   user_id: string;
   balance: number;
+  /** The user has not had a scan yet, so their first scan is free. */
+  first_scan_free?: boolean;
 }
 
 export interface CheckoutResponse {
@@ -491,6 +493,28 @@ export async function getManuscriptOutline(source: { file: File } | { docUrl: st
 }
 
 /** A public Google Doc as a Word file, so a link behaves exactly like an uploaded document. */
+/** Keep the original Word file on the server (when the server has storage on) so the report can show it on any device. Best effort. */
+export async function uploadSourceFile(scanId: string, file: File): Promise<void> {
+  try {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    await apiFetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(scanId)}/source-file`, { method: 'PUT', headers: await authHeaders(), body: form });
+  } catch (error) {
+    console.warn('Could not keep the original file on the server.', error);
+  }
+}
+
+/** The stored original Word file of a scan, or null when the server has none. */
+export async function fetchSourceFile(scanId: string): Promise<File | null> {
+  try {
+    const resp = await apiFetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(scanId)}/source-file`, { headers: await authHeaders() });
+    if (!resp.ok) return null;
+    return new File([await resp.blob()], 'manuscript.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  } catch {
+    return null;
+  }
+}
+
 export async function downloadGoogleDoc(docUrl: string): Promise<File> {
   const form = new FormData();
   form.append('doc_url', docUrl);

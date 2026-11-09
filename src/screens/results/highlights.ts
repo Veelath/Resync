@@ -1,5 +1,6 @@
 import type { V7Recommendation } from '../../services/v7Result';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
+import { edgeSentence } from '../../lib/placement';
 
 type CategorizedRecommendation = V7Recommendation & { category?: RecommendationCategory };
 
@@ -44,7 +45,10 @@ export function recommendationRanges(section: { name: string; text: string | nul
   const text = section.text ?? '';
   const ranges: { start: number; end: number; id: string; category?: RecommendationCategory }[] = [];
   for (const recommendation of recommendations) {
-    const sentence = recommendation.original_sentence;
+    // A new sentence has no original; it is shown by highlighting the sentence it goes right after (or right before).
+    const sentence = recommendation.original_sentence
+      || (recommendation.kind === 'add' && recommendation.section === section.name && recommendation.placement
+        ? edgeSentence(text, recommendation.placement, 100000) : '');
     if (!sentence || (recommendation.section && recommendation.section !== section.name)
       || (!recommendation.section && recommendation.section_a !== section.name && recommendation.section_b !== section.name)) continue;
     let start = text.indexOf(sentence);

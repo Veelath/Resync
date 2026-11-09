@@ -5,7 +5,7 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import { loadSourceFile, saveSourceFile } from '../../lib/sourceFile';
 import type { HighlightSpec } from '../../lib/docxHighlight';
 import { DocxManuscript, type DocxManuscriptHandle } from './DocxManuscript';
-import { fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
+import { fetchSourceFile, fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
 import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
@@ -14,7 +14,7 @@ import { ReportPrint } from './ReportPrint';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
-import { clearPlacementMarker, edgeSentence, markInDocx, markInSection, type Placement } from '../../lib/placement';
+import { clearPlacementMarker, edgeSentence, type Placement } from '../../lib/placement';
 import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
@@ -66,7 +66,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     setDocxLinked(null);
     if (sourceFile || isSample || !scanId) { setStoredFile(null); return; }
     let cancelled = false;
-    loadSourceFile(scanId).then(file => { if (!cancelled) setStoredFile(file); });
+    // this browser first; otherwise the copy kept on the server, which is then remembered here
+    loadSourceFile(scanId).then(file => file ?? fetchSourceFile(scanId).then(remote => { if (remote) void saveSourceFile(scanId, remote); return remote; }))
+      .then(file => { if (!cancelled) setStoredFile(file); });
     return () => { cancelled = true; };
   }, [scanId, sourceFile, isSample]);
   // The sample report is a real Word file too, so it looks exactly like a student's own report: pages, highlights and all.
@@ -99,9 +101,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
 
   if (!result) return null;
 
+  // A user's first scan is free: its full report opens by itself, with no credit asked for. The server decides this again when it unlocks.
+  const firstFree = !isSample && (result as { access?: { first_free?: boolean } }).access?.first_free === true;
+  useEffect(() => {
+    if (firstFree && locked && !unlockPending.current && unlockedId.current !== result.analysis_run_id) void handleUnlock();
+  }, [firstFree, locked, result.analysis_run_id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleUnlock() {
     if (!result || !locked || unlockPending.current) return;
-    if (balance === 0 && unlockedId.current !== result.analysis_run_id) { setBuyCredits(true); return; }
+    if (balance === 0 && !firstFree && unlockedId.current !== result.analysis_run_id) { setBuyCredits(true); return; }
     unlockPending.current = true;
     setUnlocking(true);
     setUnlockError('');
@@ -126,7 +134,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
 
   const unlockControl = <div className="space-y-2">
     <button type="button" onClick={handleUnlock} disabled={unlocking} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white hover:bg-[#1115a5] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
-      {unlocking ? 'Unlockingâ€¦' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
+      {unlocking ? 'Unlocking…' : firstFree ? 'Open your free report' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
     </button>
     <p className="text-center text-xs text-[#4b5563]">{balance == null ? 'Checking credit balance' : `You have ${balance} ${balance === 1 ? 'credit' : 'credits'}`}</p>
     {unlockError && <p role="alert" className="text-sm text-[#9f1239]">{unlockError} {balance === 0 ? 'Buy credits to continue.' : 'Try again.'}</p>}
@@ -145,7 +153,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const linkedIds = docxFile
-    ? new Set<string>(recommendations.filter(rec => rec.kind !== 'add' && (locked ? docxLinked?.has(rec.id) : !!rec.quote)).map(rec => rec.id))
+    ? new Set<string>(recommendations.filter(rec => (rec.kind === 'add' ? !!rec.anchor : !!rec.quote) && (!locked || docxLinked?.has(rec.id))).map(rec => rec.id))
     : new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
   // Colors follow the pair's grade, so a highlight in the paper matches the card that explains it.
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
@@ -205,30 +213,20 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     const first = recommendations.find(item => item.pair === order);
     if (!first) return;
     if (linkedIds.has(first.id) && (docxFile || document.getElementById(`highlight-${first.id}`))) focusLinked('highlight', first.id);
-    else if (first.kind === 'add' && first.section && first.placement) showPlacement(first.section, first.placement, plainText(first.revision));
+    else if (first.kind === 'add' && first.section && first.placement) showPlacement(first.section, first.placement);
     else {
       setPlacementMessage('We could not find that passage in the preview. You can still read the recommendation.');
       window.setTimeout(() => setPlacementMessage(''), 6000);
     }
   }
 
-  // "Go to this spot": scrolls to where a new sentence belongs and leaves a visible note there until the next one.
-  async function showPlacement(section: string, placement: Placement, sentence?: string) {
-    if (docxFile && !locked) while (await docxView.current?.loadNext()) { /* find the complete section */ }
-    const names = (result?.manuscript_sections ?? []).map(item => item.name);
-    const index = names.findIndex(name => name.toLowerCase() === section.toLowerCase());
-    const marker = index < 0 ? null : docxFile
-      ? markInDocx(document.querySelector<HTMLElement>('.docx-host .docx-main') ?? document.body, names, index, placement, sentence)
-      : markInSection(document.querySelector(`[data-section-index="${index}"]`), placement, sentence);
-    if (marker) {
-      setPlacementMessage('');
-      scrollToTarget(marker, 2400);
-      return;
-    }
+  // A suggested sentence is shown by the yellow highlight of the sentence it goes next to ("Show me where" goes there). If that
+  // sentence cannot be found in the preview, say where it belongs in words instead.
+  async function showPlacement(section: string, placement: Placement) {
     clearPlacementMarker();
-    setPlacementMessage(locked && index > 0
+    setPlacementMessage(locked && (result?.manuscript_sections ?? []).findIndex(item => item.name.toLowerCase() === section.toLowerCase()) > 0
       ? 'That part of your paper is locked. Unlock the full report to see where this sentence goes.'
-      : `We could not find the ${section} section in the page. Look for it by its heading and add the sentence there.`);
+      : `We could not highlight that spot. Add the sentence at the ${placement === 'start' ? 'beginning' : 'end'} of the ${section} section.`);
     window.setTimeout(() => setPlacementMessage(''), 6000);
   }
   const citations: Citation[] = result.citations.map((citation, index) => ({

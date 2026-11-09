@@ -5,6 +5,7 @@ import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
 import type { Session } from '@supabase/supabase-js';
 import { saveSourceFile } from "../lib/sourceFile";
+import { uploadSourceFile } from "../services/api";
 import { executeManuscriptScan, ScanLimitError, getCreditBalance, getManuscriptOutline, downloadGoogleDoc, type ManuscriptOutline } from '../services/api';
 import './upload-motion.css';
 import './upload-flow.css';
@@ -163,6 +164,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [docInfo, setDocInfo] = useState<DocInfo | null>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [firstScanFree, setFirstScanFree] = useState(false);
 
   // The sections the scan will compare, read by the backend so they match what the scan sees.
   const [outline, setOutline] = useState<ManuscriptOutline | null>(null);
@@ -236,7 +238,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   useEffect(() => {
     if (!session?.user?.id) return;
     let cancelled = false;
-    getCreditBalance(session.user.id).then(result => { if (!cancelled) setCreditBalance(result.balance); }).catch(() => { if (!cancelled) setCreditBalance(null); });
+    getCreditBalance(session.user.id).then(result => { if (!cancelled) { setCreditBalance(result.balance); setFirstScanFree(result.first_scan_free === true); } }).catch(() => { if (!cancelled) setCreditBalance(null); });
     return () => { cancelled = true; };
   }, [session?.user?.id]);
 
@@ -428,7 +430,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         doc_url: !scanFile && mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: id => { if (shownFile) void saveSourceFile(id, shownFile); onScanStarted?.(id); navigatedToProcessing = true; } });
+      }, { onStarted: id => { if (shownFile) { void saveSourceFile(id, shownFile); if (shownFile.size <= 25 * 1024 * 1024) void uploadSourceFile(id, shownFile); } onScanStarted?.(id); navigatedToProcessing = true; } });
       if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc }, shownFile ?? null);
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);
@@ -935,7 +937,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <div className="uf-rows" style={{ borderTop: 0, marginTop: 4 }}>
                     <div className="uf-row"><span>Chapter template</span><b style={{ color: "#2b25c8" }}>{hasChapters ? "Custom" : "Auto-detect"}</b></div>
                     <div className="uf-row"><span>Scan preview</span><b style={{ color: "#0b9f6e" }}>Free</b></div>
-                    <div className="uf-row"><span>Full report unlock</span><b>1 credit</b></div>
+                    <div className="uf-row"><span>Full report unlock</span><b>{firstScanFree ? "Free (your first scan)" : "1 credit"}</b></div>
                     <div className="uf-row"><span>Your credits</span><b>{creditBalance ?? "—"}</b></div>
                   </div>
                 </div>

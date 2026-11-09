@@ -13,7 +13,7 @@ self.onmessage = async (event: MessageEvent<{ file?: File; index: number }>) => 
       pages = pageDocument(xml);
     }
     if (!zip || !pages[event.data.index]) throw new Error('Missing page');
-    const bytes = await archiveDocument(zip, pages[event.data.index]);
+    const bytes = await archiveDocument(zip, pages[event.data.index], { image: 12_000_000, total: 30_000_000 });   // the report shows the real pictures
     self.postMessage({ bytes, index: event.data.index, total: pages.length }, { transfer: [bytes] });
   } catch { self.postMessage({ error: true }); }
 };

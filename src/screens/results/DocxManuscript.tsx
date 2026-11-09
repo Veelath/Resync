@@ -43,6 +43,23 @@ function keepTextOnly(root: HTMLElement, locked: boolean) {
   });
 }
 
+/** The heading of the second section (with real text after it, so a table-of-contents line does not count): a locked report stops here. */
+function withheldStart(root: HTMLElement, secondSection?: string): Element | null {
+  const norm = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
+  const target = norm(secondSection ?? '');
+  if (!target) return null;
+  const paragraphs = [...root.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table') && norm(element.textContent ?? '').length > 0);
+  for (let at = 0; at < paragraphs.length; at++) {
+    const text = norm(paragraphs[at].textContent ?? '');
+    const bare = text.replace(/^chapter\s+(?:\d+|[ivxlcdm]+)\b[\s:.\-–—]*/, '');
+    // the heading itself, with a chapter number before it or a short sub-heading run on after it
+    const isHeading = text === target || bare === target || (bare.startsWith(`${target} `) && bare.length <= target.length + 50);
+    // real text soon after (a sub-heading may come first); a table of contents is only short lines
+    if (isHeading && paragraphs.slice(at + 1, at + 5).some(next => norm(next.textContent ?? '').length >= 60)) return paragraphs[at];
+  }
+  return null;
+}
+
 export interface DocxManuscriptHandle { loadNext: () => Promise<boolean> }
 
 /** The student's uploaded Word file, drawn as it looks in Word, with the recommended sentences highlighted. */
@@ -59,6 +76,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
   const [budget, setBudget] = useState(INITIAL_ELEMENTS);
   const [loadedPages, setLoadedPages] = useState(0);
   const [truncated, setTruncated] = useState(false);
+  const [autoDone, setAutoDone] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');
   const [scale, setScale] = useState(1);
   const [pageCount, setPageCount] = useState(0);
@@ -73,14 +91,15 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     const body = bodyRef.current;
     if (!body) return;
     setStatus('loading');
+    setAutoDone(false);
     body.replaceChildren();
     setLoadedPages(0);
-    if (!locked) {
+    {
       const worker = new Worker(new URL('../../lib/docxPages.worker.ts', import.meta.url), { type: 'module' });
-      let next = 0, total = 1, pending: Promise<boolean> | null = null;
+      let next = 0, total = 1, stopped = false, pending: Promise<boolean> | null = null;
       const found = new Set<string>();
       const loadNext = (): Promise<boolean> => {
-        if (cancelled || next >= total) return Promise.resolve(false);
+        if (cancelled || stopped || next >= total) return Promise.resolve(false);
         if (pending) return pending;
         pending = new Promise<boolean>(resolve => {
           worker.onmessage = async event => {
@@ -95,14 +114,24 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
                 renderFootnotes: true, renderEndnotes: true, useBase64URL: true,
               });
               if (cancelled) { resolve(false); return; }
-              keepTextOnly(rendered, false);
+              keepTextOnly(rendered, locked);
               if (next === 0) styleRef.current?.replaceChildren(...styles.childNodes);
               const ids = highlightSentences(rendered, callbacks.current.highlights.filter(spec => !found.has(spec.id)));
               ids.forEach(id => found.add(id));
               body.append(...rendered.childNodes);
+              if (locked) {   // the rest of the paper is withheld until the report is unlocked
+                const cut = withheldStart(body, secondSection);
+                if (cut && body.lastChild) {
+                  const withheld = document.createRange();
+                  withheld.setStartBefore(cut);
+                  withheld.setEndAfter(body.lastChild);
+                  withheld.deleteContents();
+                  stopped = true;
+                }
+              }
               callbacks.current.onLinked(new Set(found));
               next++; total = event.data.total; setLoadedPages(next);
-              setTruncated(next < total);
+              setTruncated(!stopped && next < total);
               setStatus('ready');
               resolve(true);
             } catch { callbacks.current.onFailed(); resolve(false); }
@@ -113,57 +142,23 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
         return pending;
       };
       loadNextRef.current = loadNext;
-      void loadNext();
+      if (locked) {   // keep drawing pages until the second section's heading is reached; if it never is, the text view is used
+        void (async () => {
+          while (!cancelled && !stopped && next < total) { if (!(await loadNext())) return; }
+          if (!cancelled && !stopped) callbacks.current.onFailed();
+        })();
+      } else {   // the remaining pages follow on their own, a batch at a time, so the page stays responsive and nothing needs clicking
+        void (async () => {
+          while (!cancelled && !stopped) {
+            if (!(await loadNext())) break;
+            await new Promise(resolve => setTimeout(resolve, 40));
+          }
+          if (!cancelled) setAutoDone(true);
+        })();
+      }
       return () => { cancelled = true; loadNextRef.current = async () => false; worker.terminate(); };
     }
-    loadNextRef.current = async () => false;
-    const rendered = document.createElement('div');
-    const styles = document.createElement('div');
-    const worker = new Worker(new URL('../../lib/docxPreview.worker.ts', import.meta.url), { type: 'module' });
-    const guard = createPreviewGuard(() => { worker.terminate(); if (!cancelled) callbacks.current.onFailed(); });
-    worker.onerror = () => { guard.cancel(); worker.terminate(); if (!cancelled) callbacks.current.onFailed(); };
-    worker.onmessage = async event => {
-      if (cancelled || !guard.isActive()) return;
-      if (event.data.error) { guard.cancel(); worker.terminate(); callbacks.current.onFailed(); return; }
-      try {
-        await renderAsync(event.data.bytes, rendered, styles, {
-          className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
-          breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
-          renderFootnotes: true, renderEndnotes: true, useBase64URL: true,
-        });
-      if (cancelled || !guard.finish()) return;
-      worker.terminate();
-      setTruncated(event.data.truncated);
-      keepTextOnly(rendered, locked);
-      if (locked) {
-        const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
-        const target = normalize(secondSection ?? '');
-        const heading = target && [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].find(element => {
-          const text = normalize(element.textContent ?? '');
-          return text === target || (text.endsWith(` ${target}`) && /^chapter\s+(?:\d+|[ivxlcdm]+)\b/.test(text));
-        });
-        if (!heading || !rendered.lastChild) { callbacks.current.onFailed(); return; }
-        const withheld = document.createRange();
-        withheld.setStartBefore(heading);
-        withheld.setEndAfter(rendered.lastChild);
-        withheld.deleteContents();
-        keepTextOnly(rendered, locked);
-      }
-      styleRef.current?.replaceChildren(...styles.childNodes);
-      body.replaceChildren(...rendered.childNodes);
-      const specs = callbacks.current.highlights;
-      callbacks.current.onLinked(highlightSentences(body, specs));
-      setActivePage(0);
-      setStatus('ready');
-      } catch (error) {
-        guard.cancel(); worker.terminate();
-        console.error('Could not draw the uploaded document', error);
-        if (!cancelled) callbacks.current.onFailed();
-      }
-    };
-    worker.postMessage({ file, budget });
-    return () => { cancelled = true; guard.cancel(); worker.terminate(); };
-  }, [file, highlightKey, locked, secondSection, budget]);
+  }, [file, highlightKey, locked, secondSection]);
 
   // Word pages are fixed width: shrink them to fit a narrow pane instead of scrolling sideways.
   useEffect(() => {
@@ -267,7 +262,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     <div ref={outerRef} className="docx-main">
       {status === 'loading' && <p className="py-6 text-center text-sm text-gray-500" role="status">Opening your manuscript as you uploaded it…</p>}
       <div ref={bodyRef} style={{ zoom: scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
-      {status === 'ready' && truncated && (locked ? budget < MAX_ELEMENTS : true) && <button type="button" className="uf-btn is-ghost is-sm" onClick={() => locked ? setBudget(nextBudget(budget)) : void loadNextRef.current()}>Show more</button>}
+      {status === 'ready' && truncated && autoDone && (locked ? budget < MAX_ELEMENTS : true) && <button type="button" className="uf-btn is-ghost is-sm" onClick={() => locked ? setBudget(nextBudget(budget)) : void loadNextRef.current()}>Show more</button>}
       {locked && status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>Only the first pages are shown.</p>}
     </div>
   </div>;

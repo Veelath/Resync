@@ -76,7 +76,7 @@ export function levelOf(pair: ManuscriptFlowPair, hasItems: boolean): CardLevel 
 }
 
 /** One pair with a real issue: why, the lines involved, and the suggested edits. Shared by the list and the dimension view. */
-export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, onShowPlacement, revealId, showAll = false, selected = false, onSelect }: {
+export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManuscript, onShowPlacement, revealId, showAll = false, selected = false, onSelect, alwaysOpen = false }: {
   pair: ManuscriptFlowPair;
   items: RecommendationItem[];
   severity: CardLevel;
@@ -90,6 +90,8 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   /** In the list a card starts closed; choosing it opens it and shows where it is in the paper. Without onSelect it is always open. */
   selected?: boolean;
   onSelect?: () => void;
+  /** Every card shows its full explanation and steps, not only the chosen one. */
+  alwaysOpen?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -113,7 +115,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const copy = (id: string, text: string) => {
     navigator.clipboard?.writeText(text).then(() => { setCopied(id); window.setTimeout(() => setCopied(current => current === id ? null : current), 1800); }).catch(() => undefined);
   };
-  const collapsible = !!onSelect;
+  const collapsible = !!onSelect && !alwaysOpen;
   const head = <>
     <div className="flex flex-wrap items-center gap-2">
       <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${items.length && items.length <= 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-[#2b25c8]'}`}>
@@ -129,7 +131,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
       <span className={chip}>{pair.section_b}</span>
     </div>
   </>;
-  const frame = `space-y-3 rounded-2xl border bg-white p-4 ${collapsible && selected ? 'border-[#2b25c8] shadow-[0_0_0_3px_rgba(43,37,200,.14)]' : 'border-[#e3e1fa] shadow-[0_1px_3px_rgba(26,31,204,.06)]'}`;
+  const frame = `space-y-3 rounded-2xl border bg-white p-4 ${!!onSelect && selected ? 'border-[#2b25c8] shadow-[0_0_0_3px_rgba(43,37,200,.14)]' : 'border-[#e3e1fa] shadow-[0_1px_3px_rgba(26,31,204,.06)]'}`;
   if (collapsible && !selected) {
     return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className={`${frame} cursor-pointer transition hover:-translate-y-px hover:border-[#b9b6f2]`}>
       <div role="button" tabIndex={0} aria-expanded="false" onClick={onSelect} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(); } }} className="space-y-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2b25c8]">
@@ -211,8 +213,6 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
       return { pair, pairItems, severity: levelOf(pair, pairItems.length > 0) };
     })
     .filter(row => mode === 'issues' ? row.severity !== null && row.severity !== 'None' : row.severity === 'None');
-  // The open finding comes first, like a card lifted out of the list.
-  if (selectedOrder != null) rows.sort((a, b) => Number(b.pair.order === selectedOrder) - Number(a.pair.order === selectedOrder));
   // Pairs the AI could not judge are not "fine": they are shown with the recommendations as something still to do.
   const unreviewed = pairs
     .filter(pair => pair.scores.overall_coherence != null && (!onlyOrders || onlyOrders.has(pair.order)))
@@ -233,7 +233,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
         </div>;
       }
       return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll}
-        selected={selectedOrder === pair.order} onSelect={onSelect && (() => onSelect(pair.order))} /></Fragment>;
+        selected={selectedOrder === pair.order} onSelect={onSelect && (() => onSelect(pair.order))} alwaysOpen /></Fragment>;
     })}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <p className="text-sm font-semibold text-amber-900">{rateLimited

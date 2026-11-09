@@ -58,7 +58,7 @@ export async function preparePreview(zip: JSZip, xml: string, budget: number) {
   return { bytes: await archiveDocument(zip, trimmed.xml), truncated: trimmed.truncated };
 }
 
-export async function archiveDocument(zip: JSZip, xml: string) {
+export async function archiveDocument(zip: JSZip, xml: string, limits = { image: 300000, total: 2000000 }) {
   const copy = new JSZip();
   let mediaBytes = 0;
   const placeholder = Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,2,0,0,0,144,119,83,222,0,0,0,12,73,68,65,84,120,156,99,56,112,224,0,0,4,132,2,65,225,141,175,39,0,0,0,0,73,69,78,68,174,66,96,130]);
@@ -67,7 +67,7 @@ export async function archiveDocument(zip: JSZip, xml: string) {
     if (name === 'word/document.xml') { copy.file(name, xml); continue; }
     if (/^word\/media\//i.test(name)) {
       const size = (entry as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize;
-      if (size == null || size > 300000 || mediaBytes + size > 2000000) { copy.file(name, placeholder); continue; }
+      if (size == null || size > limits.image || mediaBytes + size > limits.total) { copy.file(name, placeholder); continue; }
       mediaBytes += size;
     }
     // Passing the compressed entry avoids inflating unrelated parts or large images.
