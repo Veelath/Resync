@@ -12,6 +12,7 @@ import { UploadTour, uploadTourSeen } from './UploadTour';
 import { previewParagraphs } from '../lib/previewParagraphs';
 import { DocxPreview } from '../components/DocxPreview';
 import { canShowWordPreview } from '../lib/docxPreview';
+import { wordOutlineReady } from '../lib/uploadReadiness';
 
 type UploadMode = "file" | "link";
 
@@ -28,6 +29,8 @@ const WORD_MIME_TYPES = [
 ];
 import { isDocx, docxMessage } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
+
+const WORD_READ_ERROR = 'This file could not be read as a Word document. Check that it is a real .docx file, or paste your Google Docs link instead.';
 
 const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
 const MAX_TEMPLATE_BYTES = 100 * 1024;
@@ -224,10 +227,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     let cancelled = false;
     const current = sourceToken.current.current();
     setOutlineLoading(true);
+    setOutline(null);
     setOutlineError(null);
     getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() })
       .then(result => { if (!cancelled && current()) setOutline(result); })
-      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(error instanceof Error ? error.message : "We could not read this document."); if (error instanceof ScanLimitError) setScanError(error.message); } })
+      .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(mode === "file" && !(error instanceof ScanLimitError) ? WORD_READ_ERROR : error instanceof Error ? error.message : "We could not read this document."); if (error instanceof ScanLimitError) setScanError(error.message); } })
       .finally(() => { if (!cancelled && current()) setOutlineLoading(false); });
     return () => { cancelled = true; };
   }, [mode, activeFile, link, linkState]);
@@ -354,6 +358,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     sourceToken.current.invalidate();
     const current = sourceToken.current.current();
     setUploadedPreviewFile(null);
+    setUploadedFile(null);
+    setOutline(null);
+    setOutlineError(null);
     lastScanError = null;
     if (!isDocx(file.name)) {
       setUploadedFile(null);
@@ -382,7 +389,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   async function handleScan() {
-    if (notAPaper || scanningRef.current) return;
+    if (notAPaper || scanningRef.current || (mode === "file" && !wordOutlineReady(outlineLoading, outlineError, !!outline))) return;
     if (!session?.user) { onNavigate("login"); return; }
     lastScanError = null;
     setScanError(null);
@@ -942,6 +949,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               </div>
             </div>
 
+            {mode === "file" && outlineError && !scanError && <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>{outlineError}</div>}
             {notAPaper && !scanError && (
               <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
@@ -959,7 +967,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                 Choose a different document
               </button>
-              <button type="button" onClick={handleScan} disabled={isScanning || notAPaper || (mode === "file" ? !uploadedFile : !link.trim() || linkState === "loading")} className="uf-btn is-lg is-grow um-cta">
+              <button type="button" onClick={handleScan} disabled={isScanning || notAPaper || (mode === "file" ? !uploadedFile || !wordOutlineReady(outlineLoading, outlineError, !!outline) : !link.trim() || linkState === "loading")} className="uf-btn is-lg is-grow um-cta">
                 {isScanning ? "Scanning manuscript…" : "Yes, run coherence scan"}
                 {!isScanning && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
               </button>
