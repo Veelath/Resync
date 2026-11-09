@@ -5,6 +5,7 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import { loadSourceFile, saveSourceFile } from '../../lib/sourceFile';
 import type { HighlightSpec } from '../../lib/docxHighlight';
 import { reviewUnfinished } from './reviewComplete';
+import { shouldRetryWordView } from './wordViewRetry';
 import { DocxPreview } from '../../components/DocxPreview';
 import { DocxManuscript, type DocxManuscriptHandle } from './DocxManuscript';
 import { downloadGoogleDoc, fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
@@ -60,6 +61,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
   const [sourceLoading, setSourceLoading] = useState(!sourceFile && !isSample);
   const [docxFailed, setDocxFailed] = useState(false);
   const [previewFailed, setPreviewFailed] = useState(false);
+  const previousLocked = useRef(locked);
+  useEffect(() => {
+    if (shouldRetryWordView(previousLocked.current, locked)) { setDocxFailed(false); setPreviewFailed(false); }
+    previousLocked.current = locked;
+  }, [locked]);
   // A report opened where its Word file was never saved (another browser, another address) can be pointed at the original file once.
   const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
