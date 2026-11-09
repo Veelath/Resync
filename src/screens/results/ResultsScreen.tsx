@@ -11,9 +11,8 @@ import { ResultsScorePanel } from './ResultsScorePanel';
 import { ReportPrint } from './ReportPrint';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
-import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, plainText, usableTitle } from './helpers';
-import { clearPlacementMarker, edgeSentence, markInSection, type Placement } from '../../lib/placement';
-import { findSectionIndex } from '../../lib/sectionNavigation';
+import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, usableTitle } from './helpers';
+import { edgeSentence, findSectionIndex, type Placement } from '../../lib/sectionNavigation';
 import { matchedRecommendations, recommendationRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
@@ -26,6 +25,8 @@ type Tab = 'recommendations' | 'clear' | 'citations';
 export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdated }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean; onScanUpdated?: (scan: V7ScanResponse) => void }) {
   const [currentScan, setCurrentScan] = useState(scan);
   const manuscriptScroll = useRef<HTMLDivElement>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashedTarget = useRef<HTMLElement | null>(null);
   const result = isSample ? SAMPLE_REPORT : currentScan;
   const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result?.doc_url ?? '');
   const locked = !isSample && result?.access?.unlocked === false;
@@ -38,6 +39,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const [unlockedToast, setUnlockedToast] = useState(false);
   const [placementMessage, setPlacementMessage] = useState('');
   useEffect(() => setCurrentScan(scan), [scan]);
+  useEffect(() => () => { if (flashTimer.current) clearTimeout(flashTimer.current); }, []);
   useEffect(() => {
     if (!locked || !result?.user_id) return;
     getCreditBalance(result.user_id).then(value => setBalance(value.balance)).catch(() => setBalance(null));
@@ -94,7 +96,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   // Recommendations tab holds recommendations only. Pairs the AI could not review are never counted as clear.
   const clearCount = result.manuscript_flow.filter(pair => pair.scores.overall_coherence != null && (pair.severity !== undefined ? pair.severity === 'None' && !hasAdvice(pair.order) : false)).length;
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
-  const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
+  const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => `${range.pair}:${range.id}`)));
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
 
   function scrollToTarget(target: HTMLElement | null, flash = 1600) {
@@ -104,17 +106,22 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       scroller.scrollTo({ top: scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (scroller.clientHeight - target.clientHeight) / 2, behavior });
     } else target?.scrollIntoView({ block: 'center', behavior });
     target?.focus({ preventScroll: true });
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashedTarget.current?.classList.remove('result-focus');
+    if (target) void target.offsetWidth;
     target?.classList.add('result-focus');
-    window.setTimeout(() => target?.classList.remove('result-focus'), flash);
+    flashedTarget.current = target;
+    flashTimer.current = setTimeout(() => target?.classList.remove('result-focus'), flash);
   }
 
-  async function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
+  async function focusLinked(kind: 'recommendation' | 'highlight', id: string, pair?: number) {
     if (kind === 'recommendation') {
       setActiveTab('recommendations'); setRevealId(id);
-      const found = recommendations.find(item => item.id === id);
+      const found = recommendations.find(item => item.id === id && (pair === undefined || item.pair === pair));
       if (found) setSelectedOrder(found.pair);
     }
-    requestAnimationFrame(() => scrollToTarget(kind === 'highlight' ? manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${CSS.escape(id)}"]`) ?? null : document.getElementById(`${kind}-${id}`)));
+    const order = pair ?? recommendations.find(item => item.id === id)?.pair;
+    requestAnimationFrame(() => scrollToTarget(kind === 'highlight' ? manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${order}-${CSS.escape(id)}"]`) ?? null : document.querySelector<HTMLElement>(`[aria-label="Analysis panel"] [data-pair-order="${order}"] [id="recommendation-${CSS.escape(id)}"]`)));
   }
 
   // Choosing a finding opens it and takes the reader to the matching spot in the paper.
@@ -123,25 +130,21 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     setSelectedOrder(order);
     const first = recommendations.find(item => item.pair === order);
     if (!first) return;
-    if (linkedIds.has(first.id) && document.getElementById(`highlight-${first.id}`)) focusLinked('highlight', first.id);
-    else if (first.kind === 'add' && first.section && first.placement) showPlacement(first.section, first.placement, plainText(first.revision));
-    else {
-      setPlacementMessage('We could not find that passage in the preview. You can still read the recommendation.');
-      window.setTimeout(() => setPlacementMessage(''), 6000);
-    }
+    if (linkedIds.has(`${first.pair}:${first.id}`)) focusLinked('highlight', first.id, first.pair);
+    else if (first.kind === 'add' && first.section && first.placement) showPlacement(first.section, first.placement);
+    else if (first.section) showPlacement(first.section, 'start');
   }
 
-  // "Go to this spot": scrolls to where a new sentence belongs and leaves a visible note there until the next one.
-  async function showPlacement(section: string, placement: Placement, sentence?: string) {
+  // If the passage is absent, take the reader to the available section heading.
+  async function showPlacement(section: string, _placement: Placement) {
     const names = (result?.manuscript_sections ?? []).map(item => item.name);
     const index = findSectionIndex(names, section);
-    const marker = index < 0 ? null : markInSection(document.querySelector(`[data-section-index="${index}"]`), placement, sentence);
-    if (marker) {
+    const heading = index < 0 ? null : manuscriptScroll.current?.querySelector<HTMLElement>(`[data-section-index="${index}"] h2`);
+    if (heading) {
       setPlacementMessage('');
-      scrollToTarget(marker, 2400);
+      scrollToTarget(heading, 2400);
       return;
     }
-    clearPlacementMarker();
     setPlacementMessage(locked && index > 0
       ? 'That part of your paper is locked. Unlock the full report to see where this sentence goes.'
       : `We could not find the ${section} section in the page. Look for it by its heading and add the sentence there.`);
@@ -181,13 +184,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
         <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
-          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
+          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
           <BackToTop container={manuscriptScroll} label="Back to top of the manuscript" />
         </div>
       </div>
       <aside tabIndex={0} aria-label="Analysis panel" className="results-scroll order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-2 lg:w-[clamp(380px,28vw,520px)] lg:rounded-none lg:shadow-none lg:overflow-y-auto print:hidden">
         <div>
-          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} hideBreakdown={selectedOrder != null && activeTab === 'recommendations'} />
+          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} hideBreakdown={selectedOrder != null && activeTab === 'recommendations'} />
             {result.rescan_unchanged && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900">No changes detected since your last scan of this manuscript, so this report matches the previous one.</p>}
             {result.structure_note && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-900 print:hidden">{result.structure_note}</p>}
             {selectedOrder != null && activeTab === 'recommendations' && <button type="button" onClick={() => setSelectedOrder(null)} className="mx-4 mt-3 flex items-center gap-2 text-[13.5px] font-extrabold text-[#2b25c8] focus-visible:outline-2 focus-visible:outline-offset-2 print:hidden">
@@ -205,9 +208,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
+                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
               </div>}
-              {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} mode="clear" />}
+              {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>

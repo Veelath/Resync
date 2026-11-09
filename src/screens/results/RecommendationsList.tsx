@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import type { ManuscriptFlowPair } from '../../services/v7Result';
 import { categoryColors, type RecommendationCategory } from './categoryColors';
 import { plainText } from './helpers';
-import type { Placement } from '../../lib/placement';
+import type { Placement } from '../../lib/sectionNavigation';
 
 export interface RecommendationItem {
   id: string;
@@ -131,14 +131,14 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   </>;
   const frame = `space-y-3 rounded-2xl border bg-white p-4 ${collapsible && selected ? 'border-[#2b25c8] shadow-[0_0_0_3px_rgba(43,37,200,.14)]' : 'border-[#e3e1fa] shadow-[0_1px_3px_rgba(26,31,204,.06)]'}`;
   if (collapsible && !selected) {
-    return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className={`${frame} cursor-pointer transition hover:-translate-y-px hover:border-[#b9b6f2]`}>
+    return <section data-pair-order={pair.order} aria-label={`${pair.section_a} and ${pair.section_b}`} className={`${frame} cursor-pointer transition hover:-translate-y-px hover:border-[#b9b6f2]`}>
       <div role="button" tabIndex={0} aria-expanded="false" onClick={onSelect} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(); } }} className="space-y-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2b25c8]">
         {head}
         <span className="block text-[13px] font-extrabold text-[#2b25c8]">Show me where →</span>
       </div>
     </section>;
   }
-  return <section aria-label={`${pair.section_a} and ${pair.section_b}`} className={frame}>
+  return <section data-pair-order={pair.order} aria-label={`${pair.section_a} and ${pair.section_b}`} className={frame}>
     {head}
     <div className="space-y-3 border-t border-[#eeedfb] pt-3">
     <p className="text-sm leading-snug text-[#4b5275]">{severity === 'Suggestion'
@@ -166,7 +166,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
                     <button type="button" onClick={() => copy(item.id, sentence)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#2b25c8] px-4 py-2 text-xs font-bold text-white hover:bg-[#1f1aa6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b25c8]">
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></svg>
                       {copied === item.id ? 'Copied!' : 'Copy sentence'}</button>
-                    {(linkedIds.has(item.id) || (onShowPlacement && item.section && item.placement)) && <button type="button" onClick={() => linkedIds.has(item.id) ? onShowInManuscript(item.id) : onShowPlacement?.(item.section!, item.placement!, sentence)} className={outlineButton}>
+                    {(linkedIds.has(`${pair.order}:${item.id}`) || (onShowPlacement && item.section && item.placement)) && <button type="button" onClick={() => linkedIds.has(`${pair.order}:${item.id}`) ? onShowInManuscript(item.id) : onShowPlacement?.(item.section!, item.placement!, sentence)} className={outlineButton}>
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
                       Show me where</button>}
                   </div>
@@ -175,7 +175,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
                   <p className="flex items-start gap-2"><span className={stepNumber}>1</span><span>{item.section ? <>Go to <strong className="capitalize text-[#0b0f3d]">{item.section}</strong> and find:</> : 'Find this part:'}</span></p>
                   {item.quote ? <p className="ml-7 rounded-lg bg-[#f6f7fb] px-3 py-2 font-serif text-[13px] text-gray-700">“{clip(item.quote, 160)}”</p> : null}
                   <p className="flex items-start gap-2"><span className={stepNumber}>2</span><span>{sentence}</span></p>
-                  {linkedIds.has(item.id) && <div className="ml-7"><button type="button" onClick={() => onShowInManuscript(item.id)} className={outlineButton}>Show me where</button></div>}
+                  {(linkedIds.has(`${pair.order}:${item.id}`) || (onShowPlacement && item.section)) && <div className="ml-7"><button type="button" onClick={() => linkedIds.has(`${pair.order}:${item.id}`) ? onShowInManuscript(item.id) : onShowPlacement?.(item.section!, 'start')} className={outlineButton}>Show me where</button></div>}
                 </>}
           </li>;
         })}
@@ -190,7 +190,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
   items: RecommendationItem[];
   pairs: ManuscriptFlowPair[];
   linkedIds: Set<string>;
-  onShowInManuscript: (id: string) => void;
+  onShowInManuscript: (id: string, pair: number) => void;
   onShowPlacement?: (section: string, placement: Placement, sentence?: string) => void;
   revealId: string | null;
   onlyOrders?: Set<number>;
@@ -232,7 +232,7 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
           {falseAlarm && <p className="mt-0.5 flex items-start gap-1.5 text-xs font-semibold text-emerald-700"><svg aria-hidden="true" viewBox="0 0 20 20" className="mt-px size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="8" /><path d="M6.5 10.3l2.4 2.4 4.6-5" /></svg><span>Minor vocabulary difference detected. No action needed.</span></p>}
         </div>;
       }
-      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={onShowInManuscript} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll}
+      return <Fragment key={pair.order}><PairIssueCard pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={id => onShowInManuscript(id, pair.order)} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll}
         selected={selectedOrder === pair.order} onSelect={onSelect && (() => onSelect(pair.order))} /></Fragment>;
     })}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">

@@ -11,8 +11,6 @@
 .rp-crumb{min-width:0;flex:1;font-size:13.5px;color:#7d7b9e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rp-actions{display:flex;align-items:center;gap:10px;margin-left:auto;flex:none}
 
-.results-screen .manuscript-scroll:has(.docx-host){background:#edecfb !important}
-
 .rp-score{padding:20px 20px 4px;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 .rp-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:20px;padding:18px 20px;border-radius:22px;background:linear-gradient(135deg,#17136f,#2b25c8 70%,#3a33e6);color:#fff;animation:rp-rise .7s cubic-bezier(.2,.7,.2,1) both}
 .rp-hero::after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(185,182,255,.35),transparent 70%);pointer-events:none}

@@ -1,7 +1,6 @@
 import type { V7Recommendation } from '../../services/v7Result';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
-import { findSectionIndex } from '../../lib/sectionNavigation';
-import { edgeSentence } from '../../lib/placement';
+import { edgeSentence, findSectionIndex } from '../../lib/sectionNavigation';
 
 type CategorizedRecommendation = V7Recommendation & { category?: RecommendationCategory };
 
@@ -48,7 +47,7 @@ export function matchedRecommendations(sections: { name: string; text: string | 
 
 export function recommendationRanges(section: { name: string; text: string | null }, recommendations: CategorizedRecommendation[]) {
   const text = section.text ?? '';
-  const ranges: { start: number; end: number; id: string; category?: RecommendationCategory }[] = [];
+  const ranges: { start: number; end: number; id: string; pair: number; category?: RecommendationCategory }[] = [];
   for (const recommendation of recommendations) {
     const sentence = recommendation.original_sentence || (recommendation.kind === 'add' && recommendation.section === section.name
       ? edgeSentence(text, recommendation.placement === 'start' ? 'start' : 'end', 4000) : '');
@@ -56,7 +55,7 @@ export function recommendationRanges(section: { name: string; text: string | nul
       || (!recommendation.section && recommendation.section_a !== section.name && recommendation.section_b !== section.name)) continue;
     let start = text.indexOf(sentence);
     while (start >= 0 && ranges.some(range => start < range.end && start + sentence.length > range.start)) start = text.indexOf(sentence, start + 1);
-    if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id, category: recommendationCategory(recommendation.category) });
+    if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id, pair: recommendation.pair_order, category: recommendationCategory(recommendation.category) });
   }
   return ranges.sort((a, b) => a.start - b.start);
 }

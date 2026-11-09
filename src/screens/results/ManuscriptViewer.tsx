@@ -21,19 +21,15 @@ export function AlignmentLegend() {
 
 function PaperHeading({ name }: { name: string }) {
   const chapter = name.match(/^(chapter\s+(?:[ivxlcdm]+|\d+))\b[\s:.-]*(.*)$/i);
-  return <h2 className="manuscript-heading">{chapter ? <><span className="block">{chapter[1]}</span>{chapter[2] && <span className="block">{chapter[2]}</span>}</> : name}</h2>;
+  return <h2 tabIndex={-1} className="manuscript-heading">{chapter ? <><span className="block">{chapter[1]}</span>{chapter[2] && <span className="block">{chapter[2]}</span>}</> : name}</h2>;
 }
 
-export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed, placeholderOnly }: { result: V7ScanResponse; onHighlight?: (id: string) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean; placeholderOnly?: boolean }) {
+export function ManuscriptSections({ result, onHighlight, locked, unlockControl, revealed }: { result: V7ScanResponse; onHighlight?: (id: string, pair: number) => void; locked?: boolean; unlockControl?: React.ReactNode; revealed?: boolean }) {
   const linked = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
-  const pairOf = (id: string) => {
-    const recommendation = linked.find(item => (item.id ?? item.recommendation_id) === id);
-    return result.manuscript_flow.find(pair => pair.order === recommendation?.pair_order);
-  };
   const withheld = result.manuscript_sections?.slice(1) ?? [];
   const fallback = { heading: 'The manuscript continues', paragraphs: Array(3).fill('Quiet lines continue across the page. Soft words fill this space while the full report waits to be opened. '.repeat(4)) };
   return <div className="manuscript-body">
-    {!placeholderOnly && result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
+    {result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
       const text = section.text ?? '';
       const ranges = recommendationRanges(section, linked);
       return <section key={`${index}-${section.name}`} data-section-index={index} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
@@ -45,13 +41,13 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
             const pieces: React.ReactNode[] = [];
             let cursor = start;
             for (const range of ranges.filter(item => item.start >= start && item.end <= end)) {
-              const pair = pairOf(range.id);
+              const pair = result.manuscript_flow.find(item => item.order === range.pair);
               const severity = pair ? severityOf(pair, true) : 'Moderate';
               const tone = severityTones[severity && severity !== 'None' ? severity : 'Moderate'];
               pieces.push(text.slice(cursor, range.start));
-              pieces.push(<button key={range.id} id={`highlight-${range.id}`} type="button" onClick={() => onHighlight?.(range.id)}
+              pieces.push(<button key={`${range.pair}-${range.id}`} id={`highlight-${range.pair}-${range.id}`} type="button" onClick={() => onHighlight?.(range.id, range.pair)}
                 aria-label={`Show recommendation for: ${text.slice(range.start, range.end)}`}
-                className="manuscript-highlight" style={{ backgroundColor: tone.background, color: tone.ink, textDecorationColor: tone.border }}>{text.slice(range.start, range.end)}</button>);
+                className="manuscript-highlight" style={{ backgroundColor: '#fff2a8', color: tone.ink, textDecorationColor: tone.border }}>{text.slice(range.start, range.end)}</button>);
               cursor = range.end;
             }
             pieces.push(text.slice(cursor, end));
