@@ -13,6 +13,7 @@ import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, plainText, usableTitle } from './helpers';
 import { clearPlacementMarker, edgeSentence, markInSection, type Placement } from '../../lib/placement';
+import { findSectionIndex } from '../../lib/sectionNavigation';
 import { matchedRecommendations, recommendationRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
@@ -84,7 +85,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
 
   const displayTitle = isSample ? SAMPLE_REPORT.manuscript_title : usableTitle(result.manuscript_title)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
-  const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
+  const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
+  const recommendations = matched.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
   const issueCount = result.manuscript_flow.filter(pair => pair.severity !== undefined ? pair.severity !== null && (pair.severity !== 'None' || hasAdvice(pair.order)) : hasAdvice(pair.order)).length;
@@ -92,7 +94,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   // Recommendations tab holds recommendations only. Pairs the AI could not review are never counted as clear.
   const clearCount = result.manuscript_flow.filter(pair => pair.scores.overall_coherence != null && (pair.severity !== undefined ? pair.severity === 'None' && !hasAdvice(pair.order) : false)).length;
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
-  const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
 
@@ -113,7 +114,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       const found = recommendations.find(item => item.id === id);
       if (found) setSelectedOrder(found.pair);
     }
-    requestAnimationFrame(() => scrollToTarget(document.getElementById(`${kind}-${id}`)));
+    requestAnimationFrame(() => scrollToTarget(kind === 'highlight' ? manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${CSS.escape(id)}"]`) ?? null : document.getElementById(`${kind}-${id}`)));
   }
 
   // Choosing a finding opens it and takes the reader to the matching spot in the paper.
@@ -133,7 +134,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   // "Go to this spot": scrolls to where a new sentence belongs and leaves a visible note there until the next one.
   async function showPlacement(section: string, placement: Placement, sentence?: string) {
     const names = (result?.manuscript_sections ?? []).map(item => item.name);
-    const index = names.findIndex(name => name.toLowerCase() === section.toLowerCase());
+    const index = findSectionIndex(names, section);
     const marker = index < 0 ? null : markInSection(document.querySelector(`[data-section-index="${index}"]`), placement, sentence);
     if (marker) {
       setPlacementMessage('');

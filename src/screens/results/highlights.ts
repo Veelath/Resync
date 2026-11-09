@@ -1,5 +1,7 @@
 import type { V7Recommendation } from '../../services/v7Result';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
+import { findSectionIndex } from '../../lib/sectionNavigation';
+import { edgeSentence } from '../../lib/placement';
 
 type CategorizedRecommendation = V7Recommendation & { category?: RecommendationCategory };
 
@@ -33,7 +35,11 @@ export function verifiedQuoteRanges(text: string, quotes: string[]): { start: nu
 export function matchedRecommendations(sections: { name: string; text: string | null }[], recommendations: CategorizedRecommendation[]) {
   return recommendations.map(recommendation => {
     const sentence = recommendation.original_sentence;
-    if (!sentence || recommendation.section) return recommendation;
+    if (recommendation.section) {
+      const index = findSectionIndex(sections.map(item => item.name), recommendation.section);
+      return index < 0 ? recommendation : { ...recommendation, section: sections[index].name };
+    }
+    if (!sentence) return recommendation;
     const section = [recommendation.section_a, recommendation.section_b]
       .find(name => sections.find(item => item.name === name)?.text?.includes(sentence));
     return { ...recommendation, section: section ?? '' };
@@ -44,7 +50,8 @@ export function recommendationRanges(section: { name: string; text: string | nul
   const text = section.text ?? '';
   const ranges: { start: number; end: number; id: string; category?: RecommendationCategory }[] = [];
   for (const recommendation of recommendations) {
-    const sentence = recommendation.original_sentence;
+    const sentence = recommendation.original_sentence || (recommendation.kind === 'add' && recommendation.section === section.name
+      ? edgeSentence(text, recommendation.placement === 'start' ? 'start' : 'end', 4000) : '');
     if (!sentence || (recommendation.section && recommendation.section !== section.name)
       || (!recommendation.section && recommendation.section_a !== section.name && recommendation.section_b !== section.name)) continue;
     let start = text.indexOf(sentence);
