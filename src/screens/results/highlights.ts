@@ -1,6 +1,6 @@
 import type { V7Recommendation } from '../../services/v7Result';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
-import { edgeSentence } from '../../lib/placement';
+import { edgeSentence, findSectionIndex } from '../../lib/sectionNavigation';
 
 type CategorizedRecommendation = V7Recommendation & { category?: RecommendationCategory };
 
@@ -34,7 +34,11 @@ export function verifiedQuoteRanges(text: string, quotes: string[]): { start: nu
 export function matchedRecommendations(sections: { name: string; text: string | null }[], recommendations: CategorizedRecommendation[]) {
   return recommendations.map(recommendation => {
     const sentence = recommendation.original_sentence;
-    if (!sentence || recommendation.section) return recommendation;
+    if (recommendation.section) {
+      const index = findSectionIndex(sections.map(item => item.name), recommendation.section);
+      return index < 0 ? recommendation : { ...recommendation, section: sections[index].name };
+    }
+    if (!sentence) return recommendation;
     const section = [recommendation.section_a, recommendation.section_b]
       .find(name => sections.find(item => item.name === name)?.text?.includes(sentence));
     return { ...recommendation, section: section ?? '' };
@@ -43,17 +47,15 @@ export function matchedRecommendations(sections: { name: string; text: string | 
 
 export function recommendationRanges(section: { name: string; text: string | null }, recommendations: CategorizedRecommendation[]) {
   const text = section.text ?? '';
-  const ranges: { start: number; end: number; id: string; category?: RecommendationCategory }[] = [];
+  const ranges: { start: number; end: number; id: string; pair: number; category?: RecommendationCategory }[] = [];
   for (const recommendation of recommendations) {
-    // A new sentence has no original; it is shown by highlighting the sentence it goes right after (or right before).
-    const sentence = recommendation.original_sentence
-      || (recommendation.kind === 'add' && recommendation.section === section.name && recommendation.placement
-        ? edgeSentence(text, recommendation.placement, 100000) : '');
+    const sentence = recommendation.original_sentence || (recommendation.kind === 'add' && recommendation.section === section.name
+      ? edgeSentence(text, recommendation.placement === 'start' ? 'start' : 'end', 4000) : '');
     if (!sentence || (recommendation.section && recommendation.section !== section.name)
       || (!recommendation.section && recommendation.section_a !== section.name && recommendation.section_b !== section.name)) continue;
     let start = text.indexOf(sentence);
     while (start >= 0 && ranges.some(range => start < range.end && start + sentence.length > range.start)) start = text.indexOf(sentence, start + 1);
-    if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id, category: recommendationCategory(recommendation.category) });
+    if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id, pair: recommendation.pair_order, category: recommendationCategory(recommendation.category) });
   }
   return ranges.sort((a, b) => a.start - b.start);
 }

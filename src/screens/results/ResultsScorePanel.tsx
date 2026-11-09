@@ -3,7 +3,7 @@ import type { DimensionBreakdown, DimensionKey, DimensionName, V7ScanResponse } 
 import { categoryColors } from './categoryColors';
 import { PartTooltip, formatPercent } from './PartTooltip';
 import { ScoreExplainer, groupName } from './ScoreExplainer';
-import type { Placement } from '../../lib/placement';
+import type { Placement } from '../../lib/sectionNavigation';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
 export const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
@@ -33,7 +33,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
   large?: boolean;
   items?: RecommendationItem[];
   linkedIds?: Set<string>;
-  onShowInManuscript?: (id: string) => void;
+  onShowInManuscript?: (id: string, pair: number) => void;
   onShowPlacement?: (section: string, placement: Placement, sentence?: string) => void;
   revealId?: string | null;
   /** While one finding is open the score boxes step aside. */
@@ -147,7 +147,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
           </div>
           <div className="space-y-3">
             {tracedPairs.map(pair => <Fragment key={pair.order}><PairIssueCard pair={pair} items={items.filter(item => item.pair === pair.order)} severity={pair.severity as Severity}
-              linkedIds={linkedIds ?? new Set<string>()} revealId={revealId} onShowInManuscript={id => { setOpenName(null); onShowInManuscript(id); }}
+              linkedIds={linkedIds ?? new Set<string>()} revealId={revealId} onShowInManuscript={id => { setOpenName(null); onShowInManuscript(id, pair.order); }}
               onShowPlacement={onShowPlacement && ((section, placement, sentence) => { setOpenName(null); onShowPlacement(section, placement, sentence); })} /></Fragment>)}
             {!tracedPairs.length && <p className="text-sm text-gray-500">No issues are recorded for this part.</p>}
           </div>

@@ -14,6 +14,7 @@
 .manuscript-highlight { border-radius: 2px; text-align: left; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .manuscript-highlight:hover, .manuscript-highlight:focus-visible { box-shadow: 0 0 0 2px #1a1fcc; outline: none; }
 .manuscript-highlight.result-focus, .results-screen .result-focus { animation: manuscript-target 1s ease-out 2; }
+.results-screen .result-focus { outline: 3px solid #2b25c8; outline-offset: 4px; }
 @keyframes manuscript-target { 50% { outline-width: 5px; outline-offset: 6px; } }
 @media (prefers-reduced-motion: reduce) {
   .manuscript-highlight.result-focus, .results-screen .result-focus { animation: none; }

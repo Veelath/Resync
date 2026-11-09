@@ -1,4 +1,4 @@
-import { useState, useId, useEffect } from "react";
+import { useState, useId, useEffect, useRef } from "react";
 import type React from 'react';
 import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
 import { AuthShell } from '../components/AuthShell';
@@ -7,6 +7,7 @@ import type { Screen } from '../lib/appTypes';
 import { B } from '../lib/brand';
 import { supabase } from '../lib/supabase';
 import { cleanNameInput, emailError, mailDomainAccepts, nameError } from '../lib/validation';
+import { modalTabTarget } from '../lib/modalFocus';
 
 const MAIL_ICON = (
   <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3.5 7l8.5 6 8.5-6" /></svg>
@@ -57,6 +58,24 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   const [code, setCode] = useState("");
   const [notice, setNotice] = useState("");
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+  const legalDialog = useRef<HTMLDivElement>(null);
+  const legalOpener = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!legalModal) return;
+    const dialog = legalDialog.current;
+    if (!dialog) return;
+    const opener = legalOpener.current;
+    dialog.querySelector<HTMLElement>('button')?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setLegalModal(null); return; }
+      if (event.key !== 'Tab') return;
+      const items = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter(item => item.getClientRects().length > 0);
+      const target = modalTabTarget(items.indexOf(document.activeElement as HTMLElement), items.length, event.shiftKey);
+      if (target !== null) { event.preventDefault(); (target < 0 ? dialog : items[target]).focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); opener?.focus(); };
+  }, [legalModal]);
 
   // A field shows its problem once it has been left, or after a submit attempt.
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -256,7 +275,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
               I agree to the{" "}
               <button
                 type="button"
-                onClick={() => setLegalModal("terms")}
+                onClick={event => { legalOpener.current = event.currentTarget; setLegalModal("terms"); }}
                 className="auth-link auth-focus px-0.5 cursor-pointer"
               >
                 Terms of Service
@@ -264,7 +283,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
               and{" "}
               <button
                 type="button"
-                onClick={() => setLegalModal("privacy")}
+                onClick={event => { legalOpener.current = event.currentTarget; setLegalModal("privacy"); }}
                 className="auth-link auth-focus px-0.5 cursor-pointer"
               >
                 Privacy Policy
@@ -286,13 +305,13 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
 
         {legalModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-            <div className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden">
+            <div ref={legalDialog} role="dialog" aria-modal="true" aria-labelledby="signup-legal-title" tabIndex={-1} className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">
+                  <h3 id="signup-legal-title" className="text-base font-bold text-gray-900">
                     {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Last updated: October 2026</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Last updated: {legalModal === "terms" ? "October 2026" : "November 9, 2026"}</p>
                 </div>
                 <button
                   type="button"
@@ -335,11 +354,11 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">2. Manuscript Confidentiality & Data Protection</h4>
                     <p>
-                      Your manuscripts, research findings, and unpublished drafts are treated with strict confidentiality. Resync does not use your private manuscripts to train public generative models or distribute them to third parties without your explicit authorization.
+                      Manuscript text is sent to Google Gemini to produce findings and recommendations. During user testing, Gemini runs on Google's free tier, where Google may use submitted content to improve its products. We do not sell manuscripts.
                     </p>
                     <h4 className="font-bold text-gray-800 text-sm">3. Data Retention & Deletion</h4>
                     <p>
-                      Analysis data and scanned documents are stored securely using industry-standard encryption. You may request the deletion of your account and associated document data at any time through your account settings or by contacting support.
+                      Extracted manuscript text and scan results are stored to support your reports. The app does not currently provide a control to delete individual scans or accounts.
                     </p>
                   </>
                 )}

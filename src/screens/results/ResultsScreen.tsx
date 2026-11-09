@@ -2,32 +2,31 @@
 import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
-import { loadSourceFile, saveSourceFile } from '../../lib/sourceFile';
-import type { HighlightSpec } from '../../lib/docxHighlight';
-import { DocxManuscript, type DocxManuscriptHandle } from './DocxManuscript';
-import { fetchSourceFile, fetchManuscript, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
-import { SAMPLE_MANUSCRIPT, SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
+import { reviewUnfinished } from './reviewComplete';
+import { getCreditBalance, getScanResult, unlockScan } from '../../services/api';
+import { SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { ReportPrint } from './ReportPrint';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
-import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, extractDisplayTitle, normalizeManuscriptPreview, plainText, usableTitle } from './helpers';
-import { clearPlacementMarker, edgeSentence, type Placement } from '../../lib/placement';
-import { matchedRecommendations, recommendationRanges, verifiedQuoteRanges } from './highlights';
+import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, usableTitle } from './helpers';
+import { edgeSentence, findSectionIndex, type Placement } from '../../lib/sectionNavigation';
+import { matchedRecommendations, recommendationRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
-import { RecommendationsList, inconsistencyTone, isRateLimited, severityTones } from './RecommendationsList';
+import { RecommendationsList, isRateLimited } from './RecommendationsList';
 
 import './report-design.css';
 
 type Tab = 'recommendations' | 'clear' | 'citations';
 
-export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, onScanUpdated }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean; sourceFile?: File | null; onScanUpdated?: (scan: V7ScanResponse) => void }) {
+export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdated }: { onNavigate: (screen: Screen) => void; onBack: () => void; scan?: V7ScanResponse | null; isSample?: boolean; onScanUpdated?: (scan: V7ScanResponse) => void }) {
   const [currentScan, setCurrentScan] = useState(scan);
   const manuscriptScroll = useRef<HTMLDivElement>(null);
-  const docxView = useRef<DocxManuscriptHandle>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashedTarget = useRef<HTMLElement | null>(null);
   const result = isSample ? SAMPLE_REPORT : currentScan;
   const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result?.doc_url ?? '');
   const locked = !isSample && result?.access?.unlocked === false;
@@ -40,75 +39,26 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
   const [unlockedToast, setUnlockedToast] = useState(false);
   const [placementMessage, setPlacementMessage] = useState('');
   useEffect(() => setCurrentScan(scan), [scan]);
+  useEffect(() => () => { if (flashTimer.current) clearTimeout(flashTimer.current); }, []);
   useEffect(() => {
     if (!locked || !result?.user_id) return;
     getCreditBalance(result.user_id).then(value => setBalance(value.balance)).catch(() => setBalance(null));
   }, [locked, result?.user_id]);
-  const [manuscriptText, setManuscriptText] = useState<string | null>(isSample ? SAMPLE_MANUSCRIPT : null);
-  const [manuscriptLoading, setManuscriptLoading] = useState(!isSample && isGoogleDoc);
-  const [manuscriptReason, setManuscriptReason] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('recommendations');
   const [revealId, setRevealId] = useState<string | null>(null);
   // The finding that is open in the side panel (its pair's order), or null when the whole list shows.
   const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
-  // The student's own Word file, shown as written. It comes straight from the upload, or from this browser's storage
-  // when a saved report is reopened; Google Docs links, old .doc files and sample reports use the text view instead.
-  const [storedFile, setStoredFile] = useState<File | null>(null);
-  const [docxFailed, setDocxFailed] = useState(false);
-  // A report opened where its Word file was never saved (another browser, another address) can be pointed at the original file once.
-  const [pickedFile, setPickedFile] = useState<File | null>(null);
-  const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
-  const scanId = result?.analysis_run_id;
-  useEffect(() => {
-    setDocxFailed(false);
-    setPickedFile(null);
-    setDocxLinked(null);
-    if (sourceFile || isSample || !scanId) { setStoredFile(null); return; }
-    let cancelled = false;
-    // this browser first; otherwise the copy kept on the server, which is then remembered here
-    loadSourceFile(scanId).then(file => file ?? fetchSourceFile(scanId).then(remote => { if (remote) void saveSourceFile(scanId, remote); return remote; }))
-      .then(file => { if (!cancelled) setStoredFile(file); });
-    return () => { cancelled = true; };
-  }, [scanId, sourceFile, isSample]);
-  // The sample report is a real Word file too, so it looks exactly like a student's own report: pages, highlights and all.
-  const [sampleFile, setSampleFile] = useState<File | null>(null);
-  useEffect(() => {
-    if (!isSample) { setSampleFile(null); return; }
-    let cancelled = false;
-    fetch('/sample-manuscript.docx').then(response => response.ok ? response.blob() : Promise.reject(new Error('missing')))
-      .then(blob => { if (!cancelled) setSampleFile(new File([blob], 'sample-manuscript.docx')); })
-      .catch(() => { if (!cancelled) setSampleFile(null); });
-    return () => { cancelled = true; };
-  }, [isSample]);
-  const docxFile = docxFailed ? null : isSample ? sampleFile : [sourceFile, storedFile, pickedFile].find(file => file && /\.docx$/i.test(file.name)) ?? null;
-
-  useEffect(() => {
-    if (!isGoogleDoc) { setManuscriptText(null); setManuscriptLoading(false); return; }
-    if (isSample || result?.manuscript_sections || !result?.analysis_run_id) return;
-    let cancelled = false;
-    setManuscriptLoading(true);
-    setManuscriptText(null);
-    setManuscriptReason(undefined);
-    fetchManuscript(result.analysis_run_id).then(response => {
-      if (cancelled) return;
-      setManuscriptText(response.available && response.text ? normalizeManuscriptPreview(response.text) : null);
-      setManuscriptReason(response.reason);
-    }).catch(() => { if (!cancelled) setManuscriptText(null); })
-      .finally(() => { if (!cancelled) setManuscriptLoading(false); });
-    return () => { cancelled = true; };
-  }, [isSample, isGoogleDoc, result?.analysis_run_id, result?.manuscript_sections]);
-
   if (!result) return null;
 
-  // A user's first scan is free: its full report opens by itself, with no credit asked for. The server decides this again when it unlocks.
+  const unfinished = locked && reviewUnfinished(result.ai_synthesis?.review_status);
   const firstFree = !isSample && (result as { access?: { first_free?: boolean } }).access?.first_free === true;
   useEffect(() => {
-    if (firstFree && locked && !unlockPending.current && unlockedId.current !== result.analysis_run_id) void handleUnlock();
-  }, [firstFree, locked, result.analysis_run_id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (firstFree && locked && !unfinished && !unlockPending.current && unlockedId.current !== result.analysis_run_id) void handleUnlock();
+  }, [firstFree, locked, unfinished, result.analysis_run_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleUnlock() {
-    if (!result || !locked || unlockPending.current) return;
+    if (!result || !locked || unfinished || unlockPending.current) return;
     if (balance === 0 && !firstFree && unlockedId.current !== result.analysis_run_id) { setBuyCredits(true); return; }
     unlockPending.current = true;
     setUnlocking(true);
@@ -132,7 +82,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     } finally { unlockPending.current = false; setUnlocking(false); }
   }
 
-  const unlockControl = <div className="space-y-2">
+  const unlockControl = unfinished ? <div className="space-y-2"><p className="text-sm text-[#4b5563]">The AI review did not finish, so this score is provisional. Scan again to retry.</p><button type="button" onClick={() => onNavigate('upload')} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white">Scan again</button></div> : <div className="space-y-2">
     <button type="button" onClick={handleUnlock} disabled={unlocking} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white hover:bg-[#1115a5] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
       {unlocking ? 'Unlocking…' : firstFree ? 'Open your free report' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
     </button>
@@ -141,9 +91,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
   </div>;
 
   const displayTitle = isSample ? SAMPLE_REPORT.manuscript_title : usableTitle(result.manuscript_title)
-    || usableTitle(extractDisplayTitle(manuscriptText))
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
-  const recommendations = result.recommendations.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
+  const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
+  const recommendations = matched.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
   const issueCount = result.manuscript_flow.filter(pair => pair.severity !== undefined ? pair.severity !== null && (pair.severity !== 'None' || hasAdvice(pair.order)) : hasAdvice(pair.order)).length;
@@ -151,24 +101,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
   // Recommendations tab holds recommendations only. Pairs the AI could not review are never counted as clear.
   const clearCount = result.manuscript_flow.filter(pair => pair.scores.overall_coherence != null && (pair.severity !== undefined ? pair.severity === 'None' && !hasAdvice(pair.order) : false)).length;
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
-  const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
-  const linkedIds = docxFile
-    ? new Set<string>(recommendations.filter(rec => (rec.kind === 'add' ? !!rec.anchor : !!rec.quote) && (!locked || docxLinked?.has(rec.id))).map(rec => rec.id))
-    : new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => range.id)));
-  // Colors follow the pair's grade, so a highlight in the paper matches the card that explains it.
+  const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => `${range.pair}:${range.id}`)));
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
-  const docxHighlights: HighlightSpec[] = docxFile ? [
-    ...recommendations.flatMap(rec => {
-      const pair = result.manuscript_flow.find(entry => entry.order === rec.pair);
-      const tone = severityTones[(pair?.severity && pair.severity !== 'None' ? pair.severity : 'Moderate') as keyof typeof severityTones];
-      const edge = rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === rec.section)?.text, rec.placement === 'start' ? 'start' : 'end', 4000) : '';
-      if (rec.kind === 'add' && edge) return [{ id: rec.id, text: edge, background: '#ffe8a3', border: '#e0a53c', title: 'Click to see the finding', onClick: (id: string) => focusLinked('recommendation', id) }];
-      return rec.quote && rec.kind !== 'add' ? [{ id: rec.id, text: rec.quote, ...tone, title: 'Click to see why this was flagged', onClick: (id: string) => focusLinked('recommendation', id) }] : [];
-    }),
-    ...result.manuscript_flow.flatMap(pair => (pair.explanation?.highlighted_inconsistencies ?? []).filter(item => item.quote).map((item, index) => ({
-      id: `issue-${pair.order}-${index}`, text: item.quote, ...inconsistencyTone, title: 'Part of an inconsistency between sections',
-    }))),
-  ] : [];
 
   function scrollToTarget(target: HTMLElement | null, flash = 1600) {
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
@@ -177,34 +111,23 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
       scroller.scrollTo({ top: scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (scroller.clientHeight - target.clientHeight) / 2, behavior });
     } else target?.scrollIntoView({ block: 'center', behavior });
     target?.focus({ preventScroll: true });
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashedTarget.current?.classList.remove('result-focus');
+    if (target) void target.offsetWidth;
     target?.classList.add('result-focus');
-    window.setTimeout(() => target?.classList.remove('result-focus'), flash);
+    flashedTarget.current = target;
+    flashTimer.current = setTimeout(() => target?.classList.remove('result-focus'), flash);
   }
 
-  async function focusLinked(kind: 'recommendation' | 'highlight', id: string) {
-    if (kind === 'highlight' && docxFile && !locked) {
-      while (!document.getElementById(`highlight-${id}`) && await docxView.current?.loadNext()) { /* load until found */ }
-      if (!document.getElementById(`highlight-${id}`)) {
-        setPlacementMessage('We could not find that passage in the preview. You can still read the recommendation.');
-        window.setTimeout(() => setPlacementMessage(''), 6000);
-        return;
-      }
-    }
+  async function focusLinked(kind: 'recommendation' | 'highlight', id: string, pair?: number) {
     if (kind === 'recommendation') {
       setActiveTab('recommendations'); setRevealId(id);
-      const found = recommendations.find(item => item.id === id);
+      const found = recommendations.find(item => item.id === id && (pair === undefined || item.pair === pair));
       if (found) setSelectedOrder(found.pair);
     }
-    requestAnimationFrame(() => scrollToTarget(document.getElementById(`${kind}-${id}`)));
+    const order = pair ?? recommendations.find(item => item.id === id)?.pair;
+    requestAnimationFrame(() => scrollToTarget(kind === 'highlight' ? manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${order}-${CSS.escape(id)}"]`) ?? null : document.querySelector<HTMLElement>(`[aria-label="Analysis panel"] [data-pair-order="${order}"] [id="recommendation-${CSS.escape(id)}"]`)));
   }
-
-  // The highlight of the open finding gets a ring, like the design.
-  useEffect(() => {
-    const ids = new Set(recommendations.filter(item => item.pair === selectedOrder).map(item => item.id));
-    document.querySelectorAll<HTMLElement>('.docx-host mark[data-highlight-for]').forEach(mark => {
-      if (selectedOrder != null && ids.has(mark.dataset.highlightFor ?? '')) mark.dataset.selected = 'true'; else delete mark.dataset.selected;
-    });
-  }); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Choosing a finding opens it and takes the reader to the matching spot in the paper.
   function selectFinding(order: number) {
@@ -212,21 +135,24 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     setSelectedOrder(order);
     const first = recommendations.find(item => item.pair === order);
     if (!first) return;
-    if (linkedIds.has(first.id) && (docxFile || document.getElementById(`highlight-${first.id}`))) focusLinked('highlight', first.id);
+    if (linkedIds.has(`${first.pair}:${first.id}`)) focusLinked('highlight', first.id, first.pair);
     else if (first.kind === 'add' && first.section && first.placement) showPlacement(first.section, first.placement);
-    else {
-      setPlacementMessage('We could not find that passage in the preview. You can still read the recommendation.');
-      window.setTimeout(() => setPlacementMessage(''), 6000);
-    }
+    else if (first.section) showPlacement(first.section, 'start');
   }
 
-  // A suggested sentence is shown by the yellow highlight of the sentence it goes next to ("Show me where" goes there). If that
-  // sentence cannot be found in the preview, say where it belongs in words instead.
-  async function showPlacement(section: string, placement: Placement) {
-    clearPlacementMarker();
-    setPlacementMessage(locked && (result?.manuscript_sections ?? []).findIndex(item => item.name.toLowerCase() === section.toLowerCase()) > 0
+  // If the passage is absent, take the reader to the available section heading.
+  async function showPlacement(section: string, _placement: Placement) {
+    const names = (result?.manuscript_sections ?? []).map(item => item.name);
+    const index = findSectionIndex(names, section);
+    const heading = index < 0 ? null : manuscriptScroll.current?.querySelector<HTMLElement>(`[data-section-index="${index}"] h2`);
+    if (heading) {
+      setPlacementMessage('');
+      scrollToTarget(heading, 2400);
+      return;
+    }
+    setPlacementMessage(locked && index > 0
       ? 'That part of your paper is locked. Unlock the full report to see where this sentence goes.'
-      : `We could not highlight that spot. Add the sentence at the ${placement === 'start' ? 'beginning' : 'end'} of the ${section} section.`);
+      : `We could not find the ${section} section in the page. Look for it by its heading and add the sentence there.`);
     window.setTimeout(() => setPlacementMessage(''), 6000);
   }
   const citations: Citation[] = result.citations.map((citation, index) => ({
@@ -241,22 +167,6 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     { id: 'clear', label: `All clear (${clearCount})` },
     { id: 'citations', label: `Citations (${citations.length + (locked ? result.access!.locked_counts.citations : 0)})` },
   ];
-
-  function highlighted(text: string): React.ReactNode[] {
-    const quotes = result!.inconsistencies.filter(item => item.evidence_verified)
-      .flatMap(item => item.evidence_quotes)
-      .map(quote => quote.text);
-    const ranges = verifiedQuoteRanges(text, quotes);
-    const nodes: React.ReactNode[] = [];
-    let cursor = 0;
-    ranges.forEach(({ start, end }, index) => {
-      nodes.push(text.slice(cursor, start));
-      nodes.push(<mark key={index} className="bg-rose-200 rounded px-0.5">{text.slice(start, end)}</mark>);
-      cursor = end;
-    });
-    nodes.push(text.slice(cursor));
-    return nodes;
-  }
 
   function renderCitation(citation: Citation) {
     const linkRange = citationLinkRange(citation.ref, citation.url);
@@ -277,28 +187,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
     <ReportPrint result={result} title={displayTitle} items={recommendations} citations={citations} locked={locked} lockedOrders={lockedOrders} />
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
-        {!docxFile && !isSample && scanId && <div className="flex flex-wrap items-center justify-center gap-3 border-b border-[#e1dffa] bg-[#fff8e6] px-4 py-2.5 text-[13px] text-[#6b4e00] print:hidden">
-          <span>{docxFailed ? 'Your Word file could not be drawn here.' : 'This browser does not have your Word file, so the text is shown without its original layout.'}</span>
-          <label className="cursor-pointer rounded-full bg-[#1a1fcc] px-3.5 py-1.5 text-[12.5px] font-extrabold text-white focus-within:outline-2 focus-within:outline-offset-2">Show my Word file
-            <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={event => {
-              const file = event.target.files?.[0]; event.target.value = '';
-              if (!file || !/\.docx$/i.test(file.name)) return;
-              setDocxFailed(false); setPickedFile(file); void saveSourceFile(scanId, file);
-            }} />
-          </label>
-        </div>}
         <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
-        <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
-          {docxFile ? <><DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} />{locked && <ManuscriptSections result={result} locked unlockControl={unlockControl} placeholderOnly />}</> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={id => focusLinked('recommendation', id)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : manuscriptLoading && result.analysis_run_id ? <p className="text-sm text-gray-600">Loading manuscript textâ€¦</p> : (manuscriptText
-            ? <article className="whitespace-pre-wrap break-words font-serif text-sm sm:text-base leading-8 text-gray-800">{highlighted(manuscriptText)}</article>
-            : isGoogleDoc ? <ManuscriptViewer result={result} reason={manuscriptReason} />
-            : <div className="mx-auto flex max-w-[420px] flex-col items-center py-8 text-center"><ResultsScorePanel result={result} large /><p className="mt-5 text-sm leading-6 text-[#4b5563]">This report was created before manuscripts were stored, so the text can't be shown. Re-scan to see your manuscript with highlights.</p></div>)}
+        <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
+          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
           <BackToTop container={manuscriptScroll} label="Back to top of the manuscript" />
         </div>
       </div>
       <aside tabIndex={0} aria-label="Analysis panel" className="results-scroll order-1 w-full min-w-0 shrink-0 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-2 lg:w-[clamp(380px,28vw,520px)] lg:rounded-none lg:shadow-none lg:overflow-y-auto print:hidden">
         <div>
-          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} hideBreakdown={selectedOrder != null && activeTab === 'recommendations'} />
+          <ResultsScorePanel result={result} items={recommendations} linkedIds={linkedIds} revealId={revealId} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} hideBreakdown={selectedOrder != null && activeTab === 'recommendations'} />
             {result.rescan_unchanged && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900">No changes detected since your last scan of this manuscript, so this report matches the previous one.</p>}
             {result.structure_note && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-900 print:hidden">{result.structure_note}</p>}
             {selectedOrder != null && activeTab === 'recommendations' && <button type="button" onClick={() => setSelectedOrder(null)} className="mx-4 mt-3 flex items-center gap-2 text-[13.5px] font-extrabold text-[#2b25c8] focus-visible:outline-2 focus-visible:outline-offset-2 print:hidden">
@@ -316,9 +213,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, sourceFile, 
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
+                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
               </div>}
-              {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={id => focusLinked('highlight', id)} revealId={revealId} mode="clear" />}
+              {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>
