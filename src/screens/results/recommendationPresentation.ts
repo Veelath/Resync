@@ -29,3 +29,7 @@ export function usablePair(pair: ManuscriptFlowPair, sections: Sections = []): b
 }
 
 export const severityRank = (severity: ManuscriptFlowPair['severity']) => ({ Critical: 0, Moderate: 1, Minor: 2, None: 3 }[severity ?? 'None']);
+
+export function cardHeading(a: string, b: string, suggestion: boolean): string {
+  return `${a} and ${b} ${suggestion ? 'need a clearer connection' : 'may not agree'}.`;
+}

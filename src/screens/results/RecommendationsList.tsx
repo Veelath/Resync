@@ -3,7 +3,7 @@ import type { ManuscriptFlowPair } from '../../services/v7Result';
 import { categoryColors, type RecommendationCategory } from './categoryColors';
 import { plainText } from './helpers';
 import type { Placement } from '../../lib/sectionNavigation';
-import { sectionDisplayName, severityRank, usablePair, type Sections } from './recommendationPresentation';
+import { cardHeading, sectionDisplayName, severityRank, usablePair, type Sections } from './recommendationPresentation';
 
 export interface RecommendationItem {
   id: string;
@@ -94,7 +94,8 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const categoryKey = items.map(item => item.category).find(Boolean);
   const category = categoryKey ? categoryColors[categoryKey].label : null;
   const rawProblem = (severity === 'Suggestion' ? 'The connection between these sections is unclear, so readers may struggle to follow the argument' : problemOf(pair)).split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '');
-  const title = /\b(?:because|so|therefore|which)\b/i.test(rawProblem) ? `${rawProblem}.` : `${rawProblem}, which can make the connection unclear.`;
+  const title = cardHeading(nameOf(pair.section_a), nameOf(pair.section_b), severity === 'Suggestion');
+  const why = /\b(?:because|so|therefore|which)\b/i.test(rawProblem) ? `${rawProblem}.` : `${rawProblem}, which can make the connection unclear.`;
   const tag = severity === 'Suggestion' ? { text: 'Connection needs clarification', cls: 'text-amber-700' } : { text: `${level.label}: ${{ Critical: 'serious mismatch', Moderate: 'mismatch to review', Minor: 'small mismatch' }[severity]}`, cls: severity === 'Critical' ? 'text-rose-600' : severity === 'Moderate' ? 'text-orange-600' : 'text-sky-600' };
   const chip = 'rounded-md bg-[#eeeefe] px-2 py-0.5 text-[11px] font-semibold text-[#2b25c8]';
   const stepNumber = 'grid size-5 shrink-0 place-items-center rounded-full bg-[#eeeefe] text-[11px] font-bold text-[#2b25c8]';
@@ -105,6 +106,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const collapsible = !!onSelect && !alwaysOpen;
   const head = <>
     <h3 className="text-lg font-extrabold leading-snug text-[#0b0f3d]">{title}</h3>
+    <p className="text-sm leading-snug text-[#4b5275]">{why}</p>
     <div className="flex flex-wrap items-center gap-2">
       <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${items.length && items.length <= 2 ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-[#2b25c8]'}`}>
         <span aria-hidden="true">✦</span>{!items.length ? 'Needs a look' : items.length <= 2 ? `Quick fix · ${quick ? `add ${adds.length} ${adds.length === 1 ? 'sentence' : 'sentences'}` : `change ${items.length} ${items.length === 1 ? 'part' : 'parts'}`}` : `${items.length} fixes`}

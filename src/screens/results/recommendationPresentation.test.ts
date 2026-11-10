@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sectionDisplayName, severityRank, usablePair } from './recommendationPresentation';
+import { cardHeading, sectionDisplayName, severityRank, usablePair } from './recommendationPresentation';
 import type { ManuscriptFlowPair } from '../../services/v7Result';
 
 const pair = { section_a: 'literature', section_b: 'methods' } as ManuscriptFlowPair;
@@ -15,4 +15,10 @@ test('preserves displayed names and excludes invalid section pairs', () => {
   assert.equal(usablePair({ ...pair, section_a: 'CHAPTER 1\nMethods .... 12' }, []), false);
   assert.equal(usablePair({ ...pair, section_a: '1. Literature', section_b: 'Literature' }, []), false);
   assert.ok(severityRank('Critical') < severityRank('Moderate') && severityRank('Moderate') < severityRank('Minor'));
+});
+
+test('card headings name both sections and distinguish pairs', () => {
+  assert.equal(cardHeading('Introduction', 'Review of Related Literature', true), 'Introduction and Review of Related Literature need a clearer connection.');
+  assert.equal(cardHeading('Methodology', 'Results', false), 'Methodology and Results may not agree.');
+  assert.notEqual(cardHeading('Introduction', 'Methods', false), cardHeading('Introduction', 'Results', false));
 });
