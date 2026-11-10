@@ -347,7 +347,6 @@ export default function App() {
       <ToastBanner
         toast={toast}
         soundBlocked={soundBlocked}
-        onView={toast?.kind === "success" && toast.scanId && !(screen === "results" && activeScanId === toast.scanId) ? () => { const id = toast.scanId; setToast(null); navigate("results", false, id); } : undefined}
         onEnableSound={enableSound}
         onClose={() => setToast(null)}
       />

@@ -1,4 +1,3 @@
-import { B } from '../lib/brand';
 
 // ─── Notifications & completion sound ───────────────────────────────────
 export type AppNotification = { id: string; kind: "success" | "error"; title: string; message: string; at: number; read: boolean; scanId?: string };
@@ -97,8 +96,8 @@ export function timeAgo(at: number): string {
   return hrs < 24 ? `${hrs} h ago` : `${Math.round(hrs / 24)} d ago`;
 }
 
-export function ToastBanner({ toast, soundBlocked, onView, viewLabel = "View report", onEnableSound, onClose }: {
-  toast: AppNotification | null; soundBlocked: boolean; onView?: () => void; viewLabel?: string; onEnableSound: () => void; onClose: () => void;
+export function ToastBanner({ toast, soundBlocked, onEnableSound, onClose }: {
+  toast: AppNotification | null; soundBlocked: boolean; onEnableSound: () => void; onClose: () => void;
 }) {
   if (!toast) return null;
   const ok = toast.kind === "success";
@@ -115,7 +114,6 @@ export function ToastBanner({ toast, soundBlocked, onView, viewLabel = "View rep
           <p className="text-sm font-bold text-gray-900">{toast.title}</p>
           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{toast.message}</p>
           <div className="flex flex-wrap items-center gap-2 mt-2.5">
-            {onView && <button type="button" onClick={onView} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: B }}>{viewLabel}</button>}
             {ok && soundBlocked && <button type="button" onClick={onEnableSound} className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 text-gray-700 hover:bg-gray-50">Enable sound</button>}
           </div>
         </div>
