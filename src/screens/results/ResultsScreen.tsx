@@ -19,6 +19,7 @@ import { recommendationCategory, type RecommendationCategory } from './categoryC
 import { RecommendationsList, isRateLimited } from './RecommendationsList';
 
 import './report-design.css';
+import { FIRST_SCAN_FREE_ENABLED } from '../../lib/featureFlags';
 
 type Tab = 'recommendations' | 'clear' | 'citations';
 
@@ -52,7 +53,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   if (!result) return null;
 
   const unfinished = locked && reviewUnfinished(result.ai_synthesis?.review_status);
-  const firstFree = !isSample && (result as { access?: { first_free?: boolean } }).access?.first_free === true;
+  const firstFree = FIRST_SCAN_FREE_ENABLED && !isSample && (result as { access?: { first_free?: boolean } }).access?.first_free === true;
   useEffect(() => {
     if (firstFree && locked && !unfinished && !unlockPending.current && unlockedId.current !== result.analysis_run_id) void handleUnlock();
   }, [firstFree, locked, unfinished, result.analysis_run_id]); // eslint-disable-line react-hooks/exhaustive-deps
