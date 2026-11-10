@@ -1,4 +1,5 @@
 import { useState, useId, useEffect, useRef } from "react";
+import { OTP_MAX_LENGTH, cleanCode, codeReady } from "../lib/otp";
 import type React from 'react';
 import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
 import { AuthShell } from '../components/AuthShell';
@@ -53,7 +54,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // After the account is created, the person must type the 6-digit code that was emailed to them.
+  // After the account is created, the person must type the code that was emailed to them (the project's emails carry 8 digits).
   const [codeStep, setCodeStep] = useState(false);
   const [code, setCode] = useState("");
   const [notice, setNotice] = useState("");
@@ -130,13 +131,13 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
       onSignupSuccess?.();
     } else {
       setCodeStep(true);
-      setNotice(`We sent a 6-digit code to ${email.trim().toLowerCase()}.`);
+      setNotice(`We sent a verification code to ${email.trim().toLowerCase()}.`);
     }
   }
 
   async function verifyCode(e: React.FormEvent) {
     e.preventDefault();
-    if (code.length < 6 || loading) return;
+    if (!codeReady(code) || loading) return;
     setLoading(true);
     setError("");
     const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "signup" });
@@ -185,11 +186,11 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100" role="alert">{error}</div>}
             <div className="space-y-2">
               <label htmlFor="signup-code" className="auth-label">Verification code</label>
-              <input id="signup-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} placeholder="123456"
-                onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} className="auth-input" style={{ letterSpacing: "0.4em" }} />
+              <input id="signup-code" inputMode="numeric" autoComplete="one-time-code" maxLength={OTP_MAX_LENGTH + 4} value={code} placeholder="12345678"
+                onChange={e => setCode(cleanCode(e.target.value))} className="auth-input" style={{ letterSpacing: "0.4em" }} />
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-              <button type="submit" disabled={code.length < 6 || loading} className="auth-primary auth-focus" style={{ width: "auto", padding: "0 30px" }}>
+              <button type="submit" disabled={!codeReady(code) || loading} className="auth-primary auth-focus" style={{ width: "auto", padding: "0 30px" }}>
                 {loading ? <><Spinner />Verifying…</> : "Verify and continue"}
               </button>
               <button type="button" onClick={resendCode} disabled={resendWait > 0} className="auth-link auth-focus px-1" style={resendWait > 0 ? { opacity: 0.55 } : undefined}>{resendWait > 0 ? `Send a new code (${resendWait}s)` : "Send a new code"}</button>
