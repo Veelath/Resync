@@ -83,10 +83,12 @@ export function CitationsTab({ citationFilter, setCitationFilter, displayedCitat
                     {displayedCitations.map((cite, ci) => (
                       <div key={cite.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${CITE_BADGE[cite.status].row}`}>
                         <span className="text-[11px] mono font-bold text-gray-400 mt-0.5 w-5 shrink-0">{ci + 1}</span>
-                        {renderCitation(cite)}
-                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
-                          {cite.noLink ? 'No link to check' : CITE_BADGE[cite.status].label}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          {renderCitation(cite)}
+                          <span className={`mt-2 inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${CITE_BADGE[cite.status].badge}`}>
+                            {cite.noLink ? 'No link to check' : CITE_BADGE[cite.status].label}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>

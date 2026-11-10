@@ -77,7 +77,7 @@ export function PartTooltip({ label, description, color, name, entry, rect, clic
     </>;
   }
 
-  return <div role="tooltip" style={{ position: 'fixed', left, width: 320, ...position }} className="z-50 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3.5 text-xs leading-snug text-gray-700 shadow-xl">
+  return <div role="tooltip" style={{ position: 'fixed', left, width: 320, ...position }} className="pointer-events-none z-50 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3.5 text-xs leading-snug text-gray-700 shadow-xl">
     <div className="flex items-baseline justify-between gap-2">
       <p className="text-sm font-bold text-[#0b0f3d]">{label}</p>
       {applicable && <p className="shrink-0 text-sm font-bold tabular-nums text-[#0b0f3d]">{formatPercent(entry.score as number)}%</p>}

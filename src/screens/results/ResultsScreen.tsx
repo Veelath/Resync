@@ -201,7 +201,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
             {result.structure_note && <p role="note" className="mx-4 mb-1 mt-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-900 print:hidden">{result.structure_note}</p>}
             {selectedOrder != null && activeTab === 'recommendations' && <button type="button" onClick={() => setSelectedOrder(null)} className="mx-4 mt-3 flex items-center gap-2 text-[13.5px] font-extrabold text-[#2b25c8] focus-visible:outline-2 focus-visible:outline-offset-2 print:hidden">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Back to all findings</button>}
-            <div className="scrollbar-none flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-3 print:hidden" role="tablist" aria-label="Results tabs">
+            <div className="flex flex-wrap items-center gap-x-1 border-b border-gray-200 px-3 print:hidden" role="tablist" aria-label="Results tabs">
               {tabs.map((tab, index) => <button key={tab.id} type="button" role="tab" id={`results-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls="results-tab-panel" tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => { setActiveTab(tab.id); setSelectedOrder(null); }} onKeyDown={event => {
                   const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
