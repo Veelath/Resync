@@ -97,9 +97,6 @@ export class InsufficientCreditsError extends Error {
 export interface ScanStatusNotice {
   message: string;
   level: 'info' | 'wait';
-  queued: boolean;
-  queuePosition: number | null;
-  estimatedWaitSeconds: number | null;
   elapsedSeconds?: number | null;
   reconnecting?: boolean;
   info?: string;
@@ -123,26 +120,16 @@ export function subscribeScanStatus(listener: () => void): () => void {
   return () => scanStatusListeners.delete(listener);
 }
 
-/** Reads queue and status fields defensively; both are absent on older backends. */
+/** Reads status fields defensively; they may be absent on older backends. */
 function readScanStatus(job: unknown): ScanStatusNotice | null {
   if (!job || typeof job !== 'object') return null;
   const record = job as Record<string, unknown>;
   const message = typeof record.status_message === 'string' ? record.status_message.trim() : '';
-  const queuePosition = typeof record.queue_position === 'number' && Number.isInteger(record.queue_position) && record.queue_position >= 1
-    ? record.queue_position
-    : null;
-  const estimatedWaitSeconds = typeof record.estimated_wait_seconds === 'number' && Number.isFinite(record.estimated_wait_seconds) && record.estimated_wait_seconds >= 0
-    ? record.estimated_wait_seconds
-    : null;
-  const queued = queuePosition !== null;
 
   return {
     message: scanStatusMessage(message),
     elapsedSeconds: typeof record.elapsed_seconds === 'number' ? record.elapsed_seconds : null,
     level: record.status_message_level === 'wait' ? 'wait' : 'info',
-    queued,
-    queuePosition,
-    estimatedWaitSeconds,
   };
 }
 
@@ -324,7 +311,7 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
   let failures = 0;
   let unreachableSince: number | null = null;
   let delay = 0;
-  let lastStatus: ScanStatusNotice = { message: '', level: 'info', queued: false, queuePosition: null, estimatedWaitSeconds: null };
+  let lastStatus: ScanStatusNotice = { message: '', level: 'info' };
   while (true) {
     if (waitState(Date.now(), startedAt, unreachableSince) === 'ceiling') throw new ScanOutcome(CEILING_MESSAGE, id, 'info');
     if (delay) await sleep(Math.min(delay, Math.max(0, startedAt + MAX_POLL_MS - Date.now())), signal);

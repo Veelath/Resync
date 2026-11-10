@@ -17,8 +17,7 @@ const steps = [
 export function ProcessingScreen({ onNavigate, outcome, startedAt, words, sending }: { onNavigate: (s: Screen) => void; outcome: { message: string; kind: string; failureKind?: string } | null; startedAt: number; words: number | null; sending: boolean }) {
   const status = useSyncExternalStore(subscribeScanStatus, getScanStatus);
   const [alerts, setAlerts] = useState(desktopAlertsState);
-  const queued = !sending && status?.queuePosition != null;
-  const active = sending ? { label: 'Sending your manuscript', detail: 'Please keep this page open while your manuscript is sent.' } : queued ? { label: 'Getting ready', detail: 'Your scan will start in a moment.' } : { label: 'Your scan is in progress', detail: 'We will let you know when your report is ready.' };
+  const active = sending ? { label: 'Sending your manuscript', detail: 'Please keep this page open while your manuscript is sent.' } : { label: 'Your scan is in progress', detail: 'We will let you know when your report is ready.' };
   const info = sending ? null : outcome?.kind === 'info' ? outcome.message : status?.info;
 
   return <main className="processing-screen">
@@ -39,7 +38,7 @@ export function ProcessingScreen({ onNavigate, outcome, startedAt, words, sendin
         {!outcome && <section className="processing-screen__card" aria-label="Scan progress">
           <div className="processing-screen__progress-heading"><span className="processing-screen__progress-label"><i aria-hidden="true" />{active.label}…</span><span className="processing-screen__percent" aria-hidden="true" /></div>
           <div className="processing-screen__progress-track" role="progressbar" aria-busy="true" aria-label="Manuscript analysis progress"><div className="processing-screen__progress-fill" /></div>
-          <div className={`processing-screen__active-step${queued ? ' processing-screen__active-step--queued' : ''}`} aria-current="step" aria-live="polite"><div className="processing-screen__step-copy"><strong>{active.label}</strong><span>{active.detail}</span></div><span className="processing-screen__spinner" aria-hidden="true" /></div>
+          <div className="processing-screen__active-step" aria-current="step" aria-live="polite"><div className="processing-screen__step-copy"><strong>{active.label}</strong><span>{active.detail}</span></div><span className="processing-screen__spinner" aria-hidden="true" /></div>
         </section>}
         {!sending && <><p className="processing-screen__keep-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>You can leave this page; we will tell you when your report is ready.</p>
         <button type="button" className="processing-screen__leave" onClick={() => onNavigate('dashboard')}>Continue in background</button>

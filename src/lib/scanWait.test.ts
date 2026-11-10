@@ -1,6 +1,6 @@
 ﻿import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { backoffMs, waitState, notFoundIsFinal, queueText, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, docxMessage, safeScanMessage, scanStatusMessage, MAX_POLL_MS, withRequestTimeout, rememberFailureNotification } from './scanWait';
+import { backoffMs, waitState, notFoundIsFinal, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, docxMessage, safeScanMessage, scanStatusMessage, MAX_POLL_MS, withRequestTimeout, rememberFailureNotification } from './scanWait';
 test('hides only the AI busy status notice', () => {
   assert.equal(scanStatusMessage('The AI is busy right now, so your scan may take a little longer than usual.'), '');
   assert.equal(scanStatusMessage('Please wait while the scan continues.'), 'Please wait while the scan continues.');
@@ -9,7 +9,6 @@ test('hides only the AI busy status notice', () => {
 test('backoff caps at thirty seconds', () => assert.deepEqual([1,2,3,4,5].map(backoffMs), [5000,10000,20000,30000,30000]));
 test('unreachable is information and ceiling stops polling', () => { assert.equal(waitState(600000, 0, 0), 'unreachable'); assert.equal(waitState(MAX_POLL_MS, 0, 0), 'ceiling'); });
 test('404 has a sixty second grace period', () => { assert.equal(notFoundIsFinal(59999, 0), false); assert.equal(notFoundIsFinal(60000, 0), true); });
-test('queue estimate rounds up and may be absent', () => { assert.equal(queueText(2, 61), 'Your scan is number 2 in line. About 2 minutes before it starts. This is an estimate.'); assert.equal(queueText(1, null), 'Your scan is number 1 in line.'); });
 test('long threshold uses size, default and server elapsed', () => { assert.equal(isLongRunning(299999, 5000), false); assert.equal(isLongRunning(300000, 5000), true); assert.equal(isLongRunning(479999), false); assert.equal(isLongRunning(480000), true); assert.equal(isLongRunning(1000, null, 480), true); });
 test('failure titles include fallback', () => { assert.equal(failureTitle('interrupted'), 'Scan interrupted'); assert.equal(failureTitle('timeout'), 'Scan stopped'); assert.equal(failureTitle('refused'), 'Document not accepted'); assert.equal(failureTitle('error'), 'Scan could not be finished'); assert.equal(failureTitle(), 'Scan could not be finished'); });
 test('failure notification is once per scan', () => { assert.equal(shouldNotifyFailure([{kind:'error', scanId:'a'}], 'a'), false); assert.equal(shouldNotifyFailure([{kind:'success', scanId:'a'}], 'a'), true); });
