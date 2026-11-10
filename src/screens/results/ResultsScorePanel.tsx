@@ -4,6 +4,7 @@ import { categoryColors } from './categoryColors';
 import { PartTooltip, formatPercent } from './PartTooltip';
 import { ScoreExplainer, groupName } from './ScoreExplainer';
 import type { Placement } from '../../lib/sectionNavigation';
+import { usablePair, severityRank } from './recommendationPresentation';
 import { PairIssueCard, isRateLimited, provisionalMessage, type RecommendationItem, type Severity } from './RecommendationsList';
 
 export const DIMENSIONS: { name: DimensionName; key: DimensionKey; label: string; color: string; description: string }[] = [
@@ -60,7 +61,7 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
 
   // Exactly the pairs whose issue was charged to this dimension: the full trace behind its score.
   const tracedPairs = open
-    ? result.manuscript_flow.filter(pair => pair.failed_dimension === open.key && pair.severity && pair.severity !== 'None')
+    ? result.manuscript_flow.filter(pair => pair.failed_dimension === open.key && pair.severity && pair.severity !== 'None' && usablePair(pair, result.manuscript_sections) && items.some(item => item.pair === pair.order && item.revision?.trim())).sort((a, b) => severityRank(a.severity) - severityRank(b.severity) || a.order - b.order)
     : [];
 
   return (
@@ -141,15 +142,15 @@ export function ResultsScorePanel({ result, large = false, items = [], linkedIds
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-[#0b0f3d]">{open.label}</h2>
-              <p className="text-xs text-gray-600">{open.description} {tracedPairs.length} {tracedPairs.length === 1 ? 'issue' : 'issues'} lowered this score.</p>
+              <p className="text-xs text-gray-600">{open.description} {tracedPairs.length} {tracedPairs.length === 1 ? 'recommendation is' : 'recommendations are'} available for this part.</p>
             </div>
             <button type="button" autoFocus onClick={() => setOpenName(null)} aria-label="Close" className="shrink-0 rounded-md px-2 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2">Close</button>
           </div>
           <div className="space-y-3">
-            {tracedPairs.map(pair => <Fragment key={pair.order}><PairIssueCard pair={pair} items={items.filter(item => item.pair === pair.order)} severity={pair.severity as Severity}
+            {tracedPairs.map(pair => <Fragment key={pair.order}><PairIssueCard sections={result.manuscript_sections} pair={pair} items={items.filter(item => item.pair === pair.order && item.revision?.trim())} severity={pair.severity as Severity}
               linkedIds={linkedIds ?? new Set<string>()} revealId={revealId} onShowInManuscript={id => { setOpenName(null); onShowInManuscript(id, pair.order); }}
               onShowPlacement={onShowPlacement && ((section, placement, sentence) => { setOpenName(null); onShowPlacement(section, placement, sentence); })} /></Fragment>)}
-            {!tracedPairs.length && <p className="text-sm text-gray-500">No issues are recorded for this part.</p>}
+            {!tracedPairs.length && <p className="text-sm text-gray-500">No recommendations are available for this part.</p>}
           </div>
         </div>
       </div>}

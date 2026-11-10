@@ -43,8 +43,8 @@ export function ReportPrint({ result, title, items, citations, locked, lockedOrd
 
     <h2 className="rpt-h">Recommendations</h2>
     <div className="space-y-3">
-      <RecommendationsList items={items} pairs={result.manuscript_flow} linkedIds={new Set()} onShowInManuscript={noop} revealId={null}
-        onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={isRateLimited(result.ai_synthesis?.review_status)} showAll />
+      <RecommendationsList sections={result.manuscript_sections} items={items} pairs={result.manuscript_flow} linkedIds={new Set()} onShowInManuscript={noop} revealId={null}
+        onlyOrders={lockedOrders} rateLimited={isRateLimited(result.ai_synthesis?.review_status)} showAll />
     </div>
     {locked && <p style={{ color: '#4b5275', fontStyle: 'italic', marginTop: 8 }}>This is the preview. Unlock the full report to include every recommendation.</p>}
 

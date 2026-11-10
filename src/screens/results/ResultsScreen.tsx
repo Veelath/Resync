@@ -16,7 +16,9 @@ import { edgeSentence, findSectionIndex, type Placement } from '../../lib/sectio
 import { matchedRecommendations, recommendationRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
-import { RecommendationsList, isRateLimited } from './RecommendationsList';
+import { RecommendationsList, isRateLimited, levelOf } from './RecommendationsList';
+import { usablePair } from './recommendationPresentation';
+import { plainText } from './helpers';
 
 import './report-design.css';
 import { FIRST_SCAN_FREE_ENABLED } from '../../lib/featureFlags';
@@ -94,13 +96,12 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const displayTitle = isSample ? SAMPLE_REPORT.manuscript_title : usableTitle(result.manuscript_title)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
-  const recommendations = matched.slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
+  const recommendations = matched.filter(rec => plainText(rec.recommended_revision).trim()).slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
-  const issueCount = result.manuscript_flow.filter(pair => pair.severity !== undefined ? pair.severity !== null && (pair.severity !== 'None' || hasAdvice(pair.order)) : hasAdvice(pair.order)).length;
-  // Pairs that need no action (no real issue found, or only a harmless wording difference) get their own tab, so the
-  // Recommendations tab holds recommendations only. Pairs the AI could not review are never counted as clear.
-  const clearCount = result.manuscript_flow.filter(pair => pair.scores.overall_coherence != null && (pair.severity !== undefined ? pair.severity === 'None' && !hasAdvice(pair.order) : false)).length;
+  const visiblePairs = result.manuscript_flow.filter(pair => usablePair(pair, result.manuscript_sections));
+  const issueCount = visiblePairs.filter(pair => pair.scores.overall_coherence != null && hasAdvice(pair.order) && levelOf(pair, true) !== null).length;
+  const clearCount = visiblePairs.filter(pair => pair.scores.overall_coherence != null && levelOf(pair, hasAdvice(pair.order)) === 'None').length;
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
   const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => `${range.pair}:${range.id}`)));
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
@@ -214,9 +215,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
             </div>
             <div id="results-tab-panel" role="tabpanel" aria-labelledby={`results-tab-${activeTab}`} tabIndex={0} className="px-4 py-5">
               {activeTab === 'recommendations' && <div className="space-y-4">
-                <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} score={result.overall_coherence_score} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
+                <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
               </div>}
-              {activeTab === 'clear' && <RecommendationsList items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />}
+              {activeTab === 'clear' && <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>
