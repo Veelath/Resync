@@ -783,7 +783,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       </div>
                     </div>
                   )}
-                  {(mode === "file" ? uploadedFile : link) && <button type="button" aria-label={mode === "file" ? "Remove this file" : "Remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">{String.fromCharCode(215)}</button>}
+                  {(mode === "file" ? uploadedFile : link) && <button type="button" aria-label={mode === "file" ? "Cancel and remove this file" : "Cancel and remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">Cancel</button>}
                 </div>
 
                 <div data-tour="run" className="uf-col" style={{ gap: 12 }}>
@@ -882,7 +882,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     </div>
                   </div>
 
-                  <button type="button" aria-label={mode === "file" ? "Remove this file" : "Remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">{String.fromCharCode(215)}</button>
+                  <button type="button" aria-label={mode === "file" ? "Cancel and remove this file" : "Cancel and remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">Cancel</button>
                   {mode === "file" ? (
                     <>
                       <button type="button" className="uf-btn is-ghost is-sm" disabled={isScanning} onClick={() => replaceInputRef.current?.click()}>
