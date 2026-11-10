@@ -8,6 +8,8 @@ export const NOT_FOUND_MESSAGE = 'We cannot find this scan. Please start it agai
 export const docxMessage = (name: string) => /\.doc$/i.test(name)
   ? 'Old .doc files cannot be read. Open it in Word, choose Save As > Word Document (.docx), then upload it again.'
   : 'Only Word .docx files or a Google Docs link are accepted.';
+// shortcut: estimate uses elapsed time, replace it when the server reports progress.
+export const estimatedProgress = (elapsedMs: number) => Math.min(95, 1 + Math.floor(94 * (1 - Math.exp(-Math.max(0, elapsedMs) / 300000))));
 export const backoffMs = (failures: number) => [5000, 10000, 20000, 30000][Math.min(Math.max(failures - 1, 0), 3)];
 export const waitState = (now: number, started: number, unreachableSince: number | null) => now - started >= MAX_POLL_MS ? 'ceiling' : unreachableSince !== null && now - unreachableSince >= UNREACHABLE_MS ? 'unreachable' : 'waiting';
 export const notFoundIsFinal = (now: number, started: number) => now - started >= NOT_FOUND_GRACE_MS;

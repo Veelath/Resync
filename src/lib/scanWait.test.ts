@@ -1,6 +1,6 @@
 ﻿import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { backoffMs, waitState, notFoundIsFinal, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, docxMessage, safeScanMessage, scanStatusMessage, MAX_POLL_MS, withRequestTimeout, rememberFailureNotification } from './scanWait';
+import { estimatedProgress, backoffMs, waitState, notFoundIsFinal, isLongRunning, failureTitle, shouldNotifyFailure, canResume, isDocx, docxMessage, safeScanMessage, scanStatusMessage, MAX_POLL_MS, withRequestTimeout, rememberFailureNotification } from './scanWait';
 test('hides only the AI busy status notice', () => {
   assert.equal(scanStatusMessage('The AI is busy right now, so your scan may take a little longer than usual.'), '');
   assert.equal(scanStatusMessage('Please wait while the scan continues.'), 'Please wait while the scan continues.');
@@ -42,3 +42,5 @@ test('explains old Word files and other unsupported file types', () => {
   assert.match(docxMessage('paper.txt'), /Only Word \.docx files or a Google Docs link/);
   assert.match(docxMessage('paper.png'), /Only Word \.docx files or a Google Docs link/);
 });
+
+test('estimated progress rises and stays below completion', () => { assert.equal(estimatedProgress(0), 1); assert.ok(estimatedProgress(60000) > estimatedProgress(1000)); assert.equal(estimatedProgress(99999999), 95); });

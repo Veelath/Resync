@@ -97,6 +97,7 @@ export class InsufficientCreditsError extends Error {
 export interface ScanStatusNotice {
   message: string;
   level: 'info' | 'wait';
+  completed?: boolean;
   elapsedSeconds?: number | null;
   reconnecting?: boolean;
   info?: string;
@@ -354,7 +355,11 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
     }
     if (!response.ok) throw new ScanOutcome('We cannot confirm this scan. Please check your dashboard again.', id, 'info');
     failures = 0; unreachableSince = null; delay = 5000;
-    if (job.status === 'completed' && job.result) return adaptScanResult(job.result);
+    if (job.status === 'completed' && job.result) {
+      setScanStatus({ ...lastStatus, completed: true });
+      await sleep(300, signal);
+      return adaptScanResult(job.result);
+    }
     if (job.status === 'failed') {
       const raw = typeof job.error === 'string' ? job.error : '';
       const message = safeScanMessage(raw);
