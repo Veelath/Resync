@@ -226,7 +226,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
               {activeTab === 'recommendations' && <div className="space-y-4">
                 <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
               </div>}
-              {activeTab === 'clear' && <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />}
+              {activeTab === 'clear' && (locked && result.access?.locked_counts.all_clear != null
+                ? <p className="text-sm text-gray-500">Unlock the full report to see the sections with no issues.</p>
+                : <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />)}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>
