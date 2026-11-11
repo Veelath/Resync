@@ -128,7 +128,14 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       if (found) setSelectedOrder(found.pair);
     }
     const order = pair ?? recommendations.find(item => item.id === id)?.pair;
-    requestAnimationFrame(() => scrollToTarget(kind === 'highlight' ? manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${order}-${CSS.escape(id)}"]`) ?? null : document.querySelector<HTMLElement>(`[aria-label="Analysis panel"] [data-pair-order="${order}"] [id="recommendation-${CSS.escape(id)}"]`)));
+    requestAnimationFrame(() => {
+      const target = kind === 'highlight' ? manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${order}-${CSS.escape(id)}"]`) : document.querySelector<HTMLElement>(`[aria-label="Analysis panel"] [data-pair-order="${order}"] [id="recommendation-${CSS.escape(id)}"]`);
+      if (target) scrollToTarget(target);
+      else if (kind === 'highlight') {
+        const item = recommendations.find(rec => rec.id === id && rec.pair === order);
+        if (item?.section) void showPlacement(item.section, item.placement ?? 'start');
+      }
+    });
   }
 
   // Choosing a finding opens it and takes the reader to the matching spot in the paper.
