@@ -11,8 +11,9 @@ function sectionIndex(names: string[], name: string): number {
 export function sectionDisplayName(name: string, sections: Sections = []): string {
   const index = sectionIndex(sections.map(section => section.name), name);
   const display = index < 0 ? name : sections[index].display_name?.trim() || sections[index].name;
-  if (display !== display.toLowerCase() && display !== display.toUpperCase()) return display;
-  return display.toLowerCase().replace(/[a-z]+(?:['?][a-z]+)?/g, (word, offset: number) =>
+  const stem = display.replace(/\s+cont['\u2019]d$/i, '');
+  if (stem !== stem.toLowerCase() && stem !== stem.toUpperCase()) return display;
+  return display.toLowerCase().replace(/[a-z]+(?:['\u2019][a-z]+)?/g, (word, offset: number) =>
     offset > 0 && /^(of|the|and|to|in|for|on|a|an)$/.test(word) ? word : word[0].toUpperCase() + word.slice(1));
 }
 
