@@ -101,7 +101,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
   const visiblePairs = result.manuscript_flow.filter(pair => usablePair(pair, result.manuscript_sections));
   const issueCount = visiblePairs.filter(pair => pair.scores.overall_coherence != null && hasAdvice(pair.order) && levelOf(pair, true) !== null).length;
-  const clearCount = visiblePairs.filter(pair => pair.scores.overall_coherence != null && levelOf(pair, hasAdvice(pair.order)) === 'None').length;
+  const clearCount = (locked ? result.access?.locked_counts.all_clear : undefined) ?? visiblePairs.filter(pair => pair.scores.overall_coherence != null && levelOf(pair, hasAdvice(pair.order)) === 'None').length;
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
   const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => `${range.pair}:${range.id}`)));
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
@@ -149,14 +149,16 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     else if (first.section) showPlacement(first.section, 'start');
   }
 
-  // If the passage is absent, take the reader to the available section heading.
-  async function showPlacement(section: string, _placement: Placement) {
+  // If the passage is absent, take the reader to the requested edge of the section.
+  async function showPlacement(section: string, placement: Placement) {
     const names = (result?.manuscript_sections ?? []).map(item => item.name);
     const index = findSectionIndex(names, section);
-    const heading = index < 0 ? null : manuscriptScroll.current?.querySelector<HTMLElement>(`[data-section-index="${index}"] h2`);
-    if (heading) {
+    const sectionElement = index < 0 ? null : manuscriptScroll.current?.querySelector<HTMLElement>(`[data-section-index="${index}"]`);
+    const target = placement === 'end' ? sectionElement?.lastElementChild as HTMLElement | null : sectionElement?.querySelector<HTMLElement>('h2');
+    if (target) {
       setPlacementMessage('');
-      scrollToTarget(heading, 2400);
+      if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
+      scrollToTarget(target, 2400);
       return;
     }
     setPlacementMessage(locked && index > 0
