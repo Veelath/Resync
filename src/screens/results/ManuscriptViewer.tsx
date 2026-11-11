@@ -57,6 +57,20 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
           const lines = [...body.matchAll(/[^\r\n]+/g)];
           const rendered: React.ReactNode[] = [];
           for (let line = 0; line < lines.length;) {
+            const cells = lines[line][0].split(' | ');
+            let tableEnd = line;
+            if (cells.length > 1) while (tableEnd < lines.length && lines[tableEnd][0].split(' | ').length === cells.length && (tableEnd === line || lines[tableEnd].index! - (lines[tableEnd - 1].index! + lines[tableEnd - 1][0].length) <= 2)) tableEnd++;
+            if (tableEnd - line >= 2) {
+              rendered.push(<div key={line} className="manuscript-table-region" role="region" tabIndex={0} aria-label={`Table in ${sectionHeading(section)}; scroll horizontally to see all columns`}><table><tbody>{lines.slice(line, tableEnd).map((row, rowIndex) => {
+                let offset = 0;
+                return <tr key={rowIndex}>{row[0].split(' | ').map((cell, cellIndex) => {
+                  const at = offset; offset += cell.length + 3;
+                  return <td key={cellIndex}>{base < 0 ? cell : renderLine(Object.assign([cell], { index: row.index! + at }) as unknown as RegExpMatchArray, base)}</td>;
+                })}</tr>;
+              })}</tbody></table></div>);
+              line = tableEnd;
+              continue;
+            }
             let end = line;
             while (end < lines.length && lines[end][0].trim().length > 0 && lines[end][0].trim().length <= 60 &&
               !/[.!?;:]$/.test(lines[end][0].trim()) &&
