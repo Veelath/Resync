@@ -50,7 +50,7 @@ const clip = (text: string, max: number) => text.length > max ? `${text.slice(0,
 function problemOf(pair: ManuscriptFlowPair) {
   const explanation = pair.explanation;
   const text = explanation?.link_summary || explanation?.highlighted_inconsistencies.find(item => item.what)?.what;
-  return text ? plainText(text) : 'The relationship between these sections is unclear, so readers may struggle to follow the argument.';
+  return text ? plainText(text).split(/(?<=[.!?])\s+/)[0] : 'These two parts sit side by side with nothing joining them, so a reader may feel a sudden jump. One short sentence can fix that.';
 }
 
 function saysOf(pair: ManuscriptFlowPair, side: 'a' | 'b') {
@@ -104,9 +104,8 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const quick = items.length > 0 && adds.length === items.length;
   const categoryKey = items.map(item => item.category).find(Boolean);
   const category = categoryKey ? categoryColors[categoryKey].label : null;
-  const rawProblem = (severity === 'Suggestion' ? 'The connection between these sections is unclear, so readers may struggle to follow the argument' : problemOf(pair)).split(/(?<=[.!?])\s+/)[0].replace(/[.!?]+$/, '');
   const title = cardHeading(nameOf(pair.section_a), nameOf(pair.section_b), severity === 'Suggestion');
-  const why = /\b(?:because|so|therefore|which)\b/i.test(rawProblem) ? `${rawProblem}.` : `${rawProblem}, which can make the connection unclear.`;
+  const why = problemOf(pair);
   const tag = severity === 'Suggestion' ? { text: 'Connection needs clarification', cls: 'text-amber-700' } : { text: `${level.label}: ${{ Critical: 'serious mismatch', Moderate: 'mismatch to review', Minor: 'small mismatch' }[severity]}`, cls: severity === 'Critical' ? 'text-rose-600' : severity === 'Moderate' ? 'text-orange-600' : 'text-sky-600' };
   const chip = 'rounded-md bg-[#eeeefe] px-2 py-0.5 text-[11px] font-semibold text-[#2b25c8]';
   const stepNumber = 'grid size-5 shrink-0 place-items-center rounded-full bg-[#eeeefe] text-[11px] font-bold text-[#2b25c8]';
