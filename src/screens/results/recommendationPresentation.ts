@@ -10,7 +10,10 @@ function sectionIndex(names: string[], name: string): number {
 
 export function sectionDisplayName(name: string, sections: Sections = []): string {
   const index = sectionIndex(sections.map(section => section.name), name);
-  return index < 0 ? name : sections[index].display_name?.trim() || sections[index].name;
+  const display = index < 0 ? name : sections[index].display_name?.trim() || sections[index].name;
+  if (display !== display.toLowerCase() && display !== display.toUpperCase()) return display;
+  return display.toLowerCase().replace(/[a-z]+(?:['?][a-z]+)?/g, (word, offset: number) =>
+    offset > 0 && /^(of|the|and|to|in|for|on|a|an)$/.test(word) ? word : word[0].toUpperCase() + word.slice(1));
 }
 
 export function usablePair(pair: ManuscriptFlowPair, sections: Sections = []): boolean {

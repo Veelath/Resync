@@ -22,3 +22,10 @@ test('card headings name both sections and distinguish pairs', () => {
   assert.equal(cardHeading('Methodology', 'Results', false), 'Methodology and Results may not agree.');
   assert.notEqual(cardHeading('Introduction', 'Methods', false), cardHeading('Introduction', 'Results', false));
 });
+
+test('formats uniformly cased section names while preserving mixed case', () => {
+  assert.equal(sectionDisplayName("COMPARATIVE MATRIX SUMMARY CONT'D"), "Comparative Matrix Summary Cont'd");
+  assert.equal(sectionDisplayName('research methodology'), 'Research Methodology');
+  assert.equal(sectionDisplayName('rationale of the study'), 'Rationale of the Study');
+  assert.equal(sectionDisplayName('Rationale of the Study'), 'Rationale of the Study');
+});
