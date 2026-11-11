@@ -687,7 +687,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
                   <button type="button" onClick={() => { handleResetTemplate(); setStep(2); }} className="uf-btn is-ghost is-lg" style={{ padding: "0 26px" }}>Skip, use detected headings</button>
-                  <button type="button" onClick={() => setStep(2)} className="uf-btn is-lg is-grow um-cta">
+                  <button type="button" onClick={() => setStep(2)} className="uf-btn is-lg is-grow um-cta" style={{ minWidth: 220 }}>
                     Continue to upload manuscript
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </button>
