@@ -53,6 +53,17 @@ function problemOf(pair: ManuscriptFlowPair) {
   return text ? plainText(text) : 'The relationship between these sections is unclear, so readers may struggle to follow the argument.';
 }
 
+function saysOf(pair: ManuscriptFlowPair, side: 'a' | 'b') {
+  const name = side === 'a' ? pair.section_a : pair.section_b;
+  const explanation = pair.explanation;
+  const phrase = explanation?.comparison?.[side === 'a' ? 'a_says' : 'b_says'];
+  if (phrase) return plainText(phrase);
+  const quote = explanation?.highlighted_inconsistencies.find(item => item.section === name && item.quote)?.quote
+    ?? explanation?.reference_list.find(item => item.section === name)?.sentence
+    ?? pair.culprit_sentences[side === 'a' ? 'section_a' : 'section_b'][0]?.sentence;
+  return quote ? `?${clip(plainText(quote), 110)}?` : null;
+}
+
 /** Reports saved before severity existed carry none: a pair with advice counts as Moderate, the rest as unreviewed. */
 export function severityOf(pair: ManuscriptFlowPair, hasItems: boolean): Severity | 'None' | null {
   return pair.severity !== undefined ? pair.severity : hasItems ? 'Moderate' : null;
@@ -132,6 +143,9 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   return <section data-pair-order={pair.order} aria-label={`${pair.section_a} and ${pair.section_b}`} className={frame}>
     {head}
     <div className="space-y-3 border-t border-[#eeedfb] pt-3">
+    {severity !== 'Suggestion' && <ul className="space-y-1 text-sm leading-snug text-[#303746]">
+      {(['a', 'b'] as const).map(side => { const says = saysOf(pair, side); return says && <li key={side}>? <strong>{nameOf(side === 'a' ? pair.section_a : pair.section_b)}</strong> says: {says}</li>; })}
+    </ul>}
     {items.length > 0 && <div>
       <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">What to do</p>
       <ol className="space-y-4">
@@ -139,6 +153,7 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
           const sentence = plainText(item.revision);
           const where = item.placement === 'start' ? 'beginning' : 'end';
           return <li key={item.id} id={`recommendation-${item.id}`} tabIndex={-1} hidden={index >= VISIBLE_FIXES && !open} className="scroll-mt-12 space-y-2.5 text-sm leading-snug text-[#303746]">
+            {item.issue && <p className="rounded-lg bg-[#f6f7fb] px-3 py-2 text-[13px] text-[#4b5275]"><strong className="text-[#0b0f3d]">Why this matters:</strong> {plainText(item.issue)}</p>}
             {item.kind === 'add'
               ? <>
                   <p className="flex items-start gap-2"><span className={stepNumber}>1</span><span>Go to the <strong className="text-[#0b0f3d]">{where} of <span>{item.section && nameOf(item.section)}</span></strong>.</span></p>
