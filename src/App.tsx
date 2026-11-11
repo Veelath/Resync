@@ -280,7 +280,7 @@ export default function App() {
     const finishedId = result?.analysis_run_id;
     const docName = (result?.manuscript_title ?? '').trim();   // the report is named after the uploaded document
     const scanOf = docName ? `Your scan of "${docName}"` : 'Your manuscript scan';
-    if (notificationPrefsRef.current.alerts) showDesktopAlert(result?.rescan_unchanged ? "No changes detected" : "Scan successful", result?.rescan_unchanged ? `${scanOf} is the same as your last scan.` : `${scanOf} is successful. Click to view your report.`, () => { if (finishedId) navigate("results", false, finishedId); });
+    if (notificationPrefsRef.current.alerts) showDesktopAlert(result?.rescan_unchanged ? "No changes detected" : "Scan successful", result?.rescan_unchanged ? `${scanOf} is the same as your last scan.` : `${scanOf} is successful. Your report is ready.`, () => { if (finishedId) navigate("results", false, finishedId); });
     if (result?.rescan_unchanged) pushNotification("success", "No changes detected", "Your manuscript is the same as your last scan, so the report is unchanged.", result.analysis_run_id);
     else pushNotification("success", "Scan complete", `${scanOf} is successful. Your report is ready.`, result?.analysis_run_id);
   }
