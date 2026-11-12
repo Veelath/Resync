@@ -12,7 +12,7 @@ import { ReportPrint } from './ReportPrint';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, usableTitle } from './helpers';
-import { edgeSentence, findSectionIndex, type Placement } from '../../lib/sectionNavigation';
+import { edgeSentence, findSectionIndex, isWithheldSection, type Placement } from '../../lib/sectionNavigation';
 import { matchedRecommendations, recommendationRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
@@ -153,6 +153,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   async function showPlacement(section: string, placement: Placement) {
     const names = (result?.manuscript_sections ?? []).map(item => item.name);
     const index = findSectionIndex(names, section);
+    if (isWithheldSection(locked, index)) {
+      setPlacementMessage('This part is in the full report. Unlock it to see where.');
+      const unlock = manuscriptScroll.current?.querySelector<HTMLElement>('.locked-manuscript-card');
+      if (unlock) { unlock.tabIndex = -1; scrollToTarget(unlock); }
+      window.setTimeout(() => setPlacementMessage(''), 6000);
+      return;
+    }
     const sectionElement = index < 0 ? null : manuscriptScroll.current?.querySelector<HTMLElement>(`[data-section-index="${index}"]`);
     const target = placement === 'end' ? sectionElement?.lastElementChild as HTMLElement | null : sectionElement?.querySelector<HTMLElement>('h2');
     if (target) {
@@ -161,9 +168,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       scrollToTarget(target, 2400);
       return;
     }
-    setPlacementMessage(locked && index > 0
-      ? 'That part of your paper is locked. Unlock the full report to see where this sentence goes.'
-      : `We could not find the ${section} section in the page. Look for it by its heading and add the sentence there.`);
+    setPlacementMessage(`We could not find the ${section} section in the page. Look for it by its heading and add the sentence there.`);
     window.setTimeout(() => setPlacementMessage(''), 6000);
   }
   const citations: Citation[] = result.citations.map((citation, index) => ({

@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { findSectionIndex } from './sectionNavigation';
+import { findSectionIndex, isWithheldSection } from './sectionNavigation';
+
+test('only sections after the visible preview are withheld', () => {
+  assert.equal(isWithheldSection(true, 1), true);
+  assert.equal(isWithheldSection(true, 0), false);
+  assert.equal(isWithheldSection(true, -1), false);
+  assert.equal(isWithheldSection(false, 1), false);
+});
 
 test('matches numbered and differently spaced section names without guessing duplicates', () => {
   const names = ['Related Literature', 'Related Studies', 'Review Of Sources And Methods'];

@@ -4,6 +4,10 @@ const normalize = (value: string) => value.trim()
 
 export type Placement = 'start' | 'end';
 
+export function isWithheldSection(locked: boolean, index: number): boolean {
+  return locked && index > 0;
+}
+
 export function edgeSentence(text: string | null | undefined, placement: Placement, max = 170): string {
   const sentences = (text ?? '').split(/(?<=[.!?])\s+|\n+/).map(item => item.trim()).filter(item => item.split(/\s+/).length >= 4);
   const sentence = (placement === 'end' ? sentences[sentences.length - 1] : sentences[0]) ?? '';
