@@ -22,7 +22,7 @@ export function ProcessingScreen({ onNavigate, outcome, startedAt, words, sendin
   const [progress, setProgress] = useState(() => estimatedProgress(Date.now() - startedAt));
   useEffect(() => { setProgress(previous => status?.completed ? 100 : Math.max(previous, estimatedProgress(now - startedAt))); }, [now, startedAt, status?.completed]);
   const active = sending ? { label: 'Sending your manuscript', detail: 'Please keep this page open while your manuscript is sent.' } : { label: 'Your scan is in progress', detail: 'We will let you know when your report is ready.' };
-  const info = sending ? null : outcome?.kind === 'info' ? outcome.message : status?.info;
+  const info = sending ? null : outcome?.kind === 'info' ? outcome.message : status?.info || status?.message;
 
   return <main className="processing-screen">
     <div className="processing-screen__texture" aria-hidden="true" /><div className="processing-screen__glow" aria-hidden="true" />

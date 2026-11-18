@@ -1,3 +1,5 @@
+import { MAX_ELEMENTS } from '../../lib/docxPreview';
+
 const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
 const stripNumber = (value: string) => value.replace(/^(?:chapter\s+)?(?:\d+(?:\s+\d+)*|[ivxlcdm]+)\s+/i, '');
 
@@ -19,9 +21,14 @@ export function lockedHeadingIndex(paragraphs: string[], section: string): numbe
     // a heading may share its paragraph with the line break and sub-heading after it
     const startsWith = text.length <= target.length + 60 && (text.startsWith(`${target} `) || stripNumber(text).startsWith(`${target} `));
     if (text === target || stripNumber(text) === target || startsWith) {
-      if (match !== -1) return -1;
+      if (match !== -1) return -2;
       match = i > 0 && /^chapter\s+(?:\d+|[ivxlcdm]+)$/i.test(normalize(paragraphs[i - 1])) ? i - 1 : i;
     }
   }
   return match;
+}
+
+export function lockedHeadingAction(index: number, truncated: boolean, budget: number): 'show' | 'retry' | 'fail' {
+  if (index >= 0) return 'show';
+  return index === -1 && truncated && budget < MAX_ELEMENTS ? 'retry' : 'fail';
 }

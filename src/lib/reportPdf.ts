@@ -1,11 +1,10 @@
 // The downloadable report, drawn from the scan result with a fixed template: a real PDF, not a picture of the page.
 // Order: the score report first (score, how it was made, scores by section, findings, recommendations, citations), then the
-// manuscript text. Every page carries "Report by Team Resync" and the Resync site link only (never the link of the report).
+// manuscript text. Every page links to the Resync site, never the report itself.
 import { jsPDF } from 'jspdf';
 import type { DimensionBreakdown, DimensionName, ManuscriptFlowPair, V7ScanResponse } from '../services/v7Result';
 import { GROUPS } from '../screens/results/ScoreExplainer';
 
-export const TEAM_LABEL = 'Report by Team Resync';
 export const RESYNC_SITE = 'https://resync-web-m.onrender.com';
 
 export interface PdfCitation { ref: string; status: string; noLink?: boolean }
@@ -137,7 +136,6 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
   const titleLines = doc.splitTextToSize(pdfSafe(title), inner) as string[];
   doc.text(titleLines.slice(0, 2), M, 88);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-  doc.text(TEAM_LABEL, W - M, 38, { align: 'right' });
   doc.setFont('helvetica', 'normal'); doc.text(date, W - M, 52, { align: 'right' });
   y = 132;
 
@@ -350,7 +348,6 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
     }
     stroke(LINE); doc.setLineWidth(0.6); doc.line(M, H - 40, W - M, H - 40);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); color(GREY);
-    doc.text(TEAM_LABEL, M, H - 25);
     doc.setFont('helvetica', 'normal'); color(INDIGO);
     doc.textWithLink(RESYNC_SITE, W / 2, H - 25, { url: RESYNC_SITE, align: 'center' });
     color(GREY);
