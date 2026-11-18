@@ -72,7 +72,8 @@ export function sectionScores(flow: ManuscriptFlowPair[]): { name: string; score
   return [...totals].map(([name, { earned, total, pairs }]) => ({ name, score: Number((earned / total * 100).toFixed(2)), pairs }));
 }
 
-export function buildReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false): jsPDF {
+/** `manuscriptText` is the exact text of the uploaded file (paragraph by paragraph); without it the stored sections are printed. */
+export function buildReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null): jsPDF {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -315,8 +316,10 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
   // ---------------------------------------------------------------- the manuscript text, after the score report
   newPage();
   heading('Manuscript text');
-  text('The text that was scanned, section by section.', { size: 9.5, color: GREY, gap: 4 });
-  const sections = result.manuscript_sections ?? [];
+  const exactText = !locked && manuscriptText?.trim() ? manuscriptText : null;
+  text(exactText ? 'A copy of the text of your uploaded document, as written.' : 'The text that was scanned, section by section.', { size: 9.5, color: GREY, gap: 4 });
+  if (exactText) exactText.split(/\n+/).map(line => line.trim()).filter(Boolean).forEach(line => text(line, { size: 9.5, gap: 4, lineHeight: 13.2 }));
+  const sections = exactText ? [] : result.manuscript_sections ?? [];
   sections.forEach(section => {
     if (section.text == null && !section.blocks) {
       need(30);
@@ -356,7 +359,16 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
   return doc;
 }
 
-export function downloadReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false) {
+export function reportFileName(title: string): string {
   const safeName = pdfSafe(title).replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'manuscript';
-  buildReportPdf(result, title, citations, locked).save(`ReSync-report-${safeName}.pdf`);
+  return `ReSync-report-${safeName}.pdf`;
+}
+
+/** The finished PDF as a Blob, for the preview that is shown before anything is downloaded. */
+export function reportPdfBlob(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null): Blob {
+  return buildReportPdf(result, title, citations, locked, manuscriptText).output('blob');
+}
+
+export function downloadReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null) {
+  buildReportPdf(result, title, citations, locked, manuscriptText).save(reportFileName(title));
 }

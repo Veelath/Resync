@@ -62,7 +62,7 @@
 .tour-skip{padding:0 14px;background:none;border:0;color:#5a5778}
 .tour-skip:hover{color:#2b25c8}
 .tour-next:focus-visible,.tour-back:focus-visible,.tour-skip:focus-visible{outline:3px solid #7b76f0;outline-offset:2px}
-.tour-progress{position:fixed;right:24px;bottom:24px;z-index:40;height:46px;padding:0 22px;border:0;border-radius:14px;background:#2b25c8;color:#fff;font:700 14.5px 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer;box-shadow:0 14px 28px -12px rgba(43,37,200,.7)}
+.tour-progress{position:fixed;right:20px;bottom:84px;z-index:40;height:46px;padding:0 22px;border:0;border-radius:14px;background:#2b25c8;color:#fff;font:700 14.5px 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer;box-shadow:0 14px 28px -12px rgba(43,37,200,.7)}
 .tour-progress:hover{background:#231ea8}
 .tour-progress:focus-visible{outline:3px solid #7b76f0;outline-offset:2px}
 .tour-float{animation:tour-float 5s ease-in-out infinite}

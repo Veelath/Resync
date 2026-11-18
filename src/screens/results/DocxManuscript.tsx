@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { renderAsync } from 'docx-preview';
 import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../../lib/docxPreview';
 import { lockedHeadingIndex } from './lockedHeading';
@@ -29,6 +30,9 @@ const HOST_CSS = `
 .docx-readable .docx-wrapper img { max-width: 100%; height: auto; }
 .docx-host table { display: block; max-width: 100%; overflow-x: auto; }
 .docx-host mark { transition: box-shadow .15s; }
+.docx-host .docx-withheld { filter: blur(6px); user-select: none; pointer-events: none; }
+.docx-host .docx-withheld-start .locked-manuscript-card { position: static; margin-top: 0; }
+.docx-host .docx-withheld-start { position: relative; z-index: 2; display: flex; justify-content: center; padding: 18px 0 8px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
 .docx-host mark:hover { box-shadow: 0 0 0 2px rgba(26, 31, 204, .35); }
 .docx-host mark[data-selected] { box-shadow: 0 0 0 3px rgba(43, 37, 200, .35); }
 `;
@@ -51,9 +55,10 @@ export interface DocxManuscriptHandle { loadNext: () => Promise<boolean> }
 
 /** The student's uploaded Word file, drawn as it looks in Word, with the recommended sentences highlighted. */
 export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
-  file: File; highlights: HighlightSpec[]; locked: boolean; secondSection?: string;
+  file: File; highlights: HighlightSpec[]; locked: boolean; secondSection?: string; unlockControl?: ReactNode;
   onLinked: (ids: Set<string>) => void; onFailed: () => void;
-}>(function DocxManuscript({ file, highlights, locked, secondSection, onLinked, onFailed }, ref) {
+}>(function DocxManuscript({ file, highlights, locked, secondSection, unlockControl, onLinked, onFailed }, ref) {
+  const [withheldStart, setWithheldStart] = useState<HTMLElement | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLDivElement>(null);
@@ -100,28 +105,30 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       if (cancelled || !guard.finish()) return;
       worker.terminate();
       setTruncated(event.data.truncated);
-      if (locked && [...rendered.querySelectorAll('table p, table h1, table h2, table h3, table h4, table h5, table h6')].some(element =>
-        lockedHeadingIndex([element.textContent ?? ''], secondSection ?? '') !== -1
-      )) { fail('locked-heading'); return; }
       keepTextOnly(rendered);
       if (locked) {
         const paragraphs = [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table'));
         const index = lockedHeadingIndex(paragraphs.map(element => element.textContent ?? ''), secondSection ?? '');
         const heading = paragraphs[index];
         if (!heading || !rendered.lastChild) { fail('locked-heading'); return; }
-        const withheld = document.createRange();
-        withheld.setStartBefore(heading);
-        withheld.setEndAfter(rendered.lastChild);
-        withheld.deleteContents();
-        keepTextOnly(rendered);
-      }
+        // The whole document is shown; what the free report does not cover is blurred, with the unlock card where it starts.
+        const marker = document.createElement('div');
+        marker.className = 'docx-withheld-start';
+        heading.before(marker);
+        rendered.querySelectorAll<HTMLElement>('p, h1, h2, h3, h4, h5, h6, li').forEach(element => {
+          if (element === heading || (heading.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+            element.classList.add('docx-withheld'); element.setAttribute('aria-hidden', 'true');
+          }
+        });
+        setWithheldStart(marker);
+      } else setWithheldStart(null);
       styleRef.current?.replaceChildren(...styles.childNodes);
       body.replaceChildren(...rendered.childNodes);
       const specs = callbacks.current.highlights;
       try { callbacks.current.onLinked(highlightSentences(body, specs)); } catch { /* Keep the rendered pages. */ }
       setActivePage(0);
       setStatus('ready');
-      if (!locked && event.data.truncated && budget < MAX_ELEMENTS) setTimeout(() => { if (!cancelled) setBudget(nextBudget(budget)); }, 0);
+      if (event.data.truncated && budget < MAX_ELEMENTS) setTimeout(() => { if (!cancelled) setBudget(nextBudget(budget)); }, 0);
       } catch {
         guard.cancel(); worker.terminate();
         fail('render');
@@ -242,7 +249,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       </div>}
       {status === 'loading' && <p className="py-6 text-center text-sm text-gray-500" role="status">Opening your manuscript as you uploaded it…</p>}
       <div ref={bodyRef} style={{ zoom: readableView ? 1 : scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
-      {locked && status === 'ready' && truncated && budget < MAX_ELEMENTS && <button type="button" className="uf-btn is-ghost is-sm" onClick={() => setBudget(nextBudget(budget))}>Show more</button>}
+      {withheldStart && unlockControl && createPortal(<div className="locked-manuscript-card w-full max-w-[360px] rounded-2xl border border-[#dfe5f5] bg-white p-5 text-center shadow-[0_16px_48px_#0b0f3d26]"><p className="mb-3 text-sm font-semibold text-[#0b0f3d]">The rest of your manuscript is covered by the full report.</p>{unlockControl}</div>, withheldStart)}
       {status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>The rest cannot be shown here.</p>}
     </div>
   </div>;

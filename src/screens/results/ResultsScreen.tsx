@@ -13,7 +13,8 @@ import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
 import { ResultsScorePanel } from './ResultsScorePanel';
 import { LeaveNotice } from './LeaveNotice';
-import { downloadReportPdf } from '../../lib/reportPdf';
+import { reportFileName, reportPdfBlob } from '../../lib/reportPdf';
+import { PdfPreview } from './PdfPreview';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, usableTitle } from './helpers';
@@ -73,6 +74,9 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   // The manuscript as the student uploaded it (Word file, or the Google Doc downloaded as Word), kept in this tab's memory only.
   // If it is not there (a refresh, an older .doc, a link that could not be downloaded) or cannot be drawn, the stored text view is used.
   const docxView = useRef<DocxManuscriptHandle>(null);
+  // The PDF is shown in a preview first; it is downloaded only from there.
+  const [pdfPreview, setPdfPreview] = useState<{ url: string | null; name: string } | null>(null);
+  const closePdfPreview = () => setPdfPreview(previous => { if (previous?.url) URL.revokeObjectURL(previous.url); return null; });
   const [docxFailed, setDocxFailed] = useState(false);
   const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
   const ownFile = isSample ? null : manuscriptFileFor(result?.analysis_run_id);
@@ -236,8 +240,21 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const displayedCitations = citationFilter ? citations.filter(citation => citation.status === citationFilter) : citations;
   const citeCount = (status: Citation['status']) => citations.filter(citation => citation.status === status).length;
   const askToLeave = (action: () => void) => setLeaveAction(() => action);
-  function downloadPdf() {
-    downloadReportPdf(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked);
+  async function downloadPdf() {
+    const name = reportFileName(displayTitle);
+    setPdfPreview({ url: null, name });
+    let exactText: string | null = null;
+    if (ownFile && /\.docx$/i.test(ownFile.name) && !locked) {   // an exact copy of the uploaded text, taken from the file itself
+      try {   // the text of the paragraphs only: tables and pictures are not part of the report's copy
+        const { value } = await (await import('mammoth')).convertToHtml({ arrayBuffer: await ownFile.arrayBuffer() });
+        const page = new DOMParser().parseFromString(value, 'text/html');
+        page.querySelectorAll('table, img').forEach(element => element.remove());
+        exactText = [...page.body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li')].map(element => (element.textContent ?? '').trim()).filter(Boolean).join('\n');
+      } catch { /* the stored sections are printed instead */ }
+    }
+    await new Promise(resolve => setTimeout(resolve, 30));   // let the "Preparing" state paint before the PDF is built
+    const blob = reportPdfBlob(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked, exactText);
+    setPdfPreview({ url: URL.createObjectURL(blob), name });
   }
   const tabs: { id: Tab; label: string }[] = [
     { id: 'recommendations', label: `Recommendations (${issueCount})` },
@@ -259,6 +276,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   return <div className="results-screen min-h-screen bg-[#f6f7fb] font-sans text-[#0b0f3d] lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
     <ResultsHeader onNavigate={target => isSample ? onNavigate(target) : askToLeave(() => onNavigate(target))} onBack={() => isSample ? onBack() : askToLeave(onBack)}
       isSample={isSample} displayTitle={displayTitle} onDownload={downloadPdf} sampleId={sampleId} onSampleChange={id => { setSampleId(id); setActiveTab('recommendations'); setSelectedOrder(null); manuscriptScroll.current?.scrollTo({ top: 0 }); }} onClose={isSample ? undefined : () => askToLeave(() => onNavigate('dashboard'))} />
+    {pdfPreview && <PdfPreview url={pdfPreview.url} fileName={pdfPreview.name} onClose={closePdfPreview} />}
     {leaveAction && <LeaveNotice leaving={leaving} onStay={() => setLeaveAction(null)} onDownload={downloadPdf} onLeave={async () => {
       setLeaving(true);
       if (result?.analysis_run_id) await discardScan(result.analysis_run_id);
@@ -275,7 +293,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
         <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
-          {docxFile ? <DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
+          {docxFile ? <DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} unlockControl={unlockControl} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
           <BackToTop container={manuscriptScroll} label="Back to top of the manuscript" />
         </div>
       </div>
