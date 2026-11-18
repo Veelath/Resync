@@ -1,3 +1,5 @@
+import { notify } from '../../lib/notify';
+import { NOTIFICATION_PREFS_KEY } from '../../components/ScanNotifications';
 import { checkAuthError } from '../../services/api';
 import '../upload-flow.css';
 import { CreditsPanel, type CreditActivity } from './CreditsPanel';
@@ -62,15 +64,14 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
     try {
       const dataUrl = await resizeAvatar(file);
       setAvatarUrl(dataUrl);
-      try { localStorage.setItem(avatarKey(session?.user?.id), dataUrl); } catch { setAvatarError("Photo updated, but it could not be saved on this device."); }
+      try { localStorage.setItem(avatarKey(session?.user?.id), dataUrl); notify({ kind: "success", title: "Profile picture updated", message: "Your new photo is saved." }); } catch { setAvatarError("Photo updated, but it could not be saved on this device."); }
     } catch {
       setAvatarError("We couldn't read that image. Please try another file.");
     }
   }
   function removeAvatar() {
-    setAvatarUrl(null);
     setAvatarError("");
-    try { localStorage.removeItem(avatarKey(session?.user?.id)); } catch { /* storage unavailable */ }
+    try { localStorage.removeItem(avatarKey(session?.user?.id)); setAvatarUrl(null); notify({ kind: "success", title: "Profile picture removed", message: "Your photo was removed." }); } catch { notify({ kind: "error", title: "Couldn't remove your photo", message: "Please try again." }); }
   }
   const initialResolved = parseUserProfileMetadata(session?.user?.user_metadata, session?.user?.email);
   const [profile, setProfile] = useState({
@@ -141,6 +142,7 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
       setCreditHistory(hist.entries);
     } catch (e) {
       console.error('credits fetch failed:', e);
+      notify({ kind: 'error', title: "Couldn't load your credits", message: 'Refresh the page to try again.' });
     }
   }
 
@@ -402,7 +404,15 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
                             <span style={{ display: "block", fontSize: 12.5, color: "#6b6890", marginTop: 2 }}>{hint}</span>
                           </span>
                           <button type="button" role="switch" aria-checked={on} aria-labelledby={`notif-${key}`} disabled={disabled}
-                            onClick={() => onNotificationPrefsChange?.({ ...notificationPrefs, [key]: !notificationPrefs[key] })}
+                            onClick={() => {
+                              if (!onNotificationPrefsChange) return;
+                              const prefs = { ...notificationPrefs, [key]: !notificationPrefs[key] };
+                              try {
+                                localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(prefs));
+                                onNotificationPrefsChange(prefs);
+                                notify({ kind: "success", title: "Notification settings saved", message: "" });
+                              } catch { notify({ kind: "error", title: "Couldn't save your settings", message: "Please try again." }); }
+                            }}
                             className="uf-switch" data-on={on}>
                             <span className="uf-switch-knob" />
                             <span className="sr-only">{on ? "On" : "Off"}</span>
