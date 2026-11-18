@@ -1,3 +1,4 @@
+import { allClearCount, clearPairs } from './clearPairs';
 ﻿import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
@@ -147,7 +148,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
   const visiblePairs = result.manuscript_flow.filter(pair => usablePair(pair, result.manuscript_sections));
   const issueCount = visiblePairs.filter(pair => pair.scores.overall_coherence != null && hasAdvice(pair.order) && levelOf(pair, true) !== null).length;
-  const clearCount = (locked ? result.access?.locked_counts.all_clear : undefined) ?? visiblePairs.filter(pair => pair.scores.overall_coherence != null && levelOf(pair, hasAdvice(pair.order)) === 'None').length;
+  const breakdown = result.dimension_breakdown ?? result.score_breakdown.dimension_breakdown;
+  const clearCount = allClearCount(clearPairs(visiblePairs, hasAdvice, result.manuscript_sections, breakdown).clear.length, locked, result.display_counts?.all_clear, result.access?.locked_counts.all_clear);
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
   const linkedIds = docxFile
     ? new Set<string>(recommendations.filter(rec => rec.kind !== 'add' ? (locked ? docxLinked?.has(`${rec.pair}-${rec.id}`) : !!rec.quote) : false).map(rec => `${rec.pair}:${rec.id}`))
@@ -334,8 +336,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
                 <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
               </div>}
               {activeTab === 'clear' && (locked && result.access?.locked_counts.all_clear != null
-                ? <p className="text-sm text-gray-500">Unlock the full report to see the sections with no issues.</p>
-                : <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />)}
+                ? <div className="space-y-2 text-sm text-gray-500"><p>Unlock the full report to see the sections with no issues.</p>{(result.access?.locked_counts.minor_points ?? result.display_counts?.minor_points ?? 0) > 0 && <p>Small issues that cost points: {result.access?.locked_counts.minor_points ?? result.display_counts?.minor_points}</p>}</div>
+                : <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} breakdown={breakdown} mode="clear" />)}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>

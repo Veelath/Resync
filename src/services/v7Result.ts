@@ -87,8 +87,9 @@ export interface V7ScanResponse {
   doc_url: string;
   manuscript_title?: string | null;
   result_version: 'v7';
-  access?: { unlocked: boolean; unlock_cost: number; locked_counts: { sections: number; recommendations: number; citations: number; all_clear?: number } };
+  access?: { unlocked: boolean; unlock_cost: number; locked_counts: { sections: number; recommendations: number; citations: number; all_clear?: number; minor_points?: number } };
   manuscript_sections?: { name: string; text: string | null; display_name?: string | null; blocks?: ({ type: 'paragraph'; text: string } | { type: 'table'; rows: string[][] })[] | null; placeholder?: { heading: string; paragraphs: string[] } }[];
+  display_counts?: { all_clear?: number; minor_points?: number };
   overall_coherence_score: number;
   /** Set when the paper had no usual headings, saying how it was split into sections. */
   structure_note?: string | null;
