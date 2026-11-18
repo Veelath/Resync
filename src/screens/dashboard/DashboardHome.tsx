@@ -36,7 +36,9 @@ export function DashboardHome({ onNavigate, session, greeting, scanRunning = fal
           <h1>Your manuscript,<br /><span>checked end-to-end.</span></h1>
           <p>Run a holistic manuscript analysis, check citations, and see the AI-text indicator in one report.</p>
           <div className="phase2-actions">
-            <button className="phase2-primary" onClick={() => onNavigate('upload')}><Upload size={19} aria-hidden="true" />Start a Scan</button>
+            {scanRunning && onViewProgress
+              ? <button className="phase2-primary" onClick={onViewProgress} title="One scan at a time: wait for the running scan to finish"><Upload size={19} aria-hidden="true" />Scan in progress</button>
+              : <button className="phase2-primary" onClick={() => onNavigate('upload')}><Upload size={19} aria-hidden="true" />Start a Scan</button>}
             <button className="phase2-secondary" onClick={() => onNavigate('results', true)}>Preview sample <ArrowRight size={18} aria-hidden="true" /></button>
           </div>
         </div>

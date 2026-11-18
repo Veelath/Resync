@@ -20,7 +20,7 @@ import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
 import { PAYMENT_EVENT } from './lib/paymentProof';
-import { resumeManuscriptScan, ScanOutcome } from './services/api';
+import { resumeManuscriptScan, resetScanStatus, ScanOutcome } from './services/api';
 import { canResume, shouldNotifyFailure, rememberFailureNotification } from './lib/scanWait';
 import { askForDesktopAlerts, showDesktopAlert } from './components/ScanNotifications';
 import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
@@ -45,10 +45,12 @@ export default function App() {
   const scanRunRef = useRef(0);
   const scanSettledRef = useRef(true);
   const [scanRunning, setScanRunning] = useState(false);
+  const scanSendingRef = useRef(false);
   // A scan that finished while the person was elsewhere ("Continue in background"): the dashboard offers "View result" for it.
   const [finishedScanId, setFinishedScanId] = useState<string | null>(null);
   useEffect(() => { if (screen === 'results') setFinishedScanId(null); }, [screen]);
   const [scanSending, setScanSending] = useState(false);
+  useEffect(() => { scanSendingRef.current = scanSending; }, [scanSending]);
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome | null>(null);
   const [scanStartedAt, setScanStartedAt] = useState(Date.now());
   const [scanWords, setScanWords] = useState<number | null>(null);
@@ -85,6 +87,7 @@ export default function App() {
     let target = route.unknown ? (currentSession ? 'dashboard' : 'home') : route.screen;
     let path = route.unknown ? routePath(target) : pathname;
     if (target === 'processing' && scanSettledRef.current && !readActiveScan()) { target = 'dashboard'; path = '/dashboard'; }
+    if (target === 'upload' && !scanSettledRef.current && !scanSendingRef.current) { target = 'dashboard'; path = '/dashboard'; }
     if (!currentSession && !route.sample && ['dashboard', 'upload', 'results'].includes(target)) {
       if (route.scanId) sessionStorage.setItem('resync_return_to', routePath('results', route.scanId));
       target = 'login'; path = '/login';
@@ -158,6 +161,11 @@ export default function App() {
   }, []);
 
   function navigate(s: Screen, asSample = false, resultId?: string) {
+    // One scan at a time: while one is running, the upload page is not opened (a scan that is only being sent is the upload page itself).
+    if (s === 'upload' && !scanSettledRef.current && !scanSendingRef.current && sessionRef.current) {
+      setDashboardNotice('A scan is already running. Wait for it to finish, or open View progress, before starting another.');
+      s = 'dashboard';
+    }
     if (s === 'results' && !asSample && !sessionRef.current && (resultId || scanResult?.analysis_run_id)) {
       sessionStorage.setItem('resync_return_to', routePath('results', resultId ?? scanResult?.analysis_run_id));
     }
@@ -235,6 +243,7 @@ export default function App() {
     if (!running || !canResume(running, session.user.id, Date.now())) return;
     resumedRef.current = true;
     scanSettledRef.current = false;
+    resetScanStatus();
     setScanRunning(true);
     setScanStartedAt(running.at); setScanWords(running.words ?? null);
     let resumedProcessing = false;
@@ -261,6 +270,8 @@ export default function App() {
     setScanOutcome(null); setFinishedScanId(null); setScanWords(words); scanWordsRef.current = words; setScanStartedAt(Date.now());
     setScanRunning(true);
     setScanSending(true);
+    scanSendingRef.current = true;
+    resetScanStatus();   // the last scan's "completed" must not carry over and show 100% at once
     if (notificationPrefsRef.current.alerts) void askForDesktopAlerts();   // this runs inside the click that started the scan
     scanRunRef.current += 1;
     scanSettledRef.current = false;
@@ -365,7 +376,7 @@ export default function App() {
         onClose={() => setToast(null)}
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {(screen === "upload" || scanRunning && scanSending) && <div hidden={screen !== "upload"}><UploadScreen onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={id => { setScanSending(false); rememberActiveScan(id); }} onScanRejected={() => { setScanSending(false); setScanRunning(false); scanSettledRef.current = true; navigate("upload"); }} onScanComplete={result => { setScanResult(result); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} /></div>}
+      {(screen === "upload" || scanRunning && scanSending) && <div hidden={screen !== "upload"}><UploadScreen scanBusy={scanRunning && !scanSending} onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={id => { setScanSending(false); rememberActiveScan(id); }} onScanRejected={() => { setScanSending(false); setScanRunning(false); scanSettledRef.current = true; navigate("upload"); }} onScanComplete={result => { setScanResult(result); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} /></div>}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} outcome={scanOutcome} startedAt={scanStartedAt} words={scanWords} sending={scanSending} />}
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
         ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} onScanUpdated={setScanResult} />

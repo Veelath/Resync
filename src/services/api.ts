@@ -116,6 +116,11 @@ export function getScanStatus(): ScanStatusNotice | null {
   return currentScanStatus;
 }
 
+/** Forget the last scan's status, so a new scan never starts from the previous one's "completed" (which showed 100% at once). */
+export function resetScanStatus(): void {
+  setScanStatus(null);
+}
+
 export function subscribeScanStatus(listener: () => void): () => void {
   scanStatusListeners.add(listener);
   return () => scanStatusListeners.delete(listener);

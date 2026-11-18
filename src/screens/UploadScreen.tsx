@@ -137,7 +137,7 @@ async function readDocInfo(file: File): Promise<DocInfo | null> {
 
 let lastScanError: string | null = null;
 
-export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed, onScanRejected }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void; onScanRejected?: () => void }) {
+export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed, onScanRejected, scanBusy }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void; onScanRejected?: () => void; scanBusy?: boolean }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tourOpen, setTourOpen] = useState(() => !uploadTourSeen());
   const [mode, setMode] = useState<UploadMode>("file");
@@ -395,6 +395,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   async function handleScan() {
     if (notAPaper || scanningRef.current || (mode === "file" ? !wordOutlineReady(outlineLoading, outlineError, !!outline) : !googleOutlineReady(linkState, outlineLoading, outlineError, !!outline))) return;
     if (!session?.user) { onNavigate("login"); return; }
+    if (scanBusy) { setScanError("A scan is already running. Wait for it to finish before starting another."); return; }   // one scan at a time
     lastScanError = null;
     setScanError(null);
     scanningRef.current = true;
