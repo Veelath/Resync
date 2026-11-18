@@ -809,9 +809,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   ["1", "Chapter template (optional)", "In Step 1, attach, edit or load saved headings. You can skip to use detected headings."],
                   ["2", "Upload manuscript", ".docx under 25 MB, or a Google Docs link set to “Anyone with the link can view”."],
                   ["3", "Confirm your document", "Check the file name and preview, then run the scan. The preview is free; unlocking the full report costs 1 credit."],
-                ].map(([n, title, body]) => (
-                  <div key={n} className="uf-card uf-side-step"><span className="uf-n">{n}</span><div><b>{title}</b><p>{body}</p></div></div>
-                ))}
+                ].map(([n, title, body]) => {
+                  // The highlight follows the person: step 1 is done once they are here, step 2 is current until a file or link is added, then step 3.
+                  const current = (mode === "file" ? !!uploadedFile : !!link.trim()) ? 3 : 2;
+                  const state = Number(n) < current ? "is-done" : Number(n) === current ? "is-on" : "";
+                  return <div key={n} className={`uf-card uf-side-step ${state}`} aria-current={state === "is-on" ? "step" : undefined}><span className="uf-n">{state === "is-done" ? "✓" : n}</span><div><b>{title}</b><p>{body}</p></div></div>;
+                })}
               </div>
             </div>
           </div>

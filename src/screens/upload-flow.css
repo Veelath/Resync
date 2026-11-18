@@ -247,7 +247,10 @@
 .uf-inp input::placeholder { color: #615e7e; }
 
 .uf-side-step { display: flex; gap: 14px; padding: 16px 18px; align-items: flex-start; }
-.uf-side-step .uf-n { display: flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--uf-brand); color: #fff; font-size: 13px; font-weight: 800; }
+.uf-side-step .uf-n { display: flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: #e4e3f6; color: #5a5778; font-size: 13px; font-weight: 800; }
+.uf-side-step.is-on { border-color: var(--uf-brand); box-shadow: 0 0 0 1px var(--uf-brand); }
+.uf-side-step.is-on .uf-n { background: var(--uf-brand); color: #fff; }
+.uf-side-step.is-done .uf-n { background: #22c55e; color: #fff; }
 .uf-side-step b { font-size: 14.5px; }
 .uf-side-step p { margin: 3px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--uf-muted); }
 
