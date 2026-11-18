@@ -59,15 +59,14 @@ export function DashboardHeader({ activeNav, setActiveNav, onNavigate, creditsLo
                     <ul className="max-h-80 overflow-y-auto">
                       {notifications.map(n => (
                         <li key={n.id}>
-                          <button type="button" onClick={() => { setNotifOpen(false); if (n.kind === "success") onOpenReport?.(n.scanId); }}
-                            className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors">
+                          <div className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left">
                             <span className="mt-0.5 w-2 h-2 rounded-full shrink-0" style={{ background: n.kind === "success" ? "#22c55e" : "#ef4444" }} />
                             <span className="min-w-0">
                               <span className="block text-sm font-semibold text-gray-800">{n.title}</span>
                               <span className="block text-xs text-gray-500 leading-relaxed">{n.message}</span>
                               <span className="block text-[10px] text-gray-400 mt-0.5">{timeAgo(n.at)}</span>
                             </span>
-                          </button>
+                          </div>
                         </li>
                       ))}
                     </ul>
