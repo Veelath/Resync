@@ -434,10 +434,20 @@ export async function unlockScan(analysisRunId: string): Promise<{ unlocked: tru
   return response.json();
 }
 
+/** Delete the stored report when the user leaves it. Best effort: leaving never fails because of this. */
+export async function discardScan(analysisRunId: string): Promise<void> {
+  try {
+    await apiFetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}/discard`, { method: 'POST', headers: await authHeaders() });
+  } catch (error) {
+    console.warn('Could not delete the report on the server.', error);
+  }
+}
+
 export async function getScanResult(analysisRunId: string): Promise<ScanResult> {
   const response = await apiFetch(`${API_BASE_URL}/api/scans/${encodeURIComponent(analysisRunId)}`, { headers: await authHeaders() });
   if (!response.ok) throw new Error(await extractErrorDetail(response));
   const body = await response.json();
+  if (body.status === 'failed' && typeof body.error === 'string' && body.error) throw new Error(body.error);   // for example a report that was deleted when it was closed
   if (body.status !== 'completed' || !body.result) throw new Error('The full report is not ready. Refresh and try again.');
   return adaptScanResult(body.result);
 }

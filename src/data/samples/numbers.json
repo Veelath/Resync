@@ -1,0 +1,2353 @@
+{
+ "status": "completed",
+ "analysis_run_id": "11111111-1111-4111-8111-111111111102",
+ "user_id": "22222222-2222-4222-8222-222222222222",
+ "manuscript_id": "33333333-3333-4333-8333-333333333302",
+ "doc_url": "sample-numbers.docx",
+ "manuscript_title": "Effect of a Spaced-Repetition Mobile App on Grade 8 Algebra Achievement",
+ "result_version": "v7",
+ "overall_coherence_score": 79.0,
+ "sections_analyzed": [
+  "abstract",
+  "introduction",
+  "methodology",
+  "results",
+  "discussion",
+  "conclusion"
+ ],
+ "manuscript_sections": [
+  {
+   "name": "abstract",
+   "text": "Background: Algebra achievement in lower secondary school remains low. Objective: This study tested whether a spaced-repetition app improves Grade 8 algebra achievement. Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks. Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84. Conclusion: The app is highly effective.",
+   "display_name": "Abstract",
+   "blocks": null
+  },
+  {
+   "name": "introduction",
+   "text": "Algebra is a gateway subject, yet many Grade 8 learners perform below proficiency. This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools.\nThe research question is whether the app improves achievement compared with standard homework. The hypothesis is that the treatment group will gain more than the control group.",
+   "display_name": "1. Introduction",
+   "blocks": null
+  },
+  {
+   "name": "methodology",
+   "text": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group. Mean age was 13.6 years. Sample size was based on a power analysis requiring at least 90 participants.\nInstrument. A 50-item algebra test was administered before and after the intervention and scored out of 100 points. Internal consistency was excellent (Cronbach's alpha = 1.12).\nProcedure. The treatment group used the app for 15 minutes on four school days each week for eight weeks. 14 students withdrew from the treatment group, leaving 56; the control group had no attrition.",
+   "display_name": "2. Methodology",
+   "blocks": null
+  },
+  {
+   "name": "results",
+   "text": "Pretest means were 62.4 for the treatment group and 63.1 for the control group. At posttest, the treatment group averaged 68.0 and the control group 70.5. The treatment group therefore gained 9.4 points and the control group gained 2.1 points.\nAn independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect. The sample was 55% female, 48% male, and 3% other. Table 3 reports these results; Table 2 is not included in this manuscript.",
+   "display_name": "3. Results",
+   "blocks": null
+  },
+  {
+   "name": "discussion",
+   "text": "The gain of the treatment group was 25% higher than that of the control group, which is 9.4 versus 2.1 points. The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.\nWith 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect.",
+   "display_name": "4. Discussion",
+   "blocks": null
+  },
+  {
+   "name": "conclusion",
+   "text": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+   "display_name": "5. Conclusion",
+   "blocks": null
+  }
+ ],
+ "access": {
+  "unlocked": true,
+  "unlock_cost": 1,
+  "locked_counts": {
+   "sections": 0,
+   "recommendations": 0,
+   "citations": 0
+  }
+ },
+ "manuscript_flow": [
+  {
+   "order": 1,
+   "index_a": 0,
+   "index_b": 1,
+   "adjacent": true,
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_weight": 0.6245656609535217,
+   "pair_score": 0.6110782225926717,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.6208745241165161,
+    "methodology_fit": 0.5868887305259705,
+    "numeric_consistency": 0.6351034641265869,
+    "claim_support": 0.6254714131355286,
+    "overall_coherence": 0.6986863613128662
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Moderate",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.6986863613128662,
+     "objectives": 0.6208745241165161,
+     "methodology": 0.5868887305259705,
+     "numeric": 0.6351034641265869,
+     "claims": 0.6254714131355286
+    },
+    "link_summary": "The abstract section states an eight-week duration, but the introduction section states twelve weeks.",
+    "comparison": {
+     "a_says": "over eight weeks.",
+     "b_says": "over twelve weeks of use in public schools."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "over eight weeks.",
+      "what": "The length of the study is given as eight weeks in one place and twelve weeks in the other.",
+      "why": "The two sections give different time lengths for how long the study lasted."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "abstract",
+      "original_sentence": "A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+      "recommended_revision": "A quasi-experimental design was used with 96 students (48 treatment, 48 control) over twelve weeks.",
+      "issue": "The abstract section says eight weeks, but the introduction section says twelve weeks.",
+      "category": "methodology"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "abstract",
+      "sentence": "Background: Algebra achievement in lower secondary school remains low."
+     },
+     {
+      "section": "introduction",
+      "sentence": "Algebra is a gateway subject, yet many Grade 8 learners perform below proficiency."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 2,
+   "index_a": 0,
+   "index_b": 2,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_weight": 0.6170173287391663,
+   "pair_score": 0.5724970400333405,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.5468209385871887,
+    "methodology_fit": 0.5628870129585266,
+    "numeric_consistency": 0.6232054829597473,
+    "claim_support": 0.5570747256278992,
+    "overall_coherence": 0.6397654414176941
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Moderate",
+   "failed_dimension": "objectives_alignment",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "objectives_alignment",
+    "coherence_scores": {
+     "overall": 0.6397654414176941,
+     "objectives": 0.5468209385871887,
+     "methodology": 0.5628870129585266,
+     "numeric": 0.6232054829597473,
+     "claims": 0.5570747256278992
+    },
+    "link_summary": "The abstract reports 96 students, whereas the methodology reports 120 initial participants with subgroup counts that do not match.",
+    "comparison": {
+     "a_says": "96 students with 48 treatment and 48 control",
+     "b_says": "120 Grade 8 students with 70 treatment and 40 control"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+      "what": "The abstract states there were 96 students with 48 in each group.",
+      "why": "This contradicts the methodology section which states 120 total students with 70 treatment and 40 control."
+     },
+     {
+      "section": "methodology",
+      "quote": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "what": "The methodology states 120 students with 70 and 40 in the groups.",
+      "why": "This conflicts with the 96 total students reported in the abstract."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "abstract",
+      "original_sentence": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+      "recommended_revision": "Methods: A quasi-experimental design was used with Grade 8 students over eight weeks.",
+      "issue": "The abstract reports 96 students, which contradicts the participant numbers in the methodology.",
+      "category": "numeric"
+     },
+     {
+      "section": "methodology",
+      "original_sentence": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "recommended_revision": "Participants. Grade 8 students took part in the intervention.",
+      "issue": "The methodology participant counts conflict with the total student number given in the abstract.",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "abstract",
+      "sentence": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks."
+     },
+     {
+      "section": "methodology",
+      "sentence": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 3,
+   "index_a": 0,
+   "index_b": 3,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_weight": 0.5924879312515259,
+   "pair_score": 0.4290149286389351,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.39134228229522705,
+    "methodology_fit": 0.4168482720851898,
+    "numeric_consistency": 0.5244407057762146,
+    "claim_support": 0.3834284543991089,
+    "overall_coherence": 0.4632110595703125
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Moderate",
+   "failed_dimension": "claim_support",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "claim_support",
+    "coherence_scores": {
+     "overall": 0.4632110595703125,
+     "objectives": 0.39134228229522705,
+     "methodology": 0.4168482720851898,
+     "numeric": 0.5244407057762146,
+     "claims": 0.3834284543991089
+    },
+    "link_summary": "The abstract and results report conflicting student counts, statistics, and gains.",
+    "comparison": {
+     "a_says": "96 students with a 25% improvement and t(94) = 4.12",
+     "b_says": "148 degrees of freedom with t(148) = 1.20 and mixed group counts"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks. Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84.",
+      "what": "The abstract reports 96 students and a t-value of 4.12.",
+      "why": "This contradicts the results section which lists a different sample size and test statistic."
+     },
+     {
+      "section": "results",
+      "quote": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect. The sample was 55% female, 48% male, and 3% other.",
+      "what": "The results section reports 148 degrees of freedom and a t-value of 1.20.",
+      "why": "This conflicts with the student total and test statistics stated in the abstract."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "abstract",
+      "original_sentence": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+      "recommended_revision": "Methods: A quasi-experimental design was used with the final student sample over eight weeks.",
+      "issue": "The abstract states 96 students, which does not match the statistical degrees of freedom in the results.",
+      "category": "numeric"
+     },
+     {
+      "section": "results",
+      "original_sentence": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+      "recommended_revision": "An independent-samples t-test showed a significant difference, matching the overall study metrics.",
+      "issue": "The results report a t-value and degrees of freedom that conflict with the abstract.",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "abstract",
+      "sentence": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks."
+     },
+     {
+      "section": "results",
+      "sentence": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 4,
+   "index_a": 0,
+   "index_b": 5,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_weight": 0.5283737778663635,
+   "pair_score": 0.35627423226833344,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.32934972643852234,
+    "methodology_fit": 0.34284886717796326,
+    "numeric_consistency": 0.4129095673561096,
+    "claim_support": 0.3399887681007385,
+    "overall_coherence": 0.3735809028148651
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Moderate",
+   "failed_dimension": "objectives_alignment",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "objectives_alignment",
+    "coherence_scores": {
+     "overall": 0.3735809028148651,
+     "objectives": 0.32934972643852234,
+     "methodology": 0.34284886717796326,
+     "numeric": 0.4129095673561096,
+     "claims": 0.3399887681007385
+    },
+    "link_summary": "The abstract reports a significant improvement, but the conclusion states the difference was not significant.",
+    "comparison": {
+     "a_says": "The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001.",
+     "b_says": "The difference was not significant."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84.",
+      "what": "The abstract reports a statistically significant improvement for the treatment group.",
+      "why": "This contradicts the conclusion stating the difference was not significant."
+     },
+     {
+      "section": "conclusion",
+      "quote": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+      "what": "The conclusion states the difference was not significant.",
+      "why": "This contradicts the abstract report of a statistically significant improvement."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "conclusion",
+      "original_sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+      "recommended_revision": "Among the 96 students studied, the control group declined and the treatment group improved significantly, which shows the app works for learners.",
+      "issue": "The conclusion states the difference was not significant, contradicting the abstract's report of a significant improvement.",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "abstract",
+      "sentence": "Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84."
+     },
+     {
+      "section": "conclusion",
+      "sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 5,
+   "index_a": 1,
+   "index_b": 2,
+   "adjacent": true,
+   "section_a": "introduction",
+   "section_b": "methodology",
+   "pair_weight": 0.6276853680610657,
+   "pair_score": 0.5774416526158651,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.5819670557975769,
+    "methodology_fit": 0.5907105207443237,
+    "numeric_consistency": 0.657178521156311,
+    "claim_support": 0.5596473813056946,
+    "overall_coherence": 0.6600973606109619
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Moderate",
+   "failed_dimension": "claim_support",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "claim_support",
+    "coherence_scores": {
+     "overall": 0.6600973606109619,
+     "objectives": 0.5819670557975769,
+     "methodology": 0.5907105207443237,
+     "numeric": 0.657178521156311,
+     "claims": 0.5596473813056946
+    },
+    "link_summary": "The number of students added up in the methodology section does not match the total.",
+    "comparison": {
+     "a_says": "does not mention it",
+     "b_says": "70 in the treatment group and 40 in the control group make 110 total, but the text says 120"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "methodology",
+      "quote": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "what": "The group sizes do not add up to the stated total number of students.",
+      "why": "Seventy plus forty equals 110, which conflicts with the stated total of 120 students."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "methodology",
+      "original_sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "recommended_revision": "A total of 110 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "issue": "The group sizes add up to 110 but the total is given as 120.",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 6,
+   "index_a": 1,
+   "index_b": 5,
+   "adjacent": false,
+   "section_a": "introduction",
+   "section_b": "conclusion",
+   "pair_weight": 0.5820193886756897,
+   "pair_score": 0.4643717110157013,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.46780654788017273,
+    "methodology_fit": 0.46517324447631836,
+    "numeric_consistency": 0.5301716327667236,
+    "claim_support": 0.4601353406906128,
+    "overall_coherence": 0.5341867208480835
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "claim_support",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "claim_support",
+    "coherence_scores": {
+     "overall": 0.5341867208480835,
+     "objectives": 0.46780654788017273,
+     "methodology": 0.46517324447631836,
+     "numeric": 0.5301716327667236,
+     "claims": 0.4601353406906128
+    },
+    "link_summary": "The introduction states a twelve-week public school study, while the conclusion mentions 96 students and a non-significant difference.",
+    "comparison": {
+     "a_says": "twelve weeks of use in public schools",
+     "b_says": "96 students studied with a non-significant difference"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "introduction",
+      "quote": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools.",
+      "what": "The introduction states the intervention lasted twelve weeks.",
+      "why": "The conclusion does not align with the original timeline and framing set up here."
+     },
+     {
+      "section": "conclusion",
+      "quote": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+      "what": "The conclusion claims non-significance yet asserts the app works for all learners.",
+      "why": "This contradicts the lack of a significant difference stated in the same sentence."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "introduction",
+      "original_sentence": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools.",
+      "recommended_revision": "This study examines whether a spaced-repetition mobile app improves algebra achievement.",
+      "issue": "The introduction sets a twelve-week duration that is not reflected in the conclusion's summary of findings.",
+      "category": "objectives"
+     },
+     {
+      "section": "conclusion",
+      "original_sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+      "recommended_revision": "Among the 96 students studied, the control group declined and the treatment group improved.",
+      "issue": "The conclusion claims the app works universally despite finding a non-significant difference.",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "introduction",
+      "sentence": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools."
+     },
+     {
+      "section": "conclusion",
+      "sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+     },
+     {
+      "section": "introduction",
+      "sentence": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 7,
+   "index_a": 2,
+   "index_b": 3,
+   "adjacent": true,
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_weight": 0.6841560006141663,
+   "pair_score": 0.6954475492238998,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.6709864139556885,
+    "methodology_fit": 0.6645324230194092,
+    "numeric_consistency": 0.7576130032539368,
+    "claim_support": 0.6886583566665649,
+    "overall_coherence": 0.7333983778953552
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.7333983778953552,
+     "objectives": 0.6709864139556885,
+     "methodology": 0.6645324230194092,
+     "numeric": 0.7576130032539368,
+     "claims": 0.6886583566665649
+    },
+    "link_summary": "The participant counts, group sizes, test scores, and degrees of freedom do not match up.",
+    "comparison": {
+     "a_says": "120 students with 70 in treatment and 40 in control",
+     "b_says": "Degrees of freedom of 148 and percentages totaling 106%"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "methodology",
+      "quote": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "what": "The group sizes do not add up to the total number of students.",
+      "why": "70 plus 40 equals 110, but the total says 120."
+     },
+     {
+      "section": "methodology",
+      "quote": "Internal consistency was excellent (Cronbach's alpha = 1.12).",
+      "what": "The reliability score is impossible.",
+      "why": "Cronbach's alpha cannot be higher than 1.0."
+     },
+     {
+      "section": "results",
+      "quote": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points.",
+      "what": "The reported gains do not match the pretest and posttest means.",
+      "why": "68.0 minus 62.4 is 5.6, not 9.4; 70.5 minus 63.1 is 7.4, not 2.1."
+     },
+     {
+      "section": "results",
+      "quote": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+      "what": "The degrees of freedom and effect size interpretation contradict the numbers.",
+      "why": "A degrees of freedom value of 148 is way too high for these group sizes, and an effect size of 0.08 is very small, not large."
+     },
+     {
+      "section": "results",
+      "quote": "The sample was 55% female, 48% male, and 3% other.",
+      "what": "The percentages add up to more than 100%.",
+      "why": "55 plus 48 plus 3 equals 106%."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "methodology",
+      "original_sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "recommended_revision": "A total of 110 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "issue": "The group sizes do not add up to the total number of students.",
+      "category": "numeric"
+     },
+     {
+      "section": "methodology",
+      "original_sentence": "Internal consistency was excellent (Cronbach's alpha = 1.12).",
+      "recommended_revision": "Internal consistency was excellent (Cronbach's alpha = 0.92).",
+      "issue": "The reliability score is higher than the maximum possible value of 1.0.",
+      "category": "numeric"
+     },
+     {
+      "section": "results",
+      "original_sentence": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points.",
+      "recommended_revision": "The treatment group therefore gained 5.6 points and the control group gained 7.4 points.",
+      "issue": "The reported score gains do not match the math from the pretest and posttest means.",
+      "category": "numeric"
+     },
+     {
+      "section": "results",
+      "original_sentence": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+      "recommended_revision": "An independent-samples t-test showed a significant difference, t(108) = 1.20, p < .001, d = 0.08, a small effect.",
+      "issue": "The effect size of 0.08 is labeled as large instead of small.",
+      "category": "numeric"
+     },
+     {
+      "section": "results",
+      "original_sentence": "The sample was 55% female, 48% male, and 3% other.",
+      "recommended_revision": "The sample was 52% female, 45% male, and 3% other.",
+      "issue": "The demographic percentages add up to 106% instead of 100%.",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "methodology",
+      "sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+     },
+     {
+      "section": "methodology",
+      "sentence": "Internal consistency was excellent (Cronbach's alpha = 1.12)."
+     },
+     {
+      "section": "results",
+      "sentence": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points."
+     },
+     {
+      "section": "results",
+      "sentence": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+     },
+     {
+      "section": "results",
+      "sentence": "The sample was 55% female, 48% male, and 3% other."
+     },
+     {
+      "section": "methodology",
+      "sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 8,
+   "index_a": 2,
+   "index_b": 4,
+   "adjacent": false,
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_weight": 0.6569708585739136,
+   "pair_score": 0.6096503138542175,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.5995974540710449,
+    "methodology_fit": 0.5597702264785767,
+    "numeric_consistency": 0.6728039383888245,
+    "claim_support": 0.6064296364784241,
+    "overall_coherence": 0.6278082132339478
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.6278082132339478,
+     "objectives": 0.5995974540710449,
+     "methodology": 0.5597702264785767,
+     "numeric": 0.6728039383888245,
+     "claims": 0.6064296364784241
+    },
+    "link_summary": "The methodology states an eight-week intervention, while the discussion refers to a twelve-week length and 150 participants.",
+    "comparison": {
+     "a_says": "eight weeks with 120 students and 14 withdrawals in treatment",
+     "b_says": "150 participants and a twelve-week intervention length"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "methodology",
+      "quote": "The treatment group used the app for 15 minutes on four school days each week for eight weeks. 14 students withdrew from the treatment group, leaving 56; the control group had no attrition.",
+      "what": "The methodology specifies an eight-week duration and 14 withdrawals from 70 students.",
+      "why": "This contradicts the discussion section which states a twelve-week intervention and 150 participants."
+     },
+     {
+      "section": "discussion",
+      "quote": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect.",
+      "what": "The discussion claims 150 participants and a twelve-week intervention.",
+      "why": "This directly conflicts with the participant counts and eight-week duration given in the methodology."
+     },
+     {
+      "section": "methodology",
+      "quote": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "what": "Sample Size Contradiction",
+      "why": "the methodology section states there were 120 participants in total, whereasthe discussion section claims there were 150 participants in the study."
+     },
+     {
+      "section": "discussion",
+      "quote": "With 150 participants, the study was adequately powered.",
+      "what": "Sample Size Contradiction",
+      "why": "the methodology section states there were 120 participants in total, whereasthe discussion section claims there were 150 participants in the study."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "methodology",
+      "original_sentence": "The treatment group used the app for 15 minutes on four school days each week for eight weeks.",
+      "recommended_revision": "The treatment group used the app for 15 minutes on four school days each week.",
+      "issue": "The methodology states an eight-week duration that contradicts the twelve weeks mentioned in the discussion.",
+      "category": "numeric"
+     },
+     {
+      "section": "discussion",
+      "original_sentence": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect.",
+      "recommended_revision": "The study was adequately powered based on the enrolled sample.",
+      "issue": "The discussion states 150 participants and twelve weeks, contradicting the methodology numbers.",
+      "category": "numeric"
+     },
+     {
+      "section": "discussion",
+      "original_sentence": "With 150 participants, the study was adequately powered.",
+      "recommended_revision": "With 120 participants, the study was adequately powered.",
+      "kind": "edit",
+      "issue": "the methodology section states there were 120 participants in total, whereasthe discussion section claims there were 150 participants in the study.",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "methodology",
+      "sentence": "The treatment group used the app for 15 minutes on four school days each week for eight weeks."
+     },
+     {
+      "section": "discussion",
+      "sentence": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect."
+     },
+     {
+      "section": "methodology",
+      "sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 9,
+   "index_a": 2,
+   "index_b": 5,
+   "adjacent": false,
+   "section_a": "methodology",
+   "section_b": "conclusion",
+   "pair_weight": 0.6064122915267944,
+   "pair_score": 0.5335673093795776,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.5173121690750122,
+    "methodology_fit": 0.5038251280784607,
+    "numeric_consistency": 0.587981104850769,
+    "claim_support": 0.5251508355140686,
+    "overall_coherence": 0.5461158156394958
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.5461158156394958,
+     "objectives": 0.5173121690750122,
+     "methodology": 0.5038251280784607,
+     "numeric": 0.587981104850769,
+     "claims": 0.5251508355140686
+    },
+    "link_summary": "The methodology reports 120 initial participants, while the conclusion refers to 96 students.",
+    "comparison": {
+     "a_says": "120 Grade 8 students with 70 treatment and 40 control",
+     "b_says": "96 students studied with a non-significant difference"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "methodology",
+      "quote": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "what": "The methodology states 120 total participants with 70 and 40 in the groups.",
+      "why": "This subgroup total equals 110 rather than 120, and conflicts with the 96 students in the conclusion."
+     },
+     {
+      "section": "conclusion",
+      "quote": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+      "what": "The conclusion states 96 students were studied.",
+      "why": "This number conflicts with the participant counts provided in the methodology section."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "methodology",
+      "original_sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+      "recommended_revision": "A total of Grade 8 students took part in the study.",
+      "issue": "The methodology participant numbers do not add up correctly and conflict with the conclusion.",
+      "category": "numeric"
+     },
+     {
+      "section": "conclusion",
+      "original_sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+      "recommended_revision": "Among the students studied, the control group declined and the treatment group improved.",
+      "issue": "The conclusion cites 96 students, which contradicts the participant totals in the methodology.",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "methodology",
+      "sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+     },
+     {
+      "section": "conclusion",
+      "sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+     },
+     {
+      "section": "methodology",
+      "sentence": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 10,
+   "index_a": 3,
+   "index_b": 4,
+   "adjacent": true,
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_weight": 0.6905885338783264,
+   "pair_score": 0.7184002846479416,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.7084727883338928,
+    "methodology_fit": 0.686119794845581,
+    "numeric_consistency": 0.7604027986526489,
+    "claim_support": 0.7186057567596436,
+    "overall_coherence": 0.7739207744598389
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.7739207744598389,
+     "objectives": 0.7084727883338928,
+     "methodology": 0.686119794845581,
+     "numeric": 0.7604027986526489,
+     "claims": 0.7186057567596436
+    },
+    "link_summary": "The results section reports a p-value less than .001, but the discussion section says it was .08.",
+    "comparison": {
+     "a_says": "p < .001",
+     "b_says": "p = .08"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "results",
+      "quote": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+      "what": "The results section reports the p-value as less than .001.",
+      "why": "It conflicts with the discussion section, which reports the p-value as .08."
+     },
+     {
+      "section": "discussion",
+      "quote": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.",
+      "what": "The discussion section reports the p-value as .08.",
+      "why": "It conflicts with the results section, which reports the p-value as less than .001."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "discussion",
+      "original_sentence": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.",
+      "recommended_revision": "The result was statistically significant (p < .001), and with a large effect, the hypothesis was fully confirmed.",
+      "issue": "The discussion section states the p-value is .08, but the results section states it is less than .001.",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "results",
+      "sentence": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+     },
+     {
+      "section": "discussion",
+      "sentence": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed."
+     }
+    ],
+    "bridges": [
+     {
+      "section": "results",
+      "placement": "end",
+      "sentence": "These posttest means and t-test outcomes provide the numerical basis for evaluating the twelve-week intervention hypothesis."
+     },
+     {
+      "section": "discussion",
+      "placement": "start",
+      "sentence": "Evaluating these posttest means and t-test outcomes shows how the twelve-week intervention performed across the groups."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 11,
+   "index_a": 4,
+   "index_b": 5,
+   "adjacent": true,
+   "section_a": "discussion",
+   "section_b": "conclusion",
+   "pair_weight": 0.5184134244918823,
+   "pair_score": 0.31861019879579544,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.3128340542316437,
+    "methodology_fit": 0.2946787178516388,
+    "numeric_consistency": 0.36810576915740967,
+    "claim_support": 0.2988222539424896,
+    "overall_coherence": 0.30248382687568665
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "The twelve-week intervention length may have contributed to the effect.",
+      "delta": 0.1358
+     },
+     {
+      "sentence": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.",
+      "delta": 0.103
+     },
+     {
+      "sentence": "The gain of the treatment group was 25% higher than that of the control group, which is 9.4 versus 2.1 points.",
+      "delta": 0.0059
+     }
+    ],
+    "section_b": []
+   },
+   "severity": "Moderate",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.30248382687568665,
+     "objectives": 0.3128340542316437,
+     "methodology": 0.2946787178516388,
+     "numeric": 0.36810576915740967,
+     "claims": 0.2988222539424896
+    },
+    "link_summary": "The discussion claims the hypothesis was fully confirmed, but the conclusion states the difference was not significant.",
+    "comparison": {
+     "a_says": "The hypothesis was fully confirmed.",
+     "b_says": "The difference was not significant."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "discussion",
+      "quote": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.",
+      "what": "The discussion claims the hypothesis was fully confirmed despite a marginally significant result.",
+      "why": "This contradicts the conclusion which states that the difference was not significant."
+     },
+     {
+      "section": "conclusion",
+      "quote": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+      "what": "The conclusion states the difference was not significant.",
+      "why": "This directly conflicts with the discussion claim that the hypothesis was fully confirmed."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "discussion",
+      "original_sentence": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.",
+      "recommended_revision": "The result was only marginally significant (p = .08), and the hypothesis received partial support.",
+      "issue": "The discussion claims the hypothesis was fully confirmed while the conclusion states the difference was not significant.",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "discussion",
+      "sentence": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed."
+     },
+     {
+      "section": "conclusion",
+      "sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+     }
+    ],
+    "bridges": [
+     {
+      "section": "discussion",
+      "placement": "end",
+      "sentence": "These findings across the treatment and control groups help explain the final outcome for the students."
+     },
+     {
+      "section": "conclusion",
+      "placement": "start",
+      "sentence": "The twelve-week intervention and participant data lead directly to the final results for the students."
+     }
+    ],
+    "unverified": []
+   }
+  }
+ ],
+ "inconsistencies_found": 17,
+ "inconsistencies": [
+  {
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_order": 1,
+   "coherence_score": 61.11,
+   "explanation_what": "The length of the study is given as eight weeks in one place and twelve weeks in the other.",
+   "explanation_why": "The two sections give different time lengths for how long the study lasted.",
+   "suggested_fix": "A quasi-experimental design was used with 96 students (48 treatment, 48 control) over twelve weeks.",
+   "inconsistency_id": "d13e8b3d-cdca-4384-80e0-682b806887e6",
+   "evidence_a": "over eight weeks.",
+   "evidence_b": "Algebra is a gateway subject, yet many Grade 8 learners perform below proficiency.",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "over eight weeks."
+    },
+    {
+     "section": "abstract",
+     "text": "Background: Algebra achievement in lower secondary school remains low."
+    },
+    {
+     "section": "introduction",
+     "text": "Algebra is a gateway subject, yet many Grade 8 learners perform below proficiency."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "coherence_score": 57.25,
+   "explanation_what": "The abstract states there were 96 students with 48 in each group.",
+   "explanation_why": "This contradicts the methodology section which states 120 total students with 70 treatment and 40 control.",
+   "suggested_fix": "Methods: A quasi-experimental design was used with Grade 8 students over eight weeks.",
+   "inconsistency_id": "562f21d1-d07e-4280-826b-4c2a97b329a0",
+   "evidence_a": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+   "evidence_b": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks."
+    },
+    {
+     "section": "methodology",
+     "text": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "coherence_score": 57.25,
+   "explanation_what": "The methodology states 120 students with 70 and 40 in the groups.",
+   "explanation_why": "This conflicts with the 96 total students reported in the abstract.",
+   "suggested_fix": "Participants. Grade 8 students took part in the intervention.",
+   "inconsistency_id": "b014c841-a9b8-4314-bd59-8791005ad3ea",
+   "evidence_a": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+   "evidence_b": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "abstract",
+     "text": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_order": 3,
+   "coherence_score": 42.9,
+   "explanation_what": "The abstract reports 96 students and a t-value of 4.12.",
+   "explanation_why": "This contradicts the results section which lists a different sample size and test statistic.",
+   "suggested_fix": "Methods: A quasi-experimental design was used with the final student sample over eight weeks.",
+   "inconsistency_id": "c2b67175-fd82-43fa-9143-4b3f2d9a95c6",
+   "evidence_a": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks. Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84.",
+   "evidence_b": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks. Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84."
+    },
+    {
+     "section": "abstract",
+     "text": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks."
+    },
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_order": 3,
+   "coherence_score": 42.9,
+   "explanation_what": "The results section reports 148 degrees of freedom and a t-value of 1.20.",
+   "explanation_why": "This conflicts with the student total and test statistics stated in the abstract.",
+   "suggested_fix": "An independent-samples t-test showed a significant difference, matching the overall study metrics.",
+   "inconsistency_id": "59f2f8be-3112-4810-9442-2910d9362214",
+   "evidence_a": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+   "evidence_b": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect. The sample was 55% female, 48% male, and 3% other.",
+   "evidence_quotes": [
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect. The sample was 55% female, 48% male, and 3% other."
+    },
+    {
+     "section": "abstract",
+     "text": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks."
+    },
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_order": 4,
+   "coherence_score": 35.63,
+   "explanation_what": "The abstract reports a statistically significant improvement for the treatment group.",
+   "explanation_why": "This contradicts the conclusion stating the difference was not significant.",
+   "suggested_fix": "",
+   "inconsistency_id": "bbef6852-9992-45c3-872e-60a905cd8b06",
+   "evidence_a": "Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84.",
+   "evidence_b": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84."
+    },
+    {
+     "section": "conclusion",
+     "text": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_order": 4,
+   "coherence_score": 35.63,
+   "explanation_what": "The conclusion states the difference was not significant.",
+   "explanation_why": "This contradicts the abstract report of a statistically significant improvement.",
+   "suggested_fix": "Among the 96 students studied, the control group declined and the treatment group improved significantly, which shows the app works for learners.",
+   "inconsistency_id": "cf5bcdca-42d1-41f7-a06a-05855d78b30a",
+   "evidence_a": "Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84.",
+   "evidence_b": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+   "evidence_quotes": [
+    {
+     "section": "conclusion",
+     "text": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+    },
+    {
+     "section": "abstract",
+     "text": "Results: The treatment group improved by 25% more than the control group, t(94) = 4.12, p < .001, d = 0.84."
+    },
+    {
+     "section": "introduction",
+     "text": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools."
+    },
+    {
+     "section": "introduction",
+     "text": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "discussion",
+     "text": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "introduction",
+   "section_b": "methodology",
+   "pair_order": 5,
+   "coherence_score": 57.74,
+   "explanation_what": "The group sizes do not add up to the stated total number of students.",
+   "explanation_why": "Seventy plus forty equals 110, which conflicts with the stated total of 120 students.",
+   "suggested_fix": "A total of 110 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "inconsistency_id": "ced2f20c-9a14-45de-8793-bd550467db89",
+   "evidence_a": "",
+   "evidence_b": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "methodology",
+     "text": "Internal consistency was excellent (Cronbach's alpha = 1.12)."
+    },
+    {
+     "section": "results",
+     "text": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points."
+    },
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    },
+    {
+     "section": "results",
+     "text": "The sample was 55% female, 48% male, and 3% other."
+    },
+    {
+     "section": "methodology",
+     "text": "The treatment group used the app for 15 minutes on four school days each week for eight weeks."
+    },
+    {
+     "section": "discussion",
+     "text": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect."
+    },
+    {
+     "section": "conclusion",
+     "text": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "introduction",
+   "section_b": "conclusion",
+   "pair_order": 6,
+   "coherence_score": 46.44,
+   "explanation_what": "The introduction states the intervention lasted twelve weeks.",
+   "explanation_why": "The conclusion does not align with the original timeline and framing set up here.",
+   "suggested_fix": "This study examines whether a spaced-repetition mobile app improves algebra achievement.",
+   "inconsistency_id": "70d90199-0830-4b94-9e90-eab32201b85a",
+   "evidence_a": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools.",
+   "evidence_b": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+   "evidence_quotes": [
+    {
+     "section": "introduction",
+     "text": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools."
+    },
+    {
+     "section": "conclusion",
+     "text": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 7,
+   "coherence_score": 69.54,
+   "explanation_what": "The reliability score is impossible.",
+   "explanation_why": "Cronbach's alpha cannot be higher than 1.0.",
+   "suggested_fix": "A total of 110 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "inconsistency_id": "b5dc5623-7258-4efc-96ed-bdb9463c4c41",
+   "evidence_a": "Internal consistency was excellent (Cronbach's alpha = 1.12).",
+   "evidence_b": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points.",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "Internal consistency was excellent (Cronbach's alpha = 1.12)."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "results",
+     "text": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points."
+    },
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    },
+    {
+     "section": "results",
+     "text": "The sample was 55% female, 48% male, and 3% other."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 7,
+   "coherence_score": 69.54,
+   "explanation_what": "The reported gains do not match the pretest and posttest means.",
+   "explanation_why": "68.0 minus 62.4 is 5.6, not 9.4; 70.5 minus 63.1 is 7.4, not 2.1.",
+   "suggested_fix": "The treatment group therefore gained 5.6 points and the control group gained 7.4 points.",
+   "inconsistency_id": "d266088d-ef5e-430d-9e43-8cabcfa5d039",
+   "evidence_a": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "evidence_b": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points.",
+   "evidence_quotes": [
+    {
+     "section": "results",
+     "text": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "methodology",
+     "text": "Internal consistency was excellent (Cronbach's alpha = 1.12)."
+    },
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    },
+    {
+     "section": "results",
+     "text": "The sample was 55% female, 48% male, and 3% other."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 7,
+   "coherence_score": 69.54,
+   "explanation_what": "The degrees of freedom and effect size interpretation contradict the numbers.",
+   "explanation_why": "A degrees of freedom value of 148 is way too high for these group sizes, and an effect size of 0.08 is very small, not large.",
+   "suggested_fix": "The treatment group therefore gained 5.6 points and the control group gained 7.4 points.",
+   "inconsistency_id": "aa036593-60b9-4d63-964e-c9f5da7779be",
+   "evidence_a": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "evidence_b": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+   "evidence_quotes": [
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "methodology",
+     "text": "Internal consistency was excellent (Cronbach's alpha = 1.12)."
+    },
+    {
+     "section": "results",
+     "text": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points."
+    },
+    {
+     "section": "results",
+     "text": "The sample was 55% female, 48% male, and 3% other."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "discussion",
+     "text": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 7,
+   "coherence_score": 69.54,
+   "explanation_what": "The percentages add up to more than 100%.",
+   "explanation_why": "55 plus 48 plus 3 equals 106%.",
+   "suggested_fix": "The treatment group therefore gained 5.6 points and the control group gained 7.4 points.",
+   "inconsistency_id": "2f612df3-de79-4f38-85cc-5103fb948ece",
+   "evidence_a": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "evidence_b": "The sample was 55% female, 48% male, and 3% other.",
+   "evidence_quotes": [
+    {
+     "section": "results",
+     "text": "The sample was 55% female, 48% male, and 3% other."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    },
+    {
+     "section": "methodology",
+     "text": "Internal consistency was excellent (Cronbach's alpha = 1.12)."
+    },
+    {
+     "section": "results",
+     "text": "The treatment group therefore gained 9.4 points and the control group gained 2.1 points."
+    },
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 8,
+   "coherence_score": 60.97,
+   "explanation_what": "The methodology specifies an eight-week duration and 14 withdrawals from 70 students.",
+   "explanation_why": "This contradicts the discussion section which states a twelve-week intervention and 150 participants.",
+   "suggested_fix": "The treatment group used the app for 15 minutes on four school days each week.",
+   "inconsistency_id": "b611f860-7f18-4fb1-8b64-48e616cb40a3",
+   "evidence_a": "The treatment group used the app for 15 minutes on four school days each week for eight weeks. 14 students withdrew from the treatment group, leaving 56; the control group had no attrition.",
+   "evidence_b": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect.",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "The treatment group used the app for 15 minutes on four school days each week for eight weeks. 14 students withdrew from the treatment group, leaving 56; the control group had no attrition."
+    },
+    {
+     "section": "methodology",
+     "text": "The treatment group used the app for 15 minutes on four school days each week for eight weeks."
+    },
+    {
+     "section": "discussion",
+     "text": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 8,
+   "coherence_score": 60.97,
+   "explanation_what": "The discussion claims 150 participants and a twelve-week intervention.",
+   "explanation_why": "This directly conflicts with the participant counts and eight-week duration given in the methodology.",
+   "suggested_fix": "The study was adequately powered based on the enrolled sample.",
+   "inconsistency_id": "1007e6f4-51c9-41b9-81fb-e51978c155cf",
+   "evidence_a": "The treatment group used the app for 15 minutes on four school days each week for eight weeks.",
+   "evidence_b": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect.",
+   "evidence_quotes": [
+    {
+     "section": "discussion",
+     "text": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect."
+    },
+    {
+     "section": "methodology",
+     "text": "The treatment group used the app for 15 minutes on four school days each week for eight weeks."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 8,
+   "coherence_score": 60.97,
+   "explanation_what": "Sample Size Contradiction",
+   "explanation_why": "the methodology section states there were 120 participants in total, whereasthe discussion section claims there were 150 participants in the study.",
+   "suggested_fix": "The study was adequately powered based on the enrolled sample.",
+   "inconsistency_id": "1c85810a-6d18-401a-b249-f6dbe3e62e55",
+   "evidence_a": "The treatment group used the app for 15 minutes on four school days each week for eight weeks.",
+   "evidence_b": "With 150 participants, the study was adequately powered.",
+   "evidence_quotes": [
+    {
+     "section": "discussion",
+     "text": "With 150 participants, the study was adequately powered."
+    },
+    {
+     "section": "methodology",
+     "text": "The treatment group used the app for 15 minutes on four school days each week for eight weeks."
+    },
+    {
+     "section": "discussion",
+     "text": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect."
+    },
+    {
+     "section": "methodology",
+     "text": "A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 10,
+   "coherence_score": 71.84,
+   "explanation_what": "The discussion section reports the p-value as .08.",
+   "explanation_why": "It conflicts with the results section, which reports the p-value as less than .001.",
+   "suggested_fix": "The result was statistically significant (p < .001), and with a large effect, the hypothesis was fully confirmed.",
+   "inconsistency_id": "ca293eed-3e8e-4c4c-83ae-586f18497c1b",
+   "evidence_a": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+   "evidence_b": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.",
+   "evidence_quotes": [
+    {
+     "section": "discussion",
+     "text": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed."
+    },
+    {
+     "section": "results",
+     "text": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect."
+    },
+    {
+     "section": "conclusion",
+     "text": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  }
+ ],
+ "recommendations": [
+  {
+   "recommendation_id": "184011f5-923f-4bbf-b8a2-287551dfe65e",
+   "id": "r-1-1",
+   "section": "abstract",
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_order": 1,
+   "category": "methodology",
+   "original_sentence": "A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+   "issue": "The abstract section says eight weeks, but the introduction section says twelve weeks.",
+   "kind": "edit",
+   "recommended_revision": "A quasi-experimental design was used with 96 students (48 treatment, 48 control) over twelve weeks.",
+   "recommendation_text": "A quasi-experimental design was used with 96 students (48 treatment, 48 control) over twelve weeks.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "12fbb43d-afff-4e8c-944f-efc9f3df2666",
+   "id": "r-2-1",
+   "section": "abstract",
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "category": "numeric",
+   "original_sentence": "Methods: A quasi-experimental design was used with 96 students (48 treatment, 48 control) over eight weeks.",
+   "issue": "The abstract reports 96 students, which contradicts the participant numbers in the methodology.",
+   "kind": "edit",
+   "recommended_revision": "Methods: A quasi-experimental design was used with Grade 8 students over eight weeks.",
+   "recommendation_text": "Methods: A quasi-experimental design was used with Grade 8 students over eight weeks.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "e5229250-80f3-4471-8c3a-5ea2f87c753c",
+   "id": "r-2-2",
+   "section": "methodology",
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "category": "numeric",
+   "original_sentence": "Participants. A total of 120 Grade 8 students took part, 70 in the treatment group and 40 in the control group.",
+   "issue": "The methodology participant counts conflict with the total student number given in the abstract.",
+   "kind": "edit",
+   "recommended_revision": "Participants. Grade 8 students took part in the intervention.",
+   "recommendation_text": "Participants. Grade 8 students took part in the intervention.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "4020a9be-c86b-4fc5-af18-c72fc5346b4e",
+   "id": "r-3-1",
+   "section": "results",
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_order": 3,
+   "category": "numeric",
+   "original_sentence": "An independent-samples t-test showed a significant difference, t(148) = 1.20, p < .001, d = 0.08, a large effect.",
+   "issue": "The results report a t-value and degrees of freedom that conflict with the abstract.",
+   "kind": "edit",
+   "recommended_revision": "An independent-samples t-test showed a significant difference, matching the overall study metrics.",
+   "recommendation_text": "An independent-samples t-test showed a significant difference, matching the overall study metrics.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "e4db6040-4684-4089-911d-dd83a4401362",
+   "id": "r-4-1",
+   "section": "conclusion",
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_order": 4,
+   "category": "claims",
+   "original_sentence": "Among the 96 students studied, the control group declined, the treatment group improved, and the difference was not significant, which proves that the app works for all learners in all schools.",
+   "issue": "The conclusion states the difference was not significant, contradicting the abstract's report of a significant improvement.",
+   "kind": "edit",
+   "recommended_revision": "Among the 96 students studied, the control group declined and the treatment group improved significantly, which shows the app works for learners.",
+   "recommendation_text": "Among the 96 students studied, the control group declined and the treatment group improved significantly, which shows the app works for learners.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "b2199f8e-0ee0-46aa-87a8-957d5a046973",
+   "id": "r-6-1",
+   "section": "introduction",
+   "section_a": "introduction",
+   "section_b": "conclusion",
+   "pair_order": 6,
+   "category": "objectives",
+   "original_sentence": "This study examines whether a spaced-repetition mobile app improves algebra achievement over twelve weeks of use in public schools.",
+   "issue": "The introduction sets a twelve-week duration that is not reflected in the conclusion's summary of findings.",
+   "kind": "edit",
+   "recommended_revision": "This study examines whether a spaced-repetition mobile app improves algebra achievement.",
+   "recommendation_text": "This study examines whether a spaced-repetition mobile app improves algebra achievement.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "517a8941-b483-4a4d-a5c4-be637f3784e2",
+   "id": "r-8-1",
+   "section": "methodology",
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 8,
+   "category": "numeric",
+   "original_sentence": "The treatment group used the app for 15 minutes on four school days each week for eight weeks.",
+   "issue": "The methodology states an eight-week duration that contradicts the twelve weeks mentioned in the discussion.",
+   "kind": "edit",
+   "recommended_revision": "The treatment group used the app for 15 minutes on four school days each week.",
+   "recommendation_text": "The treatment group used the app for 15 minutes on four school days each week.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "258518d9-9a5f-4ec3-931e-317b00cf655d",
+   "id": "r-8-2",
+   "section": "discussion",
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 8,
+   "category": "numeric",
+   "original_sentence": "With 150 participants, the study was adequately powered. The twelve-week intervention length may have contributed to the effect.",
+   "issue": "The discussion states 150 participants and twelve weeks, contradicting the methodology numbers.",
+   "kind": "edit",
+   "recommended_revision": "The study was adequately powered based on the enrolled sample.",
+   "recommendation_text": "The study was adequately powered based on the enrolled sample.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "b08a29bd-8b89-45cf-b188-f97a870482e7",
+   "id": "r-8-3",
+   "section": "discussion",
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 8,
+   "category": "numeric",
+   "original_sentence": "With 150 participants, the study was adequately powered.",
+   "issue": "the methodology section states there were 120 participants in total, whereasthe discussion section claims there were 150 participants in the study.",
+   "kind": "edit",
+   "recommended_revision": "With 120 participants, the study was adequately powered.",
+   "recommendation_text": "With 120 participants, the study was adequately powered.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "fed8b96c-152b-4944-9d8f-9a9c41432cf3",
+   "id": "r-10-1",
+   "section": "results",
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 10,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The results section reports a p-value less than .001, but the discussion section says it was .08.",
+   "kind": "add",
+   "placement": "end",
+   "recommended_revision": "These posttest means and t-test outcomes provide the numerical basis for evaluating the twelve-week intervention hypothesis.",
+   "recommendation_text": "These posttest means and t-test outcomes provide the numerical basis for evaluating the twelve-week intervention hypothesis.",
+   "recommendation_priority": "Low"
+  },
+  {
+   "recommendation_id": "7a0331bd-3979-4701-8813-1328870c35f8",
+   "id": "r-10-2",
+   "section": "discussion",
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 10,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The results section reports a p-value less than .001, but the discussion section says it was .08.",
+   "kind": "add",
+   "placement": "start",
+   "recommended_revision": "Evaluating these posttest means and t-test outcomes shows how the twelve-week intervention performed across the groups.",
+   "recommendation_text": "Evaluating these posttest means and t-test outcomes shows how the twelve-week intervention performed across the groups.",
+   "recommendation_priority": "Low"
+  },
+  {
+   "recommendation_id": "0768ffd6-1002-44fa-b73f-9423fd5d1685",
+   "id": "r-10-3",
+   "section": "discussion",
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 10,
+   "category": "numeric",
+   "original_sentence": "The result was only marginally significant (p = .08), but the effect was large, and so the hypothesis was fully confirmed.",
+   "issue": "The discussion section states the p-value is .08, but the results section states it is less than .001.",
+   "kind": "edit",
+   "recommended_revision": "The result was statistically significant (p < .001), and with a large effect, the hypothesis was fully confirmed.",
+   "recommendation_text": "The result was statistically significant (p < .001), and with a large effect, the hypothesis was fully confirmed.",
+   "recommendation_priority": "Low"
+  },
+  {
+   "recommendation_id": "b7f5affc-ceb3-49cc-bfdb-6e49b6fc01a0",
+   "id": "r-11-1",
+   "section": "discussion",
+   "section_a": "discussion",
+   "section_b": "conclusion",
+   "pair_order": 11,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The discussion claims the hypothesis was fully confirmed, but the conclusion states the difference was not significant.",
+   "kind": "add",
+   "placement": "end",
+   "recommended_revision": "These findings across the treatment and control groups help explain the final outcome for the students.",
+   "recommendation_text": "These findings across the treatment and control groups help explain the final outcome for the students.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "1ef5c73a-fb0a-4cd4-bca9-5789dcf96aa1",
+   "id": "r-11-2",
+   "section": "conclusion",
+   "section_a": "discussion",
+   "section_b": "conclusion",
+   "pair_order": 11,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The discussion claims the hypothesis was fully confirmed, but the conclusion states the difference was not significant.",
+   "kind": "add",
+   "placement": "start",
+   "recommended_revision": "The twelve-week intervention and participant data lead directly to the final results for the students.",
+   "recommendation_text": "The twelve-week intervention and participant data lead directly to the final results for the students.",
+   "recommendation_priority": "High"
+  }
+ ],
+ "ai_synthesis": {
+  "summary": "The manuscript exhibits critical logical and numerical inconsistencies across sections, evidenced by conflicting sample sizes, intervention durations, statistical test results, and significance values. Across the analyzed pairs, coherence scores range from 32% to 72% (with overall pair scores such as abstract-to-conclusion at 36% and methodology-to-results at 70%), reflecting severe misalignment between the stated methods, numeric findings, and final claims.",
+  "strongest_pair": {
+   "order": 10,
+   "section_a": "results",
+   "section_b": "discussion",
+   "overall_coherence": 0.7739207744598389,
+   "score": 71.84
+  },
+  "weakest_pair": {
+   "order": 11,
+   "section_a": "discussion",
+   "section_b": "conclusion",
+   "overall_coherence": 0.30248382687568665,
+   "score": 31.86
+  },
+  "review_status": {
+   "status": "complete",
+   "unreviewed": 0,
+   "analysis": "complete",
+   "needs_review": 11,
+   "reviewed": 11,
+   "basis": "ai_verified",
+   "whole_paper_check": "ran",
+   "unverified": 0
+  },
+  "unverified_findings": []
+ },
+ "citations_audited": 1,
+ "citations": [
+  {
+   "citation_raw_reference_text": "Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Lawrence Erlbaum.",
+   "citation_is_accessible": true,
+   "citation_status": "no_link",
+   "citation_primary_link": null,
+   "citation_authors_parsed": "Cohen, J",
+   "citation_year_parsed": 1988,
+   "citation_crossref_title": null,
+   "citation_title_match_score": null,
+   "citation_is_cited_in_text": false
+  }
+ ],
+ "score_breakdown": {
+  "overall_score": 79.0,
+  "band": "Solid",
+  "cross_chapter_coherence_score": 79.0,
+  "citation_integrity_score": 88.0,
+  "dimensions": {
+   "objectives_alignment": 0.6707,
+   "methodology_fit": 0.6646,
+   "numeric_consistency": 0.7552,
+   "claim_support": 0.6706
+  },
+  "dimension_weights": {
+   "objectives_alignment": 0.25,
+   "methodology_fit": 0.25,
+   "numeric_consistency": 0.25,
+   "claim_support": 0.25
+  },
+  "dimension_breakdown": {
+   "context_alignment": {
+    "score": 85.0,
+    "halves": true,
+    "items": 9,
+    "passed": 7,
+    "issues": 2,
+    "pairs": 9,
+    "failures": [
+     {
+      "order": 2,
+      "section_a": "abstract",
+      "section_b": "methodology",
+      "reason": "contradiction",
+      "severity": "Moderate",
+      "rating": 0.5468,
+      "credit": 0.25,
+      "kind": "cross"
+     },
+     {
+      "order": 4,
+      "section_a": "abstract",
+      "section_b": "conclusion",
+      "reason": "contradiction",
+      "severity": "Moderate",
+      "rating": 0.3293,
+      "credit": 0.25,
+      "kind": "cross"
+     }
+    ],
+    "flow": {
+     "items": 4,
+     "passed": 4,
+     "credit": 4.0
+    },
+    "cross": {
+     "items": 5,
+     "passed": 3,
+     "credit": 3.5
+    },
+    "points": {
+     "perfect": 7,
+     "partial": 2,
+     "zero": 0,
+     "earned": 7.5,
+     "total": 9
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "operational_alignment": {
+    "score": 55.62,
+    "halves": true,
+    "items": 9,
+    "passed": 5,
+    "issues": 4,
+    "pairs": 9,
+    "failures": [
+     {
+      "order": 1,
+      "section_a": "abstract",
+      "section_b": "introduction",
+      "reason": "contradiction",
+      "severity": "Moderate",
+      "rating": 0.5869,
+      "credit": 0.25,
+      "kind": "flow"
+     },
+     {
+      "order": 7,
+      "section_a": "methodology",
+      "section_b": "results",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.6645,
+      "credit": 0.0,
+      "kind": "flow"
+     },
+     {
+      "order": 8,
+      "section_a": "methodology",
+      "section_b": "discussion",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.5598,
+      "credit": 0.0,
+      "kind": "cross"
+     },
+     {
+      "order": 10,
+      "section_a": "results",
+      "section_b": "discussion",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.6861,
+      "credit": 0.0,
+      "kind": "flow"
+     }
+    ],
+    "flow": {
+     "items": 4,
+     "passed": 1,
+     "credit": 1.25
+    },
+    "cross": {
+     "items": 5,
+     "passed": 4,
+     "credit": 4.0
+    },
+    "points": {
+     "perfect": 5,
+     "partial": 1,
+     "zero": 3,
+     "earned": 5.25,
+     "total": 9
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "evidence_consistency": {
+    "score": 100.0,
+    "halves": true,
+    "items": 6,
+    "passed": 6,
+    "issues": 0,
+    "pairs": 6,
+    "failures": [],
+    "flow": {
+     "items": 2,
+     "passed": 2,
+     "credit": 2.0
+    },
+    "cross": {
+     "items": 4,
+     "passed": 4,
+     "credit": 4.0
+    },
+    "points": {
+     "perfect": 6,
+     "partial": 0,
+     "zero": 0,
+     "earned": 6.0,
+     "total": 6
+    },
+    "basis": "balanced",
+    "limited": true,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "logical_support": {
+    "score": 73.12,
+    "halves": true,
+    "items": 9,
+    "passed": 6,
+    "issues": 3,
+    "pairs": 9,
+    "failures": [
+     {
+      "order": 3,
+      "section_a": "abstract",
+      "section_b": "results",
+      "reason": "contradiction",
+      "severity": "Moderate",
+      "rating": 0.3834,
+      "credit": 0.25,
+      "kind": "cross"
+     },
+     {
+      "order": 5,
+      "section_a": "introduction",
+      "section_b": "methodology",
+      "reason": "contradiction",
+      "severity": "Moderate",
+      "rating": 0.5596,
+      "credit": 0.25,
+      "kind": "flow"
+     },
+     {
+      "order": 6,
+      "section_a": "introduction",
+      "section_b": "conclusion",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.4601,
+      "credit": 0.0,
+      "kind": "cross"
+     }
+    ],
+    "flow": {
+     "items": 4,
+     "passed": 3,
+     "credit": 3.25
+    },
+    "cross": {
+     "items": 5,
+     "passed": 3,
+     "credit": 3.25
+    },
+    "points": {
+     "perfect": 6,
+     "partial": 2,
+     "zero": 1,
+     "earned": 6.5,
+     "total": 9
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   }
+  },
+  "citation_detail": {
+   "well_formed_ratio": 1.0,
+   "link_resolution_rate": 1.0,
+   "cross_match_score": 0.6,
+   "total_entries": 1
+  }
+ },
+ "dimension_breakdown": {
+  "context_alignment": {
+   "score": 85.0,
+   "halves": true,
+   "items": 9,
+   "passed": 7,
+   "issues": 2,
+   "pairs": 9,
+   "failures": [
+    {
+     "order": 2,
+     "section_a": "abstract",
+     "section_b": "methodology",
+     "reason": "contradiction",
+     "severity": "Moderate",
+     "rating": 0.5468,
+     "credit": 0.25,
+     "kind": "cross"
+    },
+    {
+     "order": 4,
+     "section_a": "abstract",
+     "section_b": "conclusion",
+     "reason": "contradiction",
+     "severity": "Moderate",
+     "rating": 0.3293,
+     "credit": 0.25,
+     "kind": "cross"
+    }
+   ],
+   "flow": {
+    "items": 4,
+    "passed": 4,
+    "credit": 4.0
+   },
+   "cross": {
+    "items": 5,
+    "passed": 3,
+    "credit": 3.5
+   },
+   "points": {
+    "perfect": 7,
+    "partial": 2,
+    "zero": 0,
+    "earned": 7.5,
+    "total": 9
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "operational_alignment": {
+   "score": 55.62,
+   "halves": true,
+   "items": 9,
+   "passed": 5,
+   "issues": 4,
+   "pairs": 9,
+   "failures": [
+    {
+     "order": 1,
+     "section_a": "abstract",
+     "section_b": "introduction",
+     "reason": "contradiction",
+     "severity": "Moderate",
+     "rating": 0.5869,
+     "credit": 0.25,
+     "kind": "flow"
+    },
+    {
+     "order": 7,
+     "section_a": "methodology",
+     "section_b": "results",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.6645,
+     "credit": 0.0,
+     "kind": "flow"
+    },
+    {
+     "order": 8,
+     "section_a": "methodology",
+     "section_b": "discussion",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.5598,
+     "credit": 0.0,
+     "kind": "cross"
+    },
+    {
+     "order": 10,
+     "section_a": "results",
+     "section_b": "discussion",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.6861,
+     "credit": 0.0,
+     "kind": "flow"
+    }
+   ],
+   "flow": {
+    "items": 4,
+    "passed": 1,
+    "credit": 1.25
+   },
+   "cross": {
+    "items": 5,
+    "passed": 4,
+    "credit": 4.0
+   },
+   "points": {
+    "perfect": 5,
+    "partial": 1,
+    "zero": 3,
+    "earned": 5.25,
+    "total": 9
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "evidence_consistency": {
+   "score": 100.0,
+   "halves": true,
+   "items": 6,
+   "passed": 6,
+   "issues": 0,
+   "pairs": 6,
+   "failures": [],
+   "flow": {
+    "items": 2,
+    "passed": 2,
+    "credit": 2.0
+   },
+   "cross": {
+    "items": 4,
+    "passed": 4,
+    "credit": 4.0
+   },
+   "points": {
+    "perfect": 6,
+    "partial": 0,
+    "zero": 0,
+    "earned": 6.0,
+    "total": 6
+   },
+   "basis": "balanced",
+   "limited": true,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "logical_support": {
+   "score": 73.12,
+   "halves": true,
+   "items": 9,
+   "passed": 6,
+   "issues": 3,
+   "pairs": 9,
+   "failures": [
+    {
+     "order": 3,
+     "section_a": "abstract",
+     "section_b": "results",
+     "reason": "contradiction",
+     "severity": "Moderate",
+     "rating": 0.3834,
+     "credit": 0.25,
+     "kind": "cross"
+    },
+    {
+     "order": 5,
+     "section_a": "introduction",
+     "section_b": "methodology",
+     "reason": "contradiction",
+     "severity": "Moderate",
+     "rating": 0.5596,
+     "credit": 0.25,
+     "kind": "flow"
+    },
+    {
+     "order": 6,
+     "section_a": "introduction",
+     "section_b": "conclusion",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.4601,
+     "credit": 0.0,
+     "kind": "cross"
+    }
+   ],
+   "flow": {
+    "items": 4,
+    "passed": 3,
+    "credit": 3.25
+   },
+   "cross": {
+    "items": 5,
+    "passed": 3,
+    "credit": 3.25
+   },
+   "points": {
+    "perfect": 6,
+    "partial": 2,
+    "zero": 1,
+    "earned": 6.5,
+    "total": 9
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  }
+ },
+ "rescan_unchanged": false,
+ "structure_note": "Your headings are not the usual ones, so they were found from the layout of your paper. Check that the sections look right.",
+ "ai_text_indicator": {
+  "overall_score": 23.8,
+  "section_scores": {
+   "abstract": 22.0,
+   "introduction": null,
+   "methodology": 3.6,
+   "results": 45.9,
+   "discussion": null,
+   "conclusion": null
+  },
+  "flagged_sections": [
+   "results"
+  ],
+  "disclaimer": "Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features (sentence-length uniformity, lexical diversity, transition-phrase density, opening-word repetition, and sentence-embedding self-similarity) -- it cannot verify authorship and cannot detect real generative-model watermarks (e.g. Google SynthID), which are cryptographic signals embedded at the token-sampling level and are not recoverable from output text by any third party without the issuing model's own detection service. Formal academic prose already exhibits many of these same surface features, so well-written human capstone chapters can score in the 40-60 range; this indicator must never be used to block a submission or as a plagiarism/integrity charge on its own."
+ },
+ "db_save_status": "saved",
+ "notification_dispatched": false,
+ "credits_remaining": 4
+}

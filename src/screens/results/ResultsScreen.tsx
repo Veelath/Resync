@@ -3,12 +3,14 @@ import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
 import type { V7ScanResponse } from '../../services/v7Result';
 import { reviewUnfinished } from './reviewComplete';
-import { getCreditBalance, getScanResult, unlockScan } from '../../services/api';
-import { SAMPLE_REPORT, type Citation } from '../../data/sampleReport';
+import { discardScan, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
+import { forgetOpenReport, rememberOpenReport } from '../../lib/openReport';
+import { SAMPLE_PAPERS, sampleById, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
 import { ResultsScorePanel } from './ResultsScorePanel';
-import { ReportPrint } from './ReportPrint';
+import { LeaveNotice } from './LeaveNotice';
+import { downloadReportPdf } from '../../lib/reportPdf';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, usableTitle } from './helpers';
@@ -30,7 +32,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const manuscriptScroll = useRef<HTMLDivElement>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashedTarget = useRef<HTMLElement | null>(null);
-  const result = isSample ? SAMPLE_REPORT : currentScan;
+  const [sampleId, setSampleId] = useState(() => sampleById(new URLSearchParams(window.location.search).get('paper')).id);
+  const result = isSample ? sampleById(sampleId).result : currentScan;
   const isGoogleDoc = /^https?:\/\/docs\.google\.com\//i.test(result?.doc_url ?? '');
   const locked = !isSample && result?.access?.unlocked === false;
   const [balance, setBalance] = useState<number | null>(null);
@@ -41,6 +44,18 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const [unlockError, setUnlockError] = useState('');
   const [unlockedToast, setUnlockedToast] = useState(false);
   const [placementMessage, setPlacementMessage] = useState('');
+  // Leaving a real report: it is not kept, so the student is told first and can download the PDF.
+  const [leaveAction, setLeaveAction] = useState<(() => void) | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    if (!isSample && result?.analysis_run_id) rememberOpenReport(result.analysis_run_id);
+  }, [isSample, result?.analysis_run_id]);
+  useEffect(() => {
+    if (isSample) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isSample]);
   useEffect(() => setCurrentScan(scan), [scan]);
   useEffect(() => () => { if (flashTimer.current) clearTimeout(flashTimer.current); }, []);
   useEffect(() => {
@@ -93,7 +108,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     {unlockError && <p role="alert" className="text-sm text-[#9f1239]">{unlockError} {balance === 0 ? 'Buy credits to continue.' : 'Try again.'}</p>}
   </div>;
 
-  const displayTitle = isSample ? SAMPLE_REPORT.manuscript_title : usableTitle(result.manuscript_title)
+  const displayTitle = isSample ? sampleById(sampleId).result.manuscript_title : usableTitle(result.manuscript_title)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
   const recommendations = matched.filter(rec => plainText(rec.recommended_revision).trim()).slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
@@ -178,6 +193,10 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   }));
   const displayedCitations = citationFilter ? citations.filter(citation => citation.status === citationFilter) : citations;
   const citeCount = (status: Citation['status']) => citations.filter(citation => citation.status === status).length;
+  const askToLeave = (action: () => void) => setLeaveAction(() => action);
+  function downloadPdf() {
+    downloadReportPdf(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked);
+  }
   const tabs: { id: Tab; label: string }[] = [
     { id: 'recommendations', label: `Recommendations (${issueCount})` },
     { id: 'clear', label: `All clear (${clearCount})` },
@@ -196,11 +215,19 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   }
 
   return <div className="results-screen min-h-screen bg-[#f6f7fb] font-sans text-[#0b0f3d] lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">
-    <ResultsHeader onNavigate={onNavigate} onBack={onBack} isSample={isSample} displayTitle={displayTitle} />
+    <ResultsHeader onNavigate={target => isSample ? onNavigate(target) : askToLeave(() => onNavigate(target))} onBack={() => isSample ? onBack() : askToLeave(onBack)}
+      isSample={isSample} displayTitle={displayTitle} onDownload={downloadPdf} sampleId={sampleId} onSampleChange={id => { setSampleId(id); setActiveTab('recommendations'); setSelectedOrder(null); manuscriptScroll.current?.scrollTo({ top: 0 }); }} onClose={isSample ? undefined : () => askToLeave(() => onNavigate('dashboard'))} />
+    {leaveAction && <LeaveNotice leaving={leaving} onStay={() => setLeaveAction(null)} onDownload={downloadPdf} onLeave={async () => {
+      setLeaving(true);
+      if (result?.analysis_run_id) await discardScan(result.analysis_run_id);
+      forgetOpenReport();
+      const go = leaveAction;
+      setLeaving(false); setLeaveAction(null);
+      go();
+    }} />}
     {placementMessage && <div role="status" className="fixed top-16 right-4 z-50 max-w-sm rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">{placementMessage}</div>}
     {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
-    <ReportPrint result={result} title={displayTitle} items={recommendations} citations={citations} locked={locked} lockedOrders={lockedOrders} />
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>

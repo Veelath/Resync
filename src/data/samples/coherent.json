@@ -1,0 +1,1729 @@
+{
+ "status": "completed",
+ "analysis_run_id": "11111111-1111-4111-8111-111111111101",
+ "user_id": "22222222-2222-4222-8222-222222222222",
+ "manuscript_id": "33333333-3333-4333-8333-333333333301",
+ "doc_url": "sample-coherent.docx",
+ "manuscript_title": "Spaced Review Practice and Grade 8 Algebra Achievement",
+ "result_version": "v7",
+ "overall_coherence_score": 81.0,
+ "sections_analyzed": [
+  "abstract",
+  "introduction",
+  "review of related literature",
+  "methodology",
+  "results",
+  "discussion",
+  "limitations and recommendations",
+  "conclusion"
+ ],
+ "manuscript_sections": [
+  {
+   "name": "abstract",
+   "text": "Background: Algebra achievement in lower secondary school remains low in many public schools. Objective: This study tested whether a spaced-repetition mobile app improves Grade 8 algebra achievement. Methods: A quasi-experimental pretest–posttest design was used with 96 Grade 8 students (48 treatment, 48 control) from two public schools over eight weeks. Results: The treatment group improved from a mean of 62.4 to 71.8, while the control group improved from 63.1 to 65.2. The difference in gains was statistically significant, t(94) = 4.12, p < .001, d = 0.84. Conclusion: Within this sample, app-based spaced repetition was associated with larger algebra gains than standard practice. Generalization is limited by the non-random assignment.",
+   "display_name": "Abstract",
+   "blocks": null
+  },
+  {
+   "name": "introduction",
+   "text": "Algebra is a gateway subject for later study in mathematics and science, yet many Grade 8 learners in public schools perform below the expected proficiency level. Teachers often report that students forget procedures taught earlier in the term, which limits their ability to build on prior knowledge.\nThe spacing effect, first described by Ebbinghaus (1885), shows that memory is stronger when practice is distributed over time rather than massed. A later synthesis by Cepeda et al. (2006) confirmed this benefit across many studies. Related work on retrieval practice (Roediger & Karpicke, 2006) suggests that testing oneself strengthens retention more than rereading.\nMobile apps can schedule review automatically, but evidence of their effect on algebra achievement in public school settings is limited. This study addresses that gap. The research question was: Does eight weeks of use of a spaced-repetition app improve Grade 8 algebra achievement compared with standard homework practice? The hypothesis was that the treatment group would show larger pretest-to-posttest gains than the control group.",
+   "display_name": "1. Introduction",
+   "blocks": null
+  },
+  {
+   "name": "review of related literature",
+   "text": "Research on distributed practice shows reliable gains in recall, particularly when the gap between sessions matches the desired retention interval (Cepeda et al., 2006). Retrieval practice adds to this benefit because each review attempt is also a memory test (Roediger & Karpicke, 2006).\nSocial learning theory (Bandura, 1977) emphasizes that learners benefit from feedback and from observing successful strategies. Vygotsky (1978) argued that tasks pitched just beyond current ability, with support, promote development. Spaced-repetition apps with adaptive difficulty and immediate feedback can operationalize both ideas.\nTaken together, the literature suggests that a scheduled, feedback-rich review tool should improve retention of algebraic procedures. This study tests that prediction in a classroom setting.",
+   "display_name": "2. Review of Related Literature",
+   "blocks": null
+  },
+  {
+   "name": "methodology",
+   "text": "Design. A quasi-experimental pretest–posttest control group design was used. Two public schools participated; one class per school served as treatment and control respectively.\nParticipants. A total of 96 Grade 8 students took part, 48 in each group. Mean age was 13.6 years (SD = 0.5). Sample size was based on a power analysis (Cohen, 1988) targeting d = 0.6 at power .80, which required at least 90 participants.\nInstrument. A 50-item researcher-made algebra test covering linear equations and expressions was administered before and after the intervention. Content validity was reviewed by three Grade 8 mathematics teachers, and internal consistency was acceptable (Cronbach's alpha = .84).\nProcedure. The treatment group used the app for 15 minutes on four school days each week for eight weeks. The control group completed standard homework of equal time. Informed consent was obtained from parents, and student assent was obtained. The study was approved by the university ethics board before data collection.\nAnalysis. Gain scores were compared using an independent-samples t-test with alpha = .05, and effect size was reported as Cohen's d.",
+   "display_name": "3. Methodology",
+   "blocks": null
+  },
+  {
+   "name": "results",
+   "text": "The mean gain was 9.4 points for the treatment group and 2.1 points for the control group. This difference in gains was statistically significant, t(94) = 4.12, p < .001, with a large effect size (d = 0.84). No participant dropped out during the eight weeks.",
+   "display_name": "4. Results",
+   "blocks": null
+  },
+  {
+   "name": "discussion",
+   "text": "The results support the hypothesis: students who used the spaced-repetition app improved more than students who completed standard homework. This agrees with the distributed-practice and retrieval-practice literature (Cepeda et al., 2006; Roediger & Karpicke, 2006).\nThe effect was larger than the d = 0.6 used in planning. Possible reasons include novelty of the app and the immediate feedback it gave, which fits the support-and-feedback arguments of Bandura (1977) and Vygotsky (1978).\nBecause assignment to groups was by class and not random, pre-existing class differences may explain part of the result. Teachers' effects were also not controlled.",
+   "display_name": "5. Discussion",
+   "blocks": null
+  },
+  {
+   "name": "limitations and recommendations",
+   "text": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test. Results should not be generalized beyond similar public school settings.\nFuture studies should use random assignment across more schools, include a delayed posttest to measure retention, and compare spaced-repetition with other forms of digital practice.",
+   "display_name": "6. Limitations and Recommendations",
+   "blocks": null
+  },
+  {
+   "name": "conclusion",
+   "text": "Within this sample of 96 Grade 8 students, eight weeks of spaced-repetition app use was associated with significantly larger algebra gains than standard homework practice (d = 0.84). Schools may consider piloting such tools, while researchers should replicate the finding with randomized designs.\nReferences\nBandura, A. (1977). Social learning theory. Prentice Hall.\nCepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. Psychological Bulletin, 132(3), 354–380.\nCohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Lawrence Erlbaum.\nEbbinghaus, H. (1885). Über das Gedächtnis. Duncker & Humblot.\nRoediger, H. L., & Karpicke, J. D. (2006). Test-enhanced learning: Taking memory tests improves long-term retention. Psychological Science, 17(3), 249–255.\nVygotsky, L. S. (1978). Mind in society. Harvard University Press.",
+   "display_name": "7. Conclusion",
+   "blocks": null
+  }
+ ],
+ "access": {
+  "unlocked": true,
+  "unlock_cost": 1,
+  "locked_counts": {
+   "sections": 0,
+   "recommendations": 0,
+   "citations": 0
+  }
+ },
+ "manuscript_flow": [
+  {
+   "order": 1,
+   "index_a": 0,
+   "index_b": 1,
+   "adjacent": true,
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_weight": 0.6204191446304321,
+   "pair_score": 0.6040700227022171,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.626840353012085,
+    "methodology_fit": 0.5628402233123779,
+    "numeric_consistency": 0.6253647208213806,
+    "claim_support": 0.6012347936630249,
+    "overall_coherence": 0.6770068407058716
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.6770068407058716,
+     "objectives": 0.626840353012085,
+     "methodology": 0.5628402233123779,
+     "numeric": 0.6253647208213806,
+     "claims": 0.6012347936630249
+    },
+    "link_summary": "The \"abstract\" section summarizes the study and results, and the \"introduction\" section introduces the background, objective, and hypothesis.",
+    "comparison": {
+     "a_says": "tested a spaced-repetition mobile app with 96 students",
+     "b_says": "asks whether eight weeks of a spaced-repetition app improves algebra achievement"
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 2,
+   "index_a": 0,
+   "index_b": 3,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_weight": 0.5995067358016968,
+   "pair_score": 0.48865264654159546,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.4837828576564789,
+    "methodology_fit": 0.47124549746513367,
+    "numeric_consistency": 0.5320952534675598,
+    "claim_support": 0.4674869775772095,
+    "overall_coherence": 0.5042819976806641
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.5042819976806641,
+     "objectives": 0.4837828576564789,
+     "methodology": 0.47124549746513367,
+     "numeric": 0.5320952534675598,
+     "claims": 0.4674869775772095
+    },
+    "link_summary": "The abstract summary of methods matches the methodology section details.",
+    "comparison": {
+     "a_says": "Methods: A quasi-experimental pretest–posttest design was used with 96 Grade 8 students (48 treatment, 48 control) from two public schools over eight weeks.",
+     "b_says": "Design. A quasi-experimental pretest–posttest control group design was used. Two public schools participated..."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": [
+     {
+      "section": "abstract",
+      "what": "Methods match between sections.",
+      "why": "The abstract details align with the methodology section.",
+      "reason": "quote_not_found"
+     }
+    ]
+   }
+  },
+  {
+   "order": 3,
+   "index_a": 0,
+   "index_b": 4,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_weight": 0.48355400562286377,
+   "pair_score": 0.24014559760689735,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.2147669494152069,
+    "methodology_fit": 0.19867728650569916,
+    "numeric_consistency": 0.3297096788883209,
+    "claim_support": 0.21742847561836243,
+    "overall_coherence": 0.23732443153858185
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.23732443153858185,
+     "objectives": 0.2147669494152069,
+     "methodology": 0.19867728650569916,
+     "numeric": 0.3297096788883209,
+     "claims": 0.21742847561836243
+    },
+    "link_summary": "Both the \"abstract\" section and the \"results\" section tell the same story about the algebra gains and numbers.",
+    "comparison": {
+     "a_says": "The treatment group improved from 62.4 to 71.8 and control from 63.1 to 65.2.",
+     "b_says": "The mean gain was 9.4 points for treatment and 2.1 points for control."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 4,
+   "index_a": 0,
+   "index_b": 6,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "limitations and recommendations",
+   "pair_weight": 0.484796941280365,
+   "pair_score": 0.25580893953641254,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.29058563709259033,
+    "methodology_fit": 0.2361253947019577,
+    "numeric_consistency": 0.3381993770599365,
+    "claim_support": 0.24071578681468964,
+    "overall_coherence": 0.2888666093349457
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.2888666093349457,
+     "objectives": 0.29058563709259033,
+     "methodology": 0.2361253947019577,
+     "numeric": 0.3381993770599365,
+     "claims": 0.24071578681468964
+    },
+    "link_summary": "The abstract and limitations sections are consistent.",
+    "comparison": {
+     "a_says": "Generalization is limited by the non-random assignment.",
+     "b_says": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 5,
+   "index_a": 0,
+   "index_b": 7,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_weight": 0.5225257873535156,
+   "pair_score": 0.4090404286980629,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.4461280405521393,
+    "methodology_fit": 0.34914448857307434,
+    "numeric_consistency": 0.4642110764980316,
+    "claim_support": 0.37667810916900635,
+    "overall_coherence": 0.4408992826938629
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.4408992826938629,
+     "objectives": 0.4461280405521393,
+     "methodology": 0.34914448857307434,
+     "numeric": 0.4642110764980316,
+     "claims": 0.37667810916900635
+    },
+    "link_summary": "The conclusion section matches the findings and limits given in the abstract section.",
+    "comparison": {
+     "a_says": "App-based spaced repetition was associated with larger algebra gains than standard practice (d = 0.84).",
+     "b_says": "Spaced-repetition app use was associated with significantly larger algebra gains than standard homework practice (d = 0.84)."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 6,
+   "index_a": 1,
+   "index_b": 2,
+   "adjacent": true,
+   "section_a": "introduction",
+   "section_b": "review of related literature",
+   "pair_weight": 0.6720341444015503,
+   "pair_score": 0.755489726861318,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.7774419784545898,
+    "methodology_fit": 0.7353244423866272,
+    "numeric_consistency": 0.8004006147384644,
+    "claim_support": 0.7537027597427368,
+    "overall_coherence": 0.8414435386657715
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.8414435386657715,
+     "objectives": 0.7774419784545898,
+     "methodology": 0.7353244423866272,
+     "numeric": 0.8004006147384644,
+     "claims": 0.7537027597427368
+    },
+    "link_summary": "The \"introduction\" section sets up the research question and hypothesis, and the \"review of related literature\" section discusses distributed practice and learning theories.",
+    "comparison": {
+     "a_says": "tested whether eight weeks of a spaced-repetition app improves Grade 8 algebra achievement",
+     "b_says": "reviews research on distributed practice and social learning theory supporting review tools"
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 7,
+   "index_a": 1,
+   "index_b": 6,
+   "adjacent": false,
+   "section_a": "introduction",
+   "section_b": "limitations and recommendations",
+   "pair_weight": 0.5281745195388794,
+   "pair_score": 0.382210373878479,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.4130152761936188,
+    "methodology_fit": 0.3541727662086487,
+    "numeric_consistency": 0.4843885600566864,
+    "claim_support": 0.37944307923316956,
+    "overall_coherence": 0.44828853011131287
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.44828853011131287,
+     "objectives": 0.4130152761936188,
+     "methodology": 0.3541727662086487,
+     "numeric": 0.4843885600566864,
+     "claims": 0.37944307923316956
+    },
+    "link_summary": "The research questions set up in the introduction are addressed by the study's limitations.",
+    "comparison": {
+     "a_says": "The research question was: Does eight weeks of use of a spaced-repetition app improve Grade 8 algebra achievement...",
+     "b_says": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": [
+     {
+      "section": "introduction",
+      "what": "The sections match.",
+      "why": "The introduction goals fit the stated study bounds.",
+      "reason": "quote_not_found"
+     }
+    ]
+   }
+  },
+  {
+   "order": 8,
+   "index_a": 1,
+   "index_b": 7,
+   "adjacent": false,
+   "section_a": "introduction",
+   "section_b": "conclusion",
+   "pair_weight": 0.5413849353790283,
+   "pair_score": 0.48097505420446396,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.504523515701294,
+    "methodology_fit": 0.4170588254928589,
+    "numeric_consistency": 0.5418713688850403,
+    "claim_support": 0.4604465067386627,
+    "overall_coherence": 0.5277934670448303
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.5277934670448303,
+     "objectives": 0.504523515701294,
+     "methodology": 0.4170588254928589,
+     "numeric": 0.5418713688850403,
+     "claims": 0.4604465067386627
+    },
+    "link_summary": "The introduction states the study goals and the conclusion reports the results that address them.",
+    "comparison": {
+     "a_says": "Does eight weeks of use of a spaced-repetition app improve Grade 8 algebra achievement?",
+     "b_says": "eight weeks of spaced-repetition app use was associated with significantly larger algebra gains"
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 9,
+   "index_a": 2,
+   "index_b": 3,
+   "adjacent": true,
+   "section_a": "review of related literature",
+   "section_b": "methodology",
+   "pair_weight": 0.6371082663536072,
+   "pair_score": 0.5849978923797607,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.5918880105018616,
+    "methodology_fit": 0.5854957699775696,
+    "numeric_consistency": 0.6634685397148132,
+    "claim_support": 0.5776098966598511,
+    "overall_coherence": 0.6410807371139526
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "2006).",
+      "delta": 0.0035
+     }
+    ],
+    "section_b": [
+     {
+      "sentence": "Two public schools participated; one class per school served as treatment and control respectively.",
+      "delta": 0.0528
+     },
+     {
+      "sentence": "The study was approved by the university ethics board before data collection.",
+      "delta": 0.0391
+     },
+     {
+      "sentence": "A total of 96 Grade 8 students took part, 48 in each group.",
+      "delta": 0.0288
+     }
+    ]
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.6410807371139526,
+     "objectives": 0.5918880105018616,
+     "methodology": 0.5854957699775696,
+     "numeric": 0.6634685397148132,
+     "claims": 0.5776098966598511
+    },
+    "link_summary": "The literature review sets up the classroom test described in the methodology.",
+    "comparison": {
+     "a_says": "This study tests that prediction in a classroom setting.",
+     "b_says": "Design. A quasi-experimental pretest–posttest control group design was used. Two public schools participated..."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": [
+     {
+      "section": "review of related literature",
+      "what": "The transition flows well.",
+      "why": "The literature review leads directly into the methodology.",
+      "reason": "quote_not_found"
+     }
+    ]
+   }
+  },
+  {
+   "order": 10,
+   "index_a": 3,
+   "index_b": 4,
+   "adjacent": true,
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_weight": 0.5558896064758301,
+   "pair_score": 0.3540880158543587,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.32970699667930603,
+    "methodology_fit": 0.2851601839065552,
+    "numeric_consistency": 0.46560171246528625,
+    "claim_support": 0.33588317036628723,
+    "overall_coherence": 0.31238365173339844
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "Informed consent was obtained from parents, and student assent was obtained.",
+      "delta": 0.0324
+     },
+     {
+      "sentence": "Content validity was reviewed by three Grade 8 mathematics teachers, and internal consistency was acceptable (Cronbach's alpha = .84).",
+      "delta": 0.0305
+     },
+     {
+      "sentence": "A total of 96 Grade 8 students took part, 48 in each group.",
+      "delta": 0.0239
+     }
+    ],
+    "section_b": [
+     {
+      "sentence": "No participant dropped out during the eight weeks.",
+      "delta": 0.0824
+     }
+    ]
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.31238365173339844,
+     "objectives": 0.32970699667930603,
+     "methodology": 0.2851601839065552,
+     "numeric": 0.46560171246528625,
+     "claims": 0.33588317036628723
+    },
+    "link_summary": "The results section follows directly from the methodology.",
+    "comparison": {
+     "a_says": "Gain scores were compared using an independent-samples t-test with alpha = .05.",
+     "b_says": "The mean gain was 9.4 points for the treatment group and 2.1 points for the control group."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "methodology",
+      "placement": "end",
+      "sentence": "Comparing these gain scores with an independent-samples t-test for the 96 Grade 8 students gives the final outcomes."
+     },
+     {
+      "section": "results",
+      "placement": "start",
+      "sentence": "Using the 50-item researcher-made algebra test administered before and after the intervention, the mean gain was 9.4 points for the treatment group and 2.1 points for the control group."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 11,
+   "index_a": 3,
+   "index_b": 5,
+   "adjacent": false,
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_weight": 0.6321110129356384,
+   "pair_score": 0.6077300310134888,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.6197898387908936,
+    "methodology_fit": 0.560204029083252,
+    "numeric_consistency": 0.6634621024131775,
+    "claim_support": 0.5874641537666321,
+    "overall_coherence": 0.6416179537773132
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.6416179537773132,
+     "objectives": 0.6197898387908936,
+     "methodology": 0.560204029083252,
+     "numeric": 0.6634621024131775,
+     "claims": 0.5874641537666321
+    },
+    "link_summary": "The discussion section successfully carries through the methods and findings set up in the methodology section.",
+    "comparison": {
+     "a_says": "An independent-samples t-test was used to compare gain scores.",
+     "b_says": "Students who used the spaced-repetition app improved more than control students."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 12,
+   "index_a": 3,
+   "index_b": 6,
+   "adjacent": false,
+   "section_a": "methodology",
+   "section_b": "limitations and recommendations",
+   "pair_weight": 0.564990758895874,
+   "pair_score": 0.3686184187730153,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.41771677136421204,
+    "methodology_fit": 0.3329417407512665,
+    "numeric_consistency": 0.4852030873298645,
+    "claim_support": 0.3551967442035675,
+    "overall_coherence": 0.3714287281036377
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.3714287281036377,
+     "objectives": 0.41771677136421204,
+     "methodology": 0.3329417407512665,
+     "numeric": 0.4852030873298645,
+     "claims": 0.3551967442035675
+    },
+    "link_summary": "The methodology and limitations sections are consistent.",
+    "comparison": {
+     "a_says": "Two public schools participated; one class per school served as treatment and control respectively.",
+     "b_says": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 13,
+   "index_a": 3,
+   "index_b": 7,
+   "adjacent": false,
+   "section_a": "methodology",
+   "section_b": "conclusion",
+   "pair_weight": 0.5392538905143738,
+   "pair_score": 0.37458450347185135,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.38916435837745667,
+    "methodology_fit": 0.3230603039264679,
+    "numeric_consistency": 0.4567270874977112,
+    "claim_support": 0.32938626408576965,
+    "overall_coherence": 0.31587284803390503
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.31587284803390503,
+     "objectives": 0.38916435837745667,
+     "methodology": 0.3230603039264679,
+     "numeric": 0.4567270874977112,
+     "claims": 0.32938626408576965
+    },
+    "link_summary": "The methodology and conclusion sections match well and share the same participant count and study details.",
+    "comparison": {
+     "a_says": "Tested 96 Grade 8 students in a quasi-experimental design.",
+     "b_says": "Reports results for this sample of 96 Grade 8 students."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 14,
+   "index_a": 4,
+   "index_b": 5,
+   "adjacent": true,
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_weight": 0.4461521506309509,
+   "pair_score": 0.27410607412457466,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.24990889430046082,
+    "methodology_fit": 0.2302781194448471,
+    "numeric_consistency": 0.3459477126598358,
+    "claim_support": 0.2702895700931549,
+    "overall_coherence": 0.2656998038291931
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "No participant dropped out during the eight weeks.",
+      "delta": 0.0278
+     }
+    ],
+    "section_b": [
+     {
+      "sentence": "The results support the hypothesis: students who used the spaced-repetition app improved more than students who completed standard homework.",
+      "delta": 0.0616
+     },
+     {
+      "sentence": "Teachers' effects were also not controlled.",
+      "delta": 0.006
+     }
+    ]
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.2656998038291931,
+     "objectives": 0.24990889430046082,
+     "methodology": 0.2302781194448471,
+     "numeric": 0.3459477126598358,
+     "claims": 0.2702895700931549
+    },
+    "link_summary": "The discussion flows naturally from the results section.",
+    "comparison": {
+     "a_says": "No participant dropped out during the eight weeks.",
+     "b_says": "The results support the hypothesis: students who used the spaced-repetition app improved more."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "results",
+      "placement": "end",
+      "sentence": "These final test scores show how the treatment group gained 9.4 points while the control group gained 2.1 points over the eight weeks."
+     },
+     {
+      "section": "discussion",
+      "placement": "start",
+      "sentence": "These score gains of 9.4 points for the treatment group and 2.1 points for the control group show that students who used the app improved more than those who completed standard homework."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 15,
+   "index_a": 5,
+   "index_b": 6,
+   "adjacent": true,
+   "section_a": "discussion",
+   "section_b": "limitations and recommendations",
+   "pair_weight": 0.4805087149143219,
+   "pair_score": 0.27125558257102966,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.2901838719844818,
+    "methodology_fit": 0.2522052824497223,
+    "numeric_consistency": 0.3660021424293518,
+    "claim_support": 0.2713775932788849,
+    "overall_coherence": 0.33975374698638916
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "This agrees with the distributed-practice and retrieval-practice literature (Cepeda et al.,",
+      "delta": 0.0289
+     },
+     {
+      "sentence": "Teachers' effects were also not controlled.",
+      "delta": 0.0268
+     },
+     {
+      "sentence": "Possible reasons include novelty of the app and the immediate feedback it gave, which fits the support-and-feedback arguments of Bandura (1977) and Vygotsky (1978).",
+      "delta": 0.0189
+     }
+    ],
+    "section_b": [
+     {
+      "sentence": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test.",
+      "delta": 0.0905
+     }
+    ]
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.33975374698638916,
+     "objectives": 0.2901838719844818,
+     "methodology": 0.2522052824497223,
+     "numeric": 0.3660021424293518,
+     "claims": 0.2713775932788849
+    },
+    "link_summary": "The limitations section follows logically from the discussion.",
+    "comparison": {
+     "a_says": "Because assignment to groups was by class and not random, pre-existing class differences may explain part of the result.",
+     "b_says": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "discussion",
+      "placement": "end",
+      "sentence": "These uncontrolled teacher effects and non-random class assignments naturally shape the methodological constraints of the study."
+     },
+     {
+      "section": "limitations and recommendations",
+      "placement": "start",
+      "sentence": "Methodological constraints such as non-random assignment and unmeasured teacher effects stem directly from how the classes were grouped."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 16,
+   "index_a": 6,
+   "index_b": 7,
+   "adjacent": true,
+   "section_a": "limitations and recommendations",
+   "section_b": "conclusion",
+   "pair_weight": 0.5112677812576294,
+   "pair_score": 0.3892185688018799,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.42146989703178406,
+    "methodology_fit": 0.3573572337627411,
+    "numeric_consistency": 0.4444456696510315,
+    "claim_support": 0.3888285756111145,
+    "overall_coherence": 0.4112875759601593
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test.",
+      "delta": 0.0298
+     }
+    ],
+    "section_b": [
+     {
+      "sentence": "Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006).",
+      "delta": 0.0472
+     },
+     {
+      "sentence": "References\nBandura, A. (1977).",
+      "delta": 0.0235
+     },
+     {
+      "sentence": "Cohen, J. (1988).",
+      "delta": 0.0148
+     }
+    ]
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.4112875759601593,
+     "objectives": 0.42146989703178406,
+     "methodology": 0.3573572337627411,
+     "numeric": 0.4444456696510315,
+     "claims": 0.3888285756111145
+    },
+    "link_summary": "The limitations and conclusion connect well, moving from study bounds to final takeaways.",
+    "comparison": {
+     "a_says": "Limitations include non-random assignment, only two schools, a short eight-week window, and a researcher-made test.",
+     "b_says": "Within this sample of 96 Grade 8 students, eight weeks of spaced-repetition app use was associated..."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "limitations and recommendations",
+      "placement": "end",
+      "sentence": "These limitations point directly toward the sample and outcome measures summarized next."
+     }
+    ],
+    "unverified": [
+     {
+      "section": "limitations and recommendations",
+      "what": "The text flows logically.",
+      "why": "No contradiction exists between the sections.",
+      "reason": "quote_not_found"
+     }
+    ]
+   }
+  }
+ ],
+ "inconsistencies_found": 0,
+ "inconsistencies": [],
+ "recommendations": [
+  {
+   "recommendation_id": "aa67d602-f938-496f-af89-567c2b0efdd1",
+   "id": "r-10-1",
+   "section": "methodology",
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 10,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The results section follows directly from the methodology.",
+   "kind": "add",
+   "placement": "end",
+   "recommended_revision": "Comparing these gain scores with an independent-samples t-test for the 96 Grade 8 students gives the final outcomes.",
+   "recommendation_text": "Comparing these gain scores with an independent-samples t-test for the 96 Grade 8 students gives the final outcomes.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "9e497eb3-80ef-418a-b4f5-323caece6e9c",
+   "id": "r-10-2",
+   "section": "results",
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 10,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The results section follows directly from the methodology.",
+   "kind": "add",
+   "placement": "start",
+   "recommended_revision": "Using the 50-item researcher-made algebra test administered before and after the intervention, the mean gain was 9.4 points for the treatment group and 2.1 points for the control group.",
+   "recommendation_text": "Using the 50-item researcher-made algebra test administered before and after the intervention, the mean gain was 9.4 points for the treatment group and 2.1 points for the control group.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "652d2242-e092-4f2a-be10-d972e99dd612",
+   "id": "r-14-1",
+   "section": "results",
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 14,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The discussion flows naturally from the results section.",
+   "kind": "add",
+   "placement": "end",
+   "recommended_revision": "These final test scores show how the treatment group gained 9.4 points while the control group gained 2.1 points over the eight weeks.",
+   "recommendation_text": "These final test scores show how the treatment group gained 9.4 points while the control group gained 2.1 points over the eight weeks.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "0166de2c-b8ef-425f-b9c0-8d69750422f7",
+   "id": "r-14-2",
+   "section": "discussion",
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 14,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The discussion flows naturally from the results section.",
+   "kind": "add",
+   "placement": "start",
+   "recommended_revision": "These score gains of 9.4 points for the treatment group and 2.1 points for the control group show that students who used the app improved more than those who completed standard homework.",
+   "recommendation_text": "These score gains of 9.4 points for the treatment group and 2.1 points for the control group show that students who used the app improved more than those who completed standard homework.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "cebbcc87-1d30-48af-a906-029384ffb367",
+   "id": "r-15-1",
+   "section": "discussion",
+   "section_a": "discussion",
+   "section_b": "limitations and recommendations",
+   "pair_order": 15,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The limitations section follows logically from the discussion.",
+   "kind": "add",
+   "placement": "end",
+   "recommended_revision": "These uncontrolled teacher effects and non-random class assignments naturally shape the methodological constraints of the study.",
+   "recommendation_text": "These uncontrolled teacher effects and non-random class assignments naturally shape the methodological constraints of the study.",
+   "recommendation_priority": "High"
+  },
+  {
+   "recommendation_id": "da1870bc-9dc2-4f7f-a7f2-3895cd040765",
+   "id": "r-15-2",
+   "section": "limitations and recommendations",
+   "section_a": "discussion",
+   "section_b": "limitations and recommendations",
+   "pair_order": 15,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The limitations section follows logically from the discussion.",
+   "kind": "add",
+   "placement": "start",
+   "recommended_revision": "Methodological constraints such as non-random assignment and unmeasured teacher effects stem directly from how the classes were grouped.",
+   "recommendation_text": "Methodological constraints such as non-random assignment and unmeasured teacher effects stem directly from how the classes were grouped.",
+   "recommendation_priority": "High"
+  }
+ ],
+ "ai_synthesis": {
+  "summary": "The evaluated manuscript sections exhibit varying degrees of logical alignment, with the strongest coherence observed between the introduction and the review of related literature at 76%, while sections comparing the abstract or methodology against the results demonstrate lower consistency scores, such as 24% and 35% respectively.",
+  "strongest_pair": {
+   "order": 6,
+   "section_a": "introduction",
+   "section_b": "review of related literature",
+   "overall_coherence": 0.8414435386657715,
+   "score": 75.55
+  },
+  "weakest_pair": {
+   "order": 3,
+   "section_a": "abstract",
+   "section_b": "results",
+   "overall_coherence": 0.23732443153858185,
+   "score": 24.01
+  },
+  "review_status": {
+   "status": "complete",
+   "unreviewed": 0,
+   "analysis": "complete",
+   "needs_review": 16,
+   "reviewed": 16,
+   "basis": "ai_verified",
+   "whole_paper_check": "ran",
+   "unverified": 4
+  },
+  "unverified_findings": [
+   {
+    "pair_order": 2,
+    "section_a": "abstract",
+    "section_b": "methodology",
+    "section": "abstract",
+    "what": "Methods match between sections.",
+    "why": "The abstract details align with the methodology section.",
+    "reason": "quote_not_found"
+   },
+   {
+    "pair_order": 7,
+    "section_a": "introduction",
+    "section_b": "limitations and recommendations",
+    "section": "introduction",
+    "what": "The sections match.",
+    "why": "The introduction goals fit the stated study bounds.",
+    "reason": "quote_not_found"
+   },
+   {
+    "pair_order": 9,
+    "section_a": "review of related literature",
+    "section_b": "methodology",
+    "section": "review of related literature",
+    "what": "The transition flows well.",
+    "why": "The literature review leads directly into the methodology.",
+    "reason": "quote_not_found"
+   },
+   {
+    "pair_order": 16,
+    "section_a": "limitations and recommendations",
+    "section_b": "conclusion",
+    "section": "limitations and recommendations",
+    "what": "The text flows logically.",
+    "why": "No contradiction exists between the sections.",
+    "reason": "quote_not_found"
+   }
+  ]
+ },
+ "citations_audited": 0,
+ "citations": [],
+ "score_breakdown": {
+  "overall_score": 81.0,
+  "band": "Solid",
+  "cross_chapter_coherence_score": 81.0,
+  "citation_integrity_score": null,
+  "dimensions": {
+   "objectives_alignment": 0.54,
+   "methodology_fit": 0.4498,
+   "numeric_consistency": 0.636,
+   "claim_support": 0.4908
+  },
+  "dimension_weights": {
+   "objectives_alignment": 0.25,
+   "methodology_fit": 0.25,
+   "numeric_consistency": 0.25,
+   "claim_support": 0.25
+  },
+  "dimension_breakdown": {
+   "context_alignment": {
+    "score": 80.65,
+    "halves": true,
+    "items": 16,
+    "passed": 12,
+    "issues": 0,
+    "pairs": 16,
+    "failures": [
+     {
+      "order": 10,
+      "section_a": "methodology",
+      "section_b": "results",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.3297,
+      "credit": 0.3297,
+      "kind": "flow"
+     },
+     {
+      "order": 14,
+      "section_a": "results",
+      "section_b": "discussion",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.2499,
+      "credit": 0.2499,
+      "kind": "flow"
+     },
+     {
+      "order": 15,
+      "section_a": "discussion",
+      "section_b": "limitations and recommendations",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.2902,
+      "credit": 0.2902,
+      "kind": "flow"
+     },
+     {
+      "order": 16,
+      "section_a": "limitations and recommendations",
+      "section_b": "conclusion",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.4215,
+      "credit": 0.4215,
+      "kind": "flow"
+     }
+    ],
+    "flow": {
+     "items": 7,
+     "passed": 3,
+     "credit": 4.29
+    },
+    "cross": {
+     "items": 9,
+     "passed": 9,
+     "credit": 9.0
+    },
+    "points": {
+     "perfect": 12,
+     "partial": 4,
+     "zero": 0,
+     "earned": 13.29,
+     "total": 16
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "operational_alignment": {
+    "score": 79.46,
+    "halves": true,
+    "items": 16,
+    "passed": 12,
+    "issues": 0,
+    "pairs": 16,
+    "failures": [
+     {
+      "order": 10,
+      "section_a": "methodology",
+      "section_b": "results",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.2852,
+      "credit": 0.2852,
+      "kind": "flow"
+     },
+     {
+      "order": 14,
+      "section_a": "results",
+      "section_b": "discussion",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.2303,
+      "credit": 0.2303,
+      "kind": "flow"
+     },
+     {
+      "order": 15,
+      "section_a": "discussion",
+      "section_b": "limitations and recommendations",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.2522,
+      "credit": 0.2522,
+      "kind": "flow"
+     },
+     {
+      "order": 16,
+      "section_a": "limitations and recommendations",
+      "section_b": "conclusion",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.3574,
+      "credit": 0.3574,
+      "kind": "flow"
+     }
+    ],
+    "flow": {
+     "items": 7,
+     "passed": 3,
+     "credit": 4.13
+    },
+    "cross": {
+     "items": 9,
+     "passed": 9,
+     "credit": 9.0
+    },
+    "points": {
+     "perfect": 12,
+     "partial": 4,
+     "zero": 0,
+     "earned": 13.13,
+     "total": 16
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "evidence_consistency": {
+    "score": 80.19,
+    "halves": true,
+    "items": 9,
+    "passed": 7,
+    "issues": 0,
+    "pairs": 9,
+    "failures": [
+     {
+      "order": 10,
+      "section_a": "methodology",
+      "section_b": "results",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.4656,
+      "credit": 0.4656,
+      "kind": "flow"
+     },
+     {
+      "order": 14,
+      "section_a": "results",
+      "section_b": "discussion",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.3459,
+      "credit": 0.3459,
+      "kind": "flow"
+     }
+    ],
+    "flow": {
+     "items": 3,
+     "passed": 1,
+     "credit": 1.81
+    },
+    "cross": {
+     "items": 6,
+     "passed": 6,
+     "credit": 6.0
+    },
+    "points": {
+     "perfect": 7,
+     "partial": 2,
+     "zero": 0,
+     "earned": 7.81,
+     "total": 9
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "logical_support": {
+    "score": 80.47,
+    "halves": true,
+    "items": 16,
+    "passed": 12,
+    "issues": 0,
+    "pairs": 16,
+    "failures": [
+     {
+      "order": 10,
+      "section_a": "methodology",
+      "section_b": "results",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.3359,
+      "credit": 0.3359,
+      "kind": "flow"
+     },
+     {
+      "order": 14,
+      "section_a": "results",
+      "section_b": "discussion",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.2703,
+      "credit": 0.2703,
+      "kind": "flow"
+     },
+     {
+      "order": 15,
+      "section_a": "discussion",
+      "section_b": "limitations and recommendations",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.2714,
+      "credit": 0.2714,
+      "kind": "flow"
+     },
+     {
+      "order": 16,
+      "section_a": "limitations and recommendations",
+      "section_b": "conclusion",
+      "reason": "loose_link",
+      "severity": null,
+      "rating": 0.3888,
+      "credit": 0.3888,
+      "kind": "flow"
+     }
+    ],
+    "flow": {
+     "items": 7,
+     "passed": 3,
+     "credit": 4.27
+    },
+    "cross": {
+     "items": 9,
+     "passed": 9,
+     "credit": 9.0
+    },
+    "points": {
+     "perfect": 12,
+     "partial": 4,
+     "zero": 0,
+     "earned": 13.27,
+     "total": 16
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   }
+  },
+  "citation_detail": {
+   "well_formed_ratio": 0.0,
+   "link_resolution_rate": 0.0,
+   "cross_match_score": 0.0,
+   "total_entries": 0
+  }
+ },
+ "dimension_breakdown": {
+  "context_alignment": {
+   "score": 80.65,
+   "halves": true,
+   "items": 16,
+   "passed": 12,
+   "issues": 0,
+   "pairs": 16,
+   "failures": [
+    {
+     "order": 10,
+     "section_a": "methodology",
+     "section_b": "results",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.3297,
+     "credit": 0.3297,
+     "kind": "flow"
+    },
+    {
+     "order": 14,
+     "section_a": "results",
+     "section_b": "discussion",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.2499,
+     "credit": 0.2499,
+     "kind": "flow"
+    },
+    {
+     "order": 15,
+     "section_a": "discussion",
+     "section_b": "limitations and recommendations",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.2902,
+     "credit": 0.2902,
+     "kind": "flow"
+    },
+    {
+     "order": 16,
+     "section_a": "limitations and recommendations",
+     "section_b": "conclusion",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.4215,
+     "credit": 0.4215,
+     "kind": "flow"
+    }
+   ],
+   "flow": {
+    "items": 7,
+    "passed": 3,
+    "credit": 4.29
+   },
+   "cross": {
+    "items": 9,
+    "passed": 9,
+    "credit": 9.0
+   },
+   "points": {
+    "perfect": 12,
+    "partial": 4,
+    "zero": 0,
+    "earned": 13.29,
+    "total": 16
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "operational_alignment": {
+   "score": 79.46,
+   "halves": true,
+   "items": 16,
+   "passed": 12,
+   "issues": 0,
+   "pairs": 16,
+   "failures": [
+    {
+     "order": 10,
+     "section_a": "methodology",
+     "section_b": "results",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.2852,
+     "credit": 0.2852,
+     "kind": "flow"
+    },
+    {
+     "order": 14,
+     "section_a": "results",
+     "section_b": "discussion",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.2303,
+     "credit": 0.2303,
+     "kind": "flow"
+    },
+    {
+     "order": 15,
+     "section_a": "discussion",
+     "section_b": "limitations and recommendations",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.2522,
+     "credit": 0.2522,
+     "kind": "flow"
+    },
+    {
+     "order": 16,
+     "section_a": "limitations and recommendations",
+     "section_b": "conclusion",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.3574,
+     "credit": 0.3574,
+     "kind": "flow"
+    }
+   ],
+   "flow": {
+    "items": 7,
+    "passed": 3,
+    "credit": 4.13
+   },
+   "cross": {
+    "items": 9,
+    "passed": 9,
+    "credit": 9.0
+   },
+   "points": {
+    "perfect": 12,
+    "partial": 4,
+    "zero": 0,
+    "earned": 13.13,
+    "total": 16
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "evidence_consistency": {
+   "score": 80.19,
+   "halves": true,
+   "items": 9,
+   "passed": 7,
+   "issues": 0,
+   "pairs": 9,
+   "failures": [
+    {
+     "order": 10,
+     "section_a": "methodology",
+     "section_b": "results",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.4656,
+     "credit": 0.4656,
+     "kind": "flow"
+    },
+    {
+     "order": 14,
+     "section_a": "results",
+     "section_b": "discussion",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.3459,
+     "credit": 0.3459,
+     "kind": "flow"
+    }
+   ],
+   "flow": {
+    "items": 3,
+    "passed": 1,
+    "credit": 1.81
+   },
+   "cross": {
+    "items": 6,
+    "passed": 6,
+    "credit": 6.0
+   },
+   "points": {
+    "perfect": 7,
+    "partial": 2,
+    "zero": 0,
+    "earned": 7.81,
+    "total": 9
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "logical_support": {
+   "score": 80.47,
+   "halves": true,
+   "items": 16,
+   "passed": 12,
+   "issues": 0,
+   "pairs": 16,
+   "failures": [
+    {
+     "order": 10,
+     "section_a": "methodology",
+     "section_b": "results",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.3359,
+     "credit": 0.3359,
+     "kind": "flow"
+    },
+    {
+     "order": 14,
+     "section_a": "results",
+     "section_b": "discussion",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.2703,
+     "credit": 0.2703,
+     "kind": "flow"
+    },
+    {
+     "order": 15,
+     "section_a": "discussion",
+     "section_b": "limitations and recommendations",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.2714,
+     "credit": 0.2714,
+     "kind": "flow"
+    },
+    {
+     "order": 16,
+     "section_a": "limitations and recommendations",
+     "section_b": "conclusion",
+     "reason": "loose_link",
+     "severity": null,
+     "rating": 0.3888,
+     "credit": 0.3888,
+     "kind": "flow"
+    }
+   ],
+   "flow": {
+    "items": 7,
+    "passed": 3,
+    "credit": 4.27
+   },
+   "cross": {
+    "items": 9,
+    "passed": 9,
+    "credit": 9.0
+   },
+   "points": {
+    "perfect": 12,
+    "partial": 4,
+    "zero": 0,
+    "earned": 13.27,
+    "total": 16
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  }
+ },
+ "rescan_unchanged": false,
+ "structure_note": "Your headings are not the usual ones, so they were found from the layout of your paper. Check that the sections look right.",
+ "ai_text_indicator": {
+  "overall_score": 18.8,
+  "section_scores": {
+   "abstract": 24.8,
+   "introduction": 26.5,
+   "review of related literature": 25.6,
+   "methodology": 3.7,
+   "results": null,
+   "discussion": 22.7,
+   "limitations and recommendations": null,
+   "conclusion": 9.7
+  },
+  "flagged_sections": [],
+  "disclaimer": "Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features (sentence-length uniformity, lexical diversity, transition-phrase density, opening-word repetition, and sentence-embedding self-similarity) -- it cannot verify authorship and cannot detect real generative-model watermarks (e.g. Google SynthID), which are cryptographic signals embedded at the token-sampling level and are not recoverable from output text by any third party without the issuing model's own detection service. Formal academic prose already exhibits many of these same surface features, so well-written human capstone chapters can score in the 40-60 range; this indicator must never be used to block a submission or as a plagiarism/integrity charge on its own."
+ },
+ "db_save_status": "saved",
+ "notification_dispatched": false,
+ "credits_remaining": 4
+}

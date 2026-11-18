@@ -1,5 +1,6 @@
 import { useState, useId, useEffect, useRef } from "react";
 import { OTP_MAX_LENGTH, cleanCode, codeReady } from "../lib/otp";
+import { LEGAL_UPDATED, PRIVACY_SECTIONS, TERMS_SECTIONS } from "../data/legalText";
 import type React from 'react';
 import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
 import { AuthShell } from '../components/AuthShell';
@@ -312,7 +313,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                   <h3 id="signup-legal-title" className="text-base font-bold text-gray-900">
                     {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Last updated: {legalModal === "terms" ? "October 2026" : "November 9, 2026"}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Last updated: {LEGAL_UPDATED}</p>
                 </div>
                 <button
                   type="button"
@@ -326,43 +327,12 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
                 </button>
               </div>
               <div className="p-6 overflow-y-auto space-y-4 text-xs text-gray-600 leading-relaxed">
-                {legalModal === "terms" ? (
-                  <>
-                    <p>
-                      Welcome to Resync. By uploading or analyzing academic manuscripts, theses, dissertations, or research documents through our platform, you agree to comply with and be bound by these Terms of Service.
-                    </p>
-                    <h4 className="font-bold text-gray-800 text-sm">1. Academic Integrity & Intellectual Property</h4>
-                    <p>
-                      You retain all ownership, copyright, and intellectual property rights in and to your uploaded manuscripts and research materials. Resync does not claim any ownership over your manuscripts. You represent that you have all necessary rights to submit manuscripts for coherence and citation analysis.
-                    </p>
-                    <h4 className="font-bold text-gray-800 text-sm">2. Use of Analysis Tools</h4>
-                    <p>
-                      Resync provides holistic manuscript analysis, citation accessibility scanning, and an AI-text indicator. Analysis results and recommendations are advisory tools intended to assist scholarly writing and revision, and should be evaluated in accordance with your institution's academic guidelines.
-                    </p>
-                    <h4 className="font-bold text-gray-800 text-sm">3. Account Security</h4>
-                    <p>
-                      You are responsible for maintaining the confidentiality of your login credentials and for all activities that occur under your Resync account.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p>
-                      Resync is committed to protecting the privacy and confidentiality of researchers, scholars, and academic institutions using our manuscript verification service.
-                    </p>
-                    <h4 className="font-bold text-gray-800 text-sm">1. Information We Collect</h4>
-                    <p>
-                      We collect account information (such as your name and email address) and document content that you submit solely to perform manuscript coherence and citation analysis.
-                    </p>
-                    <h4 className="font-bold text-gray-800 text-sm">2. Manuscript Confidentiality & Data Protection</h4>
-                    <p>
-                      Manuscript text is sent to Google Gemini to produce findings and recommendations. During user testing, Gemini runs on Google's free tier, where Google may use submitted content to improve its products. We do not sell manuscripts.
-                    </p>
-                    <h4 className="font-bold text-gray-800 text-sm">3. Data Retention & Deletion</h4>
-                    <p>
-                      Extracted manuscript text and scan results are stored to support your reports. The app does not currently provide a control to delete individual scans or accounts.
-                    </p>
-                  </>
-                )}
+                {(legalModal === "terms" ? TERMS_SECTIONS : PRIVACY_SECTIONS).map(section => (
+                  <div key={section.title} className="space-y-2">
+                    <h4 className="font-bold text-gray-800 text-sm">{section.title}</h4>
+                    {section.body.map((item, i) => <p key={i}>{item}</p>)}
+                  </div>
+                ))}
               </div>
               <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
                 <button

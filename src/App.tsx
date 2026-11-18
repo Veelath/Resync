@@ -3,11 +3,12 @@ import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
 import { clearAllSourceFiles } from './lib/sourceFile';
 import { readRoute, routePath } from './lib/routes';
-import { getScanResult, subscribeSessionEnded, notifySessionEnded } from './services/api';
+import { discardScan, getScanResult, subscribeSessionEnded, notifySessionEnded } from './services/api';
 import { createSignOutController } from './lib/signOutController';
 import type { Session } from '@supabase/supabase-js';
 import { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
+import { discardLeftoverReport } from './lib/openReport';
 import { TermsScreen } from './screens/TermsScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
@@ -101,6 +102,13 @@ export default function App() {
     window.history.replaceState({ resync: { index: historyIndex.current } }, '', path);
     showRoute(path, historyIndex.current);
   }
+
+  // A report left open when the tab was closed (or the connection dropped) is deleted the next time Resync opens.
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const current = window.location.pathname.match(/\/results\/([^/?#]+)/)?.[1] ?? null;
+    void discardLeftoverReport(current, id => discardScan(id));
+  }, [session?.user?.id]);
 
   useEffect(() => {
     const isRecovery = window.location.pathname === '/reset-password' || window.location.hash.includes('type=recovery');

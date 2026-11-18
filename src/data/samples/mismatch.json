@@ -1,0 +1,2288 @@
+{
+ "status": "completed",
+ "analysis_run_id": "11111111-1111-4111-8111-111111111103",
+ "user_id": "22222222-2222-4222-8222-222222222222",
+ "manuscript_id": "33333333-3333-4333-8333-333333333303",
+ "doc_url": "sample-mismatch.docx",
+ "manuscript_title": "Teachers' Perceptions of Work-Life Balance and Their Motivation",
+ "result_version": "v7",
+ "overall_coherence_score": 79.0,
+ "sections_analyzed": [
+  "abstract",
+  "introduction",
+  "methodology",
+  "results",
+  "discussion",
+  "limitations",
+  "conclusion"
+ ],
+ "manuscript_sections": [
+  {
+   "name": "abstract",
+   "text": "Background: Teacher burnout is rising. Objective: This phenomenological study explored how eight public school teachers experience work-life balance. Methods: Semi-structured interviews were analyzed thematically. Results: Work-life balance caused a 40% increase in student test scores. Conclusion: The Department of Education should abolish standardized testing.",
+   "display_name": "Abstract",
+   "blocks": null
+  },
+  {
+   "name": "introduction",
+   "text": "Teacher burnout has become a major concern. This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.\nResearch Question 1: How do teachers describe work-life balance? Research Question 2: What factors affect their motivation? Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50).",
+   "display_name": "1. Introduction",
+   "blocks": null
+  },
+  {
+   "name": "methodology",
+   "text": "The study used a quantitative cross-sectional survey design. A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling. Responses were analyzed with multiple regression.\nIn addition, eight teachers were interviewed in depth. The interview data were not analyzed because the survey was considered sufficient. Ethical approval was not required since no humans were involved.",
+   "display_name": "2. Methodology",
+   "blocks": null
+  },
+  {
+   "name": "results",
+   "text": "Student test scores increased by 40% in classes of teachers who reported high work-life balance. Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31). Work-life balance was not included in the model.\nThemes that emerged from the interviews included isolation and autonomy, though no quotations are presented.",
+   "display_name": "3. Results",
+   "blocks": null
+  },
+  {
+   "name": "discussion",
+   "text": "The results prove that work-life balance directly causes better teaching, and that teachers who sleep more produce smarter students. The finding is consistent with the hypothesis that job satisfaction predicts motivation, although job satisfaction was not measured.\nBecause the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+   "display_name": "4. Discussion",
+   "blocks": null
+  },
+  {
+   "name": "limitations",
+   "text": "There are no limitations since the study was a complete census of the profession. The survey response rate was 12%.",
+   "display_name": "5. Limitations",
+   "blocks": null
+  },
+  {
+   "name": "conclusion",
+   "text": "The study demonstrates that standardized testing harms children and should be abolished. Teachers' perceptions of work-life balance were thus found to be irrelevant to motivation. Future studies should survey students about cafeteria food.\nReferences\nCreswell, J. (2013). Qualitative inquiry and research design (3rd ed.). Sage.",
+   "display_name": "6. Conclusion",
+   "blocks": null
+  }
+ ],
+ "access": {
+  "unlocked": true,
+  "unlock_cost": 1,
+  "locked_counts": {
+   "sections": 0,
+   "recommendations": 0,
+   "citations": 0
+  }
+ },
+ "manuscript_flow": [
+  {
+   "order": 1,
+   "index_a": 0,
+   "index_b": 1,
+   "adjacent": true,
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_weight": 0.6849848628044128,
+   "pair_score": 0.7153605222702026,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.7177461385726929,
+    "methodology_fit": 0.6717604994773865,
+    "numeric_consistency": 0.761786699295044,
+    "claim_support": 0.7565749287605286,
+    "overall_coherence": 0.7800455093383789
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.7800455093383789,
+     "objectives": 0.7177461385726929,
+     "methodology": 0.6717604994773865,
+     "numeric": 0.761786699295044,
+     "claims": 0.7565749287605286
+    },
+    "link_summary": "The abstract states the study analyzed interviews, but the introduction states the study investigates teachers' lived experiences with quantitative hypotheses.",
+    "comparison": {
+     "a_says": "Methods: Semi-structured interviews were analyzed thematically.",
+     "b_says": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50)."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "Methods: Semi-structured interviews were analyzed thematically.",
+      "what": "The abstract states that interviews were analyzed thematically.",
+      "why": "This contradicts the introduction which sets up quantitative survey hypotheses."
+     },
+     {
+      "section": "introduction",
+      "quote": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50).",
+      "what": "The introduction presents a quantitative correlation hypothesis.",
+      "why": "This contradicts the abstract which states the methods used thematic interview analysis."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "abstract",
+      "original_sentence": "Methods: Semi-structured interviews were analyzed thematically.",
+      "recommended_revision": "Methods: Questionnaires were analyzed with multiple regression.",
+      "issue": "The abstract states interviews were analyzed, but the introduction sets up a quantitative survey study.",
+      "category": "methodology"
+     }
+    ],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "abstract",
+      "placement": "end",
+      "sentence": "The study background and objectives set up the investigation into teacher burnout and work-life balance."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 2,
+   "index_a": 0,
+   "index_b": 2,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_weight": 0.6569359302520752,
+   "pair_score": 0.6403163522481918,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.6183138489723206,
+    "methodology_fit": 0.6125807762145996,
+    "numeric_consistency": 0.6951512098312378,
+    "claim_support": 0.6352195739746094,
+    "overall_coherence": 0.6885768175125122
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.6885768175125122,
+     "objectives": 0.6183138489723206,
+     "methodology": 0.6125807762145996,
+     "numeric": 0.6951512098312378,
+     "claims": 0.6352195739746094
+    },
+    "link_summary": "The abstract describes a phenomenological interview study, but the methodology describes a quantitative survey design.",
+    "comparison": {
+     "a_says": "This phenomenological study explored how eight public school teachers experience work-life balance.",
+     "b_says": "The study used a quantitative cross-sectional survey design."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "This phenomenological study explored how eight public school teachers experience work-life balance.",
+      "what": "The abstract states the study used a phenomenological interview design.",
+      "why": "This contradicts the methodology section which states the study used a quantitative survey."
+     },
+     {
+      "section": "methodology",
+      "quote": "The study used a quantitative cross-sectional survey design.",
+      "what": "The methodology states the study used a quantitative survey design.",
+      "why": "This contradicts the abstract which states the study was phenomenological."
+     },
+     {
+      "section": "methodology",
+      "quote": "A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling.",
+      "what": "Sample size mismatch",
+      "why": "The abstract states that eight teachers participated (the abstract section), but the methodology states that 500 teachers were selected (the methodology section)."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "abstract",
+      "original_sentence": "This phenomenological study explored how eight public school teachers experience work-life balance.",
+      "recommended_revision": "This quantitative study explored how work-life balance relates to teacher motivation among public school teachers.",
+      "issue": "The abstract states the study was phenomenological, but the methodology describes a quantitative survey.",
+      "category": "methodology"
+     },
+     {
+      "section": "methodology",
+      "original_sentence": "The study used a quantitative cross-sectional survey design.",
+      "recommended_revision": "This qualitative study used a phenomenological research design.",
+      "kind": "edit",
+      "issue": "The abstract states the study is a phenomenological design using interviews (the abstract section), whereas the methodology states it is a quantitative cross-sectional survey design (the methodology section).",
+      "category": "methodology"
+     },
+     {
+      "section": "methodology",
+      "original_sentence": "A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling.",
+      "recommended_revision": "Semi-structured interviews were conducted with eight teachers selected through purposive sampling.",
+      "kind": "edit",
+      "issue": "The abstract states that eight teachers participated (the abstract section), but the methodology states that 500 teachers were selected (the methodology section).",
+      "category": "numeric"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "abstract",
+      "sentence": "This phenomenological study explored how eight public school teachers experience work-life balance."
+     },
+     {
+      "section": "abstract",
+      "sentence": "This phenomenological study explored how eight public school teachers experience work-life balance."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 3,
+   "index_a": 0,
+   "index_b": 3,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_weight": 0.5841984748840332,
+   "pair_score": 0.5579084008932114,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.5418546199798584,
+    "methodology_fit": 0.5120380520820618,
+    "numeric_consistency": 0.6332278251647949,
+    "claim_support": 0.5445131063461304,
+    "overall_coherence": 0.6313486695289612
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.6313486695289612,
+     "objectives": 0.5418546199798584,
+     "methodology": 0.5120380520820618,
+     "numeric": 0.6332278251647949,
+     "claims": 0.5445131063461304
+    },
+    "link_summary": "The abstract promises interviews about work-life balance, but the results report a regression model on class size and test scores.",
+    "comparison": {
+     "a_says": "Semi-structured interviews were analyzed thematically.",
+     "b_says": "Regression analysis showed that class size was the strongest predictor."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "Semi-structured interviews were analyzed thematically.",
+      "what": "The method described in the abstract does not match the statistical analysis reported in the results.",
+      "why": "The abstract says interviews were analyzed, but the results section reports a regression model on numerical data."
+     },
+     {
+      "section": "results",
+      "quote": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31).",
+      "what": "The results introduce a regression analysis that was never mentioned in the abstract's methods.",
+      "why": "The results present regression statistics and variables that contradict the interview-based qualitative design stated in the abstract."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "abstract",
+      "original_sentence": "Semi-structured interviews were analyzed thematically.",
+      "recommended_revision": "Regression analysis was used to examine the predictors of teacher motivation.",
+      "issue": "The abstract states interviews were analyzed, but the results section reports a regression analysis.",
+      "category": "methodology"
+     },
+     {
+      "section": "results",
+      "original_sentence": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31).",
+      "recommended_revision": "Semi-structured interviews were analyzed thematically to explore the experiences of teachers.",
+      "issue": "The results show a regression model, while the abstract states that interviews were analyzed thematically.",
+      "category": "methodology"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "abstract",
+      "sentence": "Semi-structured interviews were analyzed thematically."
+     },
+     {
+      "section": "results",
+      "sentence": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31)."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 4,
+   "index_a": 0,
+   "index_b": 6,
+   "adjacent": false,
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_weight": 0.6001456379890442,
+   "pair_score": 0.5278437336285909,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.5360822677612305,
+    "methodology_fit": 0.49096280336380005,
+    "numeric_consistency": 0.6475071310997009,
+    "claim_support": 0.5564861297607422,
+    "overall_coherence": 0.6221628189086914
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.6221628189086914,
+     "objectives": 0.5360822677612305,
+     "methodology": 0.49096280336380005,
+     "numeric": 0.6475071310997009,
+     "claims": 0.5564861297607422
+    },
+    "link_summary": "The abstract claims a test score increase, but the conclusion jumps to abolishing testing without supporting it.",
+    "comparison": {
+     "a_says": "Work-life balance caused a 40% increase in student test scores.",
+     "b_says": "The study demonstrates that standardized testing harms children and should be abolished."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "abstract",
+      "quote": "Work-life balance caused a 40% increase in student test scores.",
+      "what": "The result about student test scores does not match the conclusion's claim about standardized testing.",
+      "why": "The abstract reports a numeric test score increase, while the conclusion claims the study shows testing harms children."
+     },
+     {
+      "section": "conclusion",
+      "quote": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "what": "The conclusion introduces a claim about testing harm that contradicts the results.",
+      "why": "The conclusion demands abolishing tests based on harm, while the abstract only reported test score changes."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "abstract",
+      "original_sentence": "Work-life balance caused a 40% increase in student test scores.",
+      "recommended_revision": "Work-life balance related to student test scores as described by the teachers.",
+      "issue": "The abstract reports a score increase, but the conclusion claims the study proves testing harms children.",
+      "category": "claims"
+     },
+     {
+      "section": "conclusion",
+      "original_sentence": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "recommended_revision": "The study shows how teacher experiences relate to the test scores analyzed in the research.",
+      "issue": "The conclusion demands abolishing tests, but the abstract only reported a change in test scores.",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 5,
+   "index_a": 1,
+   "index_b": 2,
+   "adjacent": true,
+   "section_a": "introduction",
+   "section_b": "methodology",
+   "pair_weight": 0.6962621212005615,
+   "pair_score": 0.6939920783042908,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.6841661334037781,
+    "methodology_fit": 0.6826179027557373,
+    "numeric_consistency": 0.7564128041267395,
+    "claim_support": 0.7151921987533569,
+    "overall_coherence": 0.7596145272254944
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.7596145272254944,
+     "objectives": 0.6841661334037781,
+     "methodology": 0.6826179027557373,
+     "numeric": 0.7564128041267395,
+     "claims": 0.7151921987533569
+    },
+    "link_summary": "The introduction aims to understand lived experiences through qualitative research questions, but the methodology uses a quantitative survey.",
+    "comparison": {
+     "a_says": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.",
+     "b_says": "The study used a quantitative cross-sectional survey design."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "introduction",
+      "quote": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.",
+      "what": "The introduction states the study aims to understand lived experiences.",
+      "why": "This contradicts the methodology section which uses a quantitative survey design."
+     },
+     {
+      "section": "methodology",
+      "quote": "The study used a quantitative cross-sectional survey design.",
+      "what": "The methodology states the study used a quantitative survey design.",
+      "why": "This contradicts the introduction aim of studying lived experiences."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "introduction",
+      "original_sentence": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.",
+      "recommended_revision": "This study aims to examine how teachers balance work and personal life and how this relates to their motivation.",
+      "issue": "The introduction focuses on lived experiences, but the methodology uses a quantitative survey.",
+      "category": "methodology"
+     }
+    ],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "introduction",
+      "placement": "end",
+      "sentence": "These research questions and hypotheses guide the quantitative survey design used to examine teacher work-life balance and motivation."
+     },
+     {
+      "section": "methodology",
+      "placement": "start",
+      "sentence": "To address the research questions about work-life balance and motivation, the study used a quantitative survey design."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 6,
+   "index_a": 1,
+   "index_b": 4,
+   "adjacent": false,
+   "section_a": "introduction",
+   "section_b": "discussion",
+   "pair_weight": 1.0,
+   "pair_score": 0.8000000000000002,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.8,
+    "methodology_fit": 0.8,
+    "numeric_consistency": 0.8,
+    "claim_support": 0.8,
+    "overall_coherence": 0.8
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {},
+    "link_summary": "The introduction proposes a hypothesis about job satisfaction scores (the introduction section), whereas the discussion claims job satisfaction was not measured (the discussion section).",
+    "comparison": {
+     "a_says": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50).",
+     "b_says": "Job satisfaction was not measured."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "introduction",
+      "quote": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50).",
+      "what": "Measurement of job satisfaction",
+      "why": "The introduction proposes a hypothesis about job satisfaction scores (the introduction section), whereas the discussion claims job satisfaction was not measured (the discussion section)."
+     },
+     {
+      "section": "discussion",
+      "quote": "The finding is consistent with the hypothesis that job satisfaction predicts motivation, although job satisfaction was not measured.",
+      "what": "Measurement of job satisfaction",
+      "why": "The introduction proposes a hypothesis about job satisfaction scores (the introduction section), whereas the discussion claims job satisfaction was not measured (the discussion section)."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "discussion",
+      "original_sentence": "The finding is consistent with the hypothesis that job satisfaction predicts motivation, although job satisfaction was not measured.",
+      "recommended_revision": "The finding is consistent with the hypothesis that higher work-life balance scores correlate with significantly higher job satisfaction.",
+      "kind": "edit",
+      "issue": "The introduction proposes a hypothesis about job satisfaction scores (the introduction section), whereas the discussion claims job satisfaction was not measured (the discussion section).",
+      "category": "methodology"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "introduction",
+      "sentence": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50)."
+     }
+    ],
+    "bridges": []
+   }
+  },
+  {
+   "order": 7,
+   "index_a": 1,
+   "index_b": 6,
+   "adjacent": false,
+   "section_a": "introduction",
+   "section_b": "conclusion",
+   "pair_weight": 0.6056733131408691,
+   "pair_score": 0.534840057293574,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.5393858551979065,
+    "methodology_fit": 0.4995017349720001,
+    "numeric_consistency": 0.6646469831466675,
+    "claim_support": 0.5656325817108154,
+    "overall_coherence": 0.6436219215393066
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.6436219215393066,
+     "objectives": 0.5393858551979065,
+     "methodology": 0.4995017349720001,
+     "numeric": 0.6646469831466675,
+     "claims": 0.5656325817108154
+    },
+    "link_summary": "The introduction focuses on teacher work-life balance and motivation, but the conclusion discusses standardized testing and cafeteria food.",
+    "comparison": {
+     "a_says": "This study aims to understand teachers' lived experiences of balancing work and personal life.",
+     "b_says": "The study demonstrates that standardized testing harms children and should be abolished."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "conclusion",
+      "quote": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "what": "The conclusion claims the study examined standardized testing, which was never mentioned in the introduction.",
+      "why": "The introduction states the study is about teacher work-life balance and motivation, so the conclusion must focus on those goals."
+     },
+     {
+      "section": "introduction",
+      "quote": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.",
+      "what": "Work-life balance and motivation",
+      "why": "The introduction states the study aims to relate work-life balance to motivation (the introduction section), whereas the conclusion claims work-life balance was found to be irrelevant to motivation (the conclusion section)."
+     },
+     {
+      "section": "conclusion",
+      "quote": "Teachers' perceptions of work-life balance were thus found to be irrelevant to motivation.",
+      "what": "Work-life balance and motivation",
+      "why": "The introduction states the study aims to relate work-life balance to motivation (the introduction section), whereas the conclusion claims work-life balance was found to be irrelevant to motivation (the conclusion section)."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "conclusion",
+      "original_sentence": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "recommended_revision": "The study demonstrates that teacher work-life balance and personal life significantly affect their job motivation and satisfaction.",
+      "issue": "The conclusion introduces standardized testing, which contradicts the focus on teacher work-life balance.",
+      "category": "objectives"
+     },
+     {
+      "section": "conclusion",
+      "original_sentence": "Teachers' perceptions of work-life balance were thus found to be irrelevant to motivation.",
+      "recommended_revision": "Teachers' perceptions of work-life balance were thus found to be significantly related to their motivation.",
+      "kind": "edit",
+      "issue": "The introduction states the study aims to relate work-life balance to motivation (the introduction section), whereas the conclusion claims work-life balance was found to be irrelevant to motivation (the conclusion section).",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "introduction",
+      "sentence": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 8,
+   "index_a": 2,
+   "index_b": 3,
+   "adjacent": true,
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_weight": 0.6312660574913025,
+   "pair_score": 0.6282260417938232,
+   "numeric_applicable": true,
+   "scores": {
+    "objectives_alignment": 0.640021800994873,
+    "methodology_fit": 0.5745896100997925,
+    "numeric_consistency": 0.6842247247695923,
+    "claim_support": 0.6140680313110352,
+    "overall_coherence": 0.6766709685325623
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.6766709685325623,
+     "objectives": 0.640021800994873,
+     "methodology": 0.5745896100997925,
+     "numeric": 0.6842247247695923,
+     "claims": 0.6140680313110352
+    },
+    "link_summary": "The methodology section states that interviews were not analyzed, but the results section presents interview themes.",
+    "comparison": {
+     "a_says": "The interview data were not analyzed because the survey was considered sufficient.",
+     "b_says": "Themes that emerged from the interviews included isolation and autonomy, though no quotations are presented."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "methodology",
+      "quote": "The interview data were not analyzed because the survey was considered sufficient.",
+      "what": "The methodology states that interviews were not analyzed.",
+      "why": "This contradicts the results section which reports themes from these interviews."
+     },
+     {
+      "section": "results",
+      "quote": "Themes that emerged from the interviews included isolation and autonomy, though no quotations are presented.",
+      "what": "The results present themes from the interviews.",
+      "why": "This contradicts the methodology section which states that the interview data were not analyzed."
+     },
+     {
+      "section": "methodology",
+      "quote": "Responses were analyzed with multiple regression.",
+      "what": "Regression model variables",
+      "why": "The methodology states multiple regression was used to analyze responses (the methodology section), but the results claim work-life balance was not included in the regression model (the results section)."
+     },
+     {
+      "section": "results",
+      "quote": "Work-life balance was not included in the model.",
+      "what": "Regression model variables",
+      "why": "The methodology states multiple regression was used to analyze responses (the methodology section), but the results claim work-life balance was not included in the regression model (the results section)."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "methodology",
+      "original_sentence": "The interview data were not analyzed because the survey was considered sufficient.",
+      "recommended_revision": "The interview data were analyzed thematically to provide further context for the survey responses.",
+      "issue": "The methodology claims interviews were unanalyzed, contradicting the results section.",
+      "category": "methodology"
+     },
+     {
+      "section": "results",
+      "original_sentence": "Work-life balance was not included in the model.",
+      "recommended_revision": "Multiple regression analysis showed that work-life balance was a significant predictor of teacher motivation.",
+      "kind": "edit",
+      "issue": "The methodology states multiple regression was used to analyze responses (the methodology section), but the results claim work-life balance was not included in the regression model (the results section).",
+      "category": "methodology"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "methodology",
+      "sentence": "Responses were analyzed with multiple regression."
+     }
+    ],
+    "bridges": [
+     {
+      "section": "methodology",
+      "placement": "end",
+      "sentence": "The quantitative survey data and qualitative interview transcripts were both prepared for analysis."
+     },
+     {
+      "section": "results",
+      "placement": "start",
+      "sentence": "The analysis of the survey responses and interview transcripts produced both statistical findings and thematic insights."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 9,
+   "index_a": 2,
+   "index_b": 4,
+   "adjacent": false,
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_weight": 0.6642839312553406,
+   "pair_score": 0.6513568758964539,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.6648217439651489,
+    "methodology_fit": 0.6067540645599365,
+    "numeric_consistency": 0.7291025519371033,
+    "claim_support": 0.6824948191642761,
+    "overall_coherence": 0.7065752148628235
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.7065752148628235,
+     "objectives": 0.6648217439651489,
+     "methodology": 0.6067540645599365,
+     "numeric": 0.7291025519371033,
+     "claims": 0.6824948191642761
+    },
+    "link_summary": "The methodology describes a survey of 500 teachers, but the discussion claims the sample had eight randomly selected teachers.",
+    "comparison": {
+     "a_says": "A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling.",
+     "b_says": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "methodology",
+      "quote": "A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling.",
+      "what": "The methodology states the sample size was 500 teachers.",
+      "why": "This contradicts the discussion which states the sample size was eight teachers."
+     },
+     {
+      "section": "discussion",
+      "quote": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+      "what": "The discussion states the sample size was eight teachers.",
+      "why": "This contradicts the methodology section which states the sample size was 500 teachers."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "discussion",
+      "original_sentence": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+      "recommended_revision": "Because the sample of 500 teachers was selected by stratified random sampling, the findings can be generalized to the surveyed population.",
+      "issue": "The discussion claims the sample size was eight teachers, contradicting the methodology sample of 500.",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 10,
+   "index_a": 2,
+   "index_b": 6,
+   "adjacent": false,
+   "section_a": "methodology",
+   "section_b": "conclusion",
+   "pair_weight": 0.626724362373352,
+   "pair_score": 0.5241226951281229,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.5520238280296326,
+    "methodology_fit": 0.4887402057647705,
+    "numeric_consistency": 0.653960645198822,
+    "claim_support": 0.5316040515899658,
+    "overall_coherence": 0.583585798740387
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": []
+   },
+   "severity": "Critical",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Critical",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.583585798740387,
+     "objectives": 0.5520238280296326,
+     "methodology": 0.4887402057647705,
+     "numeric": 0.653960645198822,
+     "claims": 0.5316040515899658
+    },
+    "link_summary": "The methodology section focuses on teachers, but the conclusion jumps to standardized testing and student cafeteria food.",
+    "comparison": {
+     "a_says": "Analyzed teachers with a questionnaire and interviews.",
+     "b_says": "Discusses standardized testing harming children and student cafeteria food."
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "conclusion",
+      "quote": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "what": "The conclusion claims the study shows standardized testing harms children.",
+      "why": "The methodology section states the study surveyed teachers using Likert items, which does not test or measure standardized testing's effect on children."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "conclusion",
+      "original_sentence": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "recommended_revision": "The study demonstrates that teachers' responses provide insight into their work-life balance and motivation.",
+      "issue": "The conclusion claims the study shows standardized testing harms children, but the methodology only surveyed teachers.",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [
+     {
+      "section": "conclusion",
+      "sentence": "Creswell, J. (2013). Qualitative inquiry and research design (3rd ed.). Sage."
+     }
+    ],
+    "bridges": [],
+    "unverified": []
+   }
+  },
+  {
+   "order": 11,
+   "index_a": 3,
+   "index_b": 4,
+   "adjacent": true,
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_weight": 0.6252965927124023,
+   "pair_score": 0.5573877294858297,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.5682700276374817,
+    "methodology_fit": 0.5192150473594666,
+    "numeric_consistency": 0.5975989103317261,
+    "claim_support": 0.5846781134605408,
+    "overall_coherence": 0.6450550556182861
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31).",
+      "delta": 0.0257
+     },
+     {
+      "sentence": "Student test scores increased by 40% in classes of teachers who reported high work-life balance.",
+      "delta": 0.0019
+     }
+    ],
+    "section_b": []
+   },
+   "severity": "None",
+   "failed_dimension": "none",
+   "explanation": {
+    "severity": "None",
+    "failed_dimension": "none",
+    "coherence_scores": {
+     "overall": 0.6450550556182861,
+     "objectives": 0.5682700276374817,
+     "methodology": 0.5192150473594666,
+     "numeric": 0.5975989103317261,
+     "claims": 0.5846781134605408
+    },
+    "link_summary": "The results section presents regression and interview data, and the discussion builds on those findings.",
+    "comparison": {
+     "a_says": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31).",
+     "b_says": "The finding is consistent with the hypothesis that job satisfaction predicts motivation, although job satisfaction was not measured."
+    },
+    "highlighted_inconsistencies": [],
+    "recommendations": [],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "results",
+      "placement": "end",
+      "sentence": "These mixed outcomes regarding teacher isolation, autonomy, and regression models motivate a deeper examination of how these quantitative and qualitative metrics interact in practice."
+     },
+     {
+      "section": "discussion",
+      "placement": "start",
+      "sentence": "The observed regression coefficients for class size and school location provide a concrete baseline for evaluating these broader claims about teacher motivation and workload."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 12,
+   "index_a": 4,
+   "index_b": 5,
+   "adjacent": true,
+   "section_a": "discussion",
+   "section_b": "limitations",
+   "pair_weight": 0.4641616642475128,
+   "pair_score": 0.19501044352849325,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.17946715652942657,
+    "methodology_fit": 0.1938667595386505,
+    "numeric_consistency": 0.26844704151153564,
+    "claim_support": 0.21169741451740265,
+    "overall_coherence": 0.22909216582775116
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [
+     {
+      "sentence": "The results prove that work-life balance directly causes better teaching, and that teachers who sleep more produce smarter students.",
+      "delta": 0.0274
+     },
+     {
+      "sentence": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+      "delta": 0.0013
+     }
+    ],
+    "section_b": []
+   },
+   "severity": "Moderate",
+   "failed_dimension": "objectives_alignment",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "objectives_alignment",
+    "coherence_scores": {
+     "overall": 0.22909216582775116,
+     "objectives": 0.17946715652942657,
+     "methodology": 0.1938667595386505,
+     "numeric": 0.26844704151153564,
+     "claims": 0.21169741451740265
+    },
+    "link_summary": "The \"discussion\" section claims a complete census, but the \"limitations\" section states a survey response rate.",
+    "comparison": {
+     "a_says": "Because the sample of eight teachers was randomly selected",
+     "b_says": "since the study was a complete census"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "discussion",
+      "quote": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+      "what": "The section claims a random sample of eight teachers, which conflicts with the limitations section.",
+      "why": "It contradicts the claim of a complete census found in the limitations section."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "discussion",
+      "original_sentence": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+      "recommended_revision": "Because the study included the entire profession, the findings reflect the complete census data.",
+      "issue": "The discussion claims a random sample of eight teachers, which contradicts the complete census stated in the limitations.",
+      "category": "claims"
+     }
+    ],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "discussion",
+      "placement": "end",
+      "sentence": "These findings are based on responses collected from the profession."
+     },
+     {
+      "section": "limitations",
+      "placement": "start",
+      "sentence": "Response rates reflect the data gathered from the profession."
+     }
+    ],
+    "unverified": []
+   }
+  },
+  {
+   "order": 13,
+   "index_a": 5,
+   "index_b": 6,
+   "adjacent": true,
+   "section_a": "limitations",
+   "section_b": "conclusion",
+   "pair_weight": 0.510513186454773,
+   "pair_score": 0.302219033241272,
+   "numeric_applicable": false,
+   "scores": {
+    "objectives_alignment": 0.2930513918399811,
+    "methodology_fit": 0.27580660581588745,
+    "numeric_consistency": 0.40268754959106445,
+    "claim_support": 0.3377991020679474,
+    "overall_coherence": 0.2856207489967346
+   },
+   "skipped_reason": null,
+   "culprit_sentences": {
+    "section_a": [],
+    "section_b": [
+     {
+      "sentence": "References\nCreswell, J. (2013).",
+      "delta": 0.0409
+     },
+     {
+      "sentence": "Sage.",
+      "delta": 0.0061
+     },
+     {
+      "sentence": "Teachers' perceptions of work-life balance were thus found to be irrelevant to motivation.",
+      "delta": 0.0001
+     }
+    ]
+   },
+   "severity": "Moderate",
+   "failed_dimension": "methodology_fit",
+   "explanation": {
+    "severity": "Moderate",
+    "failed_dimension": "methodology_fit",
+    "coherence_scores": {
+     "overall": 0.2856207489967346,
+     "objectives": 0.2930513918399811,
+     "methodology": 0.27580660581588745,
+     "numeric": 0.40268754959106445,
+     "claims": 0.3377991020679474
+    },
+    "link_summary": "The \"limitations\" section discusses a census and response rate, while the \"conclusion\" section shifts to standardized testing.",
+    "comparison": {
+     "a_says": "The survey response rate was 12%.",
+     "b_says": "The study demonstrates that standardized testing harms children"
+    },
+    "highlighted_inconsistencies": [
+     {
+      "section": "conclusion",
+      "quote": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "what": "The conclusion introduces standardized testing, which was not discussed in the limitations section.",
+      "why": "It breaks the focus on the survey response rate and profession census established in the limitations."
+     }
+    ],
+    "recommendations": [
+     {
+      "section": "conclusion",
+      "original_sentence": "The study demonstrates that standardized testing harms children and should be abolished.",
+      "recommended_revision": "The survey response rate demonstrates the level of participation across the profession.",
+      "issue": "The conclusion introduces standardized testing, which does not match the survey response rate and profession census.",
+      "category": "objectives"
+     }
+    ],
+    "reference_list": [],
+    "bridges": [
+     {
+      "section": "limitations",
+      "placement": "end",
+      "sentence": "The survey response rate of 12% shapes the conclusions drawn about the profession."
+     },
+     {
+      "section": "conclusion",
+      "placement": "start",
+      "sentence": "Conclusions about the profession follow from the survey response rate."
+     }
+    ],
+    "unverified": []
+   }
+  }
+ ],
+ "inconsistencies_found": 17,
+ "inconsistencies": [
+  {
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_order": 1,
+   "coherence_score": 71.54,
+   "explanation_what": "The abstract states that interviews were analyzed thematically.",
+   "explanation_why": "This contradicts the introduction which sets up quantitative survey hypotheses.",
+   "suggested_fix": "Methods: Questionnaires were analyzed with multiple regression.",
+   "inconsistency_id": "33b87862-d8aa-4dc0-ba46-af102c98f30d",
+   "evidence_a": "Methods: Semi-structured interviews were analyzed thematically.",
+   "evidence_b": "",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "Methods: Semi-structured interviews were analyzed thematically."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_order": 1,
+   "coherence_score": 71.54,
+   "explanation_what": "The introduction presents a quantitative correlation hypothesis.",
+   "explanation_why": "This contradicts the abstract which states the methods used thematic interview analysis.",
+   "suggested_fix": "",
+   "inconsistency_id": "28bb215c-42af-4549-8a79-1d46f32cd4ae",
+   "evidence_a": "",
+   "evidence_b": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50).",
+   "evidence_quotes": [
+    {
+     "section": "introduction",
+     "text": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50)."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "coherence_score": 64.03,
+   "explanation_what": "The abstract states the study used a phenomenological interview design.",
+   "explanation_why": "This contradicts the methodology section which states the study used a quantitative survey.",
+   "suggested_fix": "This quantitative study explored how work-life balance relates to teacher motivation among public school teachers.",
+   "inconsistency_id": "4cb81ad6-abcf-4dba-abac-5885bc7ec7bf",
+   "evidence_a": "This phenomenological study explored how eight public school teachers experience work-life balance.",
+   "evidence_b": "",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "This phenomenological study explored how eight public school teachers experience work-life balance."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "coherence_score": 64.03,
+   "explanation_what": "The methodology states the study used a quantitative survey design.",
+   "explanation_why": "This contradicts the abstract which states the study was phenomenological.",
+   "suggested_fix": "This qualitative study used a phenomenological research design.",
+   "inconsistency_id": "89b5cb7e-011c-4e5d-b96e-1fad3d1a31b8",
+   "evidence_a": "This phenomenological study explored how eight public school teachers experience work-life balance.",
+   "evidence_b": "The study used a quantitative cross-sectional survey design.",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "The study used a quantitative cross-sectional survey design."
+    },
+    {
+     "section": "abstract",
+     "text": "This phenomenological study explored how eight public school teachers experience work-life balance."
+    },
+    {
+     "section": "abstract",
+     "text": "This phenomenological study explored how eight public school teachers experience work-life balance."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "coherence_score": 64.03,
+   "explanation_what": "Sample size mismatch",
+   "explanation_why": "The abstract states that eight teachers participated (the abstract section), but the methodology states that 500 teachers were selected (the methodology section).",
+   "suggested_fix": "This qualitative study used a phenomenological research design.",
+   "inconsistency_id": "60fc9e1a-7f10-447a-8593-50a89831ed9e",
+   "evidence_a": "This phenomenological study explored how eight public school teachers experience work-life balance.",
+   "evidence_b": "A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling.",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling."
+    },
+    {
+     "section": "abstract",
+     "text": "This phenomenological study explored how eight public school teachers experience work-life balance."
+    },
+    {
+     "section": "abstract",
+     "text": "This phenomenological study explored how eight public school teachers experience work-life balance."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_order": 3,
+   "coherence_score": 55.79,
+   "explanation_what": "The method described in the abstract does not match the statistical analysis reported in the results.",
+   "explanation_why": "The abstract says interviews were analyzed, but the results section reports a regression model on numerical data.",
+   "suggested_fix": "Regression analysis was used to examine the predictors of teacher motivation.",
+   "inconsistency_id": "e8a97ba6-af6b-4581-92e4-40831b0fb0f9",
+   "evidence_a": "Semi-structured interviews were analyzed thematically.",
+   "evidence_b": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31).",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "Semi-structured interviews were analyzed thematically."
+    },
+    {
+     "section": "results",
+     "text": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31)."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_order": 3,
+   "coherence_score": 55.79,
+   "explanation_what": "The results introduce a regression analysis that was never mentioned in the abstract's methods.",
+   "explanation_why": "The results present regression statistics and variables that contradict the interview-based qualitative design stated in the abstract.",
+   "suggested_fix": "Semi-structured interviews were analyzed thematically to explore the experiences of teachers.",
+   "inconsistency_id": "07df29f3-ea6b-4718-9713-81a1cf972b42",
+   "evidence_a": "Semi-structured interviews were analyzed thematically.",
+   "evidence_b": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31).",
+   "evidence_quotes": [
+    {
+     "section": "results",
+     "text": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31)."
+    },
+    {
+     "section": "abstract",
+     "text": "Semi-structured interviews were analyzed thematically."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_order": 4,
+   "coherence_score": 52.78,
+   "explanation_what": "The result about student test scores does not match the conclusion's claim about standardized testing.",
+   "explanation_why": "The abstract reports a numeric test score increase, while the conclusion claims the study shows testing harms children.",
+   "suggested_fix": "Work-life balance related to student test scores as described by the teachers.",
+   "inconsistency_id": "6a1ce519-b274-434c-9ef8-2bbd40de5f50",
+   "evidence_a": "Work-life balance caused a 40% increase in student test scores.",
+   "evidence_b": "",
+   "evidence_quotes": [
+    {
+     "section": "abstract",
+     "text": "Work-life balance caused a 40% increase in student test scores."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_order": 4,
+   "coherence_score": 52.78,
+   "explanation_what": "The conclusion introduces a claim about testing harm that contradicts the results.",
+   "explanation_why": "The conclusion demands abolishing tests based on harm, while the abstract only reported test score changes.",
+   "suggested_fix": "The study shows how teacher experiences relate to the test scores analyzed in the research.",
+   "inconsistency_id": "4ce6640c-bd4a-4547-989e-1e79ec23a149",
+   "evidence_a": "",
+   "evidence_b": "The study demonstrates that standardized testing harms children and should be abolished.",
+   "evidence_quotes": [
+    {
+     "section": "conclusion",
+     "text": "The study demonstrates that standardized testing harms children and should be abolished."
+    },
+    {
+     "section": "introduction",
+     "text": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation."
+    },
+    {
+     "section": "conclusion",
+     "text": "Creswell, J. (2013). Qualitative inquiry and research design (3rd ed.). Sage."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "introduction",
+   "section_b": "methodology",
+   "pair_order": 5,
+   "coherence_score": 69.4,
+   "explanation_what": "The introduction states the study aims to understand lived experiences.",
+   "explanation_why": "This contradicts the methodology section which uses a quantitative survey design.",
+   "suggested_fix": "This study aims to examine how teachers balance work and personal life and how this relates to their motivation.",
+   "inconsistency_id": "e704fa59-7ce0-4418-8d25-01dde8eb3e3a",
+   "evidence_a": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.",
+   "evidence_b": "",
+   "evidence_quotes": [
+    {
+     "section": "introduction",
+     "text": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "introduction",
+   "section_b": "discussion",
+   "pair_order": 6,
+   "coherence_score": 80.0,
+   "explanation_what": "Measurement of job satisfaction",
+   "explanation_why": "The introduction proposes a hypothesis about job satisfaction scores (the introduction section), whereas the discussion claims job satisfaction was not measured (the discussion section).",
+   "suggested_fix": "The finding is consistent with the hypothesis that higher work-life balance scores correlate with significantly higher job satisfaction.",
+   "inconsistency_id": "1d2b27e4-e33b-4116-8a18-c61e2c1efc90",
+   "evidence_a": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50).",
+   "evidence_b": "The finding is consistent with the hypothesis that job satisfaction predicts motivation, although job satisfaction was not measured.",
+   "evidence_quotes": [
+    {
+     "section": "discussion",
+     "text": "The finding is consistent with the hypothesis that job satisfaction predicts motivation, although job satisfaction was not measured."
+    },
+    {
+     "section": "introduction",
+     "text": "Hypothesis: Teachers with a higher work-life balance score will have significantly higher job satisfaction (r > .50)."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "introduction",
+   "section_b": "conclusion",
+   "pair_order": 7,
+   "coherence_score": 53.48,
+   "explanation_what": "Work-life balance and motivation",
+   "explanation_why": "The introduction states the study aims to relate work-life balance to motivation (the introduction section), whereas the conclusion claims work-life balance was found to be irrelevant to motivation (the conclusion section).",
+   "suggested_fix": "The study demonstrates that teacher work-life balance and personal life significantly affect their job motivation and satisfaction.",
+   "inconsistency_id": "0301b70f-2ddf-4cdc-bdc9-b22595f6252c",
+   "evidence_a": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.",
+   "evidence_b": "Teachers' perceptions of work-life balance were thus found to be irrelevant to motivation.",
+   "evidence_quotes": [
+    {
+     "section": "conclusion",
+     "text": "Teachers' perceptions of work-life balance were thus found to be irrelevant to motivation."
+    },
+    {
+     "section": "introduction",
+     "text": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "coherence_score": 62.82,
+   "explanation_what": "The methodology states that interviews were not analyzed.",
+   "explanation_why": "This contradicts the results section which reports themes from these interviews.",
+   "suggested_fix": "The interview data were analyzed thematically to provide further context for the survey responses.",
+   "inconsistency_id": "4b51a827-297d-4040-954d-68005771448c",
+   "evidence_a": "The interview data were not analyzed because the survey was considered sufficient.",
+   "evidence_b": "",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "The interview data were not analyzed because the survey was considered sufficient."
+    },
+    {
+     "section": "methodology",
+     "text": "Responses were analyzed with multiple regression."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "coherence_score": 62.82,
+   "explanation_what": "The results present themes from the interviews.",
+   "explanation_why": "This contradicts the methodology section which states that the interview data were not analyzed.",
+   "suggested_fix": "Multiple regression analysis showed that work-life balance was a significant predictor of teacher motivation.",
+   "inconsistency_id": "25a62337-e27b-4e7f-92b2-c0838de23fce",
+   "evidence_a": "Responses were analyzed with multiple regression.",
+   "evidence_b": "Themes that emerged from the interviews included isolation and autonomy, though no quotations are presented.",
+   "evidence_quotes": [
+    {
+     "section": "results",
+     "text": "Themes that emerged from the interviews included isolation and autonomy, though no quotations are presented."
+    },
+    {
+     "section": "methodology",
+     "text": "Responses were analyzed with multiple regression."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "coherence_score": 62.82,
+   "explanation_what": "Regression model variables",
+   "explanation_why": "The methodology states multiple regression was used to analyze responses (the methodology section), but the results claim work-life balance was not included in the regression model (the results section).",
+   "suggested_fix": "The interview data were analyzed thematically to provide further context for the survey responses.",
+   "inconsistency_id": "7c88d128-7b0a-4c3c-aeeb-df2773eb878f",
+   "evidence_a": "Responses were analyzed with multiple regression.",
+   "evidence_b": "",
+   "evidence_quotes": [
+    {
+     "section": "methodology",
+     "text": "Responses were analyzed with multiple regression."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "coherence_score": 62.82,
+   "explanation_what": "Regression model variables",
+   "explanation_why": "The methodology states multiple regression was used to analyze responses (the methodology section), but the results claim work-life balance was not included in the regression model (the results section).",
+   "suggested_fix": "Multiple regression analysis showed that work-life balance was a significant predictor of teacher motivation.",
+   "inconsistency_id": "48954030-d02b-4f6a-a442-806dd498a18d",
+   "evidence_a": "Responses were analyzed with multiple regression.",
+   "evidence_b": "Work-life balance was not included in the model.",
+   "evidence_quotes": [
+    {
+     "section": "results",
+     "text": "Work-life balance was not included in the model."
+    },
+    {
+     "section": "methodology",
+     "text": "Responses were analyzed with multiple regression."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  },
+  {
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 9,
+   "coherence_score": 65.14,
+   "explanation_what": "The discussion states the sample size was eight teachers.",
+   "explanation_why": "This contradicts the methodology section which states the sample size was 500 teachers.",
+   "suggested_fix": "Because the sample of 500 teachers was selected by stratified random sampling, the findings can be generalized to the surveyed population.",
+   "inconsistency_id": "54bb2835-1a37-4701-883a-df65cfddce56",
+   "evidence_a": "",
+   "evidence_b": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+   "evidence_quotes": [
+    {
+     "section": "discussion",
+     "text": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries."
+    }
+   ],
+   "evidence_verified": true,
+   "finding_status": "material_issue"
+  }
+ ],
+ "recommendations": [
+  {
+   "recommendation_id": "f293998a-d9a4-4a60-b2b7-67310e3009b5",
+   "id": "r-1-1",
+   "section": "abstract",
+   "section_a": "abstract",
+   "section_b": "introduction",
+   "pair_order": 1,
+   "category": "methodology",
+   "original_sentence": "Methods: Semi-structured interviews were analyzed thematically.",
+   "issue": "The abstract states interviews were analyzed, but the introduction sets up a quantitative survey study.",
+   "kind": "edit",
+   "recommended_revision": "Methods: Questionnaires were analyzed with multiple regression.",
+   "recommendation_text": "Methods: Questionnaires were analyzed with multiple regression.",
+   "recommendation_priority": "Low"
+  },
+  {
+   "recommendation_id": "6134f9b9-8fba-4ce9-9f9f-eae73fdccad8",
+   "id": "r-2-1",
+   "section": "abstract",
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "category": "methodology",
+   "original_sentence": "This phenomenological study explored how eight public school teachers experience work-life balance.",
+   "issue": "The abstract states the study was phenomenological, but the methodology describes a quantitative survey.",
+   "kind": "edit",
+   "recommended_revision": "This quantitative study explored how work-life balance relates to teacher motivation among public school teachers.",
+   "recommendation_text": "This quantitative study explored how work-life balance relates to teacher motivation among public school teachers.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "49e3c8d8-9451-43f5-9c7c-a22872b7feb5",
+   "id": "r-2-2",
+   "section": "methodology",
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "category": "methodology",
+   "original_sentence": "The study used a quantitative cross-sectional survey design.",
+   "issue": "The abstract states the study is a phenomenological design using interviews (the abstract section), whereas the methodology states it is a quantitative cross-sectional survey design (the methodology section).",
+   "kind": "edit",
+   "recommended_revision": "This qualitative study used a phenomenological research design.",
+   "recommendation_text": "This qualitative study used a phenomenological research design.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "3472b34a-ac1b-463e-8fff-e7508f359fae",
+   "id": "r-2-3",
+   "section": "methodology",
+   "section_a": "abstract",
+   "section_b": "methodology",
+   "pair_order": 2,
+   "category": "numeric",
+   "original_sentence": "A structured questionnaire with 40 Likert items was distributed to 500 teachers selected by stratified random sampling.",
+   "issue": "The abstract states that eight teachers participated (the abstract section), but the methodology states that 500 teachers were selected (the methodology section).",
+   "kind": "edit",
+   "recommended_revision": "Semi-structured interviews were conducted with eight teachers selected through purposive sampling.",
+   "recommendation_text": "Semi-structured interviews were conducted with eight teachers selected through purposive sampling.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "092ac4d8-0f01-4fc9-a6a2-99d7dbb20a20",
+   "id": "r-3-1",
+   "section": "abstract",
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_order": 3,
+   "category": "methodology",
+   "original_sentence": "Semi-structured interviews were analyzed thematically.",
+   "issue": "The abstract states interviews were analyzed, but the results section reports a regression analysis.",
+   "kind": "edit",
+   "recommended_revision": "Regression analysis was used to examine the predictors of teacher motivation.",
+   "recommendation_text": "Regression analysis was used to examine the predictors of teacher motivation.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "bcc858fa-4334-4e24-b2bc-195097997038",
+   "id": "r-3-2",
+   "section": "results",
+   "section_a": "abstract",
+   "section_b": "results",
+   "pair_order": 3,
+   "category": "methodology",
+   "original_sentence": "Regression analysis showed that class size (β = .62) was the strongest predictor of teacher motivation, followed by school location (β = .31).",
+   "issue": "The results show a regression model, while the abstract states that interviews were analyzed thematically.",
+   "kind": "edit",
+   "recommended_revision": "Semi-structured interviews were analyzed thematically to explore the experiences of teachers.",
+   "recommendation_text": "Semi-structured interviews were analyzed thematically to explore the experiences of teachers.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "3044fd01-3f9e-4148-89fc-094527478e5c",
+   "id": "r-4-1",
+   "section": "abstract",
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_order": 4,
+   "category": "claims",
+   "original_sentence": "Work-life balance caused a 40% increase in student test scores.",
+   "issue": "The abstract reports a score increase, but the conclusion claims the study proves testing harms children.",
+   "kind": "edit",
+   "recommended_revision": "Work-life balance related to student test scores as described by the teachers.",
+   "recommendation_text": "Work-life balance related to student test scores as described by the teachers.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "f81abc56-712b-4dc1-a254-3eaa61e541ea",
+   "id": "r-4-2",
+   "section": "conclusion",
+   "section_a": "abstract",
+   "section_b": "conclusion",
+   "pair_order": 4,
+   "category": "claims",
+   "original_sentence": "The study demonstrates that standardized testing harms children and should be abolished.",
+   "issue": "The conclusion demands abolishing tests, but the abstract only reported a change in test scores.",
+   "kind": "edit",
+   "recommended_revision": "The study shows how teacher experiences relate to the test scores analyzed in the research.",
+   "recommendation_text": "The study shows how teacher experiences relate to the test scores analyzed in the research.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "a59ee54e-5f95-4d22-bee5-a286bc6add49",
+   "id": "r-5-1",
+   "section": "introduction",
+   "section_a": "introduction",
+   "section_b": "methodology",
+   "pair_order": 5,
+   "category": "methodology",
+   "original_sentence": "This study aims to understand teachers' lived experiences of balancing work and personal life and how this relates to their motivation.",
+   "issue": "The introduction focuses on lived experiences, but the methodology uses a quantitative survey.",
+   "kind": "edit",
+   "recommended_revision": "This study aims to examine how teachers balance work and personal life and how this relates to their motivation.",
+   "recommendation_text": "This study aims to examine how teachers balance work and personal life and how this relates to their motivation.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "d869ce0e-834c-43b4-be8d-38e044808dc8",
+   "id": "r-6-1",
+   "section": "discussion",
+   "section_a": "introduction",
+   "section_b": "discussion",
+   "pair_order": 6,
+   "category": "methodology",
+   "original_sentence": "The finding is consistent with the hypothesis that job satisfaction predicts motivation, although job satisfaction was not measured.",
+   "issue": "The introduction proposes a hypothesis about job satisfaction scores (the introduction section), whereas the discussion claims job satisfaction was not measured (the discussion section).",
+   "kind": "edit",
+   "recommended_revision": "The finding is consistent with the hypothesis that higher work-life balance scores correlate with significantly higher job satisfaction.",
+   "recommendation_text": "The finding is consistent with the hypothesis that higher work-life balance scores correlate with significantly higher job satisfaction.",
+   "recommendation_priority": "Low"
+  },
+  {
+   "recommendation_id": "4b169e72-f1f6-4877-9850-af0fbb779ae3",
+   "id": "r-7-1",
+   "section": "conclusion",
+   "section_a": "introduction",
+   "section_b": "conclusion",
+   "pair_order": 7,
+   "category": "claims",
+   "original_sentence": "Teachers' perceptions of work-life balance were thus found to be irrelevant to motivation.",
+   "issue": "The introduction states the study aims to relate work-life balance to motivation (the introduction section), whereas the conclusion claims work-life balance was found to be irrelevant to motivation (the conclusion section).",
+   "kind": "edit",
+   "recommended_revision": "Teachers' perceptions of work-life balance were thus found to be significantly related to their motivation.",
+   "recommendation_text": "Teachers' perceptions of work-life balance were thus found to be significantly related to their motivation.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "edc2ffcb-3926-4ff5-b068-6eb6b1815f0d",
+   "id": "r-8-1",
+   "section": "methodology",
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The methodology section states that interviews were not analyzed, but the results section presents interview themes.",
+   "kind": "add",
+   "placement": "end",
+   "recommended_revision": "The quantitative survey data and qualitative interview transcripts were both prepared for analysis.",
+   "recommendation_text": "The quantitative survey data and qualitative interview transcripts were both prepared for analysis.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "dbb41404-02f5-4d9e-a29c-686cfdbd5fe6",
+   "id": "r-8-2",
+   "section": "results",
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The methodology section states that interviews were not analyzed, but the results section presents interview themes.",
+   "kind": "add",
+   "placement": "start",
+   "recommended_revision": "The analysis of the survey responses and interview transcripts produced both statistical findings and thematic insights.",
+   "recommendation_text": "The analysis of the survey responses and interview transcripts produced both statistical findings and thematic insights.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "0074b6f2-4613-4c07-b553-45a440426bcf",
+   "id": "r-8-3",
+   "section": "methodology",
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "category": "methodology",
+   "original_sentence": "The interview data were not analyzed because the survey was considered sufficient.",
+   "issue": "The methodology claims interviews were unanalyzed, contradicting the results section.",
+   "kind": "edit",
+   "recommended_revision": "The interview data were analyzed thematically to provide further context for the survey responses.",
+   "recommendation_text": "The interview data were analyzed thematically to provide further context for the survey responses.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "a97830ef-f077-4fac-b6e8-01f11bb3c48c",
+   "id": "r-8-4",
+   "section": "results",
+   "section_a": "methodology",
+   "section_b": "results",
+   "pair_order": 8,
+   "category": "methodology",
+   "original_sentence": "Work-life balance was not included in the model.",
+   "issue": "The methodology states multiple regression was used to analyze responses (the methodology section), but the results claim work-life balance was not included in the regression model (the results section).",
+   "kind": "edit",
+   "recommended_revision": "Multiple regression analysis showed that work-life balance was a significant predictor of teacher motivation.",
+   "recommendation_text": "Multiple regression analysis showed that work-life balance was a significant predictor of teacher motivation.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "074120cc-5064-4dd0-82f8-ef8bf43c7abc",
+   "id": "r-9-1",
+   "section": "discussion",
+   "section_a": "methodology",
+   "section_b": "discussion",
+   "pair_order": 9,
+   "category": "claims",
+   "original_sentence": "Because the sample of eight teachers was randomly selected from the entire country, the findings can be generalized to all teachers in all countries.",
+   "issue": "The discussion claims the sample size was eight teachers, contradicting the methodology sample of 500.",
+   "kind": "edit",
+   "recommended_revision": "Because the sample of 500 teachers was selected by stratified random sampling, the findings can be generalized to the surveyed population.",
+   "recommendation_text": "Because the sample of 500 teachers was selected by stratified random sampling, the findings can be generalized to the surveyed population.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "2db8dafb-0795-4bbc-a205-5478a84ab9f7",
+   "id": "r-11-1",
+   "section": "results",
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 11,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The results section presents regression and interview data, and the discussion builds on those findings.",
+   "kind": "add",
+   "placement": "end",
+   "recommended_revision": "These mixed outcomes regarding teacher isolation, autonomy, and regression models motivate a deeper examination of how these quantitative and qualitative metrics interact in practice.",
+   "recommendation_text": "These mixed outcomes regarding teacher isolation, autonomy, and regression models motivate a deeper examination of how these quantitative and qualitative metrics interact in practice.",
+   "recommendation_priority": "Medium"
+  },
+  {
+   "recommendation_id": "da912d69-e704-4935-a8c3-39571392731d",
+   "id": "r-11-2",
+   "section": "discussion",
+   "section_a": "results",
+   "section_b": "discussion",
+   "pair_order": 11,
+   "category": "methodology",
+   "original_sentence": null,
+   "issue": "The results section presents regression and interview data, and the discussion builds on those findings.",
+   "kind": "add",
+   "placement": "start",
+   "recommended_revision": "The observed regression coefficients for class size and school location provide a concrete baseline for evaluating these broader claims about teacher motivation and workload.",
+   "recommendation_text": "The observed regression coefficients for class size and school location provide a concrete baseline for evaluating these broader claims about teacher motivation and workload.",
+   "recommendation_priority": "Medium"
+  }
+ ],
+ "ai_synthesis": {
+  "summary": "The manuscript exhibits critical inconsistencies across multiple sections regarding its core design, methodology, sample size, and analytical framework. Specifically, the abstract and methodology sections conflict on whether the study employs a qualitative phenomenological approach with eight teachers or a quantitative survey design involving 500 participants, while corresponding results and conclusions introduce unaligned statistical outcomes and contradictory claims about work-life balance and testing.",
+  "strongest_pair": {
+   "order": 6,
+   "section_a": "introduction",
+   "section_b": "discussion",
+   "overall_coherence": 0.8,
+   "score": 80.0
+  },
+  "weakest_pair": {
+   "order": 12,
+   "section_a": "discussion",
+   "section_b": "limitations",
+   "overall_coherence": 0.22909216582775116,
+   "score": 19.5
+  },
+  "review_status": {
+   "status": "complete",
+   "unreviewed": 0,
+   "analysis": "complete",
+   "needs_review": 12,
+   "reviewed": 12,
+   "basis": "ai_verified",
+   "whole_paper_check": "ran",
+   "unverified": 0
+  },
+  "unverified_findings": []
+ },
+ "citations_audited": 0,
+ "citations": [],
+ "score_breakdown": {
+  "overall_score": 79.0,
+  "band": "Solid",
+  "cross_chapter_coherence_score": 79.0,
+  "citation_integrity_score": null,
+  "dimensions": {
+   "objectives_alignment": 0.7157,
+   "methodology_fit": 0.6772,
+   "numeric_consistency": 0.8745,
+   "claim_support": 0.7367
+  },
+  "dimension_weights": {
+   "objectives_alignment": 0.25,
+   "methodology_fit": 0.25,
+   "numeric_consistency": 0.25,
+   "claim_support": 0.25
+  },
+  "dimension_breakdown": {
+   "context_alignment": {
+    "score": 100.0,
+    "halves": true,
+    "items": 10,
+    "passed": 10,
+    "issues": 0,
+    "pairs": 10,
+    "failures": [],
+    "flow": {
+     "items": 4,
+     "passed": 4,
+     "credit": 4.0
+    },
+    "cross": {
+     "items": 6,
+     "passed": 6,
+     "credit": 6.0
+    },
+    "points": {
+     "perfect": 10,
+     "partial": 0,
+     "zero": 0,
+     "earned": 10.0,
+     "total": 10
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "operational_alignment": {
+    "score": 12.5,
+    "halves": true,
+    "items": 10,
+    "passed": 1,
+    "issues": 9,
+    "pairs": 10,
+    "failures": [
+     {
+      "order": 1,
+      "section_a": "abstract",
+      "section_b": "introduction",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.6718,
+      "credit": 0.0,
+      "kind": "flow"
+     },
+     {
+      "order": 2,
+      "section_a": "abstract",
+      "section_b": "methodology",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.6126,
+      "credit": 0.0,
+      "kind": "cross"
+     },
+     {
+      "order": 3,
+      "section_a": "abstract",
+      "section_b": "results",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.512,
+      "credit": 0.0,
+      "kind": "cross"
+     },
+     {
+      "order": 4,
+      "section_a": "abstract",
+      "section_b": "conclusion",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.491,
+      "credit": 0.0,
+      "kind": "cross"
+     },
+     {
+      "order": 5,
+      "section_a": "introduction",
+      "section_b": "methodology",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.6826,
+      "credit": 0.0,
+      "kind": "flow"
+     },
+     {
+      "order": 6,
+      "section_a": "introduction",
+      "section_b": "discussion",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.8,
+      "credit": 0.0,
+      "kind": "cross"
+     },
+     {
+      "order": 7,
+      "section_a": "introduction",
+      "section_b": "conclusion",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.4995,
+      "credit": 0.0,
+      "kind": "cross"
+     },
+     {
+      "order": 8,
+      "section_a": "methodology",
+      "section_b": "results",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.5746,
+      "credit": 0.0,
+      "kind": "flow"
+     },
+     {
+      "order": 9,
+      "section_a": "methodology",
+      "section_b": "discussion",
+      "reason": "contradiction",
+      "severity": "Critical",
+      "rating": 0.6068,
+      "credit": 0.0,
+      "kind": "cross"
+     }
+    ],
+    "flow": {
+     "items": 4,
+     "passed": 1,
+     "credit": 1.0
+    },
+    "cross": {
+     "items": 6,
+     "passed": 0,
+     "credit": 0.0
+    },
+    "points": {
+     "perfect": 1,
+     "partial": 0,
+     "zero": 9,
+     "earned": 1.0,
+     "total": 10
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "evidence_consistency": {
+    "score": 100.0,
+    "halves": true,
+    "items": 3,
+    "passed": 3,
+    "issues": 0,
+    "pairs": 3,
+    "failures": [],
+    "flow": {
+     "items": 1,
+     "passed": 1,
+     "credit": 1.0
+    },
+    "cross": {
+     "items": 2,
+     "passed": 2,
+     "credit": 2.0
+    },
+    "points": {
+     "perfect": 3,
+     "partial": 0,
+     "zero": 0,
+     "earned": 3.0,
+     "total": 3
+    },
+    "basis": "balanced",
+    "limited": true,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   },
+   "logical_support": {
+    "score": 100.0,
+    "halves": true,
+    "items": 10,
+    "passed": 10,
+    "issues": 0,
+    "pairs": 10,
+    "failures": [],
+    "flow": {
+     "items": 4,
+     "passed": 4,
+     "credit": 4.0
+    },
+    "cross": {
+     "items": 6,
+     "passed": 6,
+     "credit": 6.0
+    },
+    "points": {
+     "perfect": 10,
+     "partial": 0,
+     "zero": 0,
+     "earned": 10.0,
+     "total": 10
+    },
+    "basis": "balanced",
+    "limited": false,
+    "estimated": 0,
+    "baseline": null,
+    "penalty": 0,
+    "deductions": []
+   }
+  },
+  "citation_detail": {
+   "well_formed_ratio": 0.0,
+   "link_resolution_rate": 0.0,
+   "cross_match_score": 0.0,
+   "total_entries": 0
+  }
+ },
+ "dimension_breakdown": {
+  "context_alignment": {
+   "score": 100.0,
+   "halves": true,
+   "items": 10,
+   "passed": 10,
+   "issues": 0,
+   "pairs": 10,
+   "failures": [],
+   "flow": {
+    "items": 4,
+    "passed": 4,
+    "credit": 4.0
+   },
+   "cross": {
+    "items": 6,
+    "passed": 6,
+    "credit": 6.0
+   },
+   "points": {
+    "perfect": 10,
+    "partial": 0,
+    "zero": 0,
+    "earned": 10.0,
+    "total": 10
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "operational_alignment": {
+   "score": 12.5,
+   "halves": true,
+   "items": 10,
+   "passed": 1,
+   "issues": 9,
+   "pairs": 10,
+   "failures": [
+    {
+     "order": 1,
+     "section_a": "abstract",
+     "section_b": "introduction",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.6718,
+     "credit": 0.0,
+     "kind": "flow"
+    },
+    {
+     "order": 2,
+     "section_a": "abstract",
+     "section_b": "methodology",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.6126,
+     "credit": 0.0,
+     "kind": "cross"
+    },
+    {
+     "order": 3,
+     "section_a": "abstract",
+     "section_b": "results",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.512,
+     "credit": 0.0,
+     "kind": "cross"
+    },
+    {
+     "order": 4,
+     "section_a": "abstract",
+     "section_b": "conclusion",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.491,
+     "credit": 0.0,
+     "kind": "cross"
+    },
+    {
+     "order": 5,
+     "section_a": "introduction",
+     "section_b": "methodology",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.6826,
+     "credit": 0.0,
+     "kind": "flow"
+    },
+    {
+     "order": 6,
+     "section_a": "introduction",
+     "section_b": "discussion",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.8,
+     "credit": 0.0,
+     "kind": "cross"
+    },
+    {
+     "order": 7,
+     "section_a": "introduction",
+     "section_b": "conclusion",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.4995,
+     "credit": 0.0,
+     "kind": "cross"
+    },
+    {
+     "order": 8,
+     "section_a": "methodology",
+     "section_b": "results",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.5746,
+     "credit": 0.0,
+     "kind": "flow"
+    },
+    {
+     "order": 9,
+     "section_a": "methodology",
+     "section_b": "discussion",
+     "reason": "contradiction",
+     "severity": "Critical",
+     "rating": 0.6068,
+     "credit": 0.0,
+     "kind": "cross"
+    }
+   ],
+   "flow": {
+    "items": 4,
+    "passed": 1,
+    "credit": 1.0
+   },
+   "cross": {
+    "items": 6,
+    "passed": 0,
+    "credit": 0.0
+   },
+   "points": {
+    "perfect": 1,
+    "partial": 0,
+    "zero": 9,
+    "earned": 1.0,
+    "total": 10
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "evidence_consistency": {
+   "score": 100.0,
+   "halves": true,
+   "items": 3,
+   "passed": 3,
+   "issues": 0,
+   "pairs": 3,
+   "failures": [],
+   "flow": {
+    "items": 1,
+    "passed": 1,
+    "credit": 1.0
+   },
+   "cross": {
+    "items": 2,
+    "passed": 2,
+    "credit": 2.0
+   },
+   "points": {
+    "perfect": 3,
+    "partial": 0,
+    "zero": 0,
+    "earned": 3.0,
+    "total": 3
+   },
+   "basis": "balanced",
+   "limited": true,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  },
+  "logical_support": {
+   "score": 100.0,
+   "halves": true,
+   "items": 10,
+   "passed": 10,
+   "issues": 0,
+   "pairs": 10,
+   "failures": [],
+   "flow": {
+    "items": 4,
+    "passed": 4,
+    "credit": 4.0
+   },
+   "cross": {
+    "items": 6,
+    "passed": 6,
+    "credit": 6.0
+   },
+   "points": {
+    "perfect": 10,
+    "partial": 0,
+    "zero": 0,
+    "earned": 10.0,
+    "total": 10
+   },
+   "basis": "balanced",
+   "limited": false,
+   "estimated": 0,
+   "baseline": null,
+   "penalty": 0,
+   "deductions": []
+  }
+ },
+ "rescan_unchanged": false,
+ "structure_note": "Your headings are not the usual ones, so they were found from the layout of your paper. Check that the sections look right.",
+ "ai_text_indicator": {
+  "overall_score": 40.5,
+  "section_scores": {
+   "abstract": 24.5,
+   "introduction": 56.3,
+   "methodology": 47.7,
+   "results": null,
+   "discussion": null,
+   "limitations": null,
+   "conclusion": 33.5
+  },
+  "flagged_sections": [
+   "introduction"
+  ],
+  "disclaimer": "Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features (sentence-length uniformity, lexical diversity, transition-phrase density, opening-word repetition, and sentence-embedding self-similarity) -- it cannot verify authorship and cannot detect real generative-model watermarks (e.g. Google SynthID), which are cryptographic signals embedded at the token-sampling level and are not recoverable from output text by any third party without the issuing model's own detection service. Formal academic prose already exhibits many of these same surface features, so well-written human capstone chapters can score in the 40-60 range; this indicator must never be used to block a submission or as a plagiarism/integrity charge on its own."
+ },
+ "db_save_status": "saved",
+ "notification_dispatched": false,
+ "credits_remaining": 4
+}
