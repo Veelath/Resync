@@ -29,7 +29,7 @@ const readAcademic = (meta?: Record<string, unknown> | null): AcademicInfo => ({
 });
 const academicToMetadata = (info: AcademicInfo) => ({ university: info.university.trim(), program: info.program.trim(), year_level: info.yearLevel.trim(), research_title: info.researchTitle.trim() });
 
-export function DashboardScreen({ scanRunning = false, onViewProgress, onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport, notificationPrefs = { alerts: true, sound: true }, onNotificationPrefsChange }: { scanRunning?: boolean; onViewProgress?: () => void; notificationPrefs?: NotificationPrefs; onNotificationPrefsChange?: (prefs: NotificationPrefs) => void; onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: (scanId?: string) => void }) {
+export function DashboardScreen({ scanRunning = false, finishedScanId = null, onViewResult, onViewProgress, onNavigate, session, onLogout, notifications = [], onMarkNotificationsRead, onOpenReport, notificationPrefs = { alerts: true, sound: true }, onNotificationPrefsChange }: { scanRunning?: boolean; onViewProgress?: () => void; finishedScanId?: string | null; onViewResult?: () => void; notificationPrefs?: NotificationPrefs; onNotificationPrefsChange?: (prefs: NotificationPrefs) => void; onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; onLogout?: () => void; notifications?: AppNotification[]; onMarkNotificationsRead?: () => void; onOpenReport?: (scanId?: string) => void }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const [activeNav, setActiveNav] = useState<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">("Dashboard");
@@ -429,7 +429,7 @@ export function DashboardScreen({ scanRunning = false, onViewProgress, onNavigat
         ═══════════════════════════════════════════════════ */
         <AcademicProfileView notice={profileNotice} savedAcademic={academicInfo} userId={session?.user?.id} credits={creditBalance} scansRun={creditsUsed} memberSince={session?.user?.created_at} setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
       ) : (<>
-<DashboardHome onNavigate={onNavigate} session={session} greeting={greeting} scanRunning={scanRunning} onViewProgress={onViewProgress} />
+<DashboardHome onNavigate={onNavigate} session={session} greeting={greeting} scanRunning={scanRunning} onViewProgress={onViewProgress} scanFinished={!!finishedScanId} onViewResult={onViewResult} />
         <BackToTop />
       </>)}
 

@@ -24,9 +24,10 @@ const guidance = [
   ['AI-Text Indicator', 'Review the text signal'],
 ];
 
-export function DashboardHome({ onNavigate, session, greeting, scanRunning = false, onViewProgress }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: 'Good morning' | 'Good afternoon' | 'Good evening'; scanRunning?: boolean; onViewProgress?: () => void }) {
+export function DashboardHome({ onNavigate, session, greeting, scanRunning = false, onViewProgress, scanFinished = false, onViewResult }: { onNavigate: (s: Screen, asSample?: boolean) => void; session?: Session | null; greeting: 'Good morning' | 'Good afternoon' | 'Good evening'; scanRunning?: boolean; onViewProgress?: () => void; scanFinished?: boolean; onViewResult?: () => void }) {
   const firstName = session?.user?.user_metadata?.full_name?.split(' ')[0] || session?.user?.email?.split('@')[0] || 'there';
   return <div className="phase2-dashboard">
+    {!scanRunning && scanFinished && onViewResult && <button type="button" className="tour-progress" onClick={onViewResult}>View result</button>}
     {scanRunning && onViewProgress && <button type="button" className="tour-progress" onClick={onViewProgress}><span className="tour-progress-spin" aria-hidden="true" />View progress</button>}
     <section className="phase2-hero"><div className="phase2-hero-inner">
       <div className="phase2-hero-grid">

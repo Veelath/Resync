@@ -44,6 +44,9 @@ export default function App() {
   const scanRunRef = useRef(0);
   const scanSettledRef = useRef(true);
   const [scanRunning, setScanRunning] = useState(false);
+  // A scan that finished while the person was elsewhere ("Continue in background"): the dashboard offers "View result" for it.
+  const [finishedScanId, setFinishedScanId] = useState<string | null>(null);
+  useEffect(() => { if (screen === 'results') setFinishedScanId(null); }, [screen]);
   const [scanSending, setScanSending] = useState(false);
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome | null>(null);
   const [scanStartedAt, setScanStartedAt] = useState(Date.now());
@@ -253,7 +256,7 @@ export default function App() {
   }
 
   function handleScanStart(words: number | null) {
-    setScanOutcome(null); setScanWords(words); scanWordsRef.current = words; setScanStartedAt(Date.now());
+    setScanOutcome(null); setFinishedScanId(null); setScanWords(words); scanWordsRef.current = words; setScanStartedAt(Date.now());
     setScanRunning(true);
     setScanSending(true);
     if (notificationPrefsRef.current.alerts) void askForDesktopAlerts();   // this runs inside the click that started the scan
@@ -286,6 +289,7 @@ export default function App() {
     const played = wantsSound ? playCompletionChime() : true;   // no sound wanted: nothing to be blocked
     setSoundBlocked(!played);
     const finishedId = result?.analysis_run_id;
+    if (finishedId) setFinishedScanId(finishedId);
     const docName = (result?.manuscript_title ?? '').trim();   // the report is named after the uploaded document
     const scanOf = docName ? `Your scan of "${docName}"` : 'Your manuscript scan';
     if (notificationPrefsRef.current.alerts) showDesktopAlert(result?.rescan_unchanged ? "No changes detected" : "Scan successful", result?.rescan_unchanged ? `${scanOf} is the same as your last scan.` : `${scanOf} is successful. Your report is ready.`, () => { if (finishedId) navigate("results", false, finishedId); });
@@ -372,7 +376,7 @@ export default function App() {
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
       {screen === "dashboard" && dashboardNotice && <div role="status" className="p-4 text-center bg-blue-50 text-blue-900">{dashboardNotice} <button type="button" onClick={() => setDashboardNotice(null)} aria-label="Dismiss notice" className="rounded-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">Dismiss</button></div>}
-      {screen === "dashboard" && <DashboardScreen scanRunning={scanRunning} onViewProgress={() => navigate("processing")} onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
+      {screen === "dashboard" && <DashboardScreen scanRunning={scanRunning} finishedScanId={finishedScanId} onViewResult={() => finishedScanId && navigate("results", false, finishedScanId)} onViewProgress={() => navigate("processing")} onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
     </div>
   );
 }
