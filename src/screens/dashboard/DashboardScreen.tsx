@@ -19,7 +19,6 @@ import { Info } from "lucide-react";
 import type React from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
-import { notify } from '../../lib/notify';
 import { emailError } from '../../lib/validation';
 import { isPasswordValid, passwordPolicyMessage } from '../../components/PasswordRequirements';
 import { announcePayment, payWithProof, PROOF_METHOD_LABEL, type ProofPayment } from '../../lib/paymentProof';

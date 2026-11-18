@@ -274,8 +274,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       } catch { /* the stored sections are printed instead */ }
     }
     await new Promise(resolve => setTimeout(resolve, 30));   // let the "Preparing" state paint before the PDF is built
-    const blob = reportPdfBlob(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked, exactText);
-    setPdfPreview({ url: URL.createObjectURL(blob), name });
+    try {
+      const blob = reportPdfBlob(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked, exactText);
+      setPdfPreview({ url: URL.createObjectURL(blob), name });
+    } catch {   // never leave the preview stuck on "Preparing"
+      setPdfPreview(null);
+      notify({ kind: 'error', title: "Couldn't prepare the PDF", message: 'Please try again.' });
+    }
   }
   const tabs: { id: Tab; label: string }[] = [
     { id: 'recommendations', label: `Recommendations (${issueCount})` },
