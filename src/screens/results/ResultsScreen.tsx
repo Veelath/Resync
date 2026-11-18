@@ -93,7 +93,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   }, [isSample, result?.analysis_run_id]);
   const ownFile = isSample ? null : manuscriptFileFor(result?.analysis_run_id) ?? storedFile;
   const isDocx = !!ownFile && /\.docx$/i.test(ownFile.name);
-  // The same exact copy for a Word file and a Google Doc: page by page when the whole file can be drawn, else its complete text.
+  // The text fallback is reserved for an unsafe locked-heading match.
   const wordFile = isDocx && !docxFailed ? ownFile : null;
   const textFile = isDocx && docxFailed && !textFailed ? ownFile : null;
   const docxFile = wordFile ?? textFile;

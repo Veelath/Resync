@@ -1,47 +1,37 @@
-// The student's own Word file (or the Google Doc downloaded as Word), kept ONLY in this browser so the report can show the manuscript
-// exactly as it was uploaded. It is never sent anywhere again. It is held in memory, and also in this browser's own storage so a refresh
-// of the report page does not lose it; it is dropped when the report is left, when a new scan starts, on sign-out, or when the next
-// visit finds a report that was never left properly.
+// The uploaded file stays in memory and, when small enough, in this tab for refreshes.
 let held: { file: File; scanId: string | null } | null = null;
+let revision = 0;
+const KEY = 'resync-manuscript-copy';
+const MAX_STORED_BYTES = 4 * 1024 * 1024;
 
-const DB_NAME = 'resync-manuscript-copy';
-const STORE = 'copy';
-const KEY = 'current';
+// Remove copies saved by earlier versions, including when no report is opened.
+try { indexedDB.deleteDatabase(KEY); } catch { /* IndexedDB may be unavailable. */ }
 
-function openStore(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = () => { request.result.createObjectStore(STORE); };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+export function manuscriptFits(encoded: string): boolean {
+  return encoded.length * 2 <= MAX_STORED_BYTES;
 }
 
-async function writeStored(value: { file: File; scanId: string | null } | null): Promise<void> {
+async function writeStored(value: typeof held): Promise<void> {
+  const current = ++revision;
   try {
-    const db = await openStore();
-    try {
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE, 'readwrite');
-        if (value) tx.objectStore(STORE).put(value, KEY); else tx.objectStore(STORE).delete(KEY);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-        tx.onabort = () => reject(tx.error);
-      });
-    } finally { db.close(); }
-  } catch { /* storage unavailable: the copy then lives in memory only */ }
+    sessionStorage.removeItem(KEY);
+    if (!value || value.file.size > MAX_STORED_BYTES) return;
+    const bytes = new Uint8Array(await value.file.arrayBuffer());
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    const encoded = JSON.stringify({ data: btoa(binary), name: value.file.name, type: value.file.type, scanId: value.scanId });
+    if (current === revision && manuscriptFits(encoded)) sessionStorage.setItem(KEY, encoded);
+  } catch { /* storage unavailable: the copy lives in memory only */ }
 }
 
-async function readStored(): Promise<{ file: File; scanId: string | null } | null> {
+function readStored(): typeof held {
   try {
-    const db = await openStore();
-    try {
-      return await new Promise((resolve, reject) => {
-        const request = db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY);
-        request.onsuccess = () => resolve((request.result as { file: File; scanId: string | null } | undefined) ?? null);
-        request.onerror = () => reject(request.error);
-      });
-    } finally { db.close(); }
+    const raw = sessionStorage.getItem(KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw);
+    if (typeof value.data !== 'string' || typeof value.name !== 'string' || typeof value.type !== 'string' || typeof value.scanId !== 'string') return null;
+    const bytes = Uint8Array.from(atob(value.data), char => char.charCodeAt(0));
+    return { file: new File([bytes], value.name, { type: value.type }), scanId: value.scanId };
   } catch { return null; }
 }
 
@@ -59,11 +49,11 @@ export function manuscriptFileFor(scanId: string | null | undefined): File | nul
   return held && scanId && held.scanId === scanId ? held.file : null;
 }
 
-/** The kept file after a refresh, when memory is empty. Only returned for the scan it belongs to. */
+/** The kept file after a refresh, only returned for the scan it belongs to. */
 export async function loadManuscriptFile(scanId: string | null | undefined): Promise<File | null> {
   const live = manuscriptFileFor(scanId);
   if (live || !scanId) return live;
-  const stored = await readStored();
+  const stored = readStored();
   if (!stored || stored.scanId !== scanId) return null;
   held = stored;
   return stored.file;
