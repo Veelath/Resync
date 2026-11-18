@@ -4,6 +4,7 @@ import { estimatedProgress, backoffMs, waitState, notFoundIsFinal, isLongRunning
 test('hides only the AI busy status notice', () => {
   assert.equal(scanStatusMessage('The AI is busy right now, so your scan may take a little longer than usual.'), '');
   assert.equal(scanStatusMessage('Please wait while the scan continues.'), 'Please wait while the scan continues.');
+  assert.equal(scanStatusMessage('Some checks did not finish. Finishing them now.'), 'Some checks did not finish. Finishing them now.');
   assert.equal(safeScanMessage('The scan could not finish.'), 'The scan could not finish.');
 });
 test('backoff caps at thirty seconds', () => assert.deepEqual([1,2,3,4,5].map(backoffMs), [5000,10000,20000,30000,30000]));

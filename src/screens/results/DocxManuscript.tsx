@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Reac
 import { createPortal } from 'react-dom';
 import { renderAsync } from 'docx-preview';
 import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../../lib/docxPreview';
-import { lockedHeadingIndex } from './lockedHeading';
+import { lockedHeadingAction, lockedHeadingIndex } from './lockedHeading';
 import { highlightSentences, type HighlightSpec } from '../../lib/docxHighlight';
 
 // Scoped overrides: keep Word's own page look (fonts, margins, tables, images) but fit it into the results pane.
@@ -109,8 +109,10 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       if (locked) {
         const paragraphs = [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table'));
         const index = lockedHeadingIndex(paragraphs.map(element => element.textContent ?? ''), secondSection ?? '');
+        const action = lockedHeadingAction(index, event.data.truncated, budget);
+        if (action === 'retry') { setBudget(nextBudget(budget)); return; }
         const heading = paragraphs[index];
-        if (!heading || !rendered.lastChild) { fail('locked-heading'); return; }
+        if (action === 'fail' || !heading || !rendered.lastChild) { fail('locked-heading'); return; }
         // The whole document is shown; what the free report does not cover is blurred, with the unlock card where it starts.
         const marker = document.createElement('div');
         marker.className = 'docx-withheld-start';

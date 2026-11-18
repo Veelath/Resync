@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildReportPdf, pairPoints, pdfSafe, sectionScores, RESYNC_SITE, TEAM_LABEL } from './reportPdf';
+import { buildReportPdf, pairPoints, pdfSafe, sectionScores, RESYNC_SITE } from './reportPdf';
 import sample from '../data/sampleResult.json';
 
 const result: any = sample;
@@ -13,9 +13,9 @@ test('the score report comes first and the manuscript text follows it', () => {
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'the parts appear in this order');
 });
 
-test('every page is signed by Team Resync and links only to the Resync site, never to the report', () => {
+test('the report links only to the Resync site and has no Team Resync label', () => {
   const pdf = text();
-  assert.ok(pdf.includes(TEAM_LABEL));
+  assert.ok(!pdf.includes('Report by Team Resync'));
   assert.ok(pdf.includes(RESYNC_SITE));
   const links = [...pdf.matchAll(/\/URI \((.*?)\)/g)].map(match => match[1]);
   assert.ok(links.length > 0 && links.every(link => link === RESYNC_SITE), `only the Resync link: ${links.slice(0, 3)}`);
