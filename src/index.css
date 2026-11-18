@@ -122,6 +122,9 @@ h1, h2, h3 {
 .locked-manuscript-overlay { position: absolute; inset: 0; display: flex; justify-content: center; pointer-events: none; }
 .locked-manuscript-card { position: sticky; top: max(16px, calc(50vh - 130px)); align-self: flex-start; margin-top: clamp(120px, 25vh, 220px); pointer-events: auto; }
 @media (min-width: 1024px) { .locked-manuscript-card { top: max(16px, calc(50% - 105px)); } }
+/* The card sits inside the manuscript: it must not inherit the manuscript's book paragraphs (indent, justify, serif). */
+.locked-manuscript-card { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+.locked-manuscript-card p, .manuscript-body .locked-manuscript-card p, .docx-host .locked-manuscript-card p { text-indent: 0; text-align: center; font-family: inherit; }
 .report-reveal { animation: report-reveal 260ms ease-out both; }
 @keyframes report-reveal { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .report-reveal { animation: none; } }
