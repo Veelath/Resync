@@ -9,6 +9,7 @@ import type { Screen } from '../lib/appTypes';
 import { B } from '../lib/brand';
 import { supabase } from '../lib/supabase';
 import { notify } from '../lib/notify';
+import { authNotice } from '../lib/authNotice';
 import { cleanNameInput, emailError, mailDomainAccepts, nameError } from '../lib/validation';
 import { modalTabTarget } from '../lib/modalFocus';
 
@@ -110,6 +111,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     const trimmedLast = lastName.trim();
     const full_name = [trimmedFirst, trimmedMiddle, trimmedLast].filter(Boolean).join(" ").trim();
 
+    sessionStorage.removeItem('resync_google_signin');
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: pw,
@@ -130,7 +132,8 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
       setError("This email is already registered. Try signing in instead.");
     } else if (data.session) {
       // The project is not asking for email confirmation, so there is nothing to verify.
-      notify({ kind: 'success', title: 'Account created', message: 'Welcome to ReSync!' });
+      const notice = authNotice(data.user, 'signup');
+      if (notice) notify(notice);
       onSignupSuccess?.();
     } else {
       setCodeStep(true);
@@ -143,11 +146,13 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     if (!codeReady(code) || loading) return;
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "signup" });
+    sessionStorage.removeItem('resync_google_signin');
+    const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "signup" });
     setLoading(false);
     if (error) setError("That code is wrong or has expired. Check your email or ask for a new one.");
     else {
-      notify({ kind: 'success', title: 'Account created', message: 'Welcome to ReSync!' });
+      const notice = authNotice(data.user, 'signup');
+      if (notice) notify(notice);
       onSignupSuccess?.();
     }
   }

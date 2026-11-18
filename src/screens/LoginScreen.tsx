@@ -6,6 +6,7 @@ import { AuthShell } from '../components/AuthShell';
 import type { Screen } from '../lib/appTypes';
 import { supabase } from '../lib/supabase';
 import { notify } from '../lib/notify';
+import { authNotice } from '../lib/authNotice';
 import { emailError } from '../lib/validation';
 import { isEmailRegistered } from '../services/api';
 
@@ -62,14 +63,14 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
     if (!emailValue || !passwordValue) { setError("Enter your email and password."); return; }
     setLoading(true);
     setError("");
+    sessionStorage.removeItem('resync_google_signin');
     const { data, error } = await supabase.auth.signInWithPassword({ email: emailValue, password: passwordValue });
     setLoading(false);
     if (error) {
       setError(error.message);
     } else {
-      const meta = data.user?.user_metadata;
-      const firstName = (meta?.first_name || meta?.given_name || meta?.full_name?.trim().split(/\s+/)[0] || '').trim();
-      notify({ kind: 'success', title: 'Signed in successfully', message: firstName ? `Welcome back, ${firstName}!` : 'Welcome back!' });
+      const notice = authNotice(data.user, 'signin');
+      if (notice) notify(notice);
       onLoginSuccess?.();
     }
   }

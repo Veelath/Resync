@@ -21,6 +21,7 @@ import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
 import { PAYMENT_EVENT } from './lib/paymentProof';
 import { NOTICE_EVENT, notify, type QuickNotice } from './lib/notify';
+import { authNotice } from './lib/authNotice';
 import { resumeManuscriptScan, resetScanStatus, ScanOutcome } from './services/api';
 import { canResume, shouldNotifyFailure, rememberFailureNotification } from './lib/scanWait';
 import { askForDesktopAlerts, showDesktopAlert } from './components/ScanNotifications';
@@ -124,9 +125,8 @@ export default function App() {
     if (!currentSession || !sessionStorage.getItem('resync_google_signin')) return;
     sessionStorage.removeItem('resync_google_signin');
     if (currentSession.user.app_metadata.provider !== 'google') return;
-    const meta = currentSession.user.user_metadata;
-    const firstName = (meta?.first_name || meta?.given_name || meta?.full_name?.trim().split(/\s+/)[0] || '').trim();
-    notify({ kind: 'success', title: 'Signed in successfully', message: firstName ? `Welcome back, ${firstName}!` : 'Welcome back!' });
+    const notice = authNotice(currentSession.user, 'signin');
+    if (notice) notify(notice);
   }
 
   useEffect(() => {
