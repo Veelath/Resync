@@ -141,6 +141,7 @@ export function ScoreExplainer({ name, label, description, color, entry, onClose
         </div>
         <button type="button" autoFocus onClick={onClose} aria-label="Close" className="shrink-0 rounded-md px-2 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2">Close</button>
       </div>
+      <p className="mt-3 text-xs text-gray-500">References and very short sections are not compared.</p>
       <div className="mt-3"><BarLegend unknown={!detailed} /></div>
 
       {kinds.map(kind => {
