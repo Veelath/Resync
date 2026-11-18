@@ -1,3 +1,4 @@
+import { notify } from '../../lib/notify';
 import { Fragment, useState } from 'react';
 import type { DimensionBreakdown } from '../../services/v7Result';
 import { clearPairs } from './clearPairs';
@@ -113,7 +114,9 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const stepNumber = 'grid size-5 shrink-0 place-items-center rounded-full bg-[#eeeefe] text-[11px] font-bold text-[#2b25c8]';
   const outlineButton = 'inline-flex items-center gap-1.5 rounded-xl border border-[#d9d7f7] bg-white px-4 py-2 text-xs font-bold text-[#2b25c8] hover:bg-[#f6f6ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b25c8]';
   const copy = (id: string, text: string) => {
-    navigator.clipboard?.writeText(text).then(() => { setCopied(id); window.setTimeout(() => setCopied(current => current === id ? null : current), 1800); }).catch(() => undefined);
+    const failed = () => notify({ kind: 'error', title: "Couldn't copy", message: 'Select the sentence and copy it yourself.' });
+    if (!navigator.clipboard?.writeText) { failed(); return; }
+    navigator.clipboard.writeText(text).then(() => { setCopied(id); window.setTimeout(() => setCopied(current => current === id ? null : current), 1800); }).catch(failed);
   };
   const collapsible = !!onSelect && !alwaysOpen;
   const head = <>

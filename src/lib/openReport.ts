@@ -19,9 +19,8 @@ export function leftoverReport(currentId: string | null): string | null {
 }
 
 /** Deletes a report an earlier visit left open, then forgets it. Best effort. */
-export async function discardLeftoverReport(currentId: string | null, discard: (id: string) => Promise<void>): Promise<void> {
+export async function discardLeftoverReport(currentId: string | null, discard: (id: string) => Promise<void | boolean>): Promise<void> {
   const id = leftoverReport(currentId);
   if (!id) return;
-  forgetOpenReport();
-  await discard(id);
+  if (await discard(id) !== false) forgetOpenReport();
 }
