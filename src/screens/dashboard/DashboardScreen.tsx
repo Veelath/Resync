@@ -17,6 +17,7 @@ import { Info } from "lucide-react";
 import type React from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
+import { notify } from '../../lib/notify';
 import { emailError } from '../../lib/validation';
 import { isPasswordValid, passwordPolicyMessage } from '../../components/PasswordRequirements';
 import { announcePayment, payWithProof, PROOF_METHOD_LABEL, type ProofPayment } from '../../lib/paymentProof';
@@ -307,6 +308,7 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
       const { error } = await supabase.auth.updateUser({ password: newPw });
       if (error) { checkAuthError(error); setPwErrorMsg(passwordPolicyMessage(error) ?? (/session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message) ?? "We could not update your password. Please try again."); return; }
       setPwSuccessMsg("Your password has been updated successfully.");
+      notify({ kind: 'success', title: 'Password updated', message: 'Your new password is saved.' });
       setCurrentPw("");
       setNewPw("");
       setConfirmPw("");

@@ -5,6 +5,7 @@ import { AuthShell } from '../components/AuthShell';
 import { PasswordRequirements, isPasswordValid, passwordPolicyMessage } from '../components/PasswordRequirements';
 import type { Screen } from '../lib/appTypes';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/notify';
 
 export function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Screen) => void; onBack: () => void }) {
   const [password, setPassword] = useState("");
@@ -31,6 +32,7 @@ export function ResetPasswordScreen({ onNavigate, onBack }: { onNavigate: (s: Sc
       // The reset link signs the person in for a moment. End that session so they log in with the new password.
       await supabase.auth.signOut({ scope: 'local' });
       setSuccess(true);
+      notify({ kind: 'success', title: 'Password updated', message: 'Your new password is saved.' });
       setTimeout(() => {
         onNavigate("login");
       }, 2500);
