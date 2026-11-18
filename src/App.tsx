@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { Screen, DisplayScan } from './lib/appTypes';
 import { supabase } from './lib/supabase';
 import { clearAllSourceFiles } from './lib/sourceFile';
+import { dropManuscriptFile } from './lib/manuscriptFile';
 import { readRoute, routePath } from './lib/routes';
 import { discardScan, getScanResult, subscribeSessionEnded, notifySessionEnded } from './services/api';
 import { createSignOutController } from './lib/signOutController';
@@ -61,6 +62,7 @@ export default function App() {
   const signOutRef = useRef<ReturnType<typeof createSignOutController> | null>(null);
   if (!signOutRef.current) signOutRef.current = createSignOutController(async () => {
     clearActiveScan();
+    dropManuscriptFile();
     await clearAllSourceFiles();
     await supabase.auth.signOut({ scope: 'local' });
   }, ended => {

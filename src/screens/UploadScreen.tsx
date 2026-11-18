@@ -10,6 +10,7 @@ import './upload-flow.css';
 import { UploadTour, uploadTourSeen } from './UploadTour';
 import { previewParagraphs } from '../lib/previewParagraphs';
 import { DocxPreview } from '../components/DocxPreview';
+import { keepManuscriptFile, tagManuscriptFile } from '../lib/manuscriptFile';
 import { canShowWordPreview } from '../lib/docxPreview';
 import { wordOutlineReady, googleOutlineReady } from '../lib/uploadReadiness';
 
@@ -422,6 +423,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
       // A Google Doc that downloaded as Word is scanned like an upload; only if it could not be downloaded is the link read directly.
       const scanFile = mode === "file" ? uploadedFile : linkFile;
+      // The report shows the document as uploaded (pictures and layout included), so the original is kept in memory for it.
+      keepManuscriptFile(previewFile ?? scanFile);
       onScanStart?.(outline?.words ?? docInfo?.words ?? null);
       onNavigate("processing");
       await new Promise<void>(resolve => {
@@ -434,7 +437,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         doc_url: mode === "link" ? link : undefined,
         template_toc: templateToc,
         manuscript_title: scanFile ? scanFile.name.replace(/\.[^/.]+$/, '') : undefined,
-      }, { onStarted: id => { onScanStarted?.(id); navigatedToProcessing = true; } });
+      }, { onStarted: id => { tagManuscriptFile(id); onScanStarted?.(id); navigatedToProcessing = true; } });
       if (onScanComplete) onScanComplete({ ...result, template_toc: templateToc });
     } catch (e: any) {
       if (navigatedToProcessing) console.error(e);

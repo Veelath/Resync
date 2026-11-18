@@ -5,6 +5,9 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import { reviewUnfinished } from './reviewComplete';
 import { discardScan, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
 import { forgetOpenReport, rememberOpenReport } from '../../lib/openReport';
+import { dropManuscriptFile, manuscriptFileFor } from '../../lib/manuscriptFile';
+import { DocxManuscript, type DocxManuscriptHandle } from './DocxManuscript';
+import type { HighlightSpec } from '../../lib/docxHighlight';
 import { SAMPLE_PAPERS, sampleById, type Citation } from '../../data/sampleReport';
 import { ResultsHeader } from './ResultsHeader';
 import { BackToTop } from '../../components/AppPrimitives';
@@ -18,7 +21,7 @@ import { edgeSentence, findSectionIndex, isWithheldSection, type Placement } fro
 import { matchedRecommendations, recommendationRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
-import { RecommendationsList, isRateLimited, levelOf } from './RecommendationsList';
+import { RecommendationsList, inconsistencyTone, isRateLimited, levelOf, severityTones } from './RecommendationsList';
 import { usablePair } from './recommendationPresentation';
 import { plainText } from './helpers';
 
@@ -67,6 +70,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   // The finding that is open in the side panel (its pair's order), or null when the whole list shows.
   const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
   const [citationFilter, setCitationFilter] = useState<Citation['status'] | null>(null);
+  // The manuscript as the student uploaded it (Word file, or the Google Doc downloaded as Word), kept in this tab's memory only.
+  // If it is not there (a refresh, an older .doc, a link that could not be downloaded) or cannot be drawn, the stored text view is used.
+  const docxView = useRef<DocxManuscriptHandle>(null);
+  const [docxFailed, setDocxFailed] = useState(false);
+  const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
+  const ownFile = isSample ? null : manuscriptFileFor(result?.analysis_run_id);
+  const docxFile = !docxFailed && ownFile && /\.docx$/i.test(ownFile.name) ? ownFile : null;
+  useEffect(() => { setDocxFailed(false); setDocxLinked(null); }, [result?.analysis_run_id]);
+  useEffect(() => { setDocxLinked(null); }, [locked]);
   if (!result) return null;
 
   const unfinished = locked && reviewUnfinished(result.ai_synthesis?.review_status);
@@ -118,7 +130,23 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const issueCount = visiblePairs.filter(pair => pair.scores.overall_coherence != null && hasAdvice(pair.order) && levelOf(pair, true) !== null).length;
   const clearCount = (locked ? result.access?.locked_counts.all_clear : undefined) ?? visiblePairs.filter(pair => pair.scores.overall_coherence != null && levelOf(pair, hasAdvice(pair.order)) === 'None').length;
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
-  const linkedIds = new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => `${range.pair}:${range.id}`)));
+  const linkedIds = docxFile
+    ? new Set<string>(recommendations.filter(rec => rec.kind !== 'add' ? (locked ? docxLinked?.has(`${rec.pair}-${rec.id}`) : !!rec.quote) : false).map(rec => `${rec.pair}:${rec.id}`))
+    : new Set<string>(result.manuscript_sections?.flatMap(section => recommendationRanges(section, matched).map(range => `${range.pair}:${range.id}`)));
+  // Colors follow the pair's grade, so a highlight in the paper matches the card that explains it. Ids match the text view: highlight-<pair>-<id>.
+  const docxHighlights: HighlightSpec[] = docxFile ? [
+    ...recommendations.flatMap(rec => {
+      const pair = result.manuscript_flow.find(entry => entry.order === rec.pair);
+      const tone = severityTones[(pair?.severity && pair.severity !== 'None' ? pair.severity : 'Moderate') as keyof typeof severityTones];
+      const id = `${rec.pair}-${rec.id}`;
+      const edge = rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === rec.section)?.text, rec.placement === 'start' ? 'start' : 'end', 4000) : '';
+      if (rec.kind === 'add') return edge ? [{ id, text: edge, background: '#ffe8a3', border: '#e0a53c', title: 'Click to see the finding', onClick: () => focusLinked('recommendation', rec.id, rec.pair) }] : [];
+      return rec.quote ? [{ id, text: rec.quote, ...tone, title: 'Click to see why this was flagged', onClick: () => focusLinked('recommendation', rec.id, rec.pair) }] : [];
+    }),
+    ...result.manuscript_flow.flatMap(pair => (pair.explanation?.highlighted_inconsistencies ?? []).filter(item => item.quote).map((item, index) => ({
+      id: `issue-${pair.order}-${index}`, text: item.quote, ...inconsistencyTone, title: 'Part of an inconsistency between sections',
+    }))),
+  ] : [];
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
 
   function scrollToTarget(target: HTMLElement | null, flash = 1600) {
@@ -143,8 +171,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       if (found) setSelectedOrder(found.pair);
     }
     const order = pair ?? recommendations.find(item => item.id === id)?.pair;
+    if (kind === 'highlight' && docxFile && !locked) {   // pages of a long file are drawn in turns: load until the passage is there
+      while (!document.getElementById(`highlight-${order}-${id}`) && await docxView.current?.loadNext()) { /* load until found */ }
+    }
     requestAnimationFrame(() => {
-      const target = kind === 'highlight' ? manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${order}-${CSS.escape(id)}"]`) : document.querySelector<HTMLElement>(`[aria-label="Analysis panel"] [data-pair-order="${order}"] [id="recommendation-${CSS.escape(id)}"]`);
+      const target = kind === 'highlight' ? (manuscriptScroll.current?.querySelector<HTMLElement>(`[id="highlight-${order}-${CSS.escape(id)}"]`) ?? (docxFile ? manuscriptScroll.current?.querySelector<HTMLElement>(`mark[data-highlight-for$="-${CSS.escape(id)}"]`) : null)) : document.querySelector<HTMLElement>(`[aria-label="Analysis panel"] [data-pair-order="${order}"] [id="recommendation-${CSS.escape(id)}"]`);
       if (target) scrollToTarget(target);
       else if (kind === 'highlight') {
         const item = recommendations.find(rec => rec.id === id && rec.pair === order);
@@ -152,6 +183,14 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       }
     });
   }
+
+  // The highlight of the open finding gets a ring in the Word view.
+  useEffect(() => {
+    const ids = new Set(recommendations.filter(item => item.pair === selectedOrder).map(item => `${item.pair}-${item.id}`));
+    document.querySelectorAll<HTMLElement>('.docx-host mark[data-highlight-for]').forEach(mark => {
+      if (selectedOrder != null && ids.has(mark.dataset.highlightFor ?? '')) mark.dataset.selected = 'true'; else delete mark.dataset.selected;
+    });
+  });
 
   // Choosing a finding opens it and takes the reader to the matching spot in the paper.
   function selectFinding(order: number) {
@@ -175,8 +214,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       window.setTimeout(() => setPlacementMessage(''), 6000);
       return;
     }
-    const sectionElement = index < 0 ? null : manuscriptScroll.current?.querySelector<HTMLElement>(`[data-section-index="${index}"]`);
-    const target = placement === 'end' ? sectionElement?.lastElementChild as HTMLElement | null : sectionElement?.querySelector<HTMLElement>('h2');
+    const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const sectionElement = docxFile
+      ? [...(manuscriptScroll.current?.querySelectorAll<HTMLElement>('.docx-host p, .docx-host h1, .docx-host h2, .docx-host h3, .docx-host h4') ?? [])].find(element => normalize(element.textContent ?? '') === normalize(section) || normalize(element.textContent ?? '').replace(/^chapter \w+ /, '') === normalize(section)) ?? null
+      : index < 0 ? null : manuscriptScroll.current?.querySelector<HTMLElement>(`[data-section-index="${index}"]`);
+    const target = docxFile ? sectionElement : placement === 'end' ? sectionElement?.lastElementChild as HTMLElement | null : sectionElement?.querySelector<HTMLElement>('h2');
     if (target) {
       setPlacementMessage('');
       if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
@@ -221,6 +263,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       setLeaving(true);
       if (result?.analysis_run_id) await discardScan(result.analysis_run_id);
       forgetOpenReport();
+      dropManuscriptFile();
       const go = leaveAction;
       setLeaving(false); setLeaveAction(null);
       go();
@@ -231,8 +274,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
         <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
-        <div className="mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12">
-          {result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
+        <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
+          {docxFile ? <DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
           <BackToTop container={manuscriptScroll} label="Back to top of the manuscript" />
         </div>
       </div>
