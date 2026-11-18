@@ -115,7 +115,7 @@ export default function App() {
   useEffect(() => {
     if (!session?.user?.id) return;
     const current = window.location.pathname.match(/\/results\/([^/?#]+)/)?.[1] ?? null;
-    void discardLeftoverReport(current, id => discardScan(id));
+    void discardLeftoverReport(current, id => { dropManuscriptFile(); return discardScan(id); });
   }, [session?.user?.id]);
 
   useEffect(() => {

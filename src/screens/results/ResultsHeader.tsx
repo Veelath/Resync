@@ -25,7 +25,6 @@ export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle, onDo
         </label>}
         <span className="rp-slash hidden md:block" aria-hidden="true">/</span>
         <span className="rp-crumb hidden md:block">{displayTitle}</span>
-        <span className="hidden whitespace-nowrap rounded-full bg-[#eeeefe] px-3 py-1 text-xs font-extrabold text-[#2b25c8] sm:inline-block">Report by Team Resync</span>
         {(
           <div className="rp-actions">
             <button type="button" onClick={onDownload} className="rp-pill rp-ghost">

@@ -3,7 +3,7 @@ import { renderAsync } from 'docx-preview';
 import { createRequestToken } from '../lib/requestToken';
 import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../lib/docxPreview';
 
-export function DocxPreview({ file, onFailed, autoLoad = false }: { file: File; onFailed: () => void; autoLoad?: boolean }) {
+export function DocxPreview({ file, onFailed, autoLoad = true }: { file: File; onFailed: () => void; autoLoad?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const styles = useRef<HTMLDivElement>(null);
   const worker = useRef<Worker | null>(null);
@@ -89,8 +89,6 @@ export function DocxPreview({ file, onFailed, autoLoad = false }: { file: File; 
       <div className="confirm-docx" ref={host} style={{ zoom: scale, visibility: hasContent ? 'visible' : 'hidden' }} />
     </div>
     {hasContent && <>
-      <p style={{ color: '#334155', fontSize: 14 }}>{truncated ? 'Showing the first pages of your document. The scan reads all of it.' : 'Your whole document is shown.'}</p>
-      {autoLoad && truncated && budget >= MAX_ELEMENTS && <p>The rest cannot be shown here.</p>}
       {!autoLoad && truncated && budget < MAX_ELEMENTS && <button type="button" className="uf-btn is-ghost is-sm" disabled={status === 'loading'} onClick={() => { setStatus('loading'); setBudget(nextBudget(budget)); }}>Show more</button>}
     </>}
   </>;

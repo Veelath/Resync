@@ -787,14 +787,16 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       </div>
                     </div>
                   )}
-                  {(mode === "file" ? uploadedFile : link) && <button type="button" aria-label={mode === "file" ? "Cancel and remove this file" : "Cancel and remove this link"} onClick={removeSource} className="uf-btn is-ghost is-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">Cancel</button>}
                 </div>
 
                 <div data-tour="run" className="uf-col" style={{ gap: 12 }}>
-                  <button type="button" onClick={continueToConfirm} className="uf-btn is-lg um-cta" style={{ width: "100%" }}>
-                    Continue to confirm document
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                  </button>
+                  <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
+                    {(mode === "file" ? uploadedFile : link) && <button type="button" aria-label={mode === "file" ? "Cancel and remove this file" : "Cancel and remove this link"} onClick={removeSource} className="uf-btn is-ghost is-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700">Cancel</button>}
+                    <button type="button" onClick={continueToConfirm} className="uf-btn is-lg um-cta" style={{ flex: 1 }}>
+                      Continue to confirm document
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    </button>
+                  </div>
                   {scanError && (
                     <div role="alert" className="uf-error">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>

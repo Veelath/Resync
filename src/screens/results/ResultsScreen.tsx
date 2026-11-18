@@ -5,7 +5,8 @@ import type { V7ScanResponse } from '../../services/v7Result';
 import { reviewUnfinished } from './reviewComplete';
 import { discardScan, getCreditBalance, getScanResult, unlockScan } from '../../services/api';
 import { forgetOpenReport, rememberOpenReport } from '../../lib/openReport';
-import { dropManuscriptFile, manuscriptFileFor } from '../../lib/manuscriptFile';
+import { dropManuscriptFile, loadManuscriptFile, manuscriptFileFor } from '../../lib/manuscriptFile';
+import { TextManuscript } from './TextManuscript';
 import { DocxManuscript, type DocxManuscriptHandle } from './DocxManuscript';
 import type { HighlightSpec } from '../../lib/docxHighlight';
 import { SAMPLE_PAPERS, sampleById, type Citation } from '../../data/sampleReport';
@@ -79,9 +80,23 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const closePdfPreview = () => setPdfPreview(previous => { if (previous?.url) URL.revokeObjectURL(previous.url); return null; });
   const [docxFailed, setDocxFailed] = useState(false);
   const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
-  const ownFile = isSample ? null : manuscriptFileFor(result?.analysis_run_id);
-  const docxFile = !docxFailed && ownFile && /\.docx$/i.test(ownFile.name) ? ownFile : null;
-  useEffect(() => { setDocxFailed(false); setDocxLinked(null); }, [result?.analysis_run_id]);
+  const [textFailed, setTextFailed] = useState(false);
+  const [storedFile, setStoredFile] = useState<File | null>(null);
+  // After a refresh the file is no longer in memory: it comes back from this browser's own storage, so the report still shows the exact copy.
+  useEffect(() => {
+    setStoredFile(null);
+    if (isSample || !result?.analysis_run_id || manuscriptFileFor(result.analysis_run_id)) return;
+    let cancelled = false;
+    void loadManuscriptFile(result.analysis_run_id).then(file => { if (!cancelled) setStoredFile(file); });
+    return () => { cancelled = true; };
+  }, [isSample, result?.analysis_run_id]);
+  const ownFile = isSample ? null : manuscriptFileFor(result?.analysis_run_id) ?? storedFile;
+  const isDocx = !!ownFile && /\.docx$/i.test(ownFile.name);
+  // The same exact copy for a Word file and a Google Doc: page by page when the whole file can be drawn, else its complete text.
+  const wordFile = isDocx && !docxFailed ? ownFile : null;
+  const textFile = isDocx && docxFailed && !textFailed ? ownFile : null;
+  const docxFile = wordFile ?? textFile;
+  useEffect(() => { setDocxFailed(false); setTextFailed(false); setDocxLinked(null); }, [result?.analysis_run_id]);
   useEffect(() => { setDocxLinked(null); }, [locked]);
   if (!result) return null;
 
@@ -291,9 +306,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
-        <p className="px-4 py-2 text-center text-xs text-slate-700">References and very short sections are not compared.</p>
-        <div className={docxFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
-          {docxFile ? <DocxManuscript ref={docxView} file={docxFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} unlockControl={unlockControl} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
+        <div className={wordFile ? 'w-full px-2 py-3 sm:px-4' : 'mx-auto w-full max-w-[78ch] px-5 py-7 sm:px-10 sm:py-10 lg:px-12'}>
+          {wordFile ? <DocxManuscript ref={docxView} file={wordFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} unlockControl={unlockControl} onLinked={setDocxLinked} onFailed={() => setDocxFailed(true)} /> : textFile ? <TextManuscript file={textFile} highlights={docxHighlights} locked={locked} secondSection={result.manuscript_sections?.[1]?.name} unlockControl={unlockControl} onLinked={setDocxLinked} onFailed={() => setTextFailed(true)} /> : result.manuscript_sections ? <ManuscriptSections result={result} onHighlight={(id, pair) => focusLinked('recommendation', id, pair)} locked={locked} unlockControl={unlockControl} revealed={unlockedToast} /> : locked ? <p>The available manuscript text is not shown for this report.</p> : <ManuscriptViewer result={result} />}
           <BackToTop container={manuscriptScroll} label="Back to top of the manuscript" />
         </div>
       </div>

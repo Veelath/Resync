@@ -138,6 +138,9 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     return () => { cancelled = true; guard.cancel(); worker.terminate(); };
   }, [file, highlightKey, locked, secondSection, budget]);
 
+  // A document too long to draw page by page is shown as its complete text instead, so the report never shows only part of it.
+  useEffect(() => { if (status === 'ready' && truncated && budget >= MAX_ELEMENTS) callbacks.current.onFailed(); }, [status, truncated, budget]);
+
   // Word pages are fixed width: shrink them to fit a narrow pane instead of scrolling sideways.
   useEffect(() => {
     const outer = outerRef.current;
@@ -250,7 +253,6 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       {status === 'loading' && <p className="py-6 text-center text-sm text-gray-500" role="status">Opening your manuscript as you uploaded it…</p>}
       <div ref={bodyRef} style={{ zoom: readableView ? 1 : scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
       {withheldStart && unlockControl && createPortal(<div className="locked-manuscript-card w-full max-w-[360px] rounded-2xl border border-[#dfe5f5] bg-white p-5 text-center shadow-[0_16px_48px_#0b0f3d26]"><p className="mb-3 text-sm font-semibold text-[#0b0f3d]">The rest of your manuscript is covered by the full report.</p>{unlockControl}</div>, withheldStart)}
-      {status === 'ready' && truncated && budget >= MAX_ELEMENTS && <p>The rest cannot be shown here.</p>}
     </div>
   </div>;
 });
