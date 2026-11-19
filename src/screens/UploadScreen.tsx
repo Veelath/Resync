@@ -1,3 +1,4 @@
+import { notify } from '../lib/notify';
 import { createRequestToken } from '../lib/requestToken';
 import { useState, useEffect, useRef, Fragment } from "react";
 import type React from 'react';
@@ -147,6 +148,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [uploadedPreviewFile, setUploadedPreviewFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [link, setLink] = useState("");
+  const [checkedLink, setCheckedLink] = useState('');
+  useEffect(() => { setCheckedLink(''); const timer = setTimeout(() => setCheckedLink(link.trim()), 300); return () => clearTimeout(timer); }, [link]);
   const [scanError, setScanError] = useState<string | null>(lastScanError);
   const [isScanning, setIsScanning] = useState(false);
   const scanningRef = useRef(false);
@@ -187,7 +190,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [linkState, setLinkState] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const [linkProblem, setLinkProblem] = useState<string | null>(null);
   const downloads = useRef(new Map<string, Promise<{ original: File; slim: File }>>());
-  const googleLink = (url: string) => /docs\.google\.com\/document\/d\/[\w-]{10,}/.test(url);
+  const googleLink = (url: string) => /^https?:\/\/docs\.google\.com\/document\/d\/[\w-]{10,}(?:[/?#]|$)/i.test(url);
   useEffect(() => {
     setLinkFile(null);
     setLinkPreviewFile(null);
@@ -303,21 +306,23 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       showTemplateToast("Template saved.");
     } catch (e) {
       console.error("Failed to save template to localStorage:", e);
+      notify({ kind: 'error', title: "Couldn't save the template", message: 'Please try again.' });
     }
   }
 
   function handleUseSavedTemplate() {
     try {
       const raw = localStorage.getItem("resync_saved_template");
-      if (!raw) return;
+      if (!raw) throw new Error("Saved template missing");
       const saved = JSON.parse(raw);
       if (!saved || typeof saved !== "object" || !Array.isArray(saved.chapters)) {
-        return;
+        throw new Error('Invalid saved template');
       }
       setTemplateChapters(saved.chapters);
       showTemplateToast("Saved template loaded.");
     } catch (e) {
       console.error("Failed to load saved template from localStorage:", e);
+      notify({ kind: 'error', title: "Couldn't load the saved template", message: 'Please try again.' });
     }
   }
 
@@ -382,7 +387,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       }
       setUploadedPreviewFile(file);
       setUploadedFile(slim);
-    });
+    }).catch(() => { if (current()) setScanError("We couldn't prepare this file. Try saving it again in Word and re-upload it."); });
   }
 
   function handleResetTemplate() {
@@ -780,6 +785,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
                           <input type="url" value={link} onChange={e => { setLink(e.target.value); setOutline(null); setOutlineError(null); lastScanError = null; setScanError(null); }} placeholder="https://docs.google.com/document/d/…" />
                         </span>
+                        {checkedLink && <span role={googleLink(checkedLink) ? 'status' : 'alert'} style={{ color: googleLink(checkedLink) ? '#087f5b' : '#b42318', fontSize: 13 }}>{googleLink(checkedLink) ? 'Link looks good' : "This doesn't look like a Google Docs link"}</span>}
                       </label>
                       <div style={{ display: "flex", gap: 10, fontSize: 13, color: "#6b6890", alignItems: "flex-start" }}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="#2b25c8" strokeWidth="2" className="w-4 h-4 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>

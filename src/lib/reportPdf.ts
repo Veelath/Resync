@@ -5,6 +5,8 @@ import { jsPDF } from 'jspdf';
 import type { DimensionBreakdown, DimensionName, ManuscriptFlowPair, V7ScanResponse } from '../services/v7Result';
 import { GROUPS } from '../screens/results/ScoreExplainer';
 import type { DocxBlock } from './docxStructure';
+import { clearPairs } from '../screens/results/clearPairs';
+import { plainText } from '../screens/results/helpers';
 
 export const RESYNC_SITE = 'https://resync-web-m.onrender.com';
 
@@ -308,23 +310,32 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
       y += 17;
     };
     head();
+    const hasFailures = breakdown && Object.values(breakdown).some(entry => Array.isArray(entry.failures));
+    const advice = result.recommendations.filter(rec => plainText(rec.recommended_revision).trim()).slice(0, locked ? 2 : undefined);
+    const classified = clearPairs(result.manuscript_flow, order => advice.some(rec => rec.pair_order === order), result.manuscript_sections, breakdown);
     result.manuscript_flow.forEach((pair, index) => {
-      if (y + 22 > bottom) { newPage(); head(); }
       const points = pairPoints(pair);
       const score = points ? points.earned / points.total : null;
       const label = `${pair.section_a} -> ${pair.section_b}`;
-      const verdict = pair.severity === null || pair.severity === undefined ? 'Not reviewed' : pair.severity === 'None' ? (score != null && score < 0.85 ? 'Weak link' : 'Clear') : pair.severity;   // not "Clear" while the pair lost points
-      const issue = pair.severity && pair.severity !== 'None' ? (pair.explanation?.highlighted_inconsistencies?.[0]?.what ?? pair.explanation?.link_summary ?? '') : '';
-      if (index % 2 === 0) { fill(SOFT); doc.rect(M, y, inner, 21, 'F'); }
+      const small = classified.small.find(item => item.pair === pair);
+      const verdict = !hasFailures ? (pair.severity == null ? 'Not reviewed' : pair.severity === 'None' ? (score != null && score < 0.85 ? 'Weak link' : 'Clear') : pair.severity)
+        : pair.severity == null ? 'Not reviewed' : small ? 'Small issue' : classified.clear.includes(pair) ? 'All clear'
+        : pair.severity === 'None' && advice.some(rec => rec.pair_order === pair.order) ? 'Suggestion' : pair.severity === 'None' ? 'Not reviewed' : pair.severity;
+      const issue = small ? small.categories.join(', ') : pair.severity && pair.severity !== 'None' ? (pair.explanation?.highlighted_inconsistencies?.[0]?.what ?? pair.explanation?.link_summary ?? '') : '';
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+      const issueLines = small ? doc.splitTextToSize(pdfSafe(issue), W - M - colX[4] - 8) as string[] : [trim(pdfSafe(issue), 24)];
+      const rowHeight = Math.max(21, issueLines.length * 10 + 8);
+      if (y + rowHeight > bottom) { newPage(); head(); }
+      if (index % 2 === 0) { fill(SOFT); doc.rect(M, y, inner, rowHeight, 'F'); }
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); color(NAVY);
       doc.text(trim(pdfSafe(label), 46), colX[0] + 4, y + 14);
       doc.text(pair.adjacent === false ? 'Cross-section' : 'Transition', colX[1] + 4, y + 14);
       if (points && score != null) { doc.setFont('helvetica', 'bold'); color(scoreColor(score * 100)); doc.text(`${pct(points.earned)}/${points.total} (${Math.round(score * 100)}%)`, colX[2] + 4, y + 14); }
-      doc.setFont('helvetica', 'bold'); color(verdict === 'Clear' ? GREEN : verdict === 'Not reviewed' ? GREY : verdict === 'Minor' || verdict === 'Weak link' ? AMBER : RED);
+      doc.setFont('helvetica', 'bold'); color(verdict === 'Clear' || verdict === 'All clear' ? GREEN : verdict === 'Not reviewed' ? GREY : verdict === 'Minor' || verdict === 'Weak link' || verdict === 'Small issue' || verdict === 'Suggestion' ? AMBER : RED);
       doc.text(verdict, colX[3] + 4, y + 14);
       doc.setFont('helvetica', 'normal'); color(GREY);
-      doc.text(trim(pdfSafe(issue), 24), colX[4] + 4, y + 14);
-      y += 21;
+      doc.text(issueLines, colX[4] + 4, y + 14);
+      y += rowHeight;
     });
     y += 8;
   }

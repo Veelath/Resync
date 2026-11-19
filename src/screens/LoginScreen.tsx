@@ -5,6 +5,8 @@ import { Spinner, Eye, GIcon } from '../components/AppPrimitives';
 import { AuthShell } from '../components/AuthShell';
 import type { Screen } from '../lib/appTypes';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/notify';
+import { authNotice } from '../lib/authNotice';
 import { emailError } from '../lib/validation';
 import { isEmailRegistered } from '../services/api';
 
@@ -61,11 +63,14 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
     if (!emailValue || !passwordValue) { setError("Enter your email and password."); return; }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email: emailValue, password: passwordValue });
+    sessionStorage.removeItem('resync_google_signin');
+    const { data, error } = await supabase.auth.signInWithPassword({ email: emailValue, password: passwordValue });
     setLoading(false);
     if (error) {
       setError(error.message);
     } else {
+      const notice = authNotice(data.user, 'signin');
+      if (notice) notify(notice);
       onLoginSuccess?.();
     }
   }
@@ -160,7 +165,15 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
         {/* Google SSO */}
         <button
           type="button"
-          onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
+          onClick={async () => {
+            sessionStorage.setItem('resync_google_signin', '1');
+            try {
+              const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+              if (!error) return;
+            } catch { /* Report the same friendly message for network failures. */ }
+            sessionStorage.removeItem('resync_google_signin');
+            notify({ kind: 'error', title: "Google sign-in didn't work", message: 'Please try again.' });
+          }}
           className="auth-google auth-focus auth-rise"
           style={{ ['--rise-delay' as string]: '0.35s' }}
         >

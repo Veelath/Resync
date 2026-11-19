@@ -217,7 +217,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     title: '11. Cookies and browser storage',
     body: [
       'We use your browser\'s storage to keep you signed in and to remember settings such as notification choices. We do not use advertising cookies or tracking for advertising.',
-      'While you have a report open, a copy of the file you scanned is also kept in your own browser, and only there, so the report can show your manuscript as you wrote it, even after you refresh the page. It is never sent to us again. It is deleted when you leave the report, start another scan or sign out.',
+      'While you have a report open, a copy of the file you scanned is also kept in your own browser, and only there, so the report can show your manuscript as you wrote it, even after you refresh the page. It is never sent to us again. The copy lives only in this browser tab and is removed when you close the tab, leave the report, start another scan or sign out.',
     ],
   },
   {

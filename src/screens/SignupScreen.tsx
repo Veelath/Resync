@@ -8,6 +8,8 @@ import { PasswordRequirements, isPasswordValid } from '../components/PasswordReq
 import type { Screen } from '../lib/appTypes';
 import { B } from '../lib/brand';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/notify';
+import { authNotice } from '../lib/authNotice';
 import { cleanNameInput, emailError, mailDomainAccepts, nameError } from '../lib/validation';
 import { modalTabTarget } from '../lib/modalFocus';
 
@@ -109,6 +111,7 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     const trimmedLast = lastName.trim();
     const full_name = [trimmedFirst, trimmedMiddle, trimmedLast].filter(Boolean).join(" ").trim();
 
+    sessionStorage.removeItem('resync_google_signin');
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: pw,
@@ -129,6 +132,8 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
       setError("This email is already registered. Try signing in instead.");
     } else if (data.session) {
       // The project is not asking for email confirmation, so there is nothing to verify.
+      const notice = authNotice(data.user, 'signup');
+      if (notice) notify(notice);
       onSignupSuccess?.();
     } else {
       setCodeStep(true);
@@ -141,10 +146,15 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
     if (!codeReady(code) || loading) return;
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "signup" });
+    sessionStorage.removeItem('resync_google_signin');
+    const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "signup" });
     setLoading(false);
     if (error) setError("That code is wrong or has expired. Check your email or ask for a new one.");
-    else onSignupSuccess?.();
+    else {
+      const notice = authNotice(data.user, 'signup');
+      if (notice) notify(notice);
+      onSignupSuccess?.();
+    }
   }
 
   // Wrong or inactive address: go back to the form with everything still filled in, change the email, and a fresh code goes there.
@@ -208,7 +218,15 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
         ) : (<>
         <button
           type="button"
-          onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
+          onClick={async () => {
+            sessionStorage.setItem('resync_google_signin', '1');
+            try {
+              const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+              if (!error) return;
+            } catch { /* Report the same friendly message for network failures. */ }
+            sessionStorage.removeItem('resync_google_signin');
+            notify({ kind: 'error', title: "Google sign-in didn't work", message: 'Please try again.' });
+          }}
           className="auth-google auth-focus auth-rise mb-6"
         >
           <GIcon />Continue with Google

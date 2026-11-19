@@ -1,7 +1,7 @@
 ﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import JSZip from 'jszip';
-import { trimDocument, nextBudget, preparePreview, canShowWordPreview, createPreviewGuard } from './docxPreview';
+import { trimDocument, nextBudget, preparePreview, canShowWordPreview, createPreviewGuard, previewAction, MAX_ELEMENTS } from './docxPreview';
 
 const wrap = (body: string) => `<w:document xmlns:w="word"><w:body>${body}<w:sectPr><w:pgSz/></w:sectPr></w:body></w:document>`;
 const p = (text: string) => `<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`;
@@ -24,8 +24,8 @@ test('bounds text and rejects malformed or oversized first elements', () => {
 
 test('show more doubles and stops at the hard limit', () => {
   assert.equal(nextBudget(150), 300);
-  assert.equal(nextBudget(1200), 1500);
-  assert.equal(nextBudget(1500), 1500);
+  assert.equal(nextBudget(1200), 2400);
+  assert.equal(nextBudget(3000), 3000);
 });
 
 test('generated archive retains formatting and replaces large media without inflating it', async () => {
@@ -53,21 +53,20 @@ test('falls back only when the current file is unavailable or failed', () => {
 });
 
 
-test('guard fires on timeout and ignores late completion', async () => {
-  let failures = 0;
-  const guard = createPreviewGuard(() => failures++, 10);
-  await new Promise(resolve => setTimeout(resolve, 30));
-  assert.equal(failures, 1);
-  assert.equal(guard.finish(), false);
+test('render action grows only while there is budget and reports real errors', () => {
+  assert.equal(previewAction(false, false, 150), 'show');
+  assert.equal(previewAction(false, true, 150), 'grow');
+  assert.equal(previewAction(false, true, MAX_ELEMENTS), 'show');
+  assert.equal(previewAction(true, true, 150), 'fail');
 });
 
-test('guard cancellation prevents timeout and late completion', async () => {
-  let failures = 0;
-  const guard = createPreviewGuard(() => failures++, 10);
-  guard.cancel();
-  await new Promise(resolve => setTimeout(resolve, 30));
-  assert.equal(failures, 0);
+test('guard stays active until finished or cancelled', () => {
+  const guard = createPreviewGuard(() => assert.fail('unexpected timeout'));
+  assert.equal(guard.finish(), true);
   assert.equal(guard.finish(), false);
+  const cancelled = createPreviewGuard(() => assert.fail('unexpected timeout'));
+  cancelled.cancel();
+  assert.equal(cancelled.finish(), false);
 });
 
 test('aggregate media budget keeps only the first two megabytes', async () => {

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { renderAsync } from 'docx-preview';
-import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../../lib/docxPreview';
+import { INITIAL_ELEMENTS, nextBudget, previewAction } from '../../lib/docxPreview';
 import { lockedHeadingAction, lockedHeadingIndex } from './lockedHeading';
 import { highlightSentences, type HighlightSpec } from '../../lib/docxHighlight';
 
@@ -67,8 +67,8 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
   useImperativeHandle(ref, () => ({ loadNext: () => loadNextRef.current() }), []);
   const [budget, setBudget] = useState(INITIAL_ELEMENTS);
   const [loadedPages, setLoadedPages] = useState(0);
-  const [truncated, setTruncated] = useState(false);
-  const [status, setStatus] = useState<'loading' | 'ready'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [attempt, setAttempt] = useState(0);
   const [scale, setScale] = useState(1);
   const [narrow, setNarrow] = useState(false);
   const [readable, setReadable] = useState(true);
@@ -83,28 +83,28 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     let cancelled = false;
     const body = bodyRef.current;
     if (!body) return;
-    const fail = (reason: string) => { if (!cancelled) { console.warn('Word view:', reason); callbacks.current.onFailed(); } };
+    const fail = (reason: string) => { if (!cancelled) { console.warn('Word view:', reason); setStatus('error'); } };
     setStatus('loading');
     body.replaceChildren();
     setLoadedPages(0);
     loadNextRef.current = async () => false;
     const rendered = document.createElement('div');
     const styles = document.createElement('div');
-    const worker = new Worker(new URL('../../lib/docxPreview.worker.ts', import.meta.url), { type: 'module' });
-    const guard = createPreviewGuard(() => { worker.terminate(); fail('timeout'); });
-    worker.onerror = () => { guard.cancel(); worker.terminate(); fail('worker'); };
+    let worker: Worker;
+    try { worker = new Worker(new URL('../../lib/docxPreview.worker.ts', import.meta.url), { type: 'module' }); }
+    catch { fail('worker'); return; }
+    worker.onerror = () => { worker.terminate(); fail('worker'); };
     worker.onmessage = async event => {
-      if (cancelled || !guard.isActive()) return;
-      if (event.data.error) { guard.cancel(); worker.terminate(); fail('worker'); return; }
+      if (cancelled) return;
+      if (previewAction(!!event.data.error, false, budget) === 'fail') { worker.terminate(); fail('worker'); return; }
       try {
         await renderAsync(event.data.bytes, rendered, styles, {
           className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
           breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
           renderFootnotes: false, renderEndnotes: false, useBase64URL: true,
         });
-      if (cancelled || !guard.finish()) return;
+      if (cancelled) return;
       worker.terminate();
-      setTruncated(event.data.truncated);
       keepTextOnly(rendered);
       if (locked) {
         const paragraphs = [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table'));
@@ -112,7 +112,7 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
         const action = lockedHeadingAction(index, event.data.truncated, budget);
         if (action === 'retry') { setBudget(nextBudget(budget)); return; }
         const heading = paragraphs[index];
-        if (action === 'fail' || !heading || !rendered.lastChild) { fail('locked-heading'); return; }
+        if (action === 'fail' || !heading || !rendered.lastChild) { callbacks.current.onFailed(); return; }
         // The whole document is shown; what the free report does not cover is blurred, with the unlock card where it starts.
         const marker = document.createElement('div');
         marker.className = 'docx-withheld-start';
@@ -130,18 +130,15 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       try { callbacks.current.onLinked(highlightSentences(body, specs)); } catch { /* Keep the rendered pages. */ }
       setActivePage(0);
       setStatus('ready');
-      if (event.data.truncated && budget < MAX_ELEMENTS) setTimeout(() => { if (!cancelled) setBudget(nextBudget(budget)); }, 0);
+      if (previewAction(false, event.data.truncated, budget) === 'grow') setTimeout(() => { if (!cancelled) setBudget(nextBudget(budget)); }, 0);
       } catch {
-        guard.cancel(); worker.terminate();
+        worker.terminate();
         fail('render');
       }
     };
-    worker.postMessage({ file, budget });
-    return () => { cancelled = true; guard.cancel(); worker.terminate(); };
-  }, [file, highlightKey, locked, secondSection, budget]);
-
-  // A document too long to draw page by page is shown as its complete text instead, so the report never shows only part of it.
-  useEffect(() => { if (status === 'ready' && truncated && budget >= MAX_ELEMENTS) callbacks.current.onFailed(); }, [status, truncated, budget]);
+    try { worker.postMessage({ file, budget }); } catch { worker.terminate(); fail('worker'); }
+    return () => { cancelled = true; worker.terminate(); };
+  }, [file, highlightKey, locked, secondSection, budget, attempt]);
 
   // Word pages are fixed width: shrink them to fit a narrow pane instead of scrolling sideways.
   useEffect(() => {
@@ -245,14 +242,15 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       </button>)}
     </nav>}
     <div ref={outerRef} className="docx-main">
-      {narrow && <div className="docx-phone-controls print:hidden" aria-label="Manuscript view">
+      {narrow && status === 'ready' && <div className="docx-phone-controls print:hidden" aria-label="Manuscript view">
         <button type="button" aria-pressed={readable} onClick={() => setReadable(true)}>Readable text</button>
         <button type="button" aria-pressed={!readable} onClick={() => setReadable(false)}>Word layout</button>
         {!readable && pageCount > 1 && <select aria-label="Go to page" value={activePage} onChange={event => goToPage(Number(event.target.value))}>
           {Array.from({ length: pageCount }, (_, index) => <option key={index} value={index}>Page {index + 1}</option>)}
         </select>}
       </div>}
-      {status === 'loading' && <p className="py-6 text-center text-sm text-gray-500" role="status">Opening your manuscript as you uploaded it…</p>}
+      {status === 'loading' && <div className="uf-loading py-6" role="status"><span className="uf-spinner" aria-hidden="true" /><b>Preparing your manuscript…</b></div>}
+      {status === 'error' && <div role="alert" className="py-6 text-center text-sm text-gray-700"><p>We couldn't display your manuscript. The file may be damaged, or your browser couldn't open it.</p><button type="button" className="mt-3 rounded-lg border border-[#2b25c8] px-4 py-2 font-semibold text-[#2b25c8]" onClick={() => setAttempt(value => value + 1)}>Try again</button></div>}
       <div ref={bodyRef} style={{ zoom: readableView ? 1 : scale, visibility: status === 'ready' ? 'visible' : 'hidden' }} />
       {withheldStart && unlockControl && createPortal(<div className="locked-manuscript-card w-full max-w-[360px] rounded-2xl border border-[#dfe5f5] bg-white p-5 text-center shadow-[0_16px_48px_#0b0f3d26]"><p className="mb-3 text-sm font-semibold text-[#0b0f3d]">The rest of your manuscript is covered by the full report.</p>{unlockControl}</div>, withheldStart)}
     </div>

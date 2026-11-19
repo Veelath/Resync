@@ -1,3 +1,5 @@
+import { notify } from '../../lib/notify';
+import { allClearCount, clearPairs } from './clearPairs';
 ﻿import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import type { Screen } from '../../lib/appTypes';
@@ -49,6 +51,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const unlockedId = useRef<string | null>(null);
   const [unlockError, setUnlockError] = useState('');
   const [unlockedToast, setUnlockedToast] = useState(false);
+  const unlockNotice = useRef<string>('No credit was used.');
   const [placementMessage, setPlacementMessage] = useState('');
   // Leaving a real report: it is not kept, so the student is told first and can download the PDF.
   const [leaveAction, setLeaveAction] = useState<(() => void) | null>(null);
@@ -93,7 +96,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   }, [isSample, result?.analysis_run_id]);
   const ownFile = isSample ? null : manuscriptFileFor(result?.analysis_run_id) ?? storedFile;
   const isDocx = !!ownFile && /\.docx$/i.test(ownFile.name);
-  // The same exact copy for a Word file and a Google Doc: page by page when the whole file can be drawn, else its complete text.
+  // The text fallback is reserved for an unsafe locked-heading match.
   const wordFile = isDocx && !docxFailed ? ownFile : null;
   const textFile = isDocx && docxFailed && !textFailed ? ownFile : null;
   const docxFile = wordFile ?? textFile;
@@ -118,11 +121,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
         const response = await unlockScan(result.analysis_run_id);
         unlockedId.current = result.analysis_run_id;
         setBalance(response.credits_remaining);
+        unlockNotice.current = !response.charged ? 'No credit was used.' : response.credits_remaining == null ? '1 credit used.' : `1 credit used. You have ${response.credits_remaining} credits left.`;
       }
       const full = await getScanResult(result.analysis_run_id);
       if (full.result_version !== 'v7') throw new Error('The full report is not ready. Refresh and try again.');
       setCurrentScan(full as V7ScanResponse);
       onScanUpdated?.(full as V7ScanResponse);
+      notify({ kind: 'success', title: 'Full report unlocked', message: unlockNotice.current });
       setUnlockedToast(true);
       window.setTimeout(() => setUnlockedToast(false), 4000);
     } catch (error) {
@@ -148,7 +153,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
   const visiblePairs = result.manuscript_flow.filter(pair => usablePair(pair, result.manuscript_sections));
   const issueCount = visiblePairs.filter(pair => pair.scores.overall_coherence != null && hasAdvice(pair.order) && levelOf(pair, true) !== null).length;
-  const clearCount = (locked ? result.access?.locked_counts.all_clear : undefined) ?? visiblePairs.filter(pair => pair.scores.overall_coherence != null && levelOf(pair, hasAdvice(pair.order)) === 'None').length;
+  const breakdown = result.dimension_breakdown ?? result.score_breakdown.dimension_breakdown;
+  const clearCount = allClearCount(clearPairs(visiblePairs, hasAdvice, result.manuscript_sections, breakdown).clear.length, locked, result.display_counts?.all_clear, result.access?.locked_counts.all_clear);
   const lockedOrders = locked ? new Set<number>(recommendations.map(rec => rec.pair)) : undefined;
   const linkedIds = docxFile
     ? new Set<string>(recommendations.filter(rec => rec.kind !== 'add' ? (locked ? docxLinked?.has(`${rec.pair}-${rec.id}`) : !!rec.quote) : false).map(rec => `${rec.pair}:${rec.id}`))
@@ -271,8 +277,13 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       } catch { /* the stored sections are printed instead */ }
     }
     await new Promise(resolve => setTimeout(resolve, 30));   // let the "Preparing" state paint before the PDF is built
-    const blob = reportPdfBlob(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked, exactText, structure);
-    setPdfPreview({ url: URL.createObjectURL(blob), name });
+    try {
+      const blob = reportPdfBlob(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked, exactText, structure);
+      setPdfPreview({ url: URL.createObjectURL(blob), name });
+    } catch {   // never leave the preview stuck on "Preparing"
+      setPdfPreview(null);
+      notify({ kind: 'error', title: "Couldn't prepare the PDF", message: 'Please try again.' });
+    }
   }
   const tabs: { id: Tab; label: string }[] = [
     { id: 'recommendations', label: `Recommendations (${issueCount})` },
@@ -297,15 +308,15 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     {pdfPreview && <PdfPreview url={pdfPreview.url} fileName={pdfPreview.name} onClose={closePdfPreview} />}
     {leaveAction && <LeaveNotice leaving={leaving} onStay={() => setLeaveAction(null)} onDownload={downloadPdf} onLeave={async () => {
       setLeaving(true);
-      if (result?.analysis_run_id) await discardScan(result.analysis_run_id);
-      forgetOpenReport();
+      const deleted = !!result?.analysis_run_id && await discardScan(result.analysis_run_id);
+      if (deleted) forgetOpenReport();
+      notify(deleted ? { kind: 'success', title: 'Report deleted', message: 'Your report was removed from our servers.' } : { kind: 'error', title: "Couldn't delete this report", message: 'It will be removed on your next visit.' });
       dropManuscriptFile();
       const go = leaveAction;
       setLeaving(false); setLeaveAction(null);
       go();
     }} />}
     {placementMessage && <div role="status" className="fixed top-16 right-4 z-50 max-w-sm rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">{placementMessage}</div>}
-    {unlockedToast && <div role="status" className="fixed top-16 right-4 z-50 rounded-xl bg-[#0b0f3d] px-5 py-3 text-sm font-semibold text-white shadow-lg print:hidden">Full report unlocked</div>}
     {buyCredits && <ResultsCheckout userId={result.user_id} balance={balance} onBalance={setBalance} onClose={() => setBuyCredits(false)} />}
     <main className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-4 pb-12 sm:px-6 lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-row lg:items-stretch lg:gap-px lg:bg-[#dfe5f5] lg:px-0 lg:pb-0 print:hidden">
       <div ref={manuscriptScroll} tabIndex={0} aria-label="Manuscript" className="results-scroll manuscript-scroll order-2 min-w-0 flex-1 rounded-2xl bg-white shadow-[0_10px_35px_#0b0f3d08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1a1fcc] lg:order-1 lg:rounded-none lg:shadow-none lg:overflow-y-auto print:overflow-visible print:shadow-none">
@@ -337,8 +348,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
                 <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} onShowPlacement={showPlacement} revealId={revealId} onlyOrders={lockedOrders} rateLimited={rateLimited} selectedOrder={selectedOrder} onSelect={selectFinding} />
               </div>}
               {activeTab === 'clear' && (locked && result.access?.locked_counts.all_clear != null
-                ? <p className="text-sm text-gray-500">Unlock the full report to see the sections with no issues.</p>
-                : <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} mode="clear" />)}
+                ? <div className="space-y-2 text-sm text-gray-500"><p>Unlock the full report to see the sections with no issues.</p>{(result.access?.locked_counts.minor_points ?? result.display_counts?.minor_points ?? 0) > 0 && <p>Small issues that cost points: {result.access?.locked_counts.minor_points ?? result.display_counts?.minor_points}</p>}</div>
+                : <RecommendationsList sections={result.manuscript_sections} items={recommendations} pairs={result.manuscript_flow} linkedIds={linkedIds} onShowInManuscript={(id, pair) => focusLinked('highlight', id, pair)} revealId={revealId} breakdown={breakdown} mode="clear" />)}
               {activeTab === 'citations' && (locked ? <div className="rounded-xl border border-[#dfe5f5] bg-[#e9edf8] p-4 text-sm text-[#0b0f3d]"><p className="font-semibold">{result.access!.locked_counts.citations} {result.access!.locked_counts.citations === 1 ? 'citation' : 'citations'} checked in the full report</p></div> : <CitationsTab citationFilter={citationFilter} setCitationFilter={setCitationFilter} displayedCitations={displayedCitations}
                 citationsCount={citations.length} citeCount={citeCount} renderCitation={renderCitation} scan={result} />)}
             </div>

@@ -1,25 +1,22 @@
 import JSZip from 'jszip';
 
 export const INITIAL_ELEMENTS = 150;
-export const MAX_ELEMENTS = 1500;
+export const MAX_ELEMENTS = 3000;
 export const canShowWordPreview = (file: File | null, failed: File | null) => file !== null && file !== failed;
 export const nextBudget = (n: number) => Math.min(MAX_ELEMENTS, n * 2);
 
-export function createPreviewGuard(onTimeout: () => void, delay = 8000) {
+export function createPreviewGuard(_onTimeout: () => void) {
   let active = true;
-  const started = performance.now();
-  const timer = setTimeout(() => { if (active) { active = false; onTimeout(); } }, delay);
   return {
-    finish: () => {
-      if (!active) return false;
-      active = false;
-      clearTimeout(timer);
-      if (performance.now() - started >= delay) { onTimeout(); return false; }
-      return true;
-    },
-    cancel: () => { active = false; clearTimeout(timer); },
+    finish: () => { const wasActive = active; active = false; return wasActive; },
+    cancel: () => { active = false; },
     isActive: () => active,
   };
+}
+
+export function previewAction(error: boolean, truncated: boolean, budget: number): 'show' | 'grow' | 'fail' {
+  if (error) return 'fail';
+  return truncated && budget < MAX_ELEMENTS ? 'grow' : 'show';
 }
 
 // XML is scanned in a worker; elements are never split, including tables.

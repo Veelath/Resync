@@ -20,6 +20,8 @@ import { DashboardScreen } from './screens/dashboard/DashboardScreen';
 import { ResultsScreen } from './screens/results/ResultsScreen';
 import type { V7ScanResponse } from './services/v7Result';
 import { PAYMENT_EVENT } from './lib/paymentProof';
+import { NOTICE_EVENT, notify, type QuickNotice } from './lib/notify';
+import { authNotice } from './lib/authNotice';
 import { resumeManuscriptScan, resetScanStatus, ScanOutcome } from './services/api';
 import { canResume, shouldNotifyFailure, rememberFailureNotification } from './lib/scanWait';
 import { askForDesktopAlerts, showDesktopAlert } from './components/ScanNotifications';
@@ -66,7 +68,8 @@ export default function App() {
     clearActiveScan();
     dropManuscriptFile();
     await clearAllSourceFiles();
-    await supabase.auth.signOut({ scope: 'local' });
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) throw error;
   }, ended => {
     sessionRef.current = null;
     setSession(null);
@@ -118,12 +121,21 @@ export default function App() {
     void discardLeftoverReport(current, id => { dropManuscriptFile(); return discardScan(id); });
   }, [session?.user?.id]);
 
+  function noticeGoogleReturn(currentSession: Session | null) {
+    if (!currentSession || !sessionStorage.getItem('resync_google_signin')) return;
+    sessionStorage.removeItem('resync_google_signin');
+    if (currentSession.user.app_metadata.provider !== 'google') return;
+    const notice = authNotice(currentSession.user, 'signin');
+    if (notice) notify(notice);
+  }
+
   useEffect(() => {
     const isRecovery = window.location.pathname === '/reset-password' || window.location.hash.includes('type=recovery');
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       sessionRef.current = session;
+      if (!isRecovery) noticeGoogleReturn(session);
       if (isRecovery && window.location.pathname !== '/reset-password') window.history.replaceState({ resync: { index: 0 } }, '', '/reset-password');
       showRoute(window.location.pathname, 0, session);
       setSessionLoading(false);
@@ -143,6 +155,7 @@ export default function App() {
         window.history.replaceState({ resync: { index: historyIndex.current } }, '', '/reset-password');
         showRoute('/reset-password', historyIndex.current, session);
       } else if (event === 'SIGNED_IN' && session) {
+        if (!isRecovery) noticeGoogleReturn(session);
         if (['login', 'signup', 'home'].includes(screenRef.current)) afterSignIn();
       } else if (!session) {
         if (['dashboard', 'upload', 'processing', 'results'].includes(screenRef.current) && window.location.pathname !== '/sample') {
@@ -216,6 +229,17 @@ export default function App() {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 8000);
   }
+
+  useEffect(() => {
+    const onNotice = (event: Event) => {
+      const notice = (event as CustomEvent<QuickNotice>).detail;
+      setToast({ ...notice, id: `quick-${Date.now()}`, at: Date.now(), read: true });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 4000);
+    };
+    window.addEventListener(NOTICE_EVENT, onNotice);
+    return () => window.removeEventListener(NOTICE_EVENT, onNotice);
+  }, []);
 
   // Paying (by card or by uploading proof) lands in the bell and pops up like a finished scan does.
   useEffect(() => {
@@ -346,8 +370,13 @@ export default function App() {
   }
 
   async function handleLogout() {
-    await signOutRef.current?.run(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      await signOutRef.current?.run(false);
+      notify({ kind: 'success', title: 'Signed out successfully', message: 'See you next time.' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      notify({ kind: 'error', title: "Couldn't sign you out", message: 'Please try again.' });
+    }
   }
 
   if (screen === 'privacy') {

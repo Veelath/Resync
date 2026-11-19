@@ -1,4 +1,7 @@
+import { notify } from '../../lib/notify';
 import { Fragment, useState } from 'react';
+import type { DimensionBreakdown } from '../../services/v7Result';
+import { clearPairs } from './clearPairs';
 import type { ManuscriptFlowPair } from '../../services/v7Result';
 import { categoryColors, type RecommendationCategory } from './categoryColors';
 import { plainText } from './helpers';
@@ -111,7 +114,9 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   const stepNumber = 'grid size-5 shrink-0 place-items-center rounded-full bg-[#eeeefe] text-[11px] font-bold text-[#2b25c8]';
   const outlineButton = 'inline-flex items-center gap-1.5 rounded-xl border border-[#d9d7f7] bg-white px-4 py-2 text-xs font-bold text-[#2b25c8] hover:bg-[#f6f6ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b25c8]';
   const copy = (id: string, text: string) => {
-    navigator.clipboard?.writeText(text).then(() => { setCopied(id); window.setTimeout(() => setCopied(current => current === id ? null : current), 1800); }).catch(() => undefined);
+    const failed = () => notify({ kind: 'error', title: "Couldn't copy", message: 'Select the sentence and copy it yourself.' });
+    if (!navigator.clipboard?.writeText) { failed(); return; }
+    navigator.clipboard.writeText(text).then(() => { setCopied(id); window.setTimeout(() => setCopied(current => current === id ? null : current), 1800); }).catch(failed);
   };
   const collapsible = !!onSelect && !alwaysOpen;
   const head = <>
@@ -185,8 +190,9 @@ export function PairIssueCard({ pair, items, severity, linkedIds, onShowInManusc
   </section>;
 }
 
-export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, onShowPlacement, revealId, onlyOrders, mode = 'issues', rateLimited = false, showAll = false, selectedOrder = null, onSelect, sections = [] }: {
+export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscript, onShowPlacement, revealId, onlyOrders, mode = 'issues', rateLimited = false, showAll = false, selectedOrder = null, onSelect, sections = [], breakdown }: {
   items: RecommendationItem[];
+  breakdown?: DimensionBreakdown;
   pairs: ManuscriptFlowPair[];
   sections?: Sections;
   linkedIds: Set<string>;
@@ -202,13 +208,14 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
   selectedOrder?: number | null;
   onSelect?: (order: number) => void;
 }) {
+  const classified = clearPairs(pairs, order => items.some(item => item.pair === order && plainText(item.revision).trim()), sections, breakdown);
   const rows = pairs
     .filter(pair => usablePair(pair, sections) && pair.scores.overall_coherence != null && (!onlyOrders || onlyOrders.has(pair.order)))
     .map(pair => {
       const pairItems = items.filter(item => item.pair === pair.order && plainText(item.revision).trim());
-      return { pair, pairItems, severity: levelOf(pair, pairItems.length > 0) };
+      return { pair, pairItems, severity: mode === 'clear' && classified.clear.includes(pair) ? 'None' as const : levelOf(pair, pairItems.length > 0) };
     })
-    .filter(row => mode === 'issues' ? row.pairItems.length > 0 && row.severity !== null && row.severity !== 'None' : row.severity === 'None')
+    .filter(row => mode === 'issues' ? row.pairItems.length > 0 && row.severity !== null && row.severity !== 'None' : classified.clear.includes(row.pair))
     .sort((a, b) => severityRank(a.severity === 'Suggestion' ? 'None' : a.severity) - severityRank(b.severity === 'Suggestion' ? 'None' : b.severity) || a.pair.order - b.pair.order);
   // Pairs the AI could not judge are not "fine": they are shown with the recommendations as something still to do.
   const unreviewed = pairs
@@ -232,12 +239,17 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
       return <Fragment key={pair.order}><PairIssueCard sections={sections} pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={id => onShowInManuscript(id, pair.order)} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll}
         selected={selectedOrder === pair.order} onSelect={onSelect && (() => onSelect(pair.order))} alwaysOpen /></Fragment>;
     })}
+    {mode === 'clear' && classified.small.length > 0 && <div className="space-y-2 text-sm text-gray-700">
+      <p className="font-semibold">Small issues that cost points</p>
+      <ul className="space-y-1">{classified.small.map(({ pair, categories }) => <li key={pair.order}>{sectionDisplayName(pair.section_a, sections)} and {sectionDisplayName(pair.section_b, sections)}: {categories.join(', ')}</li>)}</ul>
+      <p>No change is required; this only lowered the score slightly.</p>
+    </div>}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <p className="text-sm font-semibold text-amber-900">{rateLimited
         ? provisionalMessage
         : `${unreviewed.length} section ${unreviewed.length === 1 ? 'pair' : 'pairs'} could not be reviewed by the AI, so we can’t say whether ${unreviewed.length === 1 ? 'it is' : 'they are'} fine. Scan again to retry.`}</p>
       <ul className="space-y-1 text-xs text-amber-900">{unreviewed.map(pair => <li key={pair.order} >{sectionDisplayName(pair.section_a, sections)} ↔ {sectionDisplayName(pair.section_b, sections)}</li>)}</ul>
     </div>}
-    {!rows.length && !(mode === 'issues' && unreviewed.length > 0) && <p className="text-sm text-gray-500">{mode === 'issues' ? 'No recommendations to show.' : 'Nothing here yet.'}</p>}
+    {!rows.length && !(mode === 'clear' && classified.small.length) && !(mode === 'issues' && unreviewed.length > 0) && <p className="text-sm text-gray-500">{mode === 'issues' ? 'No recommendations to show.' : 'Nothing here yet.'}</p>}
   </div>;
 }

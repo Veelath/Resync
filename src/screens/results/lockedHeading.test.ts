@@ -23,6 +23,6 @@ test('retries only a missing heading in a truncated preview below the limit', ()
   assert.equal(lockedHeadingAction(0, true, 150), 'show');
   assert.equal(lockedHeadingAction(-1, true, 150), 'retry');
   assert.equal(lockedHeadingAction(-1, false, 150), 'fail');
-  assert.equal(lockedHeadingAction(-1, true, 1500), 'fail');
+  assert.equal(lockedHeadingAction(-1, true, 3000), 'fail');
   assert.equal(lockedHeadingAction(-2, true, 150), 'fail');
 });

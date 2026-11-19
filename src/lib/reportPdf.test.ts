@@ -41,3 +41,25 @@ test('a section scores by the points of the checks it takes part in, like the sc
   const scores = sectionScores([pair({}), pair({ order: 2, section_b: 'c', severity: 'Critical', failed_dimension: 'claim_support' })]);
   assert.deepEqual(scores.map(item => [item.name, item.score]), [['a', 83.33], ['b', 100], ['c', 66.67]]);
 });
+
+test('PDF pair labels follow failures and preserve older report labels', () => {
+  const pair = (order: number, severity: string = 'None') => ({ order, section_a: `Section ${order}`, section_b: `Section ${order + 1}`, adjacent: true, numeric_applicable: false, severity, failed_dimension: 'none', scores: { objectives_alignment: 0.2, methodology_fit: 0.9, claim_support: 0.9, overall_coherence: 0.7 } });
+  const report = structuredClone(result);
+  report.manuscript_sections = [];
+  report.manuscript_flow = [pair(1), pair(3), pair(5, 'Minor'), pair(7, 'None'), pair(9, null as any)];
+  report.recommendations = [{ pair_order: 5, recommended_revision: 'Change this.', section_a: 'Section 5', section_b: 'Section 6' }, { pair_order: 7, recommended_revision: 'Add a link.', section_a: 'Section 7', section_b: 'Section 8' }];
+  report.dimension_breakdown = { context_alignment: { score: 80, failures: [{ order: 3, credit: 0.2 }] }, logical_support: { score: 80, failures: [{ order: 3, credit: 0.5 }] } };
+  const pdf = buildReportPdf(report, 'Test', []).output();
+  assert.match(pdf, /\(All clear\)/);
+  assert.match(pdf, /\(Small issue\)/);
+  assert.match(pdf, /\(Context/);
+  assert.match(pdf, /\(Logical/);
+  assert.match(pdf, /\(Minor\)/);
+  assert.match(pdf, /\(Suggestion\)/);
+  assert.match(pdf, /\(Not reviewed\)/);
+  delete report.dimension_breakdown;
+  delete report.score_breakdown.dimension_breakdown;
+  const old = buildReportPdf(report, 'Test', []).output();
+  assert.match(old, /\(Weak link\)/);
+  assert.doesNotMatch(old, /\(All clear\)|\(Small issue\)/);
+});
