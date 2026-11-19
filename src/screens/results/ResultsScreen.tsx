@@ -16,6 +16,7 @@ import { ResultsScorePanel } from './ResultsScorePanel';
 import { LeaveNotice } from './LeaveNotice';
 import { reportFileName, reportPdfBlob } from '../../lib/reportPdf';
 import { PdfPreview } from './PdfPreview';
+import { readDocxStructure } from '../../lib/docxStructure';
 import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, usableTitle } from './helpers';
@@ -259,8 +260,10 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     const name = reportFileName(displayTitle);
     setPdfPreview({ url: null, name });
     let exactText: string | null = null;
-    if (ownFile && /\.docx$/i.test(ownFile.name) && !locked) {   // an exact copy of the uploaded text, taken from the file itself
-      try {   // the text of the paragraphs only: tables and pictures are not part of the report's copy
+    let structure: Awaited<ReturnType<typeof readDocxStructure>> | null = null;
+    if (ownFile && /\.docx$/i.test(ownFile.name) && !locked) {   // an exact copy of the uploaded document, taken from the file itself
+      try { structure = await readDocxStructure(ownFile); } catch { /* the plain text is used instead */ }
+      if (!structure) try {   // the text of the paragraphs only: tables and pictures are not part of the report's copy
         const { value } = await (await import('mammoth')).convertToHtml({ arrayBuffer: await ownFile.arrayBuffer() });
         const page = new DOMParser().parseFromString(value, 'text/html');
         page.querySelectorAll('table, img').forEach(element => element.remove());
@@ -268,7 +271,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       } catch { /* the stored sections are printed instead */ }
     }
     await new Promise(resolve => setTimeout(resolve, 30));   // let the "Preparing" state paint before the PDF is built
-    const blob = reportPdfBlob(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked, exactText);
+    const blob = reportPdfBlob(result!, displayTitle, citations.map(citation => ({ ref: citation.ref, status: citation.status, noLink: citation.noLink })), locked, exactText, structure);
     setPdfPreview({ url: URL.createObjectURL(blob), name });
   }
   const tabs: { id: Tab; label: string }[] = [

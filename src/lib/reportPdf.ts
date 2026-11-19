@@ -4,6 +4,7 @@
 import { jsPDF } from 'jspdf';
 import type { DimensionBreakdown, DimensionName, ManuscriptFlowPair, V7ScanResponse } from '../services/v7Result';
 import { GROUPS } from '../screens/results/ScoreExplainer';
+import type { DocxBlock } from './docxStructure';
 
 export const RESYNC_SITE = 'https://resync-web-m.onrender.com';
 
@@ -72,7 +73,7 @@ export function sectionScores(flow: ManuscriptFlowPair[]): { name: string; score
 }
 
 /** `manuscriptText` is the exact text of the uploaded file (paragraph by paragraph); without it the stored sections are printed. */
-export function buildReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null): jsPDF {
+export function buildReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null, structure?: DocxBlock[] | null): jsPDF {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -86,6 +87,79 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
   const stroke = (c: [number, number, number]) => doc.setDrawColor(c[0], c[1], c[2]);
   const newPage = () => { doc.addPage(); y = M + 10; };
   const need = (height: number) => { if (y + height > bottom) newPage(); };
+
+  /** The manuscript as it was written: its paragraphs in order with alignment, indents, spacing, bold, italic, underline, sizes, lists and page breaks. */
+  function drawStructure(blocks: DocxBlock[]) {
+    const TM = 64;                       // a 2.25 cm margin, like the Word page
+    const right = W - TM;
+    const fontOf = (run: { bold: boolean; italic: boolean }) => run.bold && run.italic ? 'bolditalic' : run.bold ? 'bold' : run.italic ? 'italic' : 'normal';
+    color([20, 20, 20]);
+    let blanks = 0;
+    for (const block of blocks) {
+      if (block.kind === 'page') { newPage(); blanks = 0; continue; }
+      const lineHeight = block.size * block.lineFactor;
+      if (!block.runs.length) {   // an empty paragraph is a blank line, but a long run of them is not kept
+        if (++blanks <= 3) { need(lineHeight); y += lineHeight; }
+        continue;
+      }
+      blanks = 0;
+      let left = block.left, first = block.first;
+      if (block.marker && left === 0 && first === 0) { left = 36; first = -18; }
+      if (y > M + 10) y += block.before;
+      // words with their style, then lines that fit the width
+      type Word = { text: string; font: string; underline: boolean; width: number; gap: number; breakAfter: boolean };
+      const words: Word[] = [];
+      let gap = 0;
+      doc.setFontSize(block.size);
+      for (const run of block.runs) {
+        doc.setFont('times', fontOf(run));
+        for (const piece of run.text.split(/(\n|[ \t\u00a0]+)/)) {
+          if (!piece) continue;
+          if (piece === '\n') { if (words.length) words[words.length - 1].breakAfter = true; gap = 0; continue; }
+          if (/^[ \t\u00a0]+$/.test(piece)) { gap += doc.getTextWidth(' ') * (piece.length > 3 ? 4 : Math.min(piece.length, 2)); continue; }
+          const safe = pdfSafe(piece);
+          words.push({ text: safe, font: fontOf(run), underline: run.underline, width: doc.getTextWidth(safe), gap: words.length || gap ? gap : 0, breakAfter: false });
+          gap = 0;
+        }
+      }
+      type Line = { words: Word[]; forced: boolean };
+      const lines: Line[] = [];
+      let current: Word[] = [], used = 0, firstLine = true;
+      const room = () => right - (TM + left + (firstLine ? first : 0));
+      for (const word of words) {
+        const add = (current.length ? word.gap || doc.getTextWidth(' ') : 0) + word.width;
+        if (current.length && used + add > room()) { lines.push({ words: current, forced: false }); current = []; used = 0; firstLine = false; }
+        current.push(word); used += (current.length > 1 ? word.gap || doc.getTextWidth(' ') : 0) + word.width;
+        if (word.breakAfter) { lines.push({ words: current, forced: true }); current = []; used = 0; firstLine = false; }
+      }
+      if (current.length) lines.push({ words: current, forced: true });
+      lines.forEach((line, index) => {
+        need(lineHeight);
+        const startsAt = TM + left + (index === 0 ? first : 0);
+        const space = doc.getTextWidth(' ');
+        const natural = line.words.reduce((sum, word, i) => sum + word.width + (i ? word.gap || space : 0), 0);
+        const available = right - startsAt;
+        let x = startsAt, extra = 0;
+        if (block.align === 'center') x = TM + left + (right - TM - left - natural) / 2;
+        else if (block.align === 'right') x = right - natural;
+        else if (block.align === 'justify' && !line.forced && line.words.length > 1) extra = Math.max(0, (available - natural) / (line.words.length - 1));
+        const baseline = y + block.size;
+        if (index === 0 && block.marker) {
+          doc.setFont('times', 'normal'); doc.setFontSize(block.size);
+          doc.text(pdfSafe(block.marker), TM + left + first, baseline);
+        }
+        line.words.forEach((word, i) => {
+          if (i) x += (word.gap || space) + extra;
+          doc.setFont('times', word.font); doc.setFontSize(block.size);
+          doc.text(word.text, x, baseline);
+          if (word.underline) { stroke([20, 20, 20]); doc.setLineWidth(0.5); doc.line(x, baseline + 1.5, x + word.width, baseline + 1.5); }
+          x += word.width;
+        });
+        y += lineHeight;
+      });
+      y += block.after;
+    }
+  }
 
   /** Wrapped text at the current position; returns the height used. */
   function text(value: string, opts: { size?: number; bold?: boolean; italic?: boolean; color?: [number, number, number]; x?: number; width?: number; gap?: number; lineHeight?: number } = {}) {
@@ -314,10 +388,12 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
   // ---------------------------------------------------------------- the manuscript text, after the score report
   newPage();
   heading('Manuscript text');
-  const exactText = !locked && manuscriptText?.trim() ? manuscriptText : null;
-  text(exactText ? 'A copy of the text of your uploaded document, as written.' : 'The text that was scanned, section by section.', { size: 9.5, color: GREY, gap: 4 });
-  if (exactText) exactText.split(/\n+/).map(line => line.trim()).filter(Boolean).forEach(line => text(line, { size: 9.5, gap: 4, lineHeight: 13.2 }));
-  const sections = exactText ? [] : result.manuscript_sections ?? [];
+  const copyBlocks = !locked && structure?.length ? structure : null;
+  const exactText = !locked && !copyBlocks && manuscriptText?.trim() ? manuscriptText : null;
+  text(copyBlocks || exactText ? 'A copy of your uploaded document, as you wrote it.' : 'The text that was scanned, section by section.', { size: 9.5, color: GREY, gap: 4 });
+  if (copyBlocks) drawStructure(copyBlocks);
+  else if (exactText) exactText.split(/\n+/).map(line => line.trim()).filter(Boolean).forEach(line => text(line, { size: 9.5, gap: 4, lineHeight: 13.2 }));
+  const sections = copyBlocks || exactText ? [] : result.manuscript_sections ?? [];
   sections.forEach(section => {
     if (section.text == null && !section.blocks) {
       need(30);
@@ -362,10 +438,10 @@ export function reportFileName(title: string): string {
 }
 
 /** The finished PDF as a Blob, for the preview that is shown before anything is downloaded. */
-export function reportPdfBlob(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null): Blob {
-  return buildReportPdf(result, title, citations, locked, manuscriptText).output('blob');
+export function reportPdfBlob(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null, structure?: DocxBlock[] | null): Blob {
+  return buildReportPdf(result, title, citations, locked, manuscriptText, structure).output('blob');
 }
 
-export function downloadReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null) {
-  buildReportPdf(result, title, citations, locked, manuscriptText).save(reportFileName(title));
+export function downloadReportPdf(result: V7ScanResponse, title: string, citations: PdfCitation[], locked = false, manuscriptText?: string | null, structure?: DocxBlock[] | null) {
+  buildReportPdf(result, title, citations, locked, manuscriptText, structure).save(reportFileName(title));
 }
