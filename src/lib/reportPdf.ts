@@ -277,7 +277,7 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
 
   heading('How the score is made');
   text('Every pair of sections is checked on four categories. Each check is worth 1 point: a pass earns 1, a Minor contradiction 0.5, a Moderate one 0.25, a Critical one 0, '
-    + 'and a loosely linked pair earns its own rating (up to 0.5). Each category has two groups, checks between neighbouring sections (flow) and checks between far-apart '
+    + 'and a pair the AI review could not check keeps its own model rating (up to 0.5). A pair the AI review cleared earns a full point, however the model rated it: the score only drops for a problem the AI verified with an exact quote. Each category has two groups, checks between neighbouring sections (flow) and checks between far-apart '
     + 'sections that must agree (cross-sections). The two groups count for half each: category score = (flow rate + cross-section rate) / 2. The overall score is the average of the applicable '
     + 'categories, rounded up. Bands: 85 or more is Strong, 70 to 84 is Solid, below 70 is Needs Revision. A finding only counts when it has an exact quote from the manuscript.',
     { size: 9.5, color: GREY, gap: 6 });
