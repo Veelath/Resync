@@ -294,7 +294,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   function handleSaveTemplate() {
-    if (!templateChapters.some(chapter => chapter.sections.length)) return;
+    if (!templateChapters.length) return;   // chapters alone are enough: an uploaded template often has chapters before any sections
     try {
       const existing = localStorage.getItem("resync_saved_template");
       if (existing) {
@@ -567,7 +567,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     {templateNotification}
                   </span>
                 )}
-                <button type="button" onClick={handleSaveTemplate} disabled={!hasChapters} className="uf-btn is-ghost is-sm">
+                <button type="button" onClick={handleSaveTemplate} disabled={!templateChapters.length} className="uf-btn is-ghost is-sm">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
                   Save template
                 </button>
