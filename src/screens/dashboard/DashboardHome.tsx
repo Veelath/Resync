@@ -51,7 +51,7 @@ export function DashboardHome({ onNavigate, session, greeting, scanRunning = fal
           </div>
           <span className="phase2-finding phase2-finding-one"><i />Logic gap between sections</span>
           <span className="phase2-finding phase2-finding-two"><i />Citation not accessible</span>
-          <span className="phase2-finding phase2-finding-three"><i />AI-text indicator</span>
+          <span className="phase2-finding phase2-finding-three"><i />AI recommendation</span>
         </div>
       </div>
       <div className="phase2-strip">
