@@ -499,6 +499,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   // Step 2 -> 3: make sure there is something to confirm.
   function continueToConfirm() {
     lastScanError = null;
+    setDismissedProblem(null);   // every click shows its problem again as a pop-up
     if (mode === "file" && !uploadedFile) { setScanError("Please select a manuscript file to upload."); return; }
     if (mode === "link" && (!link.trim() || !link.includes("docs.google.com"))) { setScanError("Please provide a valid Google Docs link."); return; }
     if (!linkProblem && !outlineError) setScanError(null);
@@ -807,6 +808,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                     </button>
                   </div>
+                  {step === 2 && scanError && scanError !== dismissedProblem && (() => {
+                    const noFile = /select a manuscript file/i.test(scanError);
+                    return <ProblemDialog title={noFile ? "Choose a file first" : mode === "link" ? "Check your Google Docs link" : "We could not use this document"} message={scanError}
+                      actionLabel={noFile ? "Choose a file" : "OK"}
+                      onAction={() => { setDismissedProblem(scanError); if (noFile) fileInputRef.current?.click(); }} onClose={() => setDismissedProblem(scanError)} />;
+                  })()}
                   {scanError && (
                     <div role="alert" className="uf-error">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
