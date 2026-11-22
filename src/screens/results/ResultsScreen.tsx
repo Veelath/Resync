@@ -306,7 +306,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     <ResultsHeader onNavigate={target => isSample ? onNavigate(target) : askToLeave(() => onNavigate(target))} onBack={() => isSample ? onBack() : askToLeave(onBack)}
       isSample={isSample} displayTitle={displayTitle} onDownload={downloadPdf} sampleId={sampleId} onSampleChange={id => { setSampleId(id); setActiveTab('recommendations'); setSelectedOrder(null); manuscriptScroll.current?.scrollTo({ top: 0 }); }} onClose={isSample ? undefined : () => askToLeave(() => onNavigate('dashboard'))} />
     {pdfPreview && <PdfPreview url={pdfPreview.url} fileName={pdfPreview.name} onClose={closePdfPreview} />}
-    {leaveAction && <LeaveNotice leaving={leaving} onStay={() => setLeaveAction(null)} onDownload={downloadPdf} onLeave={async () => {
+    {leaveAction && <LeaveNotice title={displayTitle} score={result.overall_coherence_score} leaving={leaving} onStay={() => setLeaveAction(null)} onDownload={downloadPdf} onLeave={async () => {
       setLeaving(true);
       const deleted = !!result?.analysis_run_id && await discardScan(result.analysis_run_id);
       if (deleted) forgetOpenReport();
