@@ -86,6 +86,17 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const [docxLinked, setDocxLinked] = useState<Set<string> | null>(null);
   const [textFailed, setTextFailed] = useState(false);
   const [storedFile, setStoredFile] = useState<File | null>(null);
+  // The sample report shows its manuscript the same way a real report does: the Word file it was scanned from, with its highlights.
+  const [sampleFile, setSampleFile] = useState<File | null>(null);
+  useEffect(() => {
+    setSampleFile(null);
+    if (!isSample) return;
+    let cancelled = false;
+    fetch(`/samples/${sampleId}.docx`).then(response => response.ok ? response.blob() : Promise.reject(new Error('missing')))
+      .then(blob => { if (!cancelled) setSampleFile(new File([blob], `${sampleId}.docx`)); })
+      .catch(() => { if (!cancelled) setSampleFile(null); });
+    return () => { cancelled = true; };
+  }, [isSample, sampleId]);
   // After a refresh the file is no longer in memory: it comes back from this browser's own storage, so the report still shows the exact copy.
   useEffect(() => {
     setStoredFile(null);
@@ -94,7 +105,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     void loadManuscriptFile(result.analysis_run_id).then(file => { if (!cancelled) setStoredFile(file); });
     return () => { cancelled = true; };
   }, [isSample, result?.analysis_run_id]);
-  const ownFile = isSample ? null : manuscriptFileFor(result?.analysis_run_id) ?? storedFile;
+  const ownFile = isSample ? sampleFile : manuscriptFileFor(result?.analysis_run_id) ?? storedFile;
   const isDocx = !!ownFile && /\.docx$/i.test(ownFile.name);
   // The text fallback is reserved for an unsafe locked-heading match.
   const wordFile = isDocx && !docxFailed ? ownFile : null;

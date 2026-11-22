@@ -25,7 +25,7 @@ export function ResultsHeader({ onNavigate, onBack, isSample, displayTitle, onDo
         </label>}
         <span className="rp-slash hidden md:block" aria-hidden="true">/</span>
         <span className="rp-crumb hidden md:block">{displayTitle}</span>
-        {(
+        {!isSample && (
           <div className="rp-actions">
             <button type="button" onClick={onDownload} className="rp-pill rp-ghost">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true"><path d="M12 4v12" /><path d="M7 11l5 5 5-5" /><path d="M4 18v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1" /></svg>
