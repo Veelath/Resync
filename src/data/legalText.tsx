@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 // this text with it. It is a careful draft, not legal advice: have a lawyer or the school's legal office review it before any real launch.
 
 export const LEGAL_UPDATED = 'November 22, 2026';
-export const CONTACT_EMAIL = 'readSync.uc.edu@gmail.com';
+export const CONTACT_EMAIL = 'resync.uc.edu@gmail.com';
 export const CONTACT_PLACE = 'University of Cebu - Banilad';
 
 export interface LegalSection { title: string; body: ReactNode[] }
