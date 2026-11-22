@@ -11,6 +11,7 @@ import './upload-flow.css';
 import { UploadTour, uploadTourSeen } from './UploadTour';
 import { previewParagraphs } from '../lib/previewParagraphs';
 import { DocxPreview } from '../components/DocxPreview';
+import { ProblemDialog } from './ProblemDialog';
 import { keepManuscriptFile, tagManuscriptFile } from '../lib/manuscriptFile';
 import { canShowWordPreview } from '../lib/docxPreview';
 import { wordOutlineReady, googleOutlineReady } from '../lib/uploadReadiness';
@@ -179,6 +180,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [outlineError, setOutlineError] = useState<string | null>(null);
   // A document with no research-paper structure is not scanned (a school template can supply its own headings, so it is let through).
   const notAPaper = outline?.looks_like_paper === false && !templateChapters.some(chapter => chapter.sections.length);
+  // On the confirm step a problem is also shown as a pop-up, so it cannot be missed below the preview. Closing it keeps the message on the page.
+  const [dismissedProblem, setDismissedProblem] = useState<string | null>(null);
+  useEffect(() => { setDismissedProblem(null); }, [uploadedFile, link, mode, step]);   // a new document, or coming back to this step, shows its problem again
   const replaceInputRef = useRef<HTMLInputElement>(null);
   const [linkDraft, setLinkDraft] = useState("");
   useEffect(() => { setLinkDraft(link); }, [link, step]);
@@ -976,6 +980,13 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                 <p style={{ margin: 0 }}>{scanError}</p>
               </div>
             )}
+            {(() => {
+              const problem = scanError ?? (notAPaper ? outline?.paper_problem ?? null : null) ?? ((mode === "file" ? outlineError : linkProblem || outlineError) || null);
+              if (!problem || problem === dismissedProblem) return null;
+              const title = scanError ? "The scan could not start" : notAPaper ? "This does not look like a research paper" : "We could not read this document";
+              return <ProblemDialog title={title} message={problem} actionLabel="Choose a different document"
+                onAction={() => { setDismissedProblem(problem); setStep(2); }} onClose={() => setDismissedProblem(problem)} />;
+            })()}
             <div className="uf-actionbar">
               <button type="button" onClick={() => setStep(2)} disabled={isScanning} className="uf-btn is-ghost is-lg" style={{ padding: "0 26px" }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="w-4 h-4" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
