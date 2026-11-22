@@ -71,7 +71,7 @@ export function DashboardHome({ onNavigate, session, greeting, scanRunning = fal
     </main>
     <div className="phase2-supporting">
       <section><p>Outputs</p><h2>What You Get</h2><span>A free preview with every scan; the full report unlocks for 1 credit.</span><div>{outputs.map(([title, description]) => <article key={title}><strong>{title}</strong>{title !== 'Coherence Score' && <small className="phase2-full-tag">Full report</small>}<span>{description}</span></article>)}</div></section>
-      <section><p>Guidance</p><h2>Best Results With</h2><span>Clear sections help ReSync assess how each part of your manuscript connects to the next.</span><div>{guidance.map(([title, description]) => <article key={title}><strong>{title}</strong><span>{description}</span></article>)}</div></section>
+      <section><p>Guidance</p><h2>Best Results With</h2><span>Clear sections help Resync assess how each part of your manuscript connects to the next.</span><div>{guidance.map(([title, description]) => <article key={title}><strong>{title}</strong><span>{description}</span></article>)}</div></section>
     </div>
   </div>;
 }

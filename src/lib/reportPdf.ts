@@ -206,7 +206,7 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
   // ---------------------------------------------------------------- cover block
   fill(INDIGO); doc.rect(0, 0, W, 112, 'F');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(255, 255, 255);
-  doc.text('ReSync', M, 38);
+  doc.text('Resync', M, 38);
   doc.setFontSize(23); doc.text('Manuscript Coherence Report', M, 68);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
   const titleLines = doc.splitTextToSize(pdfSafe(title), inner) as string[];
@@ -428,7 +428,7 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
     doc.setPage(page);
     if (page > 1) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); color(INDIGO);
-      doc.text('ReSync', M, 28);
+      doc.text('Resync', M, 28);
       doc.setFont('helvetica', 'normal'); color(GREY);
       doc.text(trim(pdfSafe(title), 70), W - M, 28, { align: 'right' });
       stroke(LINE); doc.setLineWidth(0.6); doc.line(M, 34, W - M, 34);
@@ -445,7 +445,7 @@ export function buildReportPdf(result: V7ScanResponse, title: string, citations:
 
 export function reportFileName(title: string): string {
   const safeName = pdfSafe(title).replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'manuscript';
-  return `ReSync-report-${safeName}.pdf`;
+  return `Resync-report-${safeName}.pdf`;
 }
 
 /** The finished PDF as a Blob, for the preview that is shown before anything is downloaded. */

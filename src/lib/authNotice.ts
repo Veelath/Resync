@@ -10,6 +10,6 @@ export function authNotice(user: Pick<User, 'created_at' | 'last_sign_in_at' | '
   const meta = user.user_metadata;
   const firstName = (meta?.first_name || meta?.given_name || meta?.full_name?.trim().split(/\s+/)[0] || '').trim();
   return isNew
-    ? { kind: 'success', title: 'Account created', message: firstName ? `Welcome to ReSync, ${firstName}!` : 'Welcome to ReSync!' }
+    ? { kind: 'success', title: 'Account created', message: firstName ? `Welcome to Resync, ${firstName}!` : 'Welcome to Resync!' }
     : { kind: 'success', title: 'Signed in successfully', message: firstName ? `Welcome back, ${firstName}!` : 'Welcome back!' };
 }

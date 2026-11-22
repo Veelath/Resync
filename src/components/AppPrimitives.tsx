@@ -5,8 +5,8 @@ import resyncLogo from '@/imports/Untitled_design__1_.webp';
 import './app-primitives.css';
 
 export function Logo({ className = "", header = false }: { className?: string; header?: boolean }) {
-  if (header) return <span className={`relative block shrink-0 overflow-hidden aspect-[3135/1542] ${className}`}><img src={resyncLogo} alt="ReSync" className="absolute max-w-none" style={{ width: "116.91%", height: "205.25%", left: "-8.006%", top: "-48.703%" }} /></span>;
-  return <img src={resyncLogo} alt="ReSync" className={`object-contain ${className}`} />;
+  if (header) return <span className={`relative block shrink-0 overflow-hidden aspect-[3135/1542] ${className}`}><img src={resyncLogo} alt="Resync" className="absolute max-w-none" style={{ width: "116.91%", height: "205.25%", left: "-8.006%", top: "-48.703%" }} /></span>;
+  return <img src={resyncLogo} alt="Resync" className={`object-contain ${className}`} />;
 }
 
 // One header-logo size for every screen (home, dashboard, auth).

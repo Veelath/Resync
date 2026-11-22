@@ -33,7 +33,7 @@ export function ReportPrint({ result, title, items, citations, locked, lockedOrd
       }
     `}</style>
 
-    <p style={{ color: '#1a1fcc', fontWeight: 800, fontSize: 18, margin: 0 }}>ReSync</p>
+    <p style={{ color: '#1a1fcc', fontWeight: 800, fontSize: 18, margin: 0 }}>Resync</p>
     <h1 style={{ fontSize: 22, margin: '4px 0 2px', fontWeight: 800 }}>Manuscript Coherence Report</h1>
     <p style={{ margin: '0 0 14px', color: '#4b5275' }}>{title} · {date}</p>
 

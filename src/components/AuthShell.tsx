@@ -82,6 +82,9 @@ export function AuthShell({ children, onNavigate, onBack }: { children: React.Re
             <span className="auth-tag" style={{ left: 16, top: 250 }}>Ch. 2</span>
             <span className="auth-tag" style={{ left: 22, top: 194 }}>Ch. 3</span>
             <span className="auth-tag" style={{ left: 16, top: 120 }}>Report</span>
+            <span className="auth-chip" style={{ left: 214, top: 418, animationDelay: '1.4s' }}>
+              <span className="auth-chip-dot" style={{ background: '#e5466a' }} />1 citation not accessible
+            </span>
           </div>
 
           <div className="auth-badge">
@@ -98,19 +101,12 @@ export function AuthShell({ children, onNavigate, onBack }: { children: React.Re
           <span className="auth-chip" style={{ right: 80, top: 128, animationDelay: '2.6s' }}>
             <span className="auth-chip-dot" style={{ background: '#f5a524' }} />Suggestions highlighted
           </span>
-          <span className="auth-chip" style={{ right: 64, bottom: 170, animationDelay: '1.4s' }}>
-            <span className="auth-chip-dot" style={{ background: '#e5466a' }} />1 citation not accessible
-          </span>
 
-          <p className="auth-footnote">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
-            256-bit encryption · Academic manuscript privacy guaranteed
-          </p>
         </aside>
       </div>
 
       <footer className="auth-footer">
-        © {new Date().getFullYear()} ReSync · AI-Powered Academic Coherence Engine · All rights reserved
+        © {new Date().getFullYear()} Resync · AI-Powered Academic Coherence Engine · All rights reserved
       </footer>
     </div>
   );

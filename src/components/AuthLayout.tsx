@@ -33,7 +33,7 @@ export function AuthLayout({ children, onNavigate, onBack }: { children: React.R
 
       {/* Footer */}
       <footer className="relative z-10 py-6 text-center text-xs text-gray-400">
-        © {new Date().getFullYear()} ReSync · AI-Powered Academic Coherence Engine · All rights reserved
+        © {new Date().getFullYear()} Resync · AI-Powered Academic Coherence Engine · All rights reserved
       </footer>
     </div>
   );

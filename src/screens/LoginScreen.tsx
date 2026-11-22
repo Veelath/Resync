@@ -180,10 +180,6 @@ export function LoginScreen({ onNavigate, onBack, onLoginSuccess }: { onNavigate
           <GIcon /> Continue with Google
         </button>
 
-        <div className="mt-7 pt-5 border-t border-[#e6e8f7] flex items-center justify-center gap-2 text-xs text-[#7d81a3] lg:hidden">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-          <span>256-bit encryption · Academic manuscript privacy guaranteed</span>
-        </div>
 
         {forgotModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">

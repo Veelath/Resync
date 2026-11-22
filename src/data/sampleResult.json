@@ -1562,7 +1562,7 @@
   "citation_integrity_score": 90.49,
   "cross_chapter_coherence_score": 96.0
  },
- "manuscript_title": "ReSync: An AI-Powered Capstone Manuscript Alignment and Inconsistency Detection System",
+ "manuscript_title": "Resync: An AI-Powered Capstone Manuscript Alignment and Inconsistency Detection System",
  "rescan_unchanged": false,
  "ai_text_indicator": {
   "disclaimer": "Advisory only, not an academic-integrity determination. This is a stylometric heuristic over surface features (sentence-length uniformity, lexical diversity, transition-phrase density, opening-word repetition, and sentence-embedding self-similarity) -- it cannot verify authorship and cannot detect real generative-model watermarks (e.g. Google SynthID), which are cryptographic signals embedded at the token-sampling level and are not recoverable from output text by any third party without the issuing model's own detection service. Formal academic prose already exhibits many of these same surface features, so well-written human capstone chapters can score in the 40-60 range; this indicator must never be used to block a submission or as a plagiarism/integrity charge on its own.",

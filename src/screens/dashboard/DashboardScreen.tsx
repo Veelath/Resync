@@ -421,7 +421,7 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
                         </div>
                       );
                     })}
-                    <p style={{ margin: 0, fontSize: 12.5, color: "#7d7b9e" }}>Phone alerts are managed in the ReSync mobile app.</p>
+                    <p style={{ margin: 0, fontSize: 12.5, color: "#7d7b9e" }}>Phone alerts are managed in the Resync mobile app.</p>
                   </section>
                 </div>
 

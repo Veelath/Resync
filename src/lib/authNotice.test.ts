@@ -6,9 +6,9 @@ const now = Date.parse('2026-11-19T12:00:00Z');
 const user = { created_at: '2026-11-19T11:59:30Z', last_sign_in_at: '2026-11-19T11:59:31Z', user_metadata: { first_name: 'Henry' } };
 
 test('new signup and first sign-in receive a welcome', () => {
-  assert.deepEqual(authNotice(user, 'signup', now), { kind: 'success', title: 'Account created', message: 'Welcome to ReSync, Henry!' });
+  assert.deepEqual(authNotice(user, 'signup', now), { kind: 'success', title: 'Account created', message: 'Welcome to Resync, Henry!' });
   assert.equal(authNotice(user, 'signin', now)?.title, 'Account created');
-  assert.equal(authNotice({ ...user, user_metadata: {} }, 'signup', now)?.message, 'Welcome to ReSync!');
+  assert.equal(authNotice({ ...user, user_metadata: {} }, 'signup', now)?.message, 'Welcome to Resync!');
 });
 
 test('returning sign-in is welcomed back and refresh is quiet', () => {

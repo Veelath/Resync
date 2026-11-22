@@ -16,7 +16,7 @@ export interface Citation {
 }
 
 /**
- * The sample report is a real scan result (the ReSync capstone proposal, scanned by ReSync), saved as JSON with its ids
+ * The sample report is a real scan result (the Resync capstone proposal, scanned by Resync), saved as JSON with its ids
  * made anonymous. Its Word file is public/sample-manuscript.docx, so the sample looks exactly like a student's own report.
  */
 export const SAMPLE_REPORT = sampleResult as unknown as V7ScanResponse;

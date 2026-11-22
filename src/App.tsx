@@ -352,7 +352,7 @@ export default function App() {
         try { notInLedger = rememberFailureNotification(localStorage, userId, outcome.scanId, Date.now()); } catch { /* storage unavailable */ }
       }
       if (notInBell && notInLedger) {
-        if (notificationPrefsRef.current.alerts) showDesktopAlert("Your ReSync scan did not finish", outcome.message);
+        if (notificationPrefsRef.current.alerts) showDesktopAlert("Your Resync scan did not finish", outcome.message);
         pushNotification("error", "Scan did not finish", outcome.message, outcome.scanId || undefined);
       }
       clearActiveScan();
@@ -410,7 +410,7 @@ export default function App() {
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
         ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} onScanUpdated={setScanResult} />
         : <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
-            <p>{resultError || (activeScanId && scanResult?.analysis_run_id !== activeScanId ? 'Loading report…' : scanResult ? 'This scan was made with an older version of ReSync. Please run a new scan.' : 'No scan result is available. Please run a new scan.')}</p>
+            <p>{resultError || (activeScanId && scanResult?.analysis_run_id !== activeScanId ? 'Loading report…' : scanResult ? 'This scan was made with an older version of Resync. Please run a new scan.' : 'No scan result is available. Please run a new scan.')}</p>
             <button type="button" onClick={() => navigate('upload')} className="rounded-lg bg-indigo-600 px-5 py-2 text-white">New scan</button>
           </div>)}
       {screen === "login" && sessionEndedNotice && <div role="alert" className="bg-blue-50 p-4 text-center text-blue-900">Your session has ended. Please sign in again.</div>}
