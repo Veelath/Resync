@@ -148,6 +148,8 @@
 .uf-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 26px; align-items: start; }
 .uf-grid.is-wide { grid-template-columns: minmax(0, 1fr) 400px; }
 .uf-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* the confirm step's right column starts level with the paper card, not with the small "Your paper" label above it (17px label + 12px gap) */
+.uf-col-offset { padding-top: 29px; }
 .uf-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .uf-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
@@ -283,6 +285,7 @@
 
 @media (max-width: 1000px) {
   .uf-grid, .uf-grid.is-wide { grid-template-columns: minmax(0, 1fr); }
+  .uf-col-offset { padding-top: 0; }
   .uf-stp { flex-wrap: wrap; gap: 14px; padding: 16px; }
   .uf-cn { display: none; }
   .uf-si .uf-st { display: none; }

@@ -331,8 +331,10 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   }
 
   function handleRemoveAllSections() {
-    const ok = window.confirm("Remove all sections from all chapters? This cannot be undone.");
+    // With an uploaded template the sections come from that file, so removing them removes the template too.
+    const ok = window.confirm(customTemplateFile ? "Remove all sections and the uploaded template? This cannot be undone." : "Remove all sections from all chapters? This cannot be undone.");
     if (!ok) return;
+    if (customTemplateFile) { handleResetTemplate(); showTemplateToast("Template and its sections removed."); return; }
     setTemplateChapters(prev => prev.map(ch => ({ ...ch, sections: [] })));
     showTemplateToast("All sections removed.");
   }
@@ -570,11 +572,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   Save template
                 </button>
                 <button type="button" onClick={handleUseSavedTemplate} disabled={!hasSavedTemplate} title={!hasSavedTemplate ? "No saved template yet. Save one first." : undefined} className="uf-btn is-ghost is-sm">Use saved template</button>
-                <button type="button" onClick={handleRemoveAllSections} className="uf-btn is-ghost is-danger is-sm">
+                <button type="button" onClick={handleRemoveAllSections} disabled={!hasChapters && !customTemplateFile} className="uf-btn is-ghost is-danger is-sm">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
                   Remove all sections
                 </button>
-                <button type="button" onClick={handleResetTemplate} className="uf-btn is-ghost is-sm">
+                <button type="button" onClick={() => { handleResetTemplate(); showTemplateToast("Template cleared."); }} disabled={!templateChapters.length && !customTemplateFile && !templateParseError} className="uf-btn is-ghost is-sm">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
                   Clear
                 </button>
@@ -814,12 +816,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                       actionLabel={noFile ? "Choose a file" : "OK"}
                       onAction={() => { setDismissedProblem(scanError); if (noFile) fileInputRef.current?.click(); }} onClose={() => setDismissedProblem(scanError)} />;
                   })()}
-                  {scanError && (
-                    <div role="alert" className="uf-error">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                      <p style={{ margin: 0 }}>{scanError}</p>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -894,7 +890,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   </div>
               </div>
 
-              <div className="uf-col">
+              <div className="uf-col uf-col-offset">
                 <div className="uf-card" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                     <span className="uf-ic" style={{ width: 64, height: 64, borderRadius: 16 }}>
@@ -974,19 +970,6 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               </div>
             </div>
 
-            {((mode === "file" ? outlineError : linkProblem || outlineError) && !scanError) && <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>{mode === "file" ? outlineError : linkProblem || outlineError}</div>}
-            {notAPaper && !scanError && (
-              <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                <p style={{ margin: 0 }}>{outline?.paper_problem}</p>
-              </div>
-            )}
-            {scanError && (
-              <div role="alert" className="uf-error" style={{ maxWidth: 760 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                <p style={{ margin: 0 }}>{scanError}</p>
-              </div>
-            )}
             {(() => {
               const problem = scanError ?? (notAPaper ? outline?.paper_problem ?? null : null) ?? ((mode === "file" ? outlineError : linkProblem || outlineError) || null);
               if (!problem || problem === dismissedProblem) return null;
