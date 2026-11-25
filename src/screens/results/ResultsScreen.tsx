@@ -1,4 +1,5 @@
 import { notify } from '../../lib/notify';
+import { tableTexts, quotesTable } from '../../lib/tableContent';
 import { allClearCount, clearPairs } from './clearPairs';
 ﻿import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
@@ -159,7 +160,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   const displayTitle = isSample ? sampleById(sampleId).result.manuscript_title : usableTitle(result.manuscript_title)
     || (isGoogleDoc ? 'Google Docs manuscript' : result.doc_url.split(/[\\/]/).pop()?.replace(/\.(docx|pdf|doc)$/i, '')) || 'Document Coherence Scan';
   const matched = matchedRecommendations(result.manuscript_sections ?? [], result.recommendations);
-  const recommendations = matched.filter(rec => plainText(rec.recommended_revision).trim()).slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
+  const tableCells = tableTexts(result.manuscript_sections ?? []);
+  const recommendations = matched.filter(rec => plainText(rec.recommended_revision).trim() && !quotesTable(rec.original_sentence, tableCells)).slice(0, locked ? 2 : undefined).map(rec => ({ id: rec.id ?? rec.recommendation_id, section: rec.section ?? rec.section_b, quote: rec.original_sentence, issue: rec.issue, kind: rec.kind, placement: rec.placement, pair: rec.pair_order, pairLabel: `${rec.section_a} → ${rec.section_b}`, anchor: rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === (rec.section ?? rec.section_b))?.text, rec.placement === 'start' ? 'start' : 'end') || undefined : undefined, revision: rec.recommended_revision, category: recommendationCategory((rec as typeof rec & { category?: RecommendationCategory }).category) }));
   // Pairs with a real issue (a severity above None); reports saved before severity existed count the pairs with advice.
   const hasAdvice = (order: number) => recommendations.some(rec => rec.pair === order);
   const visiblePairs = result.manuscript_flow.filter(pair => usablePair(pair, result.manuscript_sections));
