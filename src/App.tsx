@@ -322,7 +322,7 @@ export default function App() {
       if (!cancelled) setResultError(error instanceof Error ? error.message : 'Unable to load this report.');
     });
     return () => { cancelled = true; };
-  }, [screen, isSampleMode, activeScanId, session, scanResult?.analysis_run_id]);
+  }, [screen, isSampleMode, activeScanId, session?.user?.id, scanResult?.analysis_run_id]);   // the id, not the session object, which is replaced whenever the tab is refocused
 
   function handleScanCompleted(result?: { analysis_run_id?: string; rescan_unchanged?: boolean; manuscript_title?: string | null }) {
     if (scanSettledRef.current) return;

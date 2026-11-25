@@ -220,7 +220,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
         .catch(error => { if (!cancelled && current()) { setLinkState("failed"); setLinkProblem(error instanceof ScanLimitError ? error.message : GOOGLE_READ_ERROR); if (error instanceof ScanLimitError) setScanError(error.message); } });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [mode, link, session?.user]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The user's id, not the user object: coming back to the tab refreshes the session into a new object, and that must not reload the document.
+  }, [mode, link, session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // Whichever document is in play: the uploaded Word file, or the Google Doc downloaded as one.
   const activeFile = mode === "file" ? uploadedFile : linkFile;
   const previewFile = activeFile ? (mode === "file" ? uploadedPreviewFile : linkPreviewFile) : null;
