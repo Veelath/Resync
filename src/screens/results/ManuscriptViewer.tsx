@@ -3,8 +3,7 @@ import React from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { matchedRecommendations, recommendationRanges } from './highlights';
 import { inconsistencyTone, severityOf, severityTones } from './RecommendationsList';
-import { manuscriptBlocks, sectionHeading, hasTableHeader } from '../../lib/manuscriptBlocks';
-import { sectionHasTable } from '../../lib/tableContent';
+import { manuscriptBlocks, sectionHeading } from '../../lib/manuscriptBlocks';
 import './manuscript.css';
 
 export function AlignmentLegend() {
@@ -31,7 +30,6 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
   const fallback = { heading: 'The manuscript continues', paragraphs: Array(3).fill('Quiet lines continue across the page. Soft words fill this space while the full report waits to be opened. '.repeat(4)) };
   return <div className="manuscript-body">
     {result.manuscript_sections?.slice(0, locked ? 1 : undefined).map((section, index) => {
-      if (sectionHasTable(section)) return null;   // sections with a table are not shown in the report
       const text = section.text ?? '';
       const ranges = recommendationRanges(section, linked);
       return <section key={`${index}-${section.name}`} data-section-index={index} className={`scroll-mt-6 ${revealed && index > 0 ? 'report-reveal' : ''}`}>
@@ -63,14 +61,7 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
             let tableEnd = line;
             if (cells.length > 1) while (tableEnd < lines.length && lines[tableEnd][0].split(' | ').length === cells.length && (tableEnd === line || lines[tableEnd].index! - (lines[tableEnd - 1].index! + lines[tableEnd - 1][0].length) <= 2)) tableEnd++;
             if (tableEnd - line >= 2) {
-              rendered.push(<div key={line} className="manuscript-table-region" role="region" tabIndex={0} aria-label={`Table in ${sectionHeading(section)}; scroll horizontally to see all columns`}><table><tbody>{lines.slice(line, tableEnd).map((row, rowIndex) => {
-                let offset = 0;
-                return <tr key={rowIndex}>{row[0].split(' | ').map((cell, cellIndex) => {
-                  const at = offset; offset += cell.length + 3;
-                  return <td key={cellIndex}>{base < 0 ? cell : renderLine(Object.assign([cell], { index: row.index! + at }) as unknown as RegExpMatchArray, base)}</td>;
-                })}</tr>;
-              })}</tbody></table></div>);
-              line = tableEnd;
+              line = tableEnd;   // table rows are not shown in the report; the text around them is
               continue;
             }
             let end = line;
@@ -97,14 +88,7 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
           };
           return blocks.map((block, blockIndex) => {
             if (block.type === 'paragraph') return <React.Fragment key={blockIndex}>{renderParagraphs(block.text, locate(block.text))}</React.Fragment>;
-            const header = hasTableHeader(block.rows);
-            return <div className="manuscript-table-region" role="region" tabIndex={0} aria-label={`Table in ${sectionHeading(section)}; scroll horizontally to see all columns`} key={blockIndex}>
-              <table><tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => {
-                const at = locate(cell);
-                const content = at < 0 ? cell : renderLine(Object.assign([cell], { index: 0 }) as unknown as RegExpMatchArray, at);
-                return header && rowIndex === 0 ? <th scope="col" key={cellIndex}>{content}</th> : <td key={cellIndex}>{content}</td>;
-              })}</tr>)}</tbody></table>
-            </div>;
+            return null;   // a table block is not shown in the report
           });
         })()}
       </section>;

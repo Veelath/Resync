@@ -40,8 +40,6 @@ const HOST_CSS = `
 // Reports show the text only: tables, pictures, diagrams and other embedded objects are left out, locked or not.
 function keepTextOnly(root: HTMLElement) {
   const visual = 'table, img, svg, canvas, object, embed, video, audio';
-  // A page that holds a table is left out whole, so no table text is shown.
-  root.querySelectorAll('section.docx').forEach(page => { if (page.querySelector('table')) page.remove(); });
   // A paragraph that held only a picture would leave a blank gap behind, so it goes too.
   root.querySelectorAll('p').forEach(paragraph => {
     if (paragraph.querySelector(visual) && !paragraph.textContent?.trim()) paragraph.remove();
