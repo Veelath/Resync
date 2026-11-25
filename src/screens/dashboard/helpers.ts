@@ -36,7 +36,8 @@ export function parseUserProfileMetadata(meta?: Record<string, any> | null, emai
     lastName = parts.slice(1).join(' ') || '';
   }
 
-  const fullName = meta?.full_name || [firstName, middleName, lastName].filter(Boolean).join(' ') || rawFullName;
+  // A name edited in Resync is kept as separate parts, which a Google sign-in never overwrites; full_name is the fallback.
+  const fullName = meta?.first_name ? [firstName, middleName, lastName].filter(Boolean).join(' ') : meta?.full_name || [firstName, middleName, lastName].filter(Boolean).join(' ') || rawFullName;
   return { firstName, middleName, lastName, fullName };
 }
 

@@ -25,15 +25,17 @@ const USER_ICON = (
   <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4.5 20c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5" /></svg>
 );
 
-function FieldInput({ label, type = "text", value, onChange, placeholder, icon, required = true, error = "", onBlur, autoComplete }: {
+function FieldInput({ label, type = "text", value, onChange, placeholder, icon, required = true, error = "", onBlur, autoComplete, labelClass = "" }: {
   label: string; type?: string; value: string; onChange: (v: string) => void; placeholder: string; icon?: React.ReactNode; required?: boolean;
   /** Shown under the field; empty means the value is fine. */
   error?: string; onBlur?: () => void; autoComplete?: string;
+  /** Extra classes for the label, so side-by-side fields keep their boxes level when one label wraps. */
+  labelClass?: string;
 }) {
   const id = useId();
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="auth-label">{label}</label>
+      <label htmlFor={id} className={`auth-label ${labelClass}`.trim()}>{label}</label>
       <div className="auth-field">
         {icon && <span className="auth-field-icon" aria-hidden="true">{icon}</span>}
         <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} onBlur={onBlur} placeholder={placeholder} required={required}
@@ -239,9 +241,9 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
         {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100" role="alert">{error}</div>}
 
         <form onSubmit={submit} noValidate className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldInput label="First name" value={firstName} onChange={value => setFirstName(cleanNameInput(value))} onBlur={() => touch("first")} error={shown("first")} autoComplete="given-name" placeholder="Maria" required={true} icon={USER_ICON} />
-            <FieldInput label="Middle name (optional)" value={middleName} onChange={value => setMiddleName(cleanNameInput(value))} onBlur={() => touch("middle")} error={shown("middle")} autoComplete="additional-name" placeholder="Clara" required={false} icon={USER_ICON} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
+            <FieldInput label="First name" labelClass="sm:flex sm:min-h-[2.6em] sm:items-end" value={firstName} onChange={value => setFirstName(cleanNameInput(value))} onBlur={() => touch("first")} error={shown("first")} autoComplete="given-name" placeholder="Maria" required={true} icon={USER_ICON} />
+            <FieldInput label="Middle name (optional)" labelClass="sm:flex sm:min-h-[2.6em] sm:items-end" value={middleName} onChange={value => setMiddleName(cleanNameInput(value))} onBlur={() => touch("middle")} error={shown("middle")} autoComplete="additional-name" placeholder="Clara" required={false} icon={USER_ICON} />
           </div>
           <FieldInput label="Last name" value={lastName} onChange={value => setLastName(cleanNameInput(value))} onBlur={() => touch("last")} error={shown("last")} autoComplete="family-name" placeholder="Santos" required={true} icon={USER_ICON} />
           <FieldInput label="Email address" type="email" value={email} onChange={setEmail} onBlur={() => touch("email")} error={shown("email")} autoComplete="email" placeholder="maria.santos@dlsu.edu.ph" icon={MAIL_ICON} />

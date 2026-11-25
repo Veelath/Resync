@@ -88,6 +88,8 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
   useEffect(() => { setAcademicInfo(readAcademic(session?.user?.user_metadata)); }, [session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Saved to the account (not just this page), so the details are still there after a refresh or on another device.
+  // Google (and other provider) accounts sign in with their provider's address, so only password accounts can change it here.
+  const canChangeEmail = (session?.user?.app_metadata?.providers as string[] | undefined)?.includes("email") ?? true;
   async function saveProfile(nextAcademic: AcademicInfo) {
     setProfileNotice(null);
     const name = draft.fullName.trim().replace(/\s+/g, " ");
@@ -95,7 +97,7 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
     const contact = draft.contactNumber.trim();
     if (contact && !/^\+?[\d\s()-]{7,20}$/.test(contact)) { setProfileNotice({ kind: "error", text: "Enter a valid contact number, for example 0917 123 4567." }); return; }
     const email = draft.email.trim().toLowerCase();
-    const emailChanged = email !== profile.email.trim().toLowerCase();
+    const emailChanged = canChangeEmail && email !== profile.email.trim().toLowerCase();
     const problem = emailChanged ? emailError(email) : null;
     if (problem) { setProfileNotice({ kind: "error", text: problem }); return; }
     const [first, ...rest] = name.split(" ");
@@ -104,7 +106,7 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
       data: { full_name: name, first_name: first, middle_name: "", last_name: rest.join(" "), contact_number: contact, ...academicToMetadata(nextAcademic) },
     });
     if (error) { checkAuthError(error); setProfileNotice({ kind: "error", text: /session/i.test(error.message) ? "Your session has expired. Please sign in again." : error.message || "We could not save your profile. Please try again." }); return; }
-    setProfile({ ...draft, fullName: name, firstName: first, middleName: "", lastName: rest.join(" "), contactNumber: contact, email: emailChanged ? profile.email : draft.email });
+    setProfile({ ...draft, fullName: name, firstName: first, middleName: "", lastName: rest.join(" "), contactNumber: contact, email: emailChanged || !canChangeEmail ? profile.email : draft.email });
     setAcademicInfo(nextAcademic);
     setEditMode(false);
     setProfileNotice({ kind: "ok", text: emailChanged ? "Profile saved. Check your new inbox to confirm the email change." : "Profile saved." });
@@ -438,7 +440,7 @@ export function DashboardScreen({ scanRunning = false, finishedScanId = null, on
         /* ═══════════════════════════════════════════════════
            ACADEMIC PROFILE VIEW (SIMPLIFIED)
         ═══════════════════════════════════════════════════ */
-        <AcademicProfileView notice={profileNotice} savedAcademic={academicInfo} userId={session?.user?.id} credits={creditBalance} scansRun={creditsUsed} memberSince={session?.user?.created_at} setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
+        <AcademicProfileView emailLocked={!canChangeEmail} notice={profileNotice} savedAcademic={academicInfo} userId={session?.user?.id} credits={creditBalance} scansRun={creditsUsed} memberSince={session?.user?.created_at} setActiveNav={setActiveNav} editMode={editMode} setEditMode={setEditMode} profile={profile} draft={draft} setDraft={setDraft} saveProfile={saveProfile} cancelEdit={cancelEdit} avatarUrl={avatarUrl} avatarError={avatarError} handleAvatarFile={handleAvatarFile} removeAvatar={removeAvatar} />
       ) : (<>
 <DashboardHome onNavigate={onNavigate} session={session} greeting={greeting} scanRunning={scanRunning} onViewProgress={onViewProgress} scanFinished={!!finishedScanId} onViewResult={onViewResult} />
         <BackToTop />

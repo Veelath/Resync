@@ -32,7 +32,7 @@ const ICONS = {
   paper: svg('M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M9 13h6M9 17h4'),
 };
 
-export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profile, draft, setDraft, saveProfile, cancelEdit, avatarUrl, avatarError, handleAvatarFile, removeAvatar, userId, credits = null, scansRun = null, memberSince, savedAcademic = EMPTY_ACADEMIC, notice = null }: { setActiveNav: Dispatch<SetStateAction<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">>; editMode: boolean; setEditMode: Dispatch<SetStateAction<boolean>>; profile: ProfileFields; draft: ProfileFields; setDraft: Dispatch<SetStateAction<ProfileFields>>; saveProfile: (academic: Academic) => void | Promise<void>; cancelEdit: () => void; avatarUrl: string | null; avatarError: string; handleAvatarFile: (file: File) => Promise<void>; removeAvatar: () => void; userId?: string; credits?: number | null; scansRun?: number | null; memberSince?: string; savedAcademic?: Academic; notice?: { kind: 'ok' | 'error'; text: string } | null }) {
+export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profile, draft, setDraft, saveProfile, cancelEdit, avatarUrl, avatarError, handleAvatarFile, removeAvatar, userId, credits = null, scansRun = null, memberSince, savedAcademic = EMPTY_ACADEMIC, notice = null, emailLocked = false }: { emailLocked?: boolean; setActiveNav: Dispatch<SetStateAction<"Dashboard" | "Academic Profile" | "Settings" | "Usage / Credits">>; editMode: boolean; setEditMode: Dispatch<SetStateAction<boolean>>; profile: ProfileFields; draft: ProfileFields; setDraft: Dispatch<SetStateAction<ProfileFields>>; saveProfile: (academic: Academic) => void | Promise<void>; cancelEdit: () => void; avatarUrl: string | null; avatarError: string; handleAvatarFile: (file: File) => Promise<void>; removeAvatar: () => void; userId?: string; credits?: number | null; scansRun?: number | null; memberSince?: string; savedAcademic?: Academic; notice?: { kind: 'ok' | 'error'; text: string } | null }) {
   const academic = savedAcademic;
   const [academicDraft, setAcademicDraft] = useState<Academic>(academic);
   useEffect(() => { setAcademicDraft(savedAcademic); }, [savedAcademic, userId]);
@@ -132,7 +132,7 @@ export function AcademicProfileView({ setActiveNav, editMode, setEditMode, profi
               <div className="uf-fields three">
                 <Field icon={ICONS.person} label="Full name" value={profile.fullName} editing={editMode} onAdd={startEdit}
                   input={text(draft.fullName, value => setDraft({ ...draft, fullName: value }), 'Full name')} />
-                <Field icon={ICONS.mail} label="Email address" value={profile.email} editing={editMode} onAdd={startEdit}
+                <Field icon={ICONS.mail} label="Email address" value={profile.email} editing={editMode && !emailLocked} onAdd={startEdit}
                   input={text(draft.email, value => setDraft({ ...draft, email: value }), 'Email address', 'email')} />
                 <Field icon={ICONS.phone} label="Contact number" value={profile.contactNumber} editing={editMode} onAdd={startEdit}
                   input={text(draft.contactNumber, value => setDraft({ ...draft, contactNumber: value }), 'Contact number', 'tel')} />

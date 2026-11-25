@@ -24,6 +24,7 @@ import { NOTICE_EVENT, notify, type QuickNotice } from './lib/notify';
 import { authNotice } from './lib/authNotice';
 import { resumeManuscriptScan, resetScanStatus, ScanOutcome } from './services/api';
 import { canResume, shouldNotifyFailure, rememberFailureNotification } from './lib/scanWait';
+import { prefsToMetadata, prefsFromMetadata } from './lib/accountPrefs';
 import { askForDesktopAlerts, showDesktopAlert } from './components/ScanNotifications';
 import { ToastBanner, loadNotifications, loadNotificationPrefs, saveNotificationPrefs, playCompletionChime, unlockAudio, NOTIFICATIONS_KEY, type AppNotification, type NotificationPrefs } from './components/ScanNotifications';
 
@@ -41,6 +42,12 @@ export default function App() {
   // Scan callbacks run long after they were created, so they read the current choice from here.
   const notificationPrefsRef = useRef(notificationPrefs);
   notificationPrefsRef.current = notificationPrefs;
+  // The choice lives on the account, so it follows the person to another browser; this browser's copy is the fallback.
+  const prefsUserId = session?.user?.id;
+  useEffect(() => {
+    const saved = prefsFromMetadata(session?.user?.user_metadata);
+    if (saved) { setNotificationPrefs(saved); saveNotificationPrefs(saved); }
+  }, [prefsUserId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [toast, setToast] = useState<AppNotification | null>(null);
   const [soundBlocked, setSoundBlocked] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -353,9 +360,18 @@ export default function App() {
       }
       if (notInBell && notInLedger) {
         if (notificationPrefsRef.current.alerts) showDesktopAlert("Your Resync scan did not finish", outcome.message);
-        pushNotification("error", "Scan did not finish", outcome.message, outcome.scanId || undefined);
+        pushNotification("error", "Scan failed", outcome.message, outcome.scanId || undefined);
       }
       clearActiveScan();
+      // The upload page is still mounted with the file, link and template, so the person lands back on the confirm step to retry.
+      if (!recovered && screenRef.current === 'processing') {
+        navigate('upload');
+        if (!notificationPrefsRef.current.alerts) {   // alerts off: the bell stays quiet, but the person still needs to know why they are back here
+          setToast({ id: `failed-${Date.now()}`, kind: 'error', title: 'Scan failed', message: outcome.message, at: Date.now(), read: true });
+          if (toastTimer.current) clearTimeout(toastTimer.current);
+          toastTimer.current = setTimeout(() => setToast(null), 8000);
+        }
+      }
     }
   }
 
@@ -405,7 +421,7 @@ export default function App() {
         onClose={() => setToast(null)}
       />
       {screen === "home" && <HomeScreen onNavigate={navigate} session={session} />}
-      {(screen === "upload" || scanRunning && scanSending) && <div hidden={screen !== "upload"}><UploadScreen scanBusy={scanRunning && !scanSending} onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={id => { setScanSending(false); rememberActiveScan(id); }} onScanRejected={() => { setScanSending(false); setScanRunning(false); scanSettledRef.current = true; navigate("upload"); }} onScanComplete={result => { setScanResult(result); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} /></div>}
+      {(screen === "upload" || screen === "processing" || scanRunning && scanSending) && <div hidden={screen !== "upload"}><UploadScreen scanBusy={scanRunning && !scanSending} onNavigate={navigate} onBack={goBack} session={session} onScanStart={handleScanStart} onScanFailed={handleScanFailed} onScanStarted={id => { setScanSending(false); rememberActiveScan(id); }} onScanRejected={() => { setScanSending(false); setScanRunning(false); scanSettledRef.current = true; navigate("upload"); }} onScanComplete={result => { setScanResult(result); handleScanCompleted(result); if (['processing', 'upload'].includes(screenRef.current)) navigate("results", false, result.analysis_run_id); }} /></div>}
       {screen === "processing" && <ProcessingScreen onNavigate={navigate} outcome={scanOutcome} startedAt={scanStartedAt} words={scanWords} sending={scanSending} />}
       {screen === "results" && (isSampleMode || (scanResult?.result_version === 'v7' && scanResult.analysis_run_id === activeScanId)
         ? <ResultsScreen onNavigate={navigate} onBack={goBack} scan={scanResult as V7ScanResponse} isSample={isSampleMode} onScanUpdated={setScanResult} />
@@ -418,7 +434,7 @@ export default function App() {
       {screen === "signup" && <SignupScreen onNavigate={navigate} onBack={goBack} onSignupSuccess={() => navigate("dashboard")} />}
       {screen === "reset-password" && <ResetPasswordScreen onNavigate={navigate} onBack={goBack} />}
       {screen === "dashboard" && dashboardNotice && <div role="status" className="p-4 text-center bg-blue-50 text-blue-900">{dashboardNotice} <button type="button" onClick={() => setDashboardNotice(null)} aria-label="Dismiss notice" className="rounded-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">Dismiss</button></div>}
-      {screen === "dashboard" && <DashboardScreen scanRunning={scanRunning} finishedScanId={finishedScanId} onViewResult={() => finishedScanId && navigate("results", false, finishedScanId)} onViewProgress={() => navigate("processing")} onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
+      {screen === "dashboard" && <DashboardScreen scanRunning={scanRunning} finishedScanId={finishedScanId} onViewResult={() => finishedScanId && navigate("results", false, finishedScanId)} onViewProgress={() => navigate("processing")} onNavigate={navigate} session={session} onLogout={handleLogout} notifications={notifications} onMarkNotificationsRead={markNotificationsRead} notificationPrefs={notificationPrefs} onNotificationPrefsChange={prefs => { setNotificationPrefs(prefs); saveNotificationPrefs(prefs); void supabase.auth.updateUser({ data: prefsToMetadata(prefs) }).then(({ error }) => { if (error) notify({ kind: "error", title: "Couldn't save your settings", message: "Saved on this browser only. Please try again." }); }); }} onOpenReport={scanId => { const id = scanId ?? scanResult?.analysis_run_id; if (id) navigate("results", false, id); }} />}
     </div>
   );
 }
