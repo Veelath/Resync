@@ -107,13 +107,14 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
         });
       if (cancelled) return;
       worker.terminate();
+      // The unlock point is found before pages with tables are removed; if its own page goes, it moves to the next text that stays.
+      const paragraphs = locked ? [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table')) : [];
+      const index = locked ? lockedHeadingIndex(paragraphs.map(element => element.textContent ?? ''), secondSection ?? '') : -1;
       keepTextOnly(rendered);
       if (locked) {
-        const paragraphs = [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table'));
-        const index = lockedHeadingIndex(paragraphs.map(element => element.textContent ?? ''), secondSection ?? '');
         const action = lockedHeadingAction(index, event.data.truncated, budget);
         if (action === 'retry') { setBudget(nextBudget(budget)); return; }
-        const heading = paragraphs[index];
+        const heading = index < 0 ? undefined : paragraphs.slice(index).find(element => rendered.contains(element));
         if (action === 'fail' || !heading || !rendered.lastChild) { callbacks.current.onFailed(); return; }
         // The whole document is shown; what the free report does not cover is blurred, with the unlock card where it starts.
         const marker = document.createElement('div');

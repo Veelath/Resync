@@ -39,6 +39,13 @@ export function TextManuscript({ file, highlights, locked, secondSection, unlock
         const { value } = await (await import('mammoth')).convertToHtml({ arrayBuffer: await file.arrayBuffer() });
         if (cancelled) return;
         const page = new DOMParser().parseFromString(value, 'text/html');
+        // A section that holds a table (a heading and everything up to the next heading) is left out whole.
+        const groups: Element[][] = [[]];
+        for (const child of [...page.body.children]) {
+          if (/^H[1-6]$/.test(child.tagName) && groups[groups.length - 1].length) groups.push([]);
+          groups[groups.length - 1].push(child);
+        }
+        groups.filter(group => group.some(child => child.tagName === 'TABLE' || child.querySelector('table'))).flat().forEach(child => child.remove());
         page.querySelectorAll('table, img').forEach(element => element.remove());
         const blocks = [...page.body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li')]
           .map(element => ({ text: (element.textContent ?? '').trim(), heading: /^H[1-6]$/.test(element.tagName) }))
