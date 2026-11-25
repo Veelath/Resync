@@ -25,9 +25,36 @@ test('clear list shows point losses separately and excludes pairs with advice', 
     breakdown: { context_alignment: { failures: [{ order: 1, credit: 0.5 }, { order: 5 }] } } as any,
   }));
   assert.match(markup, /Small issues that cost points/);
-  assert.match(markup, /Part 1 and Part 2: Context Alignment/);
-  assert.match(markup, /Part 5 and Part 6: Context Alignment/);
-  assert.match(markup, /No change is required; this only lowered the score slightly/);
+  assert.match(markup, /Part 1 and Part 2<\/span>: Context Alignment/);
+  assert.match(markup, /Part 5 and Part 6<\/span>: Context Alignment/);
+  assert.match(markup, /No change is required; this only lowered the score/);
   assert.match(markup, /Part 3/);
   assert.doesNotMatch(markup, /Part 7/);
+});
+
+const weak = (order: number, rating: number, reason?: string) => ({
+  ...pair, order, section_a: `Part ${order}`, section_b: `Part ${order + 1}`, severity: 'None' as ManuscriptFlowPair['severity'],
+  scores: { ...pair.scores, overall_coherence: rating }, explanation: reason ? { ...pair.explanation, link_summary: reason } : { ...pair.explanation, link_summary: undefined },
+}) as unknown as ManuscriptFlowPair;
+const failures = (...orders: number[]) => ({ context_alignment: { failures: orders.map(order => ({ order })) } } as any);
+
+test('the pairs that cost points are listed weakest first with the reason the AI gave', () => {
+  const markup = renderToStaticMarkup(createElement(RecommendationsList, {
+    pairs: [weak(1, 0.45, 'Part 1 stops at the method but Part 2 starts with the survey.'), weak(3, 0.2, 'Part 3 is about coding while Part 4 is about the survey.')],
+    items: [], linkedIds: new Set<string>(), onShowInManuscript: () => {}, revealId: null, mode: 'clear', breakdown: failures(1, 3),
+  }));
+  assert.ok(markup.indexOf('Part 3 and Part 4') < markup.indexOf('Part 1 and Part 2'));   // the lowest rating comes first
+  assert.match(markup, /Part 3 is about coding while Part 4 is about the survey\./);
+  assert.match(markup, /Part 1 stops at the method but Part 2 starts with the survey\./);
+});
+
+test('with no recommendations the Recommendations tab shows the three weakest connections instead of an empty list', () => {
+  const pairs = [weak(1, 0.45, 'Reason one.'), weak(3, 0.2, 'Reason three.'), weak(5, 0.3, 'Reason five.'), weak(7, 0.4, 'Reason seven.')];
+  const markup = renderToStaticMarkup(createElement(RecommendationsList, {
+    pairs, items: [], linkedIds: new Set<string>(), onShowInManuscript: () => {}, revealId: null, mode: 'issues', breakdown: failures(1, 3, 5, 7),
+  }));
+  assert.match(markup, /No recommendations\. The weakest connections that cost points/);
+  assert.doesNotMatch(markup, /No recommendations to show/);
+  assert.ok(markup.includes('Reason three.') && markup.includes('Reason five.') && markup.includes('Reason seven.'));
+  assert.ok(!markup.includes('Reason one.'));   // only the three weakest
 });

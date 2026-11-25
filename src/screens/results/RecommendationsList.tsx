@@ -56,6 +56,27 @@ function problemOf(pair: ManuscriptFlowPair) {
   return text ? plainText(text).split(/(?<=[.!?])\s+/)[0] : 'These two parts sit side by side with nothing joining them, so a reader may feel a sudden jump. One short sentence can fix that.';
 }
 
+/** Why a pair that cost points has no advice: the AI's own explanation of how the two sections connect, when it gave one. */
+function reasonOf(pair: ManuscriptFlowPair): string | null {
+  const text = pair.explanation?.link_summary || pair.explanation?.highlighted_inconsistencies.find(item => item.what)?.what;
+  return text ? plainText(text).split(/(?<=[.!?])\s+/)[0] : null;
+}
+
+function SmallIssues({ small, sections, limit, title }: { small: { pair: ManuscriptFlowPair; categories: string[] }[]; sections: Sections; limit?: number; title: string }) {
+  const weakest = [...small].sort((a, b) => (a.pair.scores.overall_coherence ?? 1) - (b.pair.scores.overall_coherence ?? 1)).slice(0, limit);   // lowest rating first
+  return <div className="space-y-2 text-sm text-gray-700">
+    <p className="font-semibold">{title}</p>
+    <ul className="space-y-2">{weakest.map(({ pair, categories }) => {
+      const reason = reasonOf(pair);
+      return <li key={pair.order}>
+        <span className="font-medium">{sectionDisplayName(pair.section_a, sections)} and {sectionDisplayName(pair.section_b, sections)}</span>: {categories.join(', ')}
+        {reason && <span className="mt-0.5 block text-xs text-gray-600">{clip(reason, 220)}</span>}
+      </li>;
+    })}</ul>
+    <p>No change is required; this only lowered the score.</p>
+  </div>;
+}
+
 function saysOf(pair: ManuscriptFlowPair, side: 'a' | 'b') {
   const name = side === 'a' ? pair.section_a : pair.section_b;
   const explanation = pair.explanation;
@@ -239,17 +260,14 @@ export function RecommendationsList({ items, pairs, linkedIds, onShowInManuscrip
       return <Fragment key={pair.order}><PairIssueCard sections={sections} pair={pair} items={pairItems} severity={severity} linkedIds={linkedIds} onShowInManuscript={id => onShowInManuscript(id, pair.order)} onShowPlacement={onShowPlacement} revealId={revealId} showAll={showAll}
         selected={selectedOrder === pair.order} onSelect={onSelect && (() => onSelect(pair.order))} alwaysOpen /></Fragment>;
     })}
-    {mode === 'clear' && classified.small.length > 0 && <div className="space-y-2 text-sm text-gray-700">
-      <p className="font-semibold">Small issues that cost points</p>
-      <ul className="space-y-1">{classified.small.map(({ pair, categories }) => <li key={pair.order}>{sectionDisplayName(pair.section_a, sections)} and {sectionDisplayName(pair.section_b, sections)}: {categories.join(', ')}</li>)}</ul>
-      <p>No change is required; this only lowered the score slightly.</p>
-    </div>}
+    {mode === 'clear' && classified.small.length > 0 && <SmallIssues small={classified.small} sections={sections} title="Small issues that cost points" />}
+    {mode === 'issues' && !rows.length && classified.small.length > 0 && <SmallIssues small={classified.small} sections={sections} limit={3} title="No recommendations. The weakest connections that cost points:" />}
     {mode === 'issues' && unreviewed.length > 0 && <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <p className="text-sm font-semibold text-amber-900">{rateLimited
         ? provisionalMessage
         : `${unreviewed.length} section ${unreviewed.length === 1 ? 'pair' : 'pairs'} could not be reviewed by the AI, so we can’t say whether ${unreviewed.length === 1 ? 'it is' : 'they are'} fine. Scan again to retry.`}</p>
       <ul className="space-y-1 text-xs text-amber-900">{unreviewed.map(pair => <li key={pair.order} >{sectionDisplayName(pair.section_a, sections)} ↔ {sectionDisplayName(pair.section_b, sections)}</li>)}</ul>
     </div>}
-    {!rows.length && !(mode === 'clear' && classified.small.length) && !(mode === 'issues' && unreviewed.length > 0) && <p className="text-sm text-gray-500">{mode === 'issues' ? 'No recommendations to show.' : 'Nothing here yet.'}</p>}
+    {!rows.length && !classified.small.length && !(mode === 'issues' && unreviewed.length > 0) && <p className="text-sm text-gray-500">{mode === 'issues' ? 'No recommendations to show.' : 'Nothing here yet.'}</p>}
   </div>;
 }
