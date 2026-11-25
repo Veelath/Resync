@@ -138,6 +138,8 @@ async function readDocInfo(file: File): Promise<DocInfo | null> {
 }
 
 let lastScanError: string | null = null;
+// Why the last scan attempt was refused. It belongs to step 3 only, so it never shows as a problem with the document on step 2.
+let lastScanRunError: string | null = null;
 
 export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onScanStart, onScanStarted, onScanFailed, onScanRejected, scanBusy }: { onNavigate: (s: Screen) => void; onBack: () => void; session?: Session | null; onScanComplete?: (result: DisplayScan) => void; onScanStart?: (words: number | null) => void; onScanStarted?: (analysisRunId: string) => void; onScanFailed?: (error: unknown) => void; onScanRejected?: () => void; scanBusy?: boolean }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -152,6 +154,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [checkedLink, setCheckedLink] = useState('');
   useEffect(() => { setCheckedLink(''); const timer = setTimeout(() => setCheckedLink(link.trim()), 300); return () => clearTimeout(timer); }, [link]);
   const [scanError, setScanError] = useState<string | null>(lastScanError);
+  const [scanRunError, setScanRunError] = useState<string | null>(lastScanRunError);
+  const clearScanRunError = () => { lastScanRunError = null; setScanRunError(null); };
   const [isScanning, setIsScanning] = useState(false);
   const scanningRef = useRef(false);
 
@@ -376,7 +380,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setUploadedFile(null);
     setOutline(null);
     setOutlineError(null);
-    lastScanError = null;
+    lastScanError = null; clearScanRunError();
     if (!isDocx(file.name)) {
       setUploadedFile(null);
       setScanError(docxMessage(file.name));
@@ -406,9 +410,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   async function handleScan() {
     if (notAPaper || scanningRef.current || (mode === "file" ? !wordOutlineReady(outlineLoading, outlineError, !!outline) : !googleOutlineReady(linkState, outlineLoading, outlineError, !!outline))) return;
     if (!session?.user) { onNavigate("login"); return; }
-    if (scanBusy) { setScanError("A scan is already running. Wait for it to finish before starting another."); return; }   // one scan at a time
-    lastScanError = null;
+    if (scanBusy) { setDismissedProblem(null); lastScanRunError = "A scan is already running. Wait for it to finish before starting another."; setScanRunError(lastScanRunError); return; }   // one scan at a time
+    lastScanError = null; clearScanRunError();
     setScanError(null);
+    clearScanRunError();
+    setDismissedProblem(null);   // the same failure twice in a row must show its pop-up again
     scanningRef.current = true;
     setIsScanning(true);
     let navigatedToProcessing = false;
@@ -456,8 +462,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       const errMsg = e?.message || "The scan could not be completed.";
       if (navigatedToProcessing) onScanFailed?.(e);
       else onScanRejected?.();
-      lastScanError = navigatedToProcessing ? null : errMsg;
-      setScanError(navigatedToProcessing ? null : errMsg);
+      lastScanRunError = navigatedToProcessing ? null : errMsg;
+      setScanRunError(lastScanRunError);
       scanningRef.current = false;
       setIsScanning(false);
 
@@ -493,7 +499,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     sourceToken.current.invalidate();
     setUploadedFile(null); setUploadedPreviewFile(null); setLink(""); setLinkDraft(""); setLinkFile(null); setLinkPreviewFile(null);
     setOutline(null); setOutlineError(null); setOutlineLoading(false); setDocInfo(null);
-    setLinkProblem(null); setLinkState("idle"); setScanError(null); lastScanError = null;
+    setLinkProblem(null); setLinkState("idle"); setScanError(null); lastScanError = null; clearScanRunError();
     if (fileInputRef.current) fileInputRef.current.value = "";
     setStep(2);
   }
@@ -501,6 +507,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   // Step 2 -> 3: make sure there is something to confirm.
   function continueToConfirm() {
     lastScanError = null;
+    clearScanRunError();
     setDismissedProblem(null);   // every click shows its problem again as a pop-up
     if (mode === "file" && !uploadedFile) { setScanError("Please select a manuscript file to upload."); return; }
     if (mode === "link" && (!link.trim() || !link.includes("docs.google.com"))) { setScanError("Please provide a valid Google Docs link."); return; }
@@ -971,11 +978,13 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             </div>
 
             {(() => {
-              const problem = scanError ?? (notAPaper ? outline?.paper_problem ?? null : null) ?? ((mode === "file" ? outlineError : linkProblem || outlineError) || null);
+              const problem = scanRunError ?? scanError ?? (notAPaper ? outline?.paper_problem ?? null : null) ?? ((mode === "file" ? outlineError : linkProblem || outlineError) || null);
               if (!problem || problem === dismissedProblem) return null;
-              const title = scanError ? "The scan could not start" : notAPaper ? (/looks like a scan/i.test(problem) ? "This looks like a scanned document" : /two-column/i.test(problem) ? "Two columns are not supported" : "This does not look like a research paper") : "We could not read this document";
-              return <ProblemDialog title={title} message={problem} actionLabel="Choose a different document"
-                onAction={() => { setDismissedProblem(problem); setStep(2); }} onClose={() => setDismissedProblem(problem)} />;
+              const title = scanRunError ? "The scan could not start" : scanError ? "We could not use this document" : notAPaper ? (/looks like a scan/i.test(problem) ? "This looks like a scanned document" : /two-column/i.test(problem) ? "Two columns are not supported" : "This does not look like a research paper") : "We could not read this document";
+              // A refused scan attempt is retried from this step, so its button only closes the pop-up; a problem with the document goes back to step 2.
+              const refused = problem === scanRunError;
+              return <ProblemDialog title={title} message={problem} actionLabel={refused ? "OK" : "Choose a different document"}
+                onAction={() => { setDismissedProblem(problem); if (!refused) setStep(2); }} onClose={() => setDismissedProblem(problem)} />;
             })()}
             <div className="uf-actionbar">
               <button type="button" onClick={() => setStep(2)} disabled={isScanning} className="uf-btn is-ghost is-lg" style={{ padding: "0 26px" }}>
