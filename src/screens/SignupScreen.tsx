@@ -242,8 +242,8 @@ export function SignupScreen({ onNavigate, onBack, onSignupSuccess }: { onNaviga
 
         <form onSubmit={submit} noValidate className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
-            <FieldInput label="First name" labelClass="sm:flex sm:min-h-[2.6em] sm:items-end" value={firstName} onChange={value => setFirstName(cleanNameInput(value))} onBlur={() => touch("first")} error={shown("first")} autoComplete="given-name" placeholder="Maria" required={true} icon={USER_ICON} />
-            <FieldInput label="Middle name (optional)" labelClass="sm:flex sm:min-h-[2.6em] sm:items-end" value={middleName} onChange={value => setMiddleName(cleanNameInput(value))} onBlur={() => touch("middle")} error={shown("middle")} autoComplete="additional-name" placeholder="Clara" required={false} icon={USER_ICON} />
+            <FieldInput label="First name" labelClass="sm:flex sm:min-h-[3em] sm:items-end" value={firstName} onChange={value => setFirstName(cleanNameInput(value))} onBlur={() => touch("first")} error={shown("first")} autoComplete="given-name" placeholder="Maria" required={true} icon={USER_ICON} />
+            <FieldInput label="Middle name (optional)" labelClass="sm:flex sm:min-h-[3em] sm:items-end" value={middleName} onChange={value => setMiddleName(cleanNameInput(value))} onBlur={() => touch("middle")} error={shown("middle")} autoComplete="additional-name" placeholder="Clara" required={false} icon={USER_ICON} />
           </div>
           <FieldInput label="Last name" value={lastName} onChange={value => setLastName(cleanNameInput(value))} onBlur={() => touch("last")} error={shown("last")} autoComplete="family-name" placeholder="Santos" required={true} icon={USER_ICON} />
           <FieldInput label="Email address" type="email" value={email} onChange={setEmail} onBlur={() => touch("email")} error={shown("email")} autoComplete="email" placeholder="maria.santos@dlsu.edu.ph" icon={MAIL_ICON} />

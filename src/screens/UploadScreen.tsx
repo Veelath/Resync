@@ -973,7 +973,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             {(() => {
               const problem = scanError ?? (notAPaper ? outline?.paper_problem ?? null : null) ?? ((mode === "file" ? outlineError : linkProblem || outlineError) || null);
               if (!problem || problem === dismissedProblem) return null;
-              const title = scanError ? "The scan could not start" : notAPaper ? "This does not look like a research paper" : "We could not read this document";
+              const title = scanError ? "The scan could not start" : notAPaper ? (/looks like a scan/i.test(problem) ? "This looks like a scanned document" : /two-column/i.test(problem) ? "Two columns are not supported" : "This does not look like a research paper") : "We could not read this document";
               return <ProblemDialog title={title} message={problem} actionLabel="Choose a different document"
                 onAction={() => { setDismissedProblem(problem); setStep(2); }} onClose={() => setDismissedProblem(problem)} />;
             })()}
