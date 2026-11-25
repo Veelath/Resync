@@ -42,7 +42,7 @@ export function ProcessingScreen({ onNavigate, outcome, startedAt, words, sendin
         {!outcome && <section className="processing-screen__card" aria-label="Scan progress">
           <div className="processing-screen__progress-heading"><span className="processing-screen__progress-label"><i aria-hidden="true" />{active.label}…</span><span className="processing-screen__percent" aria-hidden="true">{progress}%</span></div>
           <div className="processing-screen__progress-track" role="progressbar" aria-busy={!status?.completed} aria-label="Manuscript analysis progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><div className="processing-screen__progress-fill" style={{ width: `${progress}%` }} /></div>
-          <div className="processing-screen__active-step" aria-current="step" aria-live="polite"><div className="processing-screen__step-copy"><strong>{active.label}</strong><span>{active.detail}</span></div><span className="processing-screen__spinner" aria-hidden="true" /></div>
+          {sending && <p className="processing-screen__keep-open" role="status">{active.detail}</p>}
         </section>}
         {!sending && <><p className="processing-screen__keep-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>You can leave this page; we will tell you when your report is ready.</p>
         <button type="button" className="processing-screen__leave" onClick={() => onNavigate('dashboard')}>Continue in background</button>
