@@ -6,6 +6,8 @@ import { highlightSentences, type HighlightSpec } from '../../lib/docxHighlight'
 const CSS = `
 .docx-host .text-copy p { margin: 0 0 .9em; font: 15px/1.75 Georgia, 'Times New Roman', serif; color: #1f2433; overflow-wrap: anywhere; }
 .docx-host .text-copy p[data-heading] { font-weight: 700; margin-top: 1.4em; }
+.docx-host .text-copy p[data-title] { text-align: center; font-weight: 700; }
+.docx-host .text-copy p[data-contact] { text-align: center; }
 .docx-host mark { transition: box-shadow .15s; }
 .docx-host mark[data-selected] { box-shadow: 0 0 0 3px rgba(43, 37, 200, .35); }
 .docx-host .docx-withheld { filter: blur(6px); user-select: none; pointer-events: none; }
@@ -48,6 +50,8 @@ export function TextManuscript({ file, highlights, locked, secondSection, unlock
           const paragraph = document.createElement('p');
           paragraph.textContent = block.text;
           if (block.heading) paragraph.dataset.heading = 'true';
+          if (/[A-Z]/.test(block.text) && block.text === block.text.toUpperCase() && block.text.length <= 140) paragraph.dataset.title = 'true';   // a title or heading in capitals
+          else if (/@/.test(block.text) && block.text.length <= 240) paragraph.dataset.contact = 'true';
           return paragraph;
         }));
         setWithheldStart(null);

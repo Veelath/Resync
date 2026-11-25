@@ -11,6 +11,9 @@
 .manuscript-body p { margin: 0 0 1.5em; text-align: justify; text-indent: 2em; }
 .manuscript-compact-block { margin: 0 0 1.5em; }
 .manuscript-body .manuscript-compact-block p { margin: 0; text-align: left; text-indent: 0; line-height: 1.15; }
+.manuscript-body .manuscript-title-block p { text-align: center; font-weight: 700; line-height: 1.3; }
+.manuscript-body .manuscript-title-block { margin-bottom: 2em; }
+.manuscript-body p.manuscript-contact { text-align: center; text-indent: 0; overflow-wrap: anywhere; }
 .manuscript-highlight { border-radius: 2px; text-align: left; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .manuscript-highlight:hover, .manuscript-highlight:focus-visible { box-shadow: 0 0 0 2px #1a1fcc; outline: none; }
 .manuscript-highlight.result-focus, .results-screen .result-focus { animation: manuscript-target 1s ease-out 2; }

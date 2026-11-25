@@ -69,10 +69,12 @@ export function ManuscriptSections({ result, onHighlight, locked, unlockControl,
               !/[.!?;:]$/.test(lines[end][0].trim()) &&
               (end === line || lines[end].index! - (lines[end - 1].index! + lines[end - 1][0].length) <= 2)) end++;
             if (end - line >= 3) {
-              rendered.push(<div key={line} className="manuscript-compact-block">{lines.slice(line, end).map((item, offset) => <p key={line + offset}>{base < 0 ? item[0] : renderLine(item, base)}</p>)}</div>);
+              const shown = lines.slice(line, end).map(item => item[0].trim());
+              const isTitle = shown.every(text => /[A-Z]/.test(text) && text === text.toUpperCase());   // a title page block: all capitals
+              rendered.push(<div key={line} className={isTitle ? 'manuscript-compact-block manuscript-title-block' : 'manuscript-compact-block'}>{lines.slice(line, end).map((item, offset) => <p key={line + offset}>{base < 0 ? item[0] : renderLine(item, base)}</p>)}</div>);
               line = end;
             } else {
-              rendered.push(<p key={line}>{base < 0 ? lines[line][0] : renderLine(lines[line], base)}</p>);
+              rendered.push(<p key={line} className={/@/.test(lines[line][0]) ? 'manuscript-contact' : undefined}>{base < 0 ? lines[line][0] : renderLine(lines[line], base)}</p>);
               line++;
             }
           }
