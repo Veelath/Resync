@@ -7,6 +7,7 @@ import { limitErrorMessage } from '../lib/limitErrorMessage';
 import { backoffMs, waitState, notFoundIsFinal, safeScanMessage, scanStatusMessage, withRequestTimeout, MAX_POLL_MS, RECONNECT_MESSAGE, UNREACHABLE_MESSAGE, CEILING_MESSAGE, NOT_FOUND_MESSAGE } from '../lib/scanWait';
 import { supabase } from '../lib/supabase.js';
 import { adaptScanResult, type ScanResult } from './v7Result';
+import { reviewUnfinished } from '../screens/results/reviewComplete';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
@@ -308,6 +309,8 @@ async function runManuscriptScan(
   return pollScanJob(analysisRunId, signal, Date.now());
 }
 
+export const PROVISIONAL_SCAN_MESSAGE = "The AI review could not finish, so the score would only be provisional. Please scan again in a little while.";
+
 export class ScanOutcome extends Error {
   constructor(message: string, public scanId: string, public kind: string, public failureKind?: string) { super(message); }
 }
@@ -363,7 +366,10 @@ async function pollScanJob(id: string, signal: AbortSignal | undefined, startedA
     if (job.status === 'completed' && job.result) {
       setScanStatus({ ...lastStatus, completed: true });
       await sleep(300, signal);
-      return adaptScanResult(job.result);
+      const adapted = adaptScanResult(job.result);
+      // A score the AI review did not finish is provisional: treat it as a failed scan so the person returns to the confirm step to retry.
+      if (reviewUnfinished('ai_synthesis' in adapted ? adapted.ai_synthesis?.review_status : undefined)) throw new ScanOutcome(PROVISIONAL_SCAN_MESSAGE, id, 'failed');
+      return adapted;
     }
     if (job.status === 'failed') {
       const raw = typeof job.error === 'string' ? job.error : '';
