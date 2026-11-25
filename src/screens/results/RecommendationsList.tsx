@@ -33,7 +33,7 @@ export const severityTones = {
   Minor: { background: '#bae6fd', border: '#0284c7', ink: '#075985', description: 'a small term, figure or name differs' },
 } as const;
 export const inconsistencyTone = { background: '#fef3c7', border: '#f59e0b', description: 'a quoted passage that disagrees' };
-export const provisionalMessage = "Some AI reviews could not finish because the AI's temporary limit was reached. This score is provisional; try scanning again later.";
+export const provisionalMessage = "Some AI reviews could not finish. This score is provisional; try scanning again later.";
 export function isRateLimited(reviewStatus: { status: string; reason?: string } | undefined): boolean {
   return reviewStatus?.status === 'daily_limit' || (reviewStatus?.status === 'partial' && reviewStatus.reason === 'rate_limited');
 }
