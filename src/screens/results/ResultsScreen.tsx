@@ -117,9 +117,11 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   if (!result) return null;
 
   const unfinished = locked && reviewUnfinished(result.ai_synthesis?.review_status);
+  // Nothing to reveal: no recommendation is shown and none is waiting behind the lock, so there is nothing to pay for.
+  const emptyReport = locked && !unfinished && (result.recommendations?.length ?? 0) === 0 && (result.access?.locked_counts.recommendations ?? 0) === 0;
   const firstFree = FIRST_SCAN_FREE_ENABLED && !isSample && (result as { access?: { first_free?: boolean } }).access?.first_free === true;
   useEffect(() => {
-    if (firstFree && locked && !unfinished && !unlockPending.current && unlockedId.current !== result.analysis_run_id) void handleUnlock();
+    if (firstFree && locked && !unfinished && !emptyReport && !unlockPending.current && unlockedId.current !== result.analysis_run_id) void handleUnlock();
   }, [firstFree, locked, unfinished, result.analysis_run_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleUnlock() {
@@ -149,7 +151,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
     } finally { unlockPending.current = false; setUnlocking(false); }
   }
 
-  const unlockControl = unfinished ? <div className="space-y-2"><p className="text-sm text-[#4b5563]">The AI review did not finish, so this score is provisional. Scan again to retry.</p><button type="button" onClick={() => onNavigate('upload')} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white">Scan again</button></div> : <div className="space-y-2">
+  const unlockControl = unfinished ? <div className="space-y-2"><p className="text-sm text-[#4b5563]">The AI review did not finish, so this score is provisional. Scan again to retry.</p><button type="button" onClick={() => onNavigate('upload')} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white">Scan again</button></div> : emptyReport ? <p className="text-sm text-[#4b5563]">This report has no recommendations to unlock, so there is nothing to pay for. Your score and the breakdown on this page are the full result.</p> : <div className="space-y-2">
     <button type="button" onClick={handleUnlock} disabled={unlocking} className="w-full rounded-xl bg-[#1a1fcc] px-4 py-3 text-sm font-bold text-white hover:bg-[#1115a5] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1a1fcc]">
       {unlocking ? 'Unlocking…' : firstFree ? 'Open your free report' : balance === 0 ? 'Buy credits' : 'Unlock full report (1 credit)'}
     </button>
@@ -368,7 +370,7 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
             </div>
         </div>
         {locked && <div className="rp-unlock print:hidden">
-          <p className="rp-unlock-title">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'suggestion' : 'suggestions'} in the full report</p>
+          {!emptyReport && <p className="rp-unlock-title">{result.access!.locked_counts.recommendations} more {result.access!.locked_counts.recommendations === 1 ? 'suggestion' : 'suggestions'} in the full report</p>}
           {unlockControl}
         </div>}
       </aside>
