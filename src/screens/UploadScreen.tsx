@@ -31,6 +31,7 @@ const WORD_MIME_TYPES = [
 ];
 import { isDocx, docxMessage } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
+import { isUnreadableDocument, paperProblemTitle } from '../lib/uploadProblem';
 import { FIRST_SCAN_FREE_ENABLED } from '../lib/featureFlags';
 
 const GOOGLE_READ_ERROR = "We could not open this Google document. Check the link and that sharing is set to 'Anyone with the link can view', then try again.";
@@ -183,7 +184,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [outlineLoading, setOutlineLoading] = useState(false);
   const [outlineError, setOutlineError] = useState<string | null>(null);
   // A document with no research-paper structure is not scanned (a school template can supply its own headings, so it is let through).
-  const notAPaper = outline?.looks_like_paper === false && !templateChapters.some(chapter => chapter.sections.length);
+  const notAPaper = outline?.looks_like_paper === false && (isUnreadableDocument(outline.paper_problem) || !templateChapters.some(chapter => chapter.sections.length));
   // On the confirm step a problem is also shown as a pop-up, so it cannot be missed below the preview. Closing it keeps the message on the page.
   const [dismissedProblem, setDismissedProblem] = useState<string | null>(null);
   useEffect(() => { setDismissedProblem(null); }, [uploadedFile, link, mode, step]);   // a new document, or coming back to this step, shows its problem again
@@ -981,7 +982,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             {(() => {
               const problem = scanRunError ?? scanError ?? (notAPaper ? outline?.paper_problem ?? null : null) ?? ((mode === "file" ? outlineError : linkProblem || outlineError) || null);
               if (!problem || problem === dismissedProblem) return null;
-              const title = scanRunError ? "The scan could not start" : scanError ? "We could not use this document" : notAPaper ? (/looks like a scan/i.test(problem) ? "This looks like a scanned document" : /two-column/i.test(problem) ? "Two columns are not supported" : "This does not look like a research paper") : "We could not read this document";
+              const title = scanRunError ? "The scan could not start" : scanError ? "We could not use this document" : notAPaper ? paperProblemTitle(problem) : "We could not read this document";
               // A refused scan attempt is retried from this step, so its button only closes the pop-up; a problem with the document goes back to step 2.
               const refused = problem === scanRunError;
               return <ProblemDialog title={title} message={problem} actionLabel={refused ? "OK" : "Choose a different document"}
