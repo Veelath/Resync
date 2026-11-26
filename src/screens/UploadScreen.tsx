@@ -31,6 +31,7 @@ const WORD_MIME_TYPES = [
 ];
 import { isDocx, docxMessage } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
+import { looksLikeTemplate, NOT_A_TEMPLATE_MESSAGE } from '../lib/templateCheck';
 import { isUnreadableDocument, paperProblemTitle } from '../lib/uploadProblem';
 import { FIRST_SCAN_FREE_ENABLED } from '../lib/featureFlags';
 
@@ -48,7 +49,10 @@ function isWordFile(file: File): boolean {
   return !file.type || WORD_MIME_TYPES.includes(file.type);
 }
 
-async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
+/** The chapters read from a template, and every line of it that can show whether it is a template at all. */
+interface ParsedTemplate { chapters: TemplateChapter[]; lines: string[] }
+
+async function parseDocxTemplate(file: File): Promise<ParsedTemplate> {
   const mammoth = await import('mammoth');
   const arrayBuffer = await file.arrayBuffer();
   const { value: html } = await mammoth.convertToHtml({ arrayBuffer });
@@ -78,16 +82,17 @@ async function parseDocxTemplate(file: File): Promise<TemplateChapter[]> {
     }
   }
 
-  return chapters.length > 0 ? chapters : [];
+  const lines = Array.from(doc.body.querySelectorAll('h1, h2, h3, h4, p, li'), element => element.textContent?.trim() ?? '');
+  return { chapters, lines };
 }
 
-async function parseTextTemplate(file: File): Promise<TemplateChapter[]> {
+async function parseTextTemplate(file: File): Promise<ParsedTemplate> {
   const headings = (await file.text())
     .replace(/\r\n?/g, '\n')
     .split('\n')
     .map(line => line.trim())
     .filter(Boolean);
-  return headings.length > 0 ? [{ id: 'c1', title: 'Template headings', sections: headings }] : [];
+  return { chapters: headings.length > 0 ? [{ id: 'c1', title: 'Template headings', sections: headings }] : [], lines: headings };
 }
 
 function buildTemplateToc(chapters: TemplateChapter[]): string[] | undefined {
@@ -162,6 +167,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
   const [customTemplateFile, setCustomTemplateFile] = useState<File | null>(null);
   const [templateParseError, setTemplateParseError] = useState<string | null>(null);
+  const [templateDialog, setTemplateDialog] = useState<string | null>(null);
   const customTemplateInputRef = useRef<HTMLInputElement>(null);
 
   const [templateChapters, setTemplateChapters] = useState<TemplateChapter[]>([]);
@@ -309,6 +315,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       }
       const dataToSave = {
         chapters: templateChapters,
+        checked: true,   // came from a file that passed looksLikeTemplate
         savedAt: new Date().toISOString(),
       };
       localStorage.setItem("resync_saved_template", JSON.stringify(dataToSave));
@@ -328,6 +335,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       if (!saved || typeof saved !== "object" || !Array.isArray(saved.chapters)) {
         throw new Error('Invalid saved template');
       }
+      // A template saved before files were checked may be any document.
+      const headings = (saved.chapters as TemplateChapter[]).flatMap(chapter => [chapter.title, ...chapter.sections]);
+      if (!saved.checked && !looksLikeTemplate(headings)) { rejectTemplate(NOT_A_TEMPLATE_MESSAGE); return; }
       setTemplateChapters(saved.chapters);
       showTemplateToast("Saved template loaded.");
     } catch (e) {
@@ -345,7 +355,17 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     showTemplateToast("All sections removed.");
   }
 
+  /** Drops the template and says why, on the page and in a pop-up. */
+  function rejectTemplate(message: string) {
+    setCustomTemplateFile(null);
+    setTemplateChapters([]);
+    setTemplateParseError(message);
+    setTemplateDialog(message);
+    if (customTemplateInputRef.current) customTemplateInputRef.current.value = '';
+  }
+
   async function handleTemplateFileChange(file: File) {
+    setTemplateDialog(null);
     const isTextTemplate = /\.txt$/i.test(file.name);
     if (!isWordFile(file) && !isTextTemplate) {
       setCustomTemplateFile(null);
@@ -363,15 +383,15 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setTemplateParseError(null);
     try {
       const parsed = isTextTemplate ? await parseTextTemplate(file) : await parseDocxTemplate(file);
-      if (parsed.length === 0) {
-        setTemplateParseError('No headings found in the template. No template will be sent.');
-        setTemplateChapters([]);
+      if (!looksLikeTemplate(parsed.lines, isTextTemplate)) {
+        rejectTemplate(NOT_A_TEMPLATE_MESSAGE);
+      } else if (parsed.chapters.length === 0) {
+        rejectTemplate('No headings found in the template. No template will be sent.');
       } else {
-        setTemplateChapters(parsed);
+        setTemplateChapters(parsed.chapters);
       }
     } catch {
-      setTemplateParseError('Could not parse the template file. No template will be sent.');
-      setTemplateChapters([]);
+      rejectTemplate('Could not parse the template file. No template will be sent.');
     }
   }
 
@@ -563,6 +583,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
         {step === 1 && (
           <div key="step1" className="um-panel flex flex-col gap-[22px]">
+            {templateDialog && <ProblemDialog title="We could not use this template" message={templateDialog} actionLabel="Choose another file"
+              onAction={() => { setTemplateDialog(null); customTemplateInputRef.current?.click(); }} onClose={() => setTemplateDialog(null)} />}
             <div className="uf-head">
               <div>
                 <div className="uf-eb">Step 1 · Chapter template (optional)</div>
