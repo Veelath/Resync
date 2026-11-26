@@ -24,7 +24,7 @@ import { CitationsTab } from './CitationsTab';
 import { ManuscriptSections, ManuscriptViewer } from './ManuscriptViewer';
 import { citationAccess, citationHasNoLink, citationLinkRange, citationContains, citationText, usableTitle } from './helpers';
 import { edgeSentence, findSectionIndex, isWithheldSection, type Placement } from '../../lib/sectionNavigation';
-import { matchedRecommendations, recommendationRanges } from './highlights';
+import { matchedRecommendations, quotedIssues, recommendationRanges } from './highlights';
 import { ResultsCheckout } from './ResultsCheckout';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
 import { RecommendationsList, inconsistencyTone, isRateLimited, levelOf, severityTones } from './RecommendationsList';
@@ -180,14 +180,10 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       const pair = result.manuscript_flow.find(entry => entry.order === rec.pair);
       const tone = severityTones[(pair?.severity && pair.severity !== 'None' ? pair.severity : 'Moderate') as keyof typeof severityTones];
       const id = `${rec.pair}-${rec.id}`;
-      const edge = rec.kind === 'add' ? edgeSentence(result.manuscript_sections?.find(section => section.name === rec.section)?.text, rec.placement === 'start' ? 'start' : 'end', 4000) : '';
-      if (rec.kind === 'add') return edge ? [{ id, text: edge, background: '#ffe8a3', border: '#e0a53c', title: 'Click to see the finding', onClick: () => focusLinked('recommendation', rec.id, rec.pair) }] : [];
-      return rec.quote ? [{ id, text: rec.quote, ...tone, title: 'Click to see why this was flagged', onClick: () => focusLinked('recommendation', rec.id, rec.pair) }] : [];
+      return rec.kind !== 'add' && rec.quote ? [{ id, text: rec.quote, ...tone, title: 'Click to see why this was flagged', onClick: () => focusLinked('recommendation', rec.id, rec.pair) }] : [];
     }),
-    // Only a pair that has a recommendation card is highlighted: a flagged pair whose advice was dropped must not leave a highlight with nothing to explain it.
-    ...result.manuscript_flow.filter(pair => hasAdvice(pair.order)).flatMap(pair => (pair.explanation?.highlighted_inconsistencies ?? []).filter(item => item.quote).map((item, index) => ({
-      id: `issue-${pair.order}-${index}`, text: item.quote, ...inconsistencyTone, title: 'Part of an inconsistency between sections',
-    }))),
+    // Only a pair with a rewrite card is highlighted: every mark in the paper belongs to advice about those words.
+    ...quotedIssues(result.manuscript_flow, recommendations).map(item => ({ ...item, ...inconsistencyTone, title: 'Part of an inconsistency between sections' })),
   ] : [];
   const rateLimited = isRateLimited(result.ai_synthesis?.review_status);
 

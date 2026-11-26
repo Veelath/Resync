@@ -1,6 +1,6 @@
 import type { V7Recommendation } from '../../services/v7Result';
 import { recommendationCategory, type RecommendationCategory } from './categoryColors';
-import { edgeSentence, findSectionIndex } from '../../lib/sectionNavigation';
+import { findSectionIndex } from '../../lib/sectionNavigation';
 
 type CategorizedRecommendation = V7Recommendation & { category?: RecommendationCategory };
 
@@ -45,12 +45,14 @@ export function matchedRecommendations(sections: { name: string; text: string | 
   });
 }
 
+/** The passages the manuscript marks for a section: only sentences a recommendation rewrites. A sentence to be added
+ * changes no existing words, so nothing is marked for it (the sentence at the section's edge is usually about something
+ * else); its card shows where it goes. */
 export function recommendationRanges(section: { name: string; text: string | null }, recommendations: CategorizedRecommendation[]) {
   const text = section.text ?? '';
   const ranges: { start: number; end: number; id: string; pair: number; category?: RecommendationCategory }[] = [];
   for (const recommendation of recommendations) {
-    const sentence = recommendation.original_sentence || (recommendation.kind === 'add' && recommendation.section === section.name
-      ? edgeSentence(text, recommendation.placement === 'start' ? 'start' : 'end', 4000) : '');
+    const sentence = recommendation.kind === 'add' ? null : recommendation.original_sentence;
     if (!sentence || (recommendation.section && recommendation.section !== section.name)
       || (!recommendation.section && recommendation.section_a !== section.name && recommendation.section_b !== section.name)) continue;
     let start = text.indexOf(sentence);
@@ -58,4 +60,13 @@ export function recommendationRanges(section: { name: string; text: string | nul
     if (start >= 0) ranges.push({ start, end: start + sentence.length, id: recommendation.id ?? recommendation.recommendation_id, pair: recommendation.pair_order, category: recommendationCategory(recommendation.category) });
   }
   return ranges.sort((a, b) => a.start - b.start);
+}
+
+/** The disagreeing quotes to mark: only for a pair with a card that rewrites one of its sentences. A pair whose only
+ * advice is a linking sentence would otherwise mark passages no card changes. */
+export function quotedIssues<Pair extends { order: number; explanation?: { highlighted_inconsistencies?: { quote?: string | null }[] } | null }>(
+  pairs: Pair[], recommendations: { pair: number; kind?: string }[]) {
+  const rewritten = new Set(recommendations.filter(rec => rec.kind !== 'add').map(rec => rec.pair));
+  return pairs.filter(pair => rewritten.has(pair.order)).flatMap(pair => (pair.explanation?.highlighted_inconsistencies ?? [])
+    .flatMap((item, index) => item.quote ? [{ id: `issue-${pair.order}-${index}`, text: item.quote }] : []));
 }
