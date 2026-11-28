@@ -1,6 +1,8 @@
 // Finds sentences inside a rendered Word document and wraps them in <mark>, even when a sentence is split across
 // several formatting runs (bold, italic, links...). Matching ignores differences in whitespace only.
 
+import { contentsRange } from './contentsPage';
+
 export interface HighlightSpec {
   /** Unique id; the first mark of a sentence gets the DOM id `highlight-${id}`. */
   id: string;
@@ -61,10 +63,38 @@ function wrap(located: Located[], spec: HighlightSpec, first: boolean) {
   });
 }
 
+const PLACE = 'placement';
+
+/** Takes away the highlight made by markPlace. */
+export function clearPlace(root: ParentNode): void {
+  root.querySelectorAll(`mark[data-highlight-for="${PLACE}"]`).forEach(mark => {
+    const parent = mark.parentNode;
+    mark.replaceWith(...mark.childNodes);
+    parent?.normalize();
+  });
+}
+
+/**
+ * Highlights the sentence of `paragraph` that a new sentence goes next to, and returns the first mark. A sentence that
+ * runs on into another paragraph marks all of this one.
+ */
+export function markPlace(paragraph: Element, sentence: string, title: string): HTMLElement | null {
+  const { text, map } = indexParagraph(paragraph);
+  const needle = collapse(sentence);
+  const at = text.indexOf(needle);
+  const located = at < 0 ? map : map.slice(at, at + needle.length);
+  if (!located.length) return null;
+  try { wrap(located, { id: PLACE, text: sentence, background: '#fff2a8', border: '#e0a53c', title }, true); }
+  catch { return null; }
+  return paragraph.querySelector<HTMLElement>(`#highlight-${PLACE}`);
+}
+
 /** Highlights each sentence once and returns the ids that were found in the document. */
 export function highlightSentences(root: HTMLElement, specs: HighlightSpec[]): Set<string> {
   const found = new Set<string>();
-  const paragraphs = Array.from(root.querySelectorAll('p')).filter(paragraph => !paragraph.closest('mark'));
+  const all = Array.from(root.querySelectorAll('p')).filter(paragraph => !paragraph.closest('mark'));
+  const contents = contentsRange(all.map(paragraph => paragraph.textContent ?? ''));
+  const paragraphs = contents ? all.filter((_, index) => index < contents[0] || index > contents[1]) : all;
   const indexed = paragraphs.map(paragraph => ({ paragraph, ...indexParagraph(paragraph) }));
   const done = new Set<string>();
 

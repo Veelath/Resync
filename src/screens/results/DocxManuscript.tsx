@@ -37,17 +37,18 @@ const HOST_CSS = `
 .docx-host mark[data-selected] { box-shadow: 0 0 0 3px rgba(43, 37, 200, .35); }
 `;
 
-// Reports show the text only: tables, pictures, diagrams and other embedded objects are left out, locked or not.
+// Reports show the writing only, in the document's own pages and formatting: tables, pictures, diagrams and other
+// embedded objects are left out, locked or not.
 function keepTextOnly(root: HTMLElement) {
-  const visual = 'table, img, svg, canvas, object, embed, video, audio';
+  const visual = 'table, img, svg, canvas, object, embed, video, audio, iframe, script';
   // A paragraph that held only a picture would leave a blank gap behind, so it goes too.
   root.querySelectorAll('p').forEach(paragraph => {
     if (paragraph.querySelector(visual) && !paragraph.textContent?.trim()) paragraph.remove();
   });
   root.querySelectorAll(visual).forEach(element => element.remove());
-  // pages that were only a table or a figure
+  // Pages that were only a table or a figure; a page number in the header or footer does not keep one.
   root.querySelectorAll('section.docx').forEach(page => {
-    if (!page.textContent?.trim()) page.remove();
+    if (!(page.querySelector('article') ?? page).textContent?.trim()) page.remove();
   });
 }
 
@@ -83,7 +84,8 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     let cancelled = false;
     const body = bodyRef.current;
     if (!body) return;
-    const fail = (reason: string) => { if (!cancelled) { console.warn('Word view:', reason); setStatus('error'); } };
+    // A file the page-by-page view cannot draw is handed back, so the report shows its text instead of only an error.
+    const fail = (reason: string) => { if (!cancelled) { console.warn('Word view:', reason); setStatus('error'); callbacks.current.onFailed(); } };
     setStatus('loading');
     body.replaceChildren();
     setLoadedPages(0);
@@ -100,18 +102,19 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       try {
         await renderAsync(event.data.bytes, rendered, styles, {
           className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
+          // The same options as the preview before the scan (components/DocxPreview), so the report shows the same copy.
           breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
-          renderFootnotes: false, renderEndnotes: false, useBase64URL: true,
+          renderFootnotes: false, renderEndnotes: false, useBase64URL: true, renderAltChunks: false,
         });
       if (cancelled) return;
       worker.terminate();
-      // The unlock point is found before pages with tables are removed; if its own page goes, it moves to the next text that stays.
       const paragraphs = locked ? [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table')) : [];
       const index = locked ? lockedHeadingIndex(paragraphs.map(element => element.textContent ?? ''), secondSection ?? '') : -1;
       keepTextOnly(rendered);
       if (locked) {
         const action = lockedHeadingAction(index, event.data.truncated, budget);
         if (action === 'retry') { setBudget(nextBudget(budget)); return; }
+        // If the unlock point's own paragraph was removed, the blur starts at the next text that stays.
         const heading = index < 0 ? undefined : paragraphs.slice(index).find(element => rendered.contains(element));
         if (action === 'fail' || !heading || !rendered.lastChild) { callbacks.current.onFailed(); return; }
         // The whole document is shown; what the free report does not cover is blurred, with the unlock card where it starts.

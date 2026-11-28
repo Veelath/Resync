@@ -1,4 +1,7 @@
-// The uploaded file stays in memory and, when small enough, in this tab for refreshes.
+// The uploaded file stays in memory and, when small enough, in this tab for refreshes. A file too large for the tab is
+// kept there without its pictures, so after a refresh the report still shows the document's own pages, text and tables.
+import { slimDocx } from './slimDocx';
+
 let held: { file: File; scanId: string | null } | null = null;
 let revision = 0;
 const KEY = 'resync-manuscript-copy';
@@ -15,8 +18,11 @@ async function writeStored(value: typeof held): Promise<void> {
   const current = ++revision;
   try {
     sessionStorage.removeItem(KEY);
-    if (!value || value.file.size > MAX_STORED_BYTES) return;
-    const bytes = new Uint8Array(await value.file.arrayBuffer());
+    if (!value) return;
+    let file = value.file;
+    if (file.size * 8 / 3 > MAX_STORED_BYTES && /\.docx$/i.test(file.name)) file = await slimDocx(file, true);
+    if (file.size > MAX_STORED_BYTES || current !== revision) return;
+    const bytes = new Uint8Array(await file.arrayBuffer());
     let binary = '';
     for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
     const encoded = JSON.stringify({ data: btoa(binary), name: value.file.name, type: value.file.type, scanId: value.scanId });

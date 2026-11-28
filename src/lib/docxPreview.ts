@@ -40,7 +40,8 @@ export function trimDocument(xml: string, limit: number) {
     if (depth === 0) {
       const element = content.slice(elementStart, index + tag.length);
       if (/^<w:sectPr(?:\s|>|\/)/.test(element)) { section = element; continue; }
-      if (!/^<w:(?:p|tbl)(?:\s|>|\/)/.test(element)) throw new Error('Unsupported document structure');
+      // Word also puts other things directly in the body (content controls such as an automatic table of contents,
+      // bookmarks, tracked changes). They are measured and kept like paragraphs; refusing them hid the whole document.
       const textLength = [...element.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)].reduce((n, m) => n + m[1].length, 0);
       if (truncated || count >= limit || chars + textLength > 60000 * (limit / INITIAL_ELEMENTS) || element.length > 300000 * (limit / INITIAL_ELEMENTS)) { truncated = true; continue; }
       chars += textLength; count++; cut = index + tag.length;
@@ -55,7 +56,7 @@ export async function preparePreview(zip: JSZip, xml: string, budget: number) {
   return { bytes: await archiveDocument(zip, trimmed.xml), truncated: trimmed.truncated };
 }
 
-export async function archiveDocument(zip: JSZip, xml: string, limits = { image: 300000, total: 2000000 }) {
+export async function archiveDocument(zip: JSZip, xml: string, limits = { image: 4_000_000, total: 30_000_000 }) {
   const copy = new JSZip();
   let mediaBytes = 0;
   const placeholder = Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,2,0,0,0,144,119,83,222,0,0,0,12,73,68,65,84,120,156,99,56,112,224,0,0,4,132,2,65,225,141,175,39,0,0,0,0,73,69,78,68,174,66,96,130]);

@@ -45,7 +45,7 @@ export function DocxPreview({ file, onFailed, autoLoad = true }: { file: File; o
         await renderAsync(event.data.bytes, body, css, {
           className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
           breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
-          renderFootnotes: false, renderEndnotes: false, useBase64URL: true,
+          renderFootnotes: false, renderEndnotes: false, useBase64URL: true, renderAltChunks: false,
         });
         if (!current() || !guard.isActive()) return;
         if (!guard.finish()) return;

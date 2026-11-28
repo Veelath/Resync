@@ -16,6 +16,15 @@ test('trims at whole elements and keeps the final section', () => {
   assert.equal(trimDocument(wrap(p('one')), 150).truncated, false);
 });
 
+test('keeps a document whose body holds a table of contents control and bookmarks', () => {
+  const contents = '<w:sdt><w:sdtContent>' + p('Table of Contents') + '</w:sdtContent></w:sdt>';
+  const body = '<w:bookmarkStart w:id="0"/>' + contents + p('Chapter one') + '<w:bookmarkEnd w:id="0"/>';
+  const result = trimDocument(wrap(body), 150);
+  assert.equal(result.truncated, false);
+  assert.ok(result.xml.includes(contents));
+  assert.ok(result.xml.includes('Chapter one'));
+});
+
 test('bounds text and rejects malformed or oversized first elements', () => {
   assert.equal(trimDocument(wrap(p('a'.repeat(40000)) + p('b'.repeat(30000))), 150).truncated, true);
   assert.throws(() => trimDocument(wrap(p('x'.repeat(60001))), 150));
@@ -33,7 +42,8 @@ test('generated archive retains formatting and replaces large media without infl
   original.file('word/document.xml', wrap(p('one') + p('two')));
   original.file('word/styles.xml', '<styles>font</styles>');
   original.file('word/media/small.png', new Uint8Array(10));
-  original.file('word/media/large.png', new Uint8Array(300001));
+  original.file('word/media/large.png', new Uint8Array(4_000_001));
+  original.file('word/media/photo.png', new Uint8Array(900_000));
   const zip = await JSZip.loadAsync(await original.generateAsync({ type: 'uint8array' }));
   const result = await preparePreview(zip, await zip.file('word/document.xml')!.async('string'), 1);
   const view = await JSZip.loadAsync(result.bytes);
@@ -41,6 +51,7 @@ test('generated archive retains formatting and replaces large media without infl
   assert.equal(await view.file('word/styles.xml')!.async('string'), '<styles>font</styles>');
   assert.equal((await view.file('word/media/small.png')!.async('uint8array')).length, 10);
   assert.ok((await view.file('word/media/large.png')!.async('uint8array')).length < 100);
+  assert.equal((await view.file('word/media/photo.png')!.async('uint8array')).length, 900_000);   // an ordinary picture is shown
   assert.ok(!(await view.file('word/document.xml')!.async('string')).includes('two'));
 });
 
@@ -69,15 +80,15 @@ test('guard stays active until finished or cancelled', () => {
   assert.equal(cancelled.finish(), false);
 });
 
-test('aggregate media budget keeps only the first two megabytes', async () => {
+test('aggregate media budget keeps only the first thirty megabytes', async () => {
   const original = new JSZip();
   const xml = wrap(p('text'));
   original.file('word/document.xml', xml);
-  for (let i = 0; i < 8; i++) original.file(`word/media/${i}.png`, new Uint8Array(280000));
+  for (let i = 0; i < 8; i++) original.file(`word/media/${i}.png`, new Uint8Array(3_900_000));
   const zip = await JSZip.loadAsync(await original.generateAsync({ type: 'uint8array' }));
   const result = await preparePreview(zip, xml, 150);
   const view = await JSZip.loadAsync(result.bytes);
-  assert.equal((await view.file('word/media/6.png')!.async('uint8array')).length, 280000);
+  assert.equal((await view.file('word/media/6.png')!.async('uint8array')).length, 3_900_000);
   assert.ok((await view.file('word/media/7.png')!.async('uint8array')).length < 100);
 });
 

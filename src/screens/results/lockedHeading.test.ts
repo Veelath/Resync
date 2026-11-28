@@ -26,3 +26,11 @@ test('retries only a missing heading in a truncated preview below the limit', ()
   assert.equal(lockedHeadingAction(-1, true, 3000), 'fail');
   assert.equal(lockedHeadingAction(-2, true, 150), 'fail');
 });
+
+test('a heading right above the first paragraph is found, not the contents line that repeats it', () => {
+  const prose = 'The study explains the problem in detail and why it matters to the people who are affected by it every day, with examples.';
+  const paragraphs = ['Table of Contents', 'Abstract	2', 'Rationale of the Study	3', '', 'CHAPTER 1', 'THE PROBLEM', 'Rationale of the Study', '', prose];
+  assert.equal(lockedHeadingIndex(paragraphs, 'rationale of the study'), 6);
+  // A long file drawn in turns: while only the contents page is there, nothing matches yet, so more is loaded.
+  assert.equal(lockedHeadingIndex(paragraphs.slice(0, 4), 'rationale of the study'), -1);
+});
