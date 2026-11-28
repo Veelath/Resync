@@ -499,9 +499,11 @@ export interface ManuscriptOutline {
 }
 
 /** The sections a scan would compare, read before the scan so the person can check the paper is the right one. */
-export async function getManuscriptOutline(source: { file: File } | { docUrl: string }): Promise<ManuscriptOutline> {
+export async function getManuscriptOutline(source: { file: File } | { docUrl: string }, templateToc?: string[]): Promise<ManuscriptOutline> {
   const form = new FormData();
   if ('file' in source) form.append('file', source.file); else form.append('doc_url', source.docUrl);
+  // With a template, the server also says whether the manuscript was written to it.
+  if (templateToc?.length) form.append('template_toc', JSON.stringify(templateToc));
   const resp = await apiFetch(`${API_BASE_URL}/api/manuscripts/outline`, { method: 'POST', headers: await authHeaders(), body: form });
   if (!resp.ok) throw await responseError(resp);
   return resp.json();

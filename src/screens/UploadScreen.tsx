@@ -1,6 +1,6 @@
 import { notify } from '../lib/notify';
 import { createRequestToken } from '../lib/requestToken';
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, useMemo } from "react";
 import type React from 'react';
 import type { Screen, DisplayScan } from '../lib/appTypes';
 import { B, BH, BL } from '../lib/brand';
@@ -18,12 +18,6 @@ import { wordOutlineReady, googleOutlineReady } from '../lib/uploadReadiness';
 
 type UploadMode = "file" | "link";
 
-interface TemplateChapter {
-  id: string;
-  title: string;
-  sections: string[];
-}
-
 const WORD_EXT_RE = /\.docx?$/i;
 const WORD_MIME_TYPES = [
   "application/msword",
@@ -32,6 +26,9 @@ const WORD_MIME_TYPES = [
 import { isDocx, docxMessage } from '../lib/scanWait';
 import { slimDocx } from '../lib/slimDocx';
 import { looksLikeTemplate, NOT_A_TEMPLATE_MESSAGE } from '../lib/templateCheck';
+import { fileToData, readSavedTemplate, savedFile, SAVED_TEMPLATE_KEY, type SavedTemplate, type TemplateChapter } from '../lib/savedTemplate';
+import { TemplateViewer } from './TemplateViewer';
+import { isBoldLine, parseTemplateOutline } from '../lib/templateOutline';
 import { isUnreadableDocument, paperProblemTitle } from '../lib/uploadProblem';
 import { FIRST_SCAN_FREE_ENABLED } from '../lib/featureFlags';
 
@@ -83,7 +80,15 @@ async function parseDocxTemplate(file: File): Promise<ParsedTemplate> {
   }
 
   const lines = Array.from(doc.body.querySelectorAll('h1, h2, h3, h4, p, li'), element => element.textContent?.trim() ?? '');
-  return { chapters, lines };
+  if (chapters.some(chapter => chapter.sections.length)) return { chapters, lines };
+  // No sections under heading styles: the template may be an outline or table of contents typed as plain lines or a table.
+  const line = (element: Element, text: string) => ({ text, bold: /^H[1-6]$/.test(element.tagName)
+    || isBoldLine(text, Array.from(element.querySelectorAll('strong'), part => part.textContent ?? '').join('')) });
+  const rows = elements.flatMap(element => /^(table|ul|ol)$/i.test(element.tagName)
+    ? Array.from(element.querySelectorAll('tr, li'), row => line(row, row.tagName === 'TR' ? Array.from(row.children, cell => cell.textContent?.trim() ?? '').join('\t') : row.textContent ?? ''))
+    : [line(element, element.textContent ?? '')]);
+  const outline = parseTemplateOutline(rows);
+  return { chapters: outline.length ? outline : chapters, lines };
 }
 
 async function parseTextTemplate(file: File): Promise<ParsedTemplate> {
@@ -96,8 +101,10 @@ async function parseTextTemplate(file: File): Promise<ParsedTemplate> {
 }
 
 function buildTemplateToc(chapters: TemplateChapter[]): string[] | undefined {
-  const headings = chapters.flatMap(chapter => chapter.sections);
-  if (!headings.length) return undefined;
+  // A template of chapter titles alone still says what the paper must contain; one or two stray titles do not.
+  if (!chapters.some(chapter => chapter.sections.length) && chapters.length < 3) return undefined;
+  // A chapter with no sections under it is a heading of the paper itself.
+  const headings = chapters.flatMap(chapter => chapter.sections.length ? chapter.sections : [chapter.title]);
   return headings.some(heading => /^references|bibliography/i.test(heading))
     ? headings
     : [...headings, 'References'];
@@ -176,10 +183,18 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [addingToChapter, setAddingToChapter] = useState<number | null>(null);
 
   // Saved template state & notification
-  const [hasSavedTemplate, setHasSavedTemplate] = useState<boolean>(false);
+  const [savedTemplate, setSavedTemplate] = useState<SavedTemplate | null>(null);
+  // Which template is open in the viewer: the one attached now, or the saved one.
+  const [viewingTemplate, setViewingTemplate] = useState<'current' | 'saved' | null>(null);
   const [templateNotification, setTemplateNotification] = useState<string | null>(null);
   const templateToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const templateToc = buildTemplateToc(templateChapters);
+  // The template's headings as one value, so the manuscript is checked again when they change.
+  const templateKey = templateToc ? JSON.stringify(templateToc) : "";
+  // The same File object between renders, so an open viewer does not redraw it.
+  const savedTemplateFile = useMemo(() => savedFile(savedTemplate), [savedTemplate]);
+  const savedOn = savedTemplate?.savedAt ? new Date(savedTemplate.savedAt).toLocaleDateString(undefined, { dateStyle: 'medium' }) : null;
+  const savedSections = savedTemplate?.chapters.reduce((total, chapter) => total + chapter.sections.length, 0) ?? 0;
   const [docInfo, setDocInfo] = useState<DocInfo | null>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
@@ -252,12 +267,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     setOutlineLoading(true);
     setOutline(null);
     setOutlineError(null);
-    getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() })
+    getManuscriptOutline(activeFile ? { file: activeFile } : { docUrl: link.trim() }, templateKey ? JSON.parse(templateKey) as string[] : undefined)
       .then(result => { if (!cancelled && current()) setOutline(result); })
       .catch(error => { if (!cancelled && current()) { setOutline(null); setOutlineError(error instanceof ScanLimitError ? error.message : mode === "file" ? WORD_READ_ERROR : GOOGLE_READ_ERROR); if (error instanceof ScanLimitError) setScanError(error.message); } })
       .finally(() => { if (!cancelled && current()) setOutlineLoading(false); });
     return () => { cancelled = true; };
-  }, [mode, activeFile, link, linkState]);
+  }, [mode, activeFile, link, linkState, templateKey]);
 
   // Credits left, for the "credits after scan" line on the confirm step.
   useEffect(() => {
@@ -279,10 +294,9 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   // Check localStorage on mount / when returning to the template step
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("resync_saved_template");
-      setHasSavedTemplate(Boolean(saved));
+      setSavedTemplate(readSavedTemplate(localStorage));
     } catch {
-      setHasSavedTemplate(false);
+      setSavedTemplate(null);
     }
   }, [step]);
 
@@ -305,21 +319,23 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
     }, 2000);
   }
 
-  function handleSaveTemplate() {
+  async function handleSaveTemplate() {
     if (!templateChapters.length) return;   // chapters alone are enough: an uploaded template often has chapters before any sections
     try {
-      const existing = localStorage.getItem("resync_saved_template");
+      const existing = localStorage.getItem(SAVED_TEMPLATE_KEY);
       if (existing) {
         const confirmed = window.confirm("Overwrite saved template?");
         if (!confirmed) return;
       }
-      const dataToSave = {
+      const dataToSave: SavedTemplate = {
         chapters: templateChapters,
         checked: true,   // came from a file that passed looksLikeTemplate
         savedAt: new Date().toISOString(),
+        // The file is kept too, so the student can look at it again.
+        ...(customTemplateFile ? { fileName: customTemplateFile.name, fileData: await fileToData(customTemplateFile) } : {}),
       };
-      localStorage.setItem("resync_saved_template", JSON.stringify(dataToSave));
-      setHasSavedTemplate(true);
+      localStorage.setItem(SAVED_TEMPLATE_KEY, JSON.stringify(dataToSave));
+      setSavedTemplate(dataToSave);
       showTemplateToast("Template saved.");
     } catch (e) {
       console.error("Failed to save template to localStorage:", e);
@@ -329,20 +345,29 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
 
   function handleUseSavedTemplate() {
     try {
-      const raw = localStorage.getItem("resync_saved_template");
-      if (!raw) throw new Error("Saved template missing");
-      const saved = JSON.parse(raw);
-      if (!saved || typeof saved !== "object" || !Array.isArray(saved.chapters)) {
-        throw new Error('Invalid saved template');
-      }
+      const saved = readSavedTemplate(localStorage);
+      if (!saved) throw new Error('Saved template missing or invalid');
       // A template saved before files were checked may be any document.
-      const headings = (saved.chapters as TemplateChapter[]).flatMap(chapter => [chapter.title, ...chapter.sections]);
+      const headings = saved.chapters.flatMap(chapter => [chapter.title, ...chapter.sections]);
       if (!saved.checked && !looksLikeTemplate(headings)) { rejectTemplate(NOT_A_TEMPLATE_MESSAGE); return; }
+      setCustomTemplateFile(savedFile(saved));
+      setTemplateParseError(null);
       setTemplateChapters(saved.chapters);
       showTemplateToast("Saved template loaded.");
     } catch (e) {
       console.error("Failed to load saved template from localStorage:", e);
       notify({ kind: 'error', title: "Couldn't load the saved template", message: 'Please try again.' });
+    }
+  }
+
+  function handleDeleteSavedTemplate() {
+    if (!window.confirm("Delete your saved template? This cannot be undone.")) return;
+    try {
+      localStorage.removeItem(SAVED_TEMPLATE_KEY);
+      setSavedTemplate(null);
+      showTemplateToast("Saved template deleted.");
+    } catch {
+      notify({ kind: 'error', title: "Couldn't delete the saved template", message: 'Please try again.' });
     }
   }
 
@@ -602,7 +627,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
                   Save template
                 </button>
-                <button type="button" onClick={handleUseSavedTemplate} disabled={!hasSavedTemplate} title={!hasSavedTemplate ? "No saved template yet. Save one first." : undefined} className="uf-btn is-ghost is-sm">Use saved template</button>
+                <button type="button" onClick={handleUseSavedTemplate} disabled={!savedTemplate} title={!savedTemplate ? "No saved template yet. Save one first." : undefined} className="uf-btn is-ghost is-sm">Use saved template</button>
                 <button type="button" onClick={handleRemoveAllSections} disabled={!hasChapters && !customTemplateFile} className="uf-btn is-ghost is-danger is-sm">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
                   Remove all sections
@@ -730,7 +755,25 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   {templateParseError && <p style={{ margin: 0, fontSize: 12.5, color: "#b7791f" }}>{templateParseError}</p>}
                   <input ref={customTemplateInputRef} type="file" accept={TEMPLATE_ACCEPT} className="hidden"
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleTemplateFileChange(f); e.target.value = ""; }} />
+                  {customTemplateFile && templateChapters.length > 0 && <button type="button" onClick={() => setViewingTemplate('current')} className="uf-btn is-ghost is-sm" style={{ alignSelf: "flex-start" }}>View uploaded template</button>}
                 </div>
+
+                {savedTemplate && <section aria-label="Your saved template" className="uf-card" style={{ padding: 22, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="uf-eb is-muted">Your saved template</div>
+                    <b style={{ display: "block", fontSize: 15.5, overflowWrap: "anywhere" }}>{savedTemplate.fileName ?? "Saved headings"}</b>
+                    <span style={{ fontSize: 13, color: "#6b6890" }}>{savedOn ? `Saved ${savedOn} · ` : ""}{savedTemplate.chapters.length} {savedTemplate.chapters.length === 1 ? "chapter" : "chapters"} · {savedSections} {savedSections === 1 ? "section" : "sections"} · kept in this browser</span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <button type="button" onClick={() => setViewingTemplate('saved')} className="uf-btn is-ghost is-sm">View</button>
+                    <button type="button" onClick={handleUseSavedTemplate} className="uf-btn is-ghost is-sm">Use this template</button>
+                    <button type="button" onClick={handleDeleteSavedTemplate} className="uf-btn is-ghost is-danger is-sm">Delete</button>
+                  </div>
+                </section>}
+                {viewingTemplate === 'current' && customTemplateFile && <TemplateViewer name={customTemplateFile.name} detail="The template attached to this scan"
+                  file={customTemplateFile} onClose={() => setViewingTemplate(null)} />}
+                {viewingTemplate === 'saved' && savedTemplate && <TemplateViewer name={savedTemplate.fileName ?? "Saved template"} detail={savedOn ? `Saved ${savedOn} in this browser` : "Saved in this browser"}
+                  file={savedTemplateFile} onClose={() => setViewingTemplate(null)} />}
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
                   <button type="button" onClick={() => { handleResetTemplate(); setStep(2); }} className="uf-btn is-ghost is-lg" style={{ padding: "0 26px" }}>Skip, use detected headings</button>

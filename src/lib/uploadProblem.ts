@@ -5,6 +5,7 @@ export const isUnreadableDocument = (problem?: string | null): boolean =>
 
 /** The pop-up title for a document the outline refused. The message under it is the server's own wording. */
 export function paperProblemTitle(problem: string): string {
+  if (/does not match the uploaded template/.test(problem)) return 'This does not match your template';
   if (isUnreadableDocument(problem)) return 'Document not supported';
   // The two older sentences are still sent by a backend that has not been redeployed.
   if (/looks like a scan/i.test(problem)) return 'This looks like a scanned document';

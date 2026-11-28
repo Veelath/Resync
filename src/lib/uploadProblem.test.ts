@@ -12,6 +12,7 @@ test('every "could not read" sentence gets one title and blocks a template', () 
     assert.equal(paperProblemTitle(problem), 'Document not supported');
   }
   assert.equal(isUnreadableDocument('This does not look like a research paper, so it was not scanned.'), false);
+  assert.equal(paperProblemTitle('Could not read this document because it does not match the uploaded template: only 1 of 5.'), 'This does not match your template');
   assert.equal(paperProblemTitle('This does not look like a research paper.'), 'This does not look like a research paper');
 });
 
