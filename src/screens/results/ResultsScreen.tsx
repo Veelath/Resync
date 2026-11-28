@@ -268,7 +268,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
   async function placementElement(section: string, placement: Placement) {
     const sectionText = result?.manuscript_sections?.[findSectionIndex((result?.manuscript_sections ?? []).map(item => item.name), section)]?.text;
     for (;;) {
-      const paragraphs = [...(manuscriptScroll.current?.querySelectorAll<HTMLElement>(docxFile ? '.docx-host p, .docx-host h1, .docx-host h2, .docx-host h3, .docx-host h4, .docx-host li' : '[data-section-index] p, [data-section-index] li, [data-section-index] h2') ?? [])];
+      const paragraphs = [...(manuscriptScroll.current?.querySelectorAll<HTMLElement>(docxFile ? '.docx-host p, .docx-host h1, .docx-host h2, .docx-host h3, .docx-host h4, .docx-host li' : '[data-section-index] p, [data-section-index] li, [data-section-index] h2') ?? [])]
+        .filter(element => !element.closest('.docx-hidden-visual'));
       const at = placementParagraph(paragraphs.map(element => element.textContent ?? ''), section, sectionText, placement);
       if (at >= 0) return paragraphs[at];
       if (!(docxFile && !locked && await docxView.current?.loadNext())) return null;
@@ -298,7 +299,8 @@ export function ResultsScreen({ onNavigate, onBack, scan, isSample, onScanUpdate
       return;
     }
     const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-    const shown = [...(manuscriptScroll.current?.querySelectorAll<HTMLElement>('.docx-host p, .docx-host h1, .docx-host h2, .docx-host h3, .docx-host h4') ?? [])];
+    const shown = [...(manuscriptScroll.current?.querySelectorAll<HTMLElement>('.docx-host p, .docx-host h1, .docx-host h2, .docx-host h3, .docx-host h4') ?? [])]
+      .filter(element => !element.closest('.docx-hidden-visual'));
     const contents = contentsRange(shown.map(element => element.textContent ?? ''));   // a heading listed there is not the heading
     const sectionElement = docxFile
       ? shown.find((element, at) => !(contents && at >= contents[0] && at <= contents[1])

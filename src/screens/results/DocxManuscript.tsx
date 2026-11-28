@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { renderAsync } from 'docx-preview';
-import { INITIAL_ELEMENTS, nextBudget, previewAction } from '../../lib/docxPreview';
+import { renderWord } from '../../lib/renderWord';
+import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, previewAction } from '../../lib/docxPreview';
 import { lockedHeadingAction, lockedHeadingIndex } from './lockedHeading';
 import { highlightSentences, type HighlightSpec } from '../../lib/docxHighlight';
 
@@ -28,7 +28,8 @@ const HOST_CSS = `
 .docx-readable .docx-wrapper > section.docx { width: 100% !important; min-width: 0 !important; height: auto !important; min-height: 0 !important; padding: 18px !important; }
 .docx-readable .docx-wrapper :is(p, li, td, th, span) { font-size: 16px !important; line-height: 1.55 !important; overflow-wrap: anywhere; }
 .docx-readable .docx-wrapper img { max-width: 100%; height: auto; }
-.docx-host table { display: block; max-width: 100%; overflow-x: auto; }
+.docx-host .docx-hidden-visual, .docx-host .docx-hidden-visual * { visibility: hidden !important; }
+.docx-readable .docx-hidden-visual { display: none !important; }
 .docx-host mark { transition: box-shadow .15s; }
 .docx-host .docx-withheld { filter: blur(6px); user-select: none; pointer-events: none; }
 .docx-host .docx-withheld-start .locked-manuscript-card { position: static; margin-top: 0; }
@@ -37,19 +38,11 @@ const HOST_CSS = `
 .docx-host mark[data-selected] { box-shadow: 0 0 0 3px rgba(43, 37, 200, .35); }
 `;
 
-// Reports show the writing only, in the document's own pages and formatting: tables, pictures, diagrams and other
-// embedded objects are left out, locked or not.
-function keepTextOnly(root: HTMLElement) {
-  const visual = 'table, img, svg, canvas, object, embed, video, audio, iframe, script';
-  // A paragraph that held only a picture would leave a blank gap behind, so it goes too.
-  root.querySelectorAll('p').forEach(paragraph => {
-    if (paragraph.querySelector(visual) && !paragraph.textContent?.trim()) paragraph.remove();
-  });
-  root.querySelectorAll(visual).forEach(element => element.remove());
-  // Pages that were only a table or a figure; a page number in the header or footer does not keep one.
-  root.querySelectorAll('section.docx').forEach(page => {
-    if (!(page.querySelector('article') ?? page).textContent?.trim()) page.remove();
-  });
+// Reports show the writing only, on the document's own pages: tables, pictures and diagrams keep their place, so every
+// page begins and ends where it does in the file, but they are not shown. Embedded players and programs are removed.
+function hideVisuals(root: HTMLElement) {
+  root.querySelectorAll('object, embed, video, audio, iframe, script').forEach(element => element.remove());
+  root.querySelectorAll('table, img, svg, canvas').forEach(element => element.classList.add('docx-hidden-visual'));
 }
 
 export interface DocxManuscriptHandle { loadNext: () => Promise<boolean> }
@@ -90,8 +83,6 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     body.replaceChildren();
     setLoadedPages(0);
     loadNextRef.current = async () => false;
-    const rendered = document.createElement('div');
-    const styles = document.createElement('div');
     let worker: Worker;
     try { worker = new Worker(new URL('../../lib/docxPreview.worker.ts', import.meta.url), { type: 'module' }); }
     catch { fail('worker'); return; }
@@ -100,17 +91,14 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
       if (cancelled) return;
       if (previewAction(!!event.data.error, false, budget) === 'fail') { worker.terminate(); fail('worker'); return; }
       try {
-        await renderAsync(event.data.bytes, rendered, styles, {
-          className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
-          // The same options as the preview before the scan (components/DocxPreview), so the report shows the same copy.
-          breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
-          renderFootnotes: false, renderEndnotes: false, useBase64URL: true, renderAltChunks: false,
-        });
+        const drawn = await renderWord(event.data.bytes);
+        const rendered = drawn.body;
       if (cancelled) return;
       worker.terminate();
       const paragraphs = locked ? [...rendered.querySelectorAll('p, h1, h2, h3, h4, h5, h6')].filter(element => !element.closest('table')) : [];
       const index = locked ? lockedHeadingIndex(paragraphs.map(element => element.textContent ?? ''), secondSection ?? '') : -1;
-      keepTextOnly(rendered);
+      hideVisuals(rendered);
+      let unlockSpot: HTMLElement | null = null;
       if (locked) {
         const action = lockedHeadingAction(index, event.data.truncated, budget);
         if (action === 'retry') { setBudget(nextBudget(budget)); return; }
@@ -126,15 +114,21 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
             element.classList.add('docx-withheld'); element.setAttribute('aria-hidden', 'true');
           }
         });
-        setWithheldStart(marker);
-      } else setWithheldStart(null);
-      styleRef.current?.replaceChildren(...styles.childNodes);
+        unlockSpot = marker;
+      }
+      // Sentences are marked before the pages are cut, so one that runs onto the next page is still found.
+      let linked: Set<string> | null = null;
+      try { linked = highlightSentences(rendered, callbacks.current.highlights); } catch { /* Keep the rendered pages. */ }
+      await drawn.paginate();
+      if (cancelled) return;
+      setWithheldStart(unlockSpot);
+      styleRef.current?.replaceChildren(...drawn.styles.childNodes);
       body.replaceChildren(...rendered.childNodes);
-      const specs = callbacks.current.highlights;
-      try { callbacks.current.onLinked(highlightSentences(body, specs)); } catch { /* Keep the rendered pages. */ }
+      if (linked) callbacks.current.onLinked(linked);
       setActivePage(0);
       setStatus('ready');
-      if (previewAction(false, event.data.truncated, budget) === 'grow') setTimeout(() => { if (!cancelled) setBudget(nextBudget(budget)); }, 0);
+      // The first pages show at once; the rest of the file follows in one step.
+      if (previewAction(false, event.data.truncated, budget) === 'grow') setTimeout(() => { if (!cancelled) setBudget(MAX_ELEMENTS); }, 0);
       } catch {
         worker.terminate();
         fail('render');
@@ -160,22 +154,11 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     return () => observer.disconnect();
   }, [status, readable]);
 
-  // Pages are counted the way Word would: the document is cut into sheet-sized pieces by height, because the file's own
-  // page breaks can be few and far between. All sizes here are on-screen pixels, so they already include the zoom.
-  const pageMetrics = () => {
-    const body = bodyRef.current;
-    const first = body?.querySelector<HTMLElement>('section.docx');
-    if (!body || !first) return null;
-    const nominal = parseFloat(getComputedStyle(first).minHeight) || first.offsetWidth * 1.294;
-    const rect = body.getBoundingClientRect();
-    return { top: rect.top, height: rect.height, step: (nominal + 14) * scale };
-  };
+  const sheets = () => [...(bodyRef.current?.querySelectorAll<HTMLElement>('section.docx') ?? [])];
 
   useEffect(() => {
-    if (status !== 'ready') return;
-    const metrics = pageMetrics();
-    if (metrics) setPageCount(Math.max(1, Math.round(metrics.height / metrics.step)));
-  }, [status, scale, loadedPages, narrow, readable]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (status === 'ready') setPageCount(sheets().length);
+  }, [status, loadedPages, narrow, readable]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // On wide screens the manuscript pane scrolls by itself; on narrow ones the whole page does. Find whichever moves now.
   const scrollerOf = (): HTMLElement | null => {
@@ -191,10 +174,9 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
     if (status !== 'ready') return;
     const onScroll = (event: Event) => {
       if (railRef.current?.contains(event.target as Node)) return;
-      const metrics = pageMetrics();
-      if (!metrics) return;
       const edge = (scrollerOf()?.getBoundingClientRect().top ?? 0) + 120;
-      setActivePage(Math.max(0, Math.min(pageCount - 1, Math.floor((edge - metrics.top) / metrics.step))));
+      const below = sheets().findIndex(sheet => sheet.getBoundingClientRect().top > edge);
+      setActivePage(Math.max(0, (below < 0 ? pageCount : below) - 1));
     };
     // capture: scroll events do not bubble, and this catches the pane and the page alike
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
@@ -227,10 +209,10 @@ export const DocxManuscript = forwardRef<DocxManuscriptHandle, {
   }, [activePage]);
 
   const goToPage = (index: number) => {
-    const metrics = pageMetrics();
-    if (!metrics) return;
+    const sheet = sheets()[index];
+    if (!sheet) return;
     const scroller = scrollerOf();
-    const delta = metrics.top + index * metrics.step - (scroller?.getBoundingClientRect().top ?? 0) - 8;
+    const delta = sheet.getBoundingClientRect().top - (scroller?.getBoundingClientRect().top ?? 0) - 8;
     if (scroller) scroller.scrollTo({ top: Math.max(0, scroller.scrollTop + delta), behavior: 'smooth' });
     else window.scrollTo({ top: Math.max(0, window.scrollY + delta), behavior: 'smooth' });
     setActivePage(index);

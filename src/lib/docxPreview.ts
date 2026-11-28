@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
 export const INITIAL_ELEMENTS = 150;
-export const MAX_ELEMENTS = 3000;
+export const MAX_ELEMENTS = 8000;   // a 300-page thesis has about 3,500
 export const canShowWordPreview = (file: File | null, failed: File | null) => file !== null && file !== failed;
 export const nextBudget = (n: number) => Math.min(MAX_ELEMENTS, n * 2);
 

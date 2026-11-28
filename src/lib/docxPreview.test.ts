@@ -34,7 +34,7 @@ test('bounds text and rejects malformed or oversized first elements', () => {
 test('show more doubles and stops at the hard limit', () => {
   assert.equal(nextBudget(150), 300);
   assert.equal(nextBudget(1200), 2400);
-  assert.equal(nextBudget(3000), 3000);
+  assert.equal(nextBudget(MAX_ELEMENTS), MAX_ELEMENTS);
 });
 
 test('generated archive retains formatting and replaces large media without inflating it', async () => {

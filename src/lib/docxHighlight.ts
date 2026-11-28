@@ -92,7 +92,7 @@ export function markPlace(paragraph: Element, sentence: string, title: string): 
 /** Highlights each sentence once and returns the ids that were found in the document. */
 export function highlightSentences(root: HTMLElement, specs: HighlightSpec[]): Set<string> {
   const found = new Set<string>();
-  const all = Array.from(root.querySelectorAll('p')).filter(paragraph => !paragraph.closest('mark'));
+  const all = Array.from(root.querySelectorAll('p')).filter(paragraph => !paragraph.closest('mark, .docx-hidden-visual'));
   const contents = contentsRange(all.map(paragraph => paragraph.textContent ?? ''));
   const paragraphs = contents ? all.filter((_, index) => index < contents[0] || index > contents[1]) : all;
   const indexed = paragraphs.map(paragraph => ({ paragraph, ...indexParagraph(paragraph) }));

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { lockedHeadingAction, lockedHeadingIndex } from './lockedHeading';
+import { MAX_ELEMENTS } from '../../lib/docxPreview';
 
 test('finds normalized, numbered and split headings at their earliest safe boundary', () => {
   for (const heading of [' METHODOLOGY! ', '2. Methodology', '2.0 Methodology', 'II. Methodology', 'CHAPTER 2: Methodology']) {
@@ -23,7 +24,7 @@ test('retries only a missing heading in a truncated preview below the limit', ()
   assert.equal(lockedHeadingAction(0, true, 150), 'show');
   assert.equal(lockedHeadingAction(-1, true, 150), 'retry');
   assert.equal(lockedHeadingAction(-1, false, 150), 'fail');
-  assert.equal(lockedHeadingAction(-1, true, 3000), 'fail');
+  assert.equal(lockedHeadingAction(-1, true, MAX_ELEMENTS), 'fail');
   assert.equal(lockedHeadingAction(-2, true, 150), 'fail');
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { renderAsync } from 'docx-preview';
+import { renderWord } from '../lib/renderWord';
 import { createRequestToken } from '../lib/requestToken';
 import { INITIAL_ELEMENTS, MAX_ELEMENTS, nextBudget, createPreviewGuard } from '../lib/docxPreview';
 
@@ -40,21 +40,17 @@ export function DocxPreview({ file, onFailed, autoLoad = true }: { file: File; o
       const end = performance.now();
       performance.measure('docx-preview-worker', { start: Math.max(0, end - event.data.workerMs), end });
       try {
-        const body = document.createElement('div');
-        const css = document.createElement('div');
-        await renderAsync(event.data.bytes, body, css, {
-          className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false, ignoreFonts: false,
-          breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true,
-          renderFootnotes: false, renderEndnotes: false, useBase64URL: true, renderAltChunks: false,
-        });
+        const drawn = await renderWord(event.data.bytes);
+        if (!current() || !guard.isActive()) return;
+        await drawn.paginate();
         if (!current() || !guard.isActive()) return;
         if (!guard.finish()) return;
-        styles.current?.replaceChildren(...css.childNodes);
-        host.current?.replaceChildren(...body.childNodes);
+        styles.current?.replaceChildren(...drawn.styles.childNodes);
+        host.current?.replaceChildren(...drawn.body.childNodes);
         setHasContent(true);
         setTruncated(event.data.truncated);
         setStatus('ready');
-        if (autoLoad && event.data.truncated && budget < MAX_ELEMENTS) setTimeout(() => { if (current()) setBudget(nextBudget(budget)); }, 0);
+        if (autoLoad && event.data.truncated && budget < MAX_ELEMENTS) setTimeout(() => { if (current()) setBudget(MAX_ELEMENTS); }, 0);
       } catch { guard.cancel(); fail(); }
     };
     instance.onerror = () => { guard.cancel(); fail(); };
