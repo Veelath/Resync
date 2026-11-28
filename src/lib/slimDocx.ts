@@ -34,14 +34,15 @@ async function pagePicturesToKeep(zip: JSZip, pictures: string[]): Promise<Set<s
  * Word files full of pictures are slow to send, open and draw, yet the pictures are thrown away anyway. This swaps every
  * picture for a tiny placeholder and keeps all the text, tables and layout as they were (a file that is only pictures
  * keeps a few of them, see above). Anything unexpected returns the original file untouched.
+ * `everyPicture` removes all of them from a file of any size: for a template, only the writing is ever read.
  */
-export async function slimDocx(file: File): Promise<File> {
-  if (file.size < WORTH_SLIMMING || !/\.docx$/i.test(file.name)) return file;
+export async function slimDocx(file: File, everyPicture = false): Promise<File> {
+  if ((!everyPicture && file.size < WORTH_SLIMMING) || !/\.docx$/i.test(file.name)) return file;
   try {
     const zip = await JSZip.loadAsync(await file.arrayBuffer());
     const pictures = Object.keys(zip.files).filter(name => /^word\/media\//i.test(name) && !zip.files[name].dir);
     if (!pictures.length) return file;
-    const keep = await pagePicturesToKeep(zip, pictures);
+    const keep = everyPicture ? new Set<string>() : await pagePicturesToKeep(zip, pictures);
     for (const name of pictures) if (!keep.has(name)) zip.file(name, PLACEHOLDER);
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 1 } });
     if (blob.size >= file.size) return file;

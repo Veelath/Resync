@@ -36,7 +36,7 @@ const GOOGLE_READ_ERROR = "We could not open this Google document. Check the lin
 const WORD_READ_ERROR = 'This file could not be read as a Word document. Check that it is a real .docx file, or paste your Google Docs link instead.';
 
 const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
-const MAX_TEMPLATE_BYTES = 100 * 1024;
+const MAX_TEMPLATE_BYTES = 1024 * 1024;
 const WORD_ACCEPT = ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const TEMPLATE_ACCEPT = ".doc,.docx," + WORD_MIME_TYPES.join(",") + ",.txt,text/plain";
 
@@ -175,6 +175,8 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
   const [customTemplateFile, setCustomTemplateFile] = useState<File | null>(null);
   const [templateParseError, setTemplateParseError] = useState<string | null>(null);
   const [templateDialog, setTemplateDialog] = useState<string | null>(null);
+  const [templateLink, setTemplateLink] = useState("");
+  const [templateLinkLoading, setTemplateLinkLoading] = useState(false);
   const customTemplateInputRef = useRef<HTMLInputElement>(null);
 
   const [templateChapters, setTemplateChapters] = useState<TemplateChapter[]>([]);
@@ -398,10 +400,12 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       setTemplateParseError('Unsupported template file. Please upload a Word document (.docx) or a text file (.txt).');
       return;
     }
+    // Only the writing of a template is read, so a large Word file is first judged without its pictures.
+    if (file.size > MAX_TEMPLATE_BYTES && !isTextTemplate) file = await slimDocx(file, true);
     if (file.size > MAX_TEMPLATE_BYTES) {
       setCustomTemplateFile(null);
       setTemplateChapters([]);
-      setTemplateParseError('This template is larger than 100 KB. Please upload a smaller file.');
+      setTemplateParseError('This template is larger than 1 MB even without its pictures. Please use a smaller file.');
       return;
     }
     setCustomTemplateFile(file);
@@ -417,6 +421,23 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
       }
     } catch {
       rejectTemplate('Could not parse the template file. No template will be sent.');
+    }
+  }
+
+  // A template shared as a Google Doc is downloaded as a Word file and then read like an uploaded one.
+  async function handleTemplateLink() {
+    const url = templateLink.trim();
+    if (!url || templateLinkLoading) return;
+    if (!googleLink(url)) { rejectTemplate("This doesn't look like a Google Docs link."); return; }
+    setTemplateLinkLoading(true);
+    try {
+      const downloaded = await downloadGoogleDoc(url);
+      const file = /\.docx$/i.test(downloaded.name) ? downloaded : new File([downloaded], `${downloaded.name}.docx`, { type: downloaded.type });
+      await handleTemplateFileChange(file);
+    } catch (error) {
+      rejectTemplate(error instanceof ScanLimitError ? error.message : GOOGLE_READ_ERROR);
+    } finally {
+      setTemplateLinkLoading(false);
     }
   }
 
@@ -614,7 +635,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
               <div>
                 <div className="uf-eb">Step 1 · Chapter template (optional)</div>
                 <h1 className="uf-h1">Optional chapter template</h1>
-                <p className="uf-sub">Attach, edit or load a saved template if you need specific headings. Skip to use headings detected from your manuscript.</p>
+                <p className="uf-sub">Attach, edit or load a saved template to check that your manuscript follows your school's headings, or skip this step.</p>
               </div>
               <div className="uf-actions">
                 {templateNotification && (
@@ -744,7 +765,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                     <span className="uf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></svg></span>
                     <div>
                       <b style={{ fontSize: 15.5 }}>Have an institutional Word template?</b>
-                      <div style={{ fontSize: 13, color: "#6b6890" }}>Resync reads its headings so your report follows your school's format.</div>
+                      <div style={{ fontSize: 13, color: "#6b6890" }}>Resync checks that your manuscript follows its headings.</div>
                     </div>
                   </div>
                   <button type="button" className={`uf-dz ${customTemplateFile ? "has-file" : ""}`} onClick={() => customTemplateInputRef.current?.click()} style={{ font: "inherit", color: "inherit" }}>
@@ -755,6 +776,11 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   {templateParseError && <p style={{ margin: 0, fontSize: 12.5, color: "#b7791f" }}>{templateParseError}</p>}
                   <input ref={customTemplateInputRef} type="file" accept={TEMPLATE_ACCEPT} className="hidden"
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleTemplateFileChange(f); e.target.value = ""; }} />
+                  <form onSubmit={e => { e.preventDefault(); void handleTemplateLink(); }} style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    <input type="url" aria-label="Template Google Docs link" value={templateLink} onChange={e => setTemplateLink(e.target.value)} placeholder="Or paste your template's Google Docs link"
+                      className="h-11 min-w-[220px] flex-1 rounded-xl border border-[#dad8f2] bg-white px-3 text-sm text-[#0b0a2e] placeholder:text-[#8b89a6] focus-visible:outline-2 focus-visible:outline-[#2b25c8]" />
+                    <button type="submit" disabled={!templateLink.trim() || templateLinkLoading} className="uf-btn is-ghost is-sm">{templateLinkLoading ? "Opening…" : "Use link"}</button>
+                  </form>
                   {customTemplateFile && templateChapters.length > 0 && <button type="button" onClick={() => setViewingTemplate('current')} className="uf-btn is-ghost is-sm" style={{ alignSelf: "flex-start" }}>View uploaded template</button>}
                 </div>
 
@@ -799,7 +825,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0012 2z" /></svg>
                   <div>
                     <b>Template tip</b>
-                    {hasChapters ? "Click a heading pill to rename it. Resync will compare your sections across the whole manuscript." : "No template selected. Resync will detect sections from your manuscript."}
+                    {hasChapters ? "Click a heading pill to rename it. Your manuscript must have most of these headings to be scanned." : "No template selected. Resync will detect sections from your manuscript."}
                   </div>
                 </div>
               </div>
@@ -812,7 +838,7 @@ export function UploadScreen({ onNavigate, onBack, session, onScanComplete, onSc
             <div>
               <div className="uf-eb">Step 2 · Manuscript intake</div>
               <h1 className="uf-h1">Upload manuscript</h1>
-              <p className="uf-sub">Upload a Word document or add a Google Docs link. Resync uses your template headings if you chose them in Step 1; otherwise it detects sections.</p>
+              <p className="uf-sub">Upload a Word document or add a Google Docs link. If you added a template in Step 1, Resync checks that your manuscript follows it. The score is worked out the same way with or without one.</p>
             </div>
 
             <div className="uf-grid">
